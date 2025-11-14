@@ -41,9 +41,6 @@ struct radv_sdma_surf {
       /* tiled images only */
       struct {
          uint64_t meta_va;      /* Virtual address of metadata. */
-         uint32_t meta_config;  /* Metadata configuration DWORD. */
-         uint32_t header_dword; /* Extra bits for the copy packet header. */
-         uint32_t info_dword;   /* Image information DWORD. */
          bool is_compressed;
          uint32_t surface_type;
          bool htile_enabled;

@@ -50,21 +50,6 @@ radv_sdma_pitch_alignment(const struct radv_device *device, const unsigned bpp)
    return 4;
 }
 
-ALWAYS_INLINE static enum gfx9_resource_type
-radv_sdma_surface_resource_type(const struct radv_device *const device, const struct radeon_surf *const surf)
-{
-   const struct radv_physical_device *pdev = radv_device_physical(device);
-
-   if (pdev->info.sdma_ip_version >= SDMA_5_0) {
-      /* Use the 2D resource type for rotated or Z swizzles. */
-      if ((surf->u.gfx9.resource_type == RADEON_RESOURCE_1D || surf->u.gfx9.resource_type == RADEON_RESOURCE_3D) &&
-          (surf->micro_tile_mode == RADEON_MICRO_MODE_RENDER || surf->micro_tile_mode == RADEON_MICRO_MODE_DEPTH))
-         return RADEON_RESOURCE_2D;
-   }
-
-   return surf->u.gfx9.resource_type;
-}
-
 ALWAYS_INLINE static uint32_t
 radv_sdma_surface_type_from_aspect_mask(const VkImageAspectFlags aspectMask)
 {
@@ -193,75 +178,6 @@ radv_sdma_get_buf_surf(uint64_t buffer_va, const struct radv_image *const image,
    return info;
 }
 
-static uint32_t
-radv_sdma_get_metadata_config(const struct radv_device *const device, const struct radv_image *const image,
-                              const struct radeon_surf *const surf, const VkImageSubresourceLayers subresource)
-{
-   const struct radv_physical_device *pdev = radv_device_physical(device);
-
-   const VkFormat format = vk_format_get_aspect_format(image->vk.format, subresource.aspectMask);
-
-   const uint32_t data_format = ac_get_cb_format(pdev->info.gfx_level, radv_format_to_pipe_format(format));
-   const uint32_t alpha_is_on_msb = ac_alpha_is_on_msb(&pdev->info, radv_format_to_pipe_format(format));
-   const uint32_t number_type = ac_get_cb_number_type(radv_format_to_pipe_format(format));
-   const uint32_t surface_type = radv_sdma_surface_type_from_aspect_mask(subresource.aspectMask);
-   const uint32_t max_comp_block_size = surf->u.gfx9.color.dcc.max_compressed_block_size;
-   const uint32_t pipe_aligned = radv_htile_enabled(image, subresource.mipLevel) || surf->u.gfx9.color.dcc.pipe_aligned;
-
-   if (pdev->info.sdma_ip_version >= SDMA_7_0) {
-      return SDMA7_DCC_DATA_FORMAT(data_format) | SDMA7_DCC_NUM_TYPE(number_type) | SDMA7_DCC_READ_CM(2) |
-             SDMA7_DCC_MAX_COM(max_comp_block_size) | SDMA7_DCC_MAX_UCOM(1);
-   } else {
-      return SDMA5_DCC_DATA_FORMAT(data_format) | SDMA5_DCC_ALPHA_IS_ON_MSB(alpha_is_on_msb) |
-             SDMA5_DCC_NUM_TYPE(number_type) | SDMA5_DCC_SURF_TYPE(surface_type) |
-             SDMA5_DCC_MAX_COM(max_comp_block_size) | SDMA5_DCC_MAX_UCOM(V_028C78_MAX_BLOCK_SIZE_256B) |
-             SDMA5_DCC_PIPE_ALIGNED(pipe_aligned);
-   }
-}
-
-static uint32_t
-radv_sdma_get_tiled_info_dword(const struct radv_device *const device, const struct radv_image *const image,
-                               const struct radeon_surf *const surf, const VkImageSubresourceLayers subresource)
-{
-   const struct radv_physical_device *pdev = radv_device_physical(device);
-   const uint32_t bpe = radv_sdma_get_bpe(image, subresource.aspectMask);
-   const uint32_t element_size = util_logbase2(bpe);
-   const uint32_t swizzle_mode = surf->has_stencil ? surf->u.gfx9.zs.stencil_swizzle_mode : surf->u.gfx9.swizzle_mode;
-   const enum gfx9_resource_type dimension = radv_sdma_surface_resource_type(device, surf);
-   uint32_t info = element_size | swizzle_mode << 3;
-   const enum sdma_version ver = pdev->info.sdma_ip_version;
-   const uint32_t mip_max = MAX2(image->vk.mip_levels, 1);
-   const uint32_t mip_id = subresource.mipLevel;
-
-   if (ver >= SDMA_7_0) {
-      return info | (mip_max - 1) << 16 | mip_id << 24;
-   } else if (ver >= SDMA_5_0) {
-      return info | dimension << 9 | (mip_max - 1) << 16 | mip_id << 20;
-   } else if (ver >= SDMA_4_0) {
-      return info | dimension << 9 | surf->u.gfx9.epitch << 16;
-   } else {
-      UNREACHABLE("unsupported SDMA version");
-   }
-}
-
-static uint32_t
-radv_sdma_get_tiled_header_dword(const struct radv_device *const device, const struct radv_image *const image,
-                                 const VkImageSubresourceLayers subresource)
-{
-   const struct radv_physical_device *pdev = radv_device_physical(device);
-   const enum sdma_version ver = pdev->info.sdma_ip_version;
-
-   if (ver >= SDMA_5_0) {
-      return 0;
-   } else if (ver >= SDMA_4_0) {
-      const uint32_t mip_max = MAX2(image->vk.mip_levels, 1);
-      const uint32_t mip_id = subresource.mipLevel;
-      return (mip_max - 1) << 20 | mip_id << 24;
-   } else {
-      UNREACHABLE("unsupported SDMA version");
-   }
-}
-
 struct radv_sdma_surf
 radv_sdma_get_surf(const struct radv_device *const device, const struct radv_image *const image,
                    const VkImageSubresourceLayers subresource, const VkOffset3D offset)
@@ -317,9 +233,6 @@ radv_sdma_get_surf(const struct radv_device *const device, const struct radv_ima
 
       info.va = (va + surf_offset) | surf->tile_swizzle << 8;
 
-      info.info_dword = radv_sdma_get_tiled_info_dword(device, image, surf, subresource);
-      info.header_dword = radv_sdma_get_tiled_header_dword(device, image, subresource);
-
       if (pdev->info.gfx_level >= GFX12) {
          info.is_compressed = binding->bo && binding->bo->gfx12_allow_dcc;
       } else if (pdev->info.sdma_supports_compression &&
@@ -330,7 +243,6 @@ radv_sdma_get_surf(const struct radv_device *const device, const struct radv_ima
       if (info.is_compressed) {
          info.meta_va = va + surf->meta_offset;
          info.surface_type = radv_sdma_surface_type_from_aspect_mask(subresource.aspectMask);
-         info.meta_config = radv_sdma_get_metadata_config(device, image, surf, subresource);
          info.htile_enabled = htile_enabled;
       }
    }
