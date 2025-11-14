@@ -3352,6 +3352,12 @@ bi_emit_alu(bi_builder *b, nir_alu_instr *instr)
    bi_index s2 =
       srcs > 2 ? bi_alu_src_index(b, instr->src[2], comps) : bi_null();
 
+   bool need_post_swizzle = sz == 8 && comps == 2;
+   bi_index post_swizzle_dst = dst;
+   if (need_post_swizzle) {
+      dst = bi_temp(b->shader);
+   }
+
    switch (instr->op) {
    case nir_op_ffma:
       bi_fma_to(b, sz, dst, s0, s1, s2);
@@ -3926,6 +3932,12 @@ bi_emit_alu(bi_builder *b, nir_alu_instr *instr)
    default:
       fprintf(stderr, "Unhandled ALU op %s\n", nir_op_infos[instr->op].name);
       UNREACHABLE("Unknown ALU op");
+   }
+
+   if (need_post_swizzle) {
+      bi_index srcs[2] = {dst, dst};
+      unsigned channels[2] = {0, 2};
+      bi_make_vec_to(b, post_swizzle_dst, srcs, channels, 2, 8);
    }
 }
 
