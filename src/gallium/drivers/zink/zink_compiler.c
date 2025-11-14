@@ -1265,7 +1265,7 @@ zink_screen_init_compiler(struct zink_screen *screen)
 {
    static const struct nir_shader_compiler_options
    default_options = {
-      .io_options = nir_io_has_intrinsics | nir_io_separate_clip_cull_distance_arrays,
+      .io_options = nir_io_has_intrinsics,
       .lower_ffma16 = true,
       .lower_ffma32 = true,
       .lower_ffma64 = true,
@@ -6189,6 +6189,7 @@ zink_shader_init(struct zink_screen *screen, struct zink_shader *zs)
    }
 
    NIR_PASS(_, nir, nir_lower_io_to_scalar, nir_var_shader_in | nir_var_shader_out, NULL, NULL);
+   NIR_PASS(_, nir, nir_separate_merged_clip_cull_io);
    optimize_nir(nir, NULL, true);
    NIR_PASS(_, nir, bound_image_arrays);
    NIR_PASS(_, nir, flatten_image_arrays);

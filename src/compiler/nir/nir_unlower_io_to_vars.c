@@ -288,15 +288,8 @@ create_vars(nir_builder *b, nir_intrinsic_instr *intr, void *opaque)
             case VARYING_SLOT_CLIP_DIST1:
             case VARYING_SLOT_CULL_DIST0:
             case VARYING_SLOT_CULL_DIST1:
-               if (nir->options->io_options &
-                   nir_io_separate_clip_cull_distance_arrays) {
-                  decl_size = desc.sem.location >= VARYING_SLOT_CULL_DIST0 ?
-                                 nir->info.cull_distance_array_size :
-                                 nir->info.clip_distance_array_size;
-               } else {
-                  decl_size = nir->info.clip_distance_array_size +
-                              nir->info.cull_distance_array_size;
-               }
+               decl_size = nir->info.clip_distance_array_size +
+                           nir->info.cull_distance_array_size;
                component = (desc.sem.location == VARYING_SLOT_CLIP_DIST1 ||
                             desc.sem.location == VARYING_SLOT_CULL_DIST1) * 4 +
                            desc.component;
