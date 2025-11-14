@@ -1187,14 +1187,20 @@ virtgpu_bo_create_from_dma_buf(struct vn_renderer *renderer,
       /* mmap_size is only used when mappable */
       mmap_size = 0;
       if (blob_flags & VIRTGPU_BLOB_FLAG_USE_MAPPABLE) {
-         /* If queried blob size is smaller than requested allocation size, we
-          * drop the mappable flag to defer the mapping failure till the app's
-          * vkMapMemory api call.
-          */
-         if (info.size < size)
+         if (info.size < size) {
+            /* If queried blob size is smaller than requested allocation size,
+             * we drop the mappable flag to defer the mapping failure till the
+             * app attempts to map the imported memory.
+             */
             blob_flags &= ~VIRTGPU_BLOB_FLAG_USE_MAPPABLE;
-         else
-            mmap_size = size;
+         } else {
+            /* Similar to virtgpu_bo_create_from_device_memory, the app can
+             * do multiple imports with different sizes for suballocation. So
+             * on the initial import, the mapping size has to be initialized
+             * with the real size of the backing blob resource.
+             */
+            mmap_size = info.size;
+         }
       }
    }
 
@@ -1254,6 +1260,29 @@ virtgpu_bo_create_from_device_memory(
       gpu, gpu->bo_blob_mem, blob_flags, size, mem_id, &res_id);
    if (!gem_handle)
       return VK_ERROR_OUT_OF_DEVICE_MEMORY;
+
+   /* There's a single underlying bo mapping shared by the initial alloc here
+    * and the later import of the same. The mapping size has to be initialized
+    * with the real size of the created blob resource, since the app can query
+    * the exported native handle size for re-import. e.g. lseek dma-buf size
+    */
+   const uint32_t mappable_and_shareable =
+      VIRTGPU_BLOB_FLAG_USE_MAPPABLE | VIRTGPU_BLOB_FLAG_USE_SHAREABLE;
+   if ((blob_flags & mappable_and_shareable) == mappable_and_shareable) {
+      struct drm_virtgpu_resource_info info;
+      if (virtgpu_ioctl_resource_info(gpu, gem_handle, &info)) {
+         virtgpu_ioctl_gem_close(gpu, gem_handle);
+         return VK_ERROR_INVALID_EXTERNAL_HANDLE;
+      }
+
+      assert(info.blob_mem);
+      if (info.size < size) {
+         virtgpu_ioctl_gem_close(gpu, gem_handle);
+         return VK_ERROR_INVALID_EXTERNAL_HANDLE;
+      }
+
+      size = info.size;
+   }
 
    struct virtgpu_bo *bo = util_sparse_array_get(&gpu->bo_array, gem_handle);
    *bo = (struct virtgpu_bo){
