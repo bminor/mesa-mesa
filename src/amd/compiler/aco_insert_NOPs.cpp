@@ -1610,7 +1610,8 @@ handle_instruction_gfx11(State& state, NOP_ctx_gfx11& ctx, aco_ptr<Instruction>&
 
             for (unsigned i = 0; i < op.size(); i++) {
                PhysReg reg = op.physReg().advance(i * 4);
-               if (ctx.sgpr_read_by_valu_then_wr_by_salu.get(reg) < expiry_count) {
+               if (ctx.sgpr_read_by_valu_then_wr_by_salu.get(reg) < expiry_count &&
+                   wait.sa_sdst > 0) {
                   imm &= 0xfffe;
                   wait.sa_sdst = 0;
                }
@@ -1620,11 +1621,13 @@ handle_instruction_gfx11(State& state, NOP_ctx_gfx11& ctx, aco_ptr<Instruction>&
                   /* s_wait_alu on va_sdst (if non-VCC SGPR) or va_vcc (if VCC SGPR) */
                   if (ctx.sgpr_read_by_valu_then_wr_by_valu[reg]) {
                      bool is_vcc = reg == vcc || reg == vcc_hi;
-                     imm &= is_vcc ? 0xfffd : 0xf1ff;
-                     if (is_vcc)
+                     if (is_vcc && wait.va_vcc > 0) {
+                        imm &= 0xfffd;
                         wait.va_vcc = 0;
-                     else
+                     } else if (!is_vcc && wait.va_sdst > 0) {
+                        imm &= 0xf1ff;
                         wait.va_sdst = 0;
+                     }
                   }
                }
             }
