@@ -1148,6 +1148,16 @@ nir_is_output_load(nir_intrinsic_instr *intr)
           intr->intrinsic == nir_intrinsic_load_per_view_output;
 }
 
+bool
+nir_is_input_load(nir_intrinsic_instr *intr)
+{
+   return intr->intrinsic == nir_intrinsic_load_input ||
+          intr->intrinsic == nir_intrinsic_load_per_vertex_input ||
+          intr->intrinsic == nir_intrinsic_load_per_primitive_input ||
+          intr->intrinsic == nir_intrinsic_load_interpolated_input ||
+          intr->intrinsic == nir_intrinsic_load_input_vertex;
+}
+
 /**
  * Return the array index source for an arrayed load/store intrinsic.
  */

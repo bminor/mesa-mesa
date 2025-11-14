@@ -323,6 +323,7 @@ else
   'nir_search.c',
   'nir_search.h',
   'nir_search_helpers.h',
+  'nir_separate_merged_clip_cull_io.c',
   'nir_serialize.c',
   'nir_serialize.h',
   'nir_shader_bisect.c',

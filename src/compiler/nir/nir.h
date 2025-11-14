@@ -5049,6 +5049,7 @@ bool nir_opt_group_loads(nir_shader *shader, nir_load_grouping grouping,
 bool nir_shrink_vec_array_vars(nir_shader *shader, nir_variable_mode modes);
 bool nir_split_array_vars(nir_shader *shader, nir_variable_mode modes);
 bool nir_split_var_copies(nir_shader *shader);
+bool nir_separate_merged_clip_cull_io(nir_shader *nir);
 bool nir_split_per_member_structs(nir_shader *shader);
 bool nir_split_struct_vars(nir_shader *shader, nir_variable_mode modes);
 
@@ -5427,6 +5428,7 @@ nir_src *nir_get_io_arrayed_index_src(nir_intrinsic_instr *instr);
 nir_src *nir_get_shader_call_payload_src(nir_intrinsic_instr *call);
 
 bool nir_is_output_load(nir_intrinsic_instr *intr);
+bool nir_is_input_load(nir_intrinsic_instr *intr);
 bool nir_is_arrayed_io(const nir_variable *var, mesa_shader_stage stage);
 
 /* Represents an offset used by intrinsics that support the offset_shift
