@@ -5,7 +5,7 @@
 
 #include "compiler/nir/nir_builder.h"
 #include "pipe/p_defines.h"
-#include "poly/nir/poly_nir_lower_gs.h"
+#include "poly/nir/poly_nir.h"
 #include "util/bitset.h"
 #include "util/u_dynarray.h"
 #include "agx_abi.h"

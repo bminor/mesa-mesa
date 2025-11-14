@@ -5,14 +5,9 @@
 
 #include "compiler/nir/nir_builder.h"
 #include "poly/cl/libpoly.h"
+#include "poly/nir/poly_nir.h"
 #include "poly/geometry.h"
 #include "nir.h"
-
-/* XXX: Remove me later */
-nir_def *poly_nir_load_vertex_id(struct nir_builder *b, nir_def *id,
-                                 unsigned index_size_B);
-
-bool poly_nir_lower_sw_vs(struct nir_shader *s, unsigned index_size_B);
 
 /*
  * This file implements basic input assembly in software. It runs on software

@@ -6,7 +6,7 @@
 
 #include "gallium/include/pipe/p_defines.h"
 #include "poly/cl/libpoly.h"
-#include "poly/nir/poly_nir_lower_gs.h"
+#include "poly/nir/poly_nir.h"
 #include "util/format/u_formats.h"
 #include "agx_abi.h"
 #include "agx_linker.h"

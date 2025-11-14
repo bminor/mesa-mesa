@@ -35,7 +35,6 @@
 #include "pipe/p_screen.h"
 #include "pipe/p_state.h"
 #include "poly/geometry.h"
-#include "poly/nir/poly_nir_lower_gs.h"
 #include "util/bitscan.h"
 #include "util/bitset.h"
 #include "util/blend.h"

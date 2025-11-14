@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-#include "poly/nir/poly_nir_lower_gs.h"
+#include "poly/nir/poly_nir.h"
 #include "compiler/nir/nir_builder.h"
 #include "gallium/include/pipe/p_defines.h"
 #include "poly/cl/libpoly.h"

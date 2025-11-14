@@ -8,7 +8,7 @@
  */
 #include "hk_shader.h"
 
-#include "poly/nir/poly_nir_lower_gs.h"
+#include "poly/nir/poly_nir.h"
 #include "agx_debug.h"
 #include "agx_device.h"
 #include "agx_helpers.h"

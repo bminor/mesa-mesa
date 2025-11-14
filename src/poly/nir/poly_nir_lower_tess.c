@@ -5,7 +5,7 @@
 
 #include "poly/cl/libpoly.h"
 #include "poly/geometry.h"
-#include "poly/nir/poly_nir_lower_gs.h"
+#include "poly/nir/poly_nir.h"
 #include "util/bitscan.h"
 #include "util/macros.h"
 #include "nir.h"

@@ -5,7 +5,6 @@
  * SPDX-License-Identifier: MIT
  */
 #include <assert.h>
-#include "poly/nir/poly_nir_lower_gs.h"
 #include "agx_abi.h"
 #include "agx_bg_eot.h"
 #include "agx_bo.h"

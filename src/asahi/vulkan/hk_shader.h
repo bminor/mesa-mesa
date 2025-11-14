@@ -8,7 +8,7 @@
 #pragma once
 
 #include "asahi/compiler/agx_compile.h"
-#include "poly/nir/poly_nir_lower_gs.h"
+#include "poly/nir/poly_nir.h"
 #include "util/macros.h"
 #include "agx_linker.h"
 #include "agx_nir_lower_vbo.h"

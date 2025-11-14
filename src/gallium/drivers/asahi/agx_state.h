@@ -25,7 +25,7 @@
 #include "gallium/include/pipe/p_state.h"
 #include "pipe/p_defines.h"
 #include "poly/geometry.h"
-#include "poly/nir/poly_nir_lower_gs.h"
+#include "poly/nir/poly_nir.h"
 #include "util/bitset.h"
 #include "util/disk_cache.h"
 #include "util/hash_table.h"

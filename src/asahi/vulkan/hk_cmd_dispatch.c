@@ -5,7 +5,6 @@
  * SPDX-License-Identifier: MIT
  */
 #include "libagx/query.h"
-#include "poly/nir/poly_nir_lower_gs.h"
 #include "vulkan/vulkan_core.h"
 #include "agx_helpers.h"
 #include "agx_linker.h"
