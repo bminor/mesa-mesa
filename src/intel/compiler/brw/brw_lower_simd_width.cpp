@@ -597,12 +597,23 @@ emit_zip(const brw_builder &lbld_before, const brw_builder &lbld_after,
       (reg_unit(devinfo) * REG_SIZE) : 0;
    const unsigned dst_size = (inst->size_written - residency_size) /
       inst->dst.component_size(inst->exec_size);
+   unsigned tmp_comp_size;
+   brw_reg tmp;
 
-   /* For SEND messages, align the allocation to physical registers */
-   const brw_reg tmp = lbld_after.vgrf(
-      inst->dst.type,
-      (is_send_inst(inst) ? align(dst_size, reg_unit(devinfo)) : dst_size) +
-      inst->has_sampler_residency() * reg_unit(devinfo));
+   if (is_send_inst(inst)) {
+      /* For SEND messages, align the allocation to physical registers */
+      tmp_comp_size =
+         align(inst->dst.component_size(lbld_after.dispatch_width()),
+               reg_unit(devinfo) * REG_SIZE);
+      const unsigned tmp_size =
+         (dst_size * tmp_comp_size + residency_size) / REG_SIZE;
+      tmp = retype(brw_allocate_vgrf_units(*lbld_after.shader, tmp_size),
+                   inst->dst.type);
+   } else {
+      tmp_comp_size = inst->dst.component_size(lbld_after.dispatch_width());
+      tmp = lbld_after.vgrf(inst->dst.type, dst_size +
+         inst->has_sampler_residency() * reg_unit(devinfo));
+   }
 
    if (inst->predicate) {
       /* Handle predication by copying the original contents of the
@@ -610,7 +621,7 @@ emit_zip(const brw_builder &lbld_before, const brw_builder &lbld_after,
        * instruction.
        */
       for (unsigned k = 0; k < dst_size; ++k) {
-         lbld_before.MOV(offset(tmp, lbld_before, k),
+         lbld_before.MOV(byte_offset(tmp, tmp_comp_size * k),
                          offset(dst, inst->exec_size, k));
       }
    }
@@ -618,7 +629,7 @@ emit_zip(const brw_builder &lbld_before, const brw_builder &lbld_after,
    for (unsigned k = 0; k < dst_size; ++k) {
       /* Copy the (split) temp into the original (larger) destination */
       lbld_after.MOV(offset(dst, inst->exec_size, k),
-                     offset(tmp, lbld_after, k));
+                     byte_offset(tmp, tmp_comp_size * k));
    }
 
    if (inst->has_sampler_residency()) {
@@ -745,13 +756,14 @@ brw_lower_simd_width(brw_shader &s)
 
          split_inst->dst = emit_zip(lbld.before(inst),
                                    lbld_after, inst);
-         /* For SEND messages, align the data size to physical registers */
-         unsigned data_size =
-            split_inst->dst.component_size(lower_width) * dst_size;
-         if (is_send_inst(split_inst))
-            data_size = align(data_size, REG_SIZE * reg_unit(s.devinfo));
+         unsigned comp_size =
+            split_inst->dst.component_size(lower_width);
 
-         split_inst->size_written = data_size + residency_size;
+         /* For SEND messages, align the data size to physical registers */
+         if (is_send_inst(split_inst))
+            comp_size = align(comp_size, REG_SIZE * reg_unit(s.devinfo));
+
+         split_inst->size_written = comp_size * dst_size + residency_size;
 
          lbld.after(inst).emit(split_inst);
       }
