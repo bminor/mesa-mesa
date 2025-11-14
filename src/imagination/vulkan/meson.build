@@ -29,6 +29,7 @@ pvr_files = files(
   'pvr_arch_descriptor_set.c',
   'pvr_arch_device.c',
   'pvr_arch_pass.c',
+  'pvr_arch_tex_state.c',
   'pvr_blit.c',
   'pvr_bo.c',
   'pvr_clear.c',
@@ -61,7 +62,6 @@ pvr_files = files(
   'pvr_rt_dataset.c',
   'pvr_sampler.c',
   'pvr_spm.c',
-  'pvr_tex_state.c',
   'pvr_usc.c',
   'pvr_wsi.c',
 )
