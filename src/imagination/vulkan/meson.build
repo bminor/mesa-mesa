@@ -29,6 +29,7 @@ pvr_files = files(
   'pvr_border.c',
   'pvr_clear.c',
   'pvr_cmd_buffer.c',
+  'pvr_cmd_query.c',
   'pvr_csb.c',
   'pvr_descriptor_set.c',
   'pvr_device.c',
