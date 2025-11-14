@@ -50,22 +50,6 @@ radv_sdma_pitch_alignment(const struct radv_device *device, const unsigned bpp)
    return 4;
 }
 
-ALWAYS_INLINE static void
-radv_sdma_check_pitches(const unsigned pitch, const unsigned slice_pitch, const unsigned bpp, const bool uses_depth)
-{
-   ASSERTED const unsigned pitch_alignment = MAX2(1, 4 / bpp);
-   assert(pitch);
-   assert(pitch <= (1 << 14));
-   assert(util_is_aligned(pitch, pitch_alignment));
-
-   if (uses_depth) {
-      ASSERTED const unsigned slice_pitch_alignment = 4;
-      assert(slice_pitch);
-      assert(slice_pitch <= (1 << 28));
-      assert(util_is_aligned(slice_pitch, slice_pitch_alignment));
-   }
-}
-
 ALWAYS_INLINE static enum gfx9_resource_type
 radv_sdma_surface_resource_type(const struct radv_device *const device, const struct radeon_surf *const surf)
 {
@@ -292,7 +276,9 @@ radv_sdma_get_surf(const struct radv_device *const device, const struct radv_ima
    const uint64_t va = binding->addr;
    const uint32_t bpe = radv_sdma_get_bpe(image, subresource.aspectMask);
    struct radv_sdma_surf info = {
+      .surf = surf,
       .format = image->vk.format,
+      .aspect_format = vk_format_get_aspect_format(image->vk.format, subresource.aspectMask),
       .extent =
          {
             .width = vk_format_get_plane_width(image->vk.format, plane_idx, image->vk.extent.width),
@@ -308,6 +294,7 @@ radv_sdma_get_surf(const struct radv_device *const device, const struct radv_ima
       .bpp = bpe,
       .blk_w = surf->blk_w,
       .blk_h = surf->blk_h,
+      .first_level = subresource.mipLevel,
       .mip_levels = image->vk.mip_levels,
       .micro_tile_mode = surf->micro_tile_mode,
       .texel_scale = radv_sdma_get_texel_scale(image),
@@ -323,6 +310,8 @@ radv_sdma_get_surf(const struct radv_device *const device, const struct radv_ima
       info.pitch = surf->u.gfx9.pitch[subresource.mipLevel];
       info.slice_pitch = surf->blk_w * surf->blk_h * surf->u.gfx9.surf_slice_size / bpe;
    } else {
+      const bool htile_enabled = radv_htile_enabled(image, subresource.mipLevel);
+
       /* 1D resources should be linear. */
       assert(surf->u.gfx9.resource_type != RADEON_RESOURCE_1D);
 
@@ -334,13 +323,15 @@ radv_sdma_get_surf(const struct radv_device *const device, const struct radv_ima
       if (pdev->info.gfx_level >= GFX12) {
          info.is_compressed = binding->bo && binding->bo->gfx12_allow_dcc;
       } else if (pdev->info.sdma_supports_compression &&
-                 (radv_dcc_enabled(image, subresource.mipLevel) || radv_htile_enabled(image, subresource.mipLevel))) {
+                 (radv_dcc_enabled(image, subresource.mipLevel) || htile_enabled)) {
          info.is_compressed = true;
       }
 
       if (info.is_compressed) {
          info.meta_va = va + surf->meta_offset;
+         info.surface_type = radv_sdma_surface_type_from_aspect_mask(subresource.aspectMask);
          info.meta_config = radv_sdma_get_metadata_config(device, image, surf, subresource);
+         info.htile_enabled = htile_enabled;
       }
    }
 
@@ -444,54 +435,54 @@ radv_sdma_emit_copy_tiled_sub_window(const struct radv_device *device, struct ra
                                      const bool detile)
 {
    const struct radv_physical_device *pdev = radv_device_physical(device);
-
-   if (!pdev->info.sdma_supports_compression) {
-      assert(!tiled->is_compressed);
-   }
-
    const VkOffset3D linear_off = radv_sdma_pixel_offset_to_blocks(linear->offset, linear->blk_w, linear->blk_h);
    const VkOffset3D tiled_off = radv_sdma_pixel_offset_to_blocks(tiled->offset, tiled->blk_w, tiled->blk_h);
    const VkExtent3D tiled_ext = radv_sdma_pixel_extent_to_blocks(tiled->extent, tiled->blk_w, tiled->blk_h);
    const VkExtent3D ext = radv_sdma_pixel_extent_to_blocks(pix_extent, tiled->blk_w, tiled->blk_h);
    const unsigned linear_pitch = radv_sdma_pixels_to_blocks(linear->pitch, tiled->blk_w);
    const unsigned linear_slice_pitch = radv_sdma_pixel_area_to_blocks(linear->slice_pitch, tiled->blk_w, tiled->blk_h);
-   const bool dcc = tiled->is_compressed;
-   const bool uses_depth = linear_off.z != 0 || tiled_off.z != 0 || ext.depth != 1;
 
-   assert(util_is_power_of_two_nonzero(tiled->bpp));
-   radv_sdma_check_pitches(linear_pitch, linear_slice_pitch, tiled->bpp, uses_depth);
+   const struct ac_sdma_surf_linear surf_linear = {
+      .va = linear->va,
+      .offset =
+         {
+            .x = linear_off.x,
+            .y = linear_off.y,
+            .z = linear_off.z,
+         },
+      .pitch = linear_pitch,
+      .slice_pitch = linear_slice_pitch,
+   };
 
-   ASSERTED unsigned cdw_end = radeon_check_space(device->ws, cs->b, 14 + (dcc ? 3 : 0));
+   const struct ac_sdma_surf_tiled surf_tiled = {
+      .surf = tiled->surf,
+      .va = tiled->va,
+      .format = radv_format_to_pipe_format(tiled->aspect_format),
+      .bpp = tiled->bpp,
+      .offset =
+         {
+            .x = tiled_off.x,
+            .y = tiled_off.y,
+            .z = tiled_off.z,
+         },
+      .extent =
+         {
+            .width = tiled_ext.width,
+            .height = tiled_ext.height,
+            .depth = tiled_ext.depth,
+         },
+      .first_level = tiled->first_level,
+      .num_levels = tiled->mip_levels,
+      .is_compressed = tiled->is_compressed,
+      .surf_type = tiled->surface_type,
+      .meta_va = tiled->meta_va,
+      .htile_enabled = tiled->htile_enabled,
 
-   radeon_begin(cs);
-   radeon_emit(SDMA_PACKET(SDMA_OPCODE_COPY, SDMA_COPY_SUB_OPCODE_TILED_SUB_WINDOW, 0) | dcc << 19 | detile << 31 |
-               tiled->header_dword);
-   radeon_emit(tiled->va);
-   radeon_emit(tiled->va >> 32);
-   radeon_emit(tiled_off.x | tiled_off.y << 16);
-   radeon_emit(tiled_off.z | (tiled_ext.width - 1) << 16);
-   radeon_emit((tiled_ext.height - 1) | (tiled_ext.depth - 1) << 16);
-   radeon_emit(tiled->info_dword);
-   radeon_emit(linear->va);
-   radeon_emit(linear->va >> 32);
-   radeon_emit(linear_off.x | linear_off.y << 16);
-   radeon_emit(linear_off.z | (linear_pitch - 1) << 16);
-   radeon_emit(linear_slice_pitch - 1);
-   radeon_emit((ext.width - 1) | (ext.height - 1) << 16);
-   radeon_emit((ext.depth - 1));
+   };
 
-   if (tiled->is_compressed) {
-      if (pdev->info.sdma_ip_version >= SDMA_7_0) {
-         radeon_emit(tiled->meta_config | SDMA7_DCC_WRITE_CM(!detile));
-      } else {
-         radeon_emit(tiled->meta_va);
-         radeon_emit(tiled->meta_va >> 32);
-         radeon_emit(tiled->meta_config | SDMA5_DCC_WRITE_COMPRESS(!detile));
-      }
-   }
-
-   radeon_end();
-   assert(cs->b->cdw <= cdw_end);
+   radeon_check_space(device->ws, cs->b, 17);
+   ac_emit_sdma_copy_tiled_sub_window(cs->b, &pdev->info, &surf_linear, &surf_tiled, detile, ext.width, ext.height,
+                                      ext.depth, false);
 }
 
 static void

@@ -16,13 +16,16 @@ extern "C" {
 #endif
 
 struct radv_sdma_surf {
+   const struct radeon_surf *surf;
    VkFormat format;         /* Image format. */
+   VkFormat aspect_format;  /* Image subresource format. */
    VkExtent3D extent;       /* Image extent. */
    VkOffset3D offset;       /* Image offset. */
    uint64_t va;             /* Virtual address of image data. */
    unsigned bpp;            /* Bytes per pixel. */
    unsigned blk_w;          /* Image format block width in pixels. */
    unsigned blk_h;          /* Image format block height in pixels. */
+   unsigned first_level;    /* First mip level in the image. */
    unsigned mip_levels;     /* Mip levels in the image. */
    uint8_t micro_tile_mode; /* Micro tile mode of the image. */
    uint8_t texel_scale;     /* Texel scale for 96-bit formats */
@@ -42,6 +45,8 @@ struct radv_sdma_surf {
          uint32_t header_dword; /* Extra bits for the copy packet header. */
          uint32_t info_dword;   /* Image information DWORD. */
          bool is_compressed;
+         uint32_t surface_type;
+         bool htile_enabled;
       };
    };
 };

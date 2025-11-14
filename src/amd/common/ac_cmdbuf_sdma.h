@@ -8,6 +8,9 @@
 #ifndef AC_CMDBUF_SDMA_H
 #define AC_CMDBUF_SDMA_H
 
+#include "util/format/u_format.h"
+
+struct radeon_info;
 struct ac_cmdbuf;
 
 #ifdef __cplusplus
@@ -52,6 +55,41 @@ ac_emit_sdma_copy_linear_sub_window(struct ac_cmdbuf *cs, enum sdma_version sdma
                                     const struct ac_sdma_surf_linear *src,
                                     const struct ac_sdma_surf_linear *dst,
                                     uint32_t width, uint32_t height, uint32_t depth);
+
+struct ac_sdma_surf_tiled {
+   const struct radeon_surf *surf;
+   uint64_t va;
+   enum pipe_format format;
+   uint32_t bpp;
+
+   struct {
+      uint32_t x;
+      uint32_t y;
+      uint32_t z;
+   } offset;
+
+   struct {
+      uint32_t width;
+      uint32_t height;
+      uint32_t depth;
+   } extent;
+
+   uint32_t first_level;
+   uint32_t num_levels;
+
+   bool is_compressed;
+   uint64_t meta_va;
+   uint32_t surf_type;
+   bool htile_enabled;
+};
+
+void
+ac_emit_sdma_copy_tiled_sub_window(struct ac_cmdbuf *cs, const struct radeon_info *info,
+                                   const struct ac_sdma_surf_linear *linear,
+                                   const struct ac_sdma_surf_tiled *tiled,
+                                   bool detile, uint32_t width, uint32_t height,
+                                   uint32_t depth, bool tmz);
+
 #ifdef __cplusplus
 }
 #endif
