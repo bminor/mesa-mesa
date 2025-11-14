@@ -158,6 +158,10 @@
       # Enable the KMS driver
       dtoverlay=vc4-kms-v3d
     GPU_VERSION: "broadcom-rpi3"
+    # FIXME: hack to mask the problem in https://gitlab.freedesktop.org/gfx-ci/ci-tron/-/issues/303
+    # To be reverted once the cause is identified and fixed.
+    CI_TRON_PATTERN__SESSION_REBOOT__REGEX: "VFS: Cannot open root device"
+    CI_TRON_TIMEOUT__BOOT_CYCLE__RETRIES: 2
 
 
 # 1 device (2025-05-12)
