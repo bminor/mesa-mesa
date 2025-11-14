@@ -28,8 +28,9 @@
 #include <stdint.h>
 #include <vulkan/vulkan_core.h>
 
-#include "pvr_csb.h"
 #include "util/bitset.h"
+
+#include "pvr_csb.h"
 
 #define PVR_BORDER_COLOR_TABLE_NR_ENTRIES \
    (ROGUE_TEXSTATE_SAMPLER_WORD0_BORDERCOLOR_INDEX_MAX_SIZE + 1)
