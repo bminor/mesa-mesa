@@ -491,76 +491,64 @@ radv_sdma_emit_copy_t2t_sub_window(const struct radv_device *device, struct radv
                                    const VkExtent3D px_extent)
 {
    const struct radv_physical_device *pdev = radv_device_physical(device);
-
-   /* We currently only support the SDMA v4+ versions of this packet. */
-   assert(pdev->info.sdma_ip_version >= SDMA_4_0);
-
-   /* On GFX10+ this supports DCC, but cannot copy a compressed surface to another compressed surface. */
-   assert(!src->is_compressed || !dst->is_compressed);
-
-   if (pdev->info.sdma_ip_version >= SDMA_4_0 && pdev->info.sdma_ip_version < SDMA_5_0) {
-      /* SDMA v4 doesn't support mip_id selection in the T2T copy packet. */
-      assert(src->header_dword >> 24 == 0);
-      assert(dst->header_dword >> 24 == 0);
-      /* SDMA v4 doesn't support any image metadata. */
-      assert(!src->is_compressed);
-      assert(!dst->is_compressed);
-   }
-
-   /* Despite the name, this can indicate DCC or HTILE metadata. */
-   const uint32_t dcc = src->is_compressed || dst->is_compressed;
-   /* 0 = compress (src is uncompressed), 1 = decompress (src is compressed). */
-   const uint32_t dcc_dir = src->is_compressed && !dst->is_compressed;
-
    const VkOffset3D src_off = radv_sdma_pixel_offset_to_blocks(src->offset, src->blk_w, src->blk_h);
    const VkOffset3D dst_off = radv_sdma_pixel_offset_to_blocks(dst->offset, dst->blk_w, dst->blk_h);
    const VkExtent3D src_ext = radv_sdma_pixel_extent_to_blocks(src->extent, src->blk_w, src->blk_h);
    const VkExtent3D dst_ext = radv_sdma_pixel_extent_to_blocks(dst->extent, dst->blk_w, dst->blk_h);
    const VkExtent3D ext = radv_sdma_pixel_extent_to_blocks(px_extent, src->blk_w, src->blk_h);
 
-   assert(util_is_power_of_two_nonzero(src->bpp));
-   assert(util_is_power_of_two_nonzero(dst->bpp));
+   const struct ac_sdma_surf_tiled surf_src = {
+      .surf = src->surf,
+      .va = src->va,
+      .format = radv_format_to_pipe_format(src->aspect_format),
+      .bpp = src->bpp,
+      .offset =
+         {
+            .x = src_off.x,
+            .y = src_off.y,
+            .z = src_off.z,
+         },
+      .extent =
+         {
+            .width = src_ext.width,
+            .height = src_ext.height,
+            .depth = src_ext.depth,
+         },
+      .first_level = src->first_level,
+      .num_levels = src->mip_levels,
+      .is_compressed = src->is_compressed,
+      .surf_type = src->surface_type,
+      .meta_va = src->meta_va,
+      .htile_enabled = src->htile_enabled,
+   };
 
-   ASSERTED unsigned cdw_end = radeon_check_space(device->ws, cs->b, 15 + (dcc ? 3 : 0));
+   const struct ac_sdma_surf_tiled surf_dst = {
+      .surf = dst->surf,
+      .va = dst->va,
+      .format = radv_format_to_pipe_format(dst->aspect_format),
+      .bpp = dst->bpp,
+      .offset =
+         {
+            .x = dst_off.x,
+            .y = dst_off.y,
+            .z = dst_off.z,
+         },
+      .extent =
+         {
+            .width = dst_ext.width,
+            .height = dst_ext.height,
+            .depth = dst_ext.depth,
+         },
+      .first_level = dst->first_level,
+      .num_levels = dst->mip_levels,
+      .is_compressed = dst->is_compressed,
+      .surf_type = dst->surface_type,
+      .meta_va = dst->meta_va,
+      .htile_enabled = dst->htile_enabled,
+   };
 
-   radeon_begin(cs);
-   radeon_emit(SDMA_PACKET(SDMA_OPCODE_COPY, SDMA_COPY_SUB_OPCODE_T2T_SUB_WINDOW, 0) | dcc << 19 | dcc_dir << 31 |
-               src->header_dword);
-   radeon_emit(src->va);
-   radeon_emit(src->va >> 32);
-   radeon_emit(src_off.x | src_off.y << 16);
-   radeon_emit(src_off.z | (src_ext.width - 1) << 16);
-   radeon_emit((src_ext.height - 1) | (src_ext.depth - 1) << 16);
-   radeon_emit(src->info_dword);
-   radeon_emit(dst->va);
-   radeon_emit(dst->va >> 32);
-   radeon_emit(dst_off.x | dst_off.y << 16);
-   radeon_emit(dst_off.z | (dst_ext.width - 1) << 16);
-   radeon_emit((dst_ext.height - 1) | (dst_ext.depth - 1) << 16);
-   radeon_emit(dst->info_dword);
-   radeon_emit((ext.width - 1) | (ext.height - 1) << 16);
-   radeon_emit((ext.depth - 1));
-
-   if (pdev->info.sdma_ip_version >= SDMA_7_0) {
-      /* Compress only when dst has DCC. If src has DCC, it automatically decompresses according to
-       * PTE.D (page table bit) even if we don't enable DCC in the packet.
-       */
-      if (dst->is_compressed)
-         radeon_emit(dst->meta_config | SDMA7_DCC_WRITE_CM(1));
-   } else {
-      if (dst->is_compressed) {
-         radeon_emit(dst->meta_va);
-         radeon_emit(dst->meta_va >> 32);
-         radeon_emit(dst->meta_config | SDMA5_DCC_WRITE_COMPRESS(1));
-      } else if (src->is_compressed) {
-         radeon_emit(src->meta_va);
-         radeon_emit(src->meta_va >> 32);
-         radeon_emit(src->meta_config);
-      }
-   }
-
-   radeon_end();
-   assert(cs->b->cdw <= cdw_end);
+   radeon_check_space(device->ws, cs->b, 18);
+   ac_emit_sdma_copy_t2t_sub_window(cs->b, &pdev->info, &surf_src, &surf_dst, ext.width, ext.height, ext.depth);
 }
 
 void

@@ -351,3 +351,85 @@ ac_emit_sdma_copy_tiled_sub_window(struct ac_cmdbuf *cs, const struct radeon_inf
 
    ac_cmdbuf_end();
 }
+
+void
+ac_emit_sdma_copy_t2t_sub_window(struct ac_cmdbuf *cs, const struct radeon_info *info,
+                                 const struct ac_sdma_surf_tiled *src,
+                                 const struct ac_sdma_surf_tiled *dst,
+                                 uint32_t width, uint32_t height, uint32_t depth)
+{
+   const uint32_t src_header_dword =
+      ac_sdma_get_tiled_header_dword(info->sdma_ip_version, src);
+   const uint32_t src_info_dword = ac_sdma_get_tiled_info_dword(info, src);
+   const uint32_t dst_info_dword = ac_sdma_get_tiled_info_dword(info, dst);
+
+   /* Sanity checks. */
+   assert(info->sdma_ip_version >= SDMA_4_0);
+
+   /* On GFX10+ this supports DCC, but cannot copy a compressed surface to another compressed surface. */
+   assert(!src->is_compressed || !dst->is_compressed);
+
+   if (info->sdma_ip_version >= SDMA_4_0 && info->sdma_ip_version < SDMA_5_0) {
+      /* SDMA v4 doesn't support mip_id selection in the T2T copy packet. */
+      assert(src_header_dword >> 24 == 0);
+      /* SDMA v4 doesn't support any image metadata. */
+      assert(!src->is_compressed);
+      assert(!dst->is_compressed);
+   }
+   assert(util_is_power_of_two_nonzero(src->bpp));
+   assert(util_is_power_of_two_nonzero(dst->bpp));
+
+   /* Despite the name, this can indicate DCC or HTILE metadata. */
+   const uint32_t dcc = src->is_compressed || dst->is_compressed;
+   /* 0 = compress (src is uncompressed), 1 = decompress (src is compressed). */
+   const uint32_t dcc_dir = src->is_compressed && !dst->is_compressed;
+
+   ac_cmdbuf_begin(cs);
+   ac_cmdbuf_emit(SDMA_PACKET(SDMA_OPCODE_COPY, SDMA_COPY_SUB_OPCODE_T2T_SUB_WINDOW, 0) |
+                  dcc << 19 | dcc_dir << 31 | src_header_dword);
+   ac_cmdbuf_emit(src->va);
+   ac_cmdbuf_emit(src->va >> 32);
+   ac_cmdbuf_emit(src->offset.x | src->offset.y << 16);
+   ac_cmdbuf_emit(src->offset.z | (src->extent.width - 1) << 16);
+   ac_cmdbuf_emit((src->extent.height - 1) | (src->extent.depth - 1) << 16);
+   ac_cmdbuf_emit(src_info_dword);
+   ac_cmdbuf_emit(dst->va);
+   ac_cmdbuf_emit(dst->va >> 32);
+   ac_cmdbuf_emit(dst->offset.x | dst->offset.y << 16);
+   ac_cmdbuf_emit(dst->offset.z | (dst->extent.width - 1) << 16);
+   ac_cmdbuf_emit((dst->extent.height - 1) | (dst->extent.depth - 1) << 16);
+   ac_cmdbuf_emit(dst_info_dword);
+   ac_cmdbuf_emit((width - 1) | (height - 1) << 16);
+   ac_cmdbuf_emit((depth - 1));
+
+   if (info->sdma_ip_version >= SDMA_7_0) {
+      /* Compress only when dst has DCC. If src has DCC, it automatically
+       * decompresses according to PTE.D (page table bit) even if we don't
+       * enable DCC in the packet.
+       */
+      if (dst->is_compressed) {
+         const uint32_t dst_meta_config =
+            ac_sdma_get_tiled_metadata_config(info, dst, false, false);
+
+         ac_cmdbuf_emit(dst_meta_config);
+      }
+   } else {
+      if (dst->is_compressed) {
+         const uint32_t dst_meta_config =
+            ac_sdma_get_tiled_metadata_config(info, dst, false, false);
+
+         ac_cmdbuf_emit(dst->meta_va);
+         ac_cmdbuf_emit(dst->meta_va >> 32);
+         ac_cmdbuf_emit(dst_meta_config);
+      } else if (src->is_compressed) {
+         const uint32_t src_meta_config =
+            ac_sdma_get_tiled_metadata_config(info, src, true, false);
+
+         ac_cmdbuf_emit(src->meta_va);
+         ac_cmdbuf_emit(src->meta_va >> 32);
+         ac_cmdbuf_emit(src_meta_config);
+      }
+   }
+
+   ac_cmdbuf_end();
+}

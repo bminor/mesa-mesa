@@ -90,6 +90,12 @@ ac_emit_sdma_copy_tiled_sub_window(struct ac_cmdbuf *cs, const struct radeon_inf
                                    bool detile, uint32_t width, uint32_t height,
                                    uint32_t depth, bool tmz);
 
+void
+ac_emit_sdma_copy_t2t_sub_window(struct ac_cmdbuf *cs, const struct radeon_info *info,
+                                 const struct ac_sdma_surf_tiled *src,
+                                 const struct ac_sdma_surf_tiled *dst,
+                                 uint32_t width, uint32_t height, uint32_t depth);
+
 #ifdef __cplusplus
 }
 #endif
