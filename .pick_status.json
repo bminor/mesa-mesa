@@ -1,5 +1,315 @@
 [
     {
+        "sha": "8f13905c5e38ac3921c4804b19fc0f50531b0317",
+        "description": "pan/bi: improve bi_alu_src_index to avoid bi_make_vec when possible",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b75b0ce7b2b554cd7e0c84f3d54671d152ed504c",
+        "description": "lp: Implement gallium depth_bounds_test capability",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "36b0fdb7b7f943d3df17cec5e376f72599e2b6a0",
+        "description": "radv: move nir_opt_copy_prop_vars out of optimization loop",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7ff8cf3e7bcd9f9518ea8693bc7479b34caf509a",
+        "description": "radv: Only call nir_lower_alu_width once in radv_optimize_nir()",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "11fb6c30b3795c9484898d7a36efbe09115ab409",
+        "description": "nir/lower_vars_to_ssa: return early if there is no local variables to lower",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "18b99338b7a6f3b277f0e99d2d1fbfd18fdc5d68",
+        "description": "radv: don't lower_vars_to_ssa during optimization loop",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d959e17d3d256501eab0824331573df56c2418bb",
+        "description": "radv: call nir_opt_find_array_copies before first radv_optimize_nir()",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "bf0e04a5315922cb97eed0f7359386ed0484906e",
+        "description": "radv: Only call nir_opt_dead_write_vars once",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c3b72ea00c9065c4fbed0a93a79b650dbc1cf4ec",
+        "description": "radv: Only call nir_opt_memcpy once",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7ee1932309623490f8b9aad1cc95742f9243b3ad",
+        "description": "treewide: Never preserve nir_metadata_dominance without nir_metadata_block_index",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0d70716c8a5e4a4dddf777a0c9529ada69f8aee1",
+        "description": "nir/opt_large_constants: Fix dead deref instructions accessing lowered variables",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "61d6aea401743177e30d286ce6946525f30c8df9",
+        "description": "brw: fix SIMD lowering of sampler messages with fp16 data",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "295734bf88dbff12fe8e109162590357ed11a86d",
+        "notes": null
+    },
+    {
+        "sha": "e47a60255a028b8bca66ac0a14325842cb9082b3",
+        "description": "radv: add a workaround for color<->stencil only copies on SDMA4-5",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "0034f5a9487b66467ff415a2ba3490b32443062f",
+        "notes": null
+    },
+    {
+        "sha": "54715e898916e868f821cddc559ee276b6f8a1d4",
+        "description": "util: Getting util_align_npot to be same with ALIGN_NPOT so it can be merged latter",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "07d059f3e20179266c12d5a59bde6a8249306bd2",
+        "description": "venus: use seq_cst for ring cs and tail update ordering",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "27695ac463d4ee4bf3a6133a3ff705585a008667",
+        "description": "anv: report actual AS descriptor limits",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "80c89909f36045305ef151bd66fec7dd922df81e",
+        "description": "brw: fixup immediate bindless surface handling",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "73bf51dba087bb30378a5773c59033099254db42",
+        "description": "anv: consider 64bit atomics on similar formats with mutable images",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "ed77f67e445d5104c81b999bbc7cbafc75090838",
+        "notes": null
+    },
+    {
+        "sha": "b3cc54731f1952c2eab05826be5a4dbca07fadf4",
+        "description": "brw: fixup 64bit atomics emulation on 2D array images",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "ce7208c3eeefc34193e79997a0447a90fd740453",
+        "notes": null
+    },
+    {
+        "sha": "aeaf1cbc2b370e9a31ab7245710307384329d52b",
+        "description": "anv: Replay mode is only available on Gfx < 20",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "29cc9c5eab3b6fbfb82e4628939591b60a235585",
+        "description": "intel/genxml: Update CS_CHICKEN1 register for gfx20",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6064e3a7d82ecd31f54f5a77c01ce4253f0e79fe",
+        "description": "tu: Handle case where pipeline writes unused color attachments",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "c2eb768eb22287a5cc0cf578f677dc0157ab008e",
+        "notes": null
+    },
+    {
+        "sha": "47d86e5f66bc787ed4347b073a0f4ea3f29cc22d",
+        "description": "treewide: strip unneeded inc_gallium inc_gallium_aux",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "65fcdf4c81d4309257a4ca6471332a7d56e68729",
+        "description": "nir/sweep: fix use-after-free with dominance LCA",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "17876a00afabc9466162187c18f04080353575d2",
+        "notes": null
+    },
+    {
+        "sha": "a24f490488c4622cd6434d668d35c9ce20c2eb98",
+        "description": "panfrost: match a GL object's maximum label length to KMD uAPI limit",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a68c584d70be5254c68beeb2e54ba2e9113196fb",
+        "description": "mesa: gallium: make GL object maximum label length a pipescreen cap",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "fa9ac826bec4125a0e6f54ba4b4a22132b2ed799",
+        "description": "freedreno/decode: Add some code to the already present generate-rd",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "950f07748a96829e6aad50474ff68af5871a9fcf",
+        "description": "meson: Use adreno-pm4-pack.xml.h instead of custom definitions",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f5f11f12a69dc0b299150b37a94fd8370e8baea9",
+        "description": "freedreno/registers: Remove extra space in reg definition",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "884849587569919b7ef40021da70e6858d93cbe9",
+        "description": "radv/video: Align each layer of encode DPB to 256",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "37e71a5cb24cd6053603ca64b67352e0c8e2fce8",
+        "notes": null
+    },
+    {
+        "sha": "e9757d25e05a33dbf0896152232ccf8f072f8a8b",
+        "description": "mediafoundation: propagate input timestamp / duration to output",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
         "sha": "294e72e2b517bc744f909fbce9e154efa698dd10",
         "description": "freedreno/docs: Add -k option to nc command",
         "nominated": false,
