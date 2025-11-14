@@ -29,10 +29,8 @@
 #include "hwdef/rogue_hw_utils.h"
 #include "pvr_bo.h"
 #include "pvr_common.h"
-#include "pvr_csb.h"
 #include "pvr_device.h"
 #include "pvr_device_info.h"
-#include "pvr_job_transfer.h"
 #include "pvr_pds.h"
 #include "pvr_physical_device.h"
 #include "pvr_transfer_frag_store.h"
@@ -231,6 +229,9 @@ static VkResult pvr_transfer_frag_store_entry_data_compile(
    return VK_SUCCESS;
 }
 
+static uint32_t get_doutu_sample_rate(const struct pvr_device_info *dev_info,
+                                      bool full_rate);
+
 static VkResult pvr_transfer_frag_store_entry_data_create(
    struct pvr_device *device,
    struct pvr_transfer_frag_store *store,
@@ -260,9 +261,8 @@ static VkResult pvr_transfer_frag_store_entry_data_create(
    pvr_pds_setup_doutu(&kick_usc_pds_prog.usc_task_control,
                        dev_addr.addr,
                        num_usc_temps,
-                       shader_props->full_rate
-                          ? ROGUE_PDSINST_DOUTU_SAMPLE_RATE_FULL
-                          : ROGUE_PDSINST_DOUTU_SAMPLE_RATE_INSTANCE,
+                       get_doutu_sample_rate(&device->pdevice->dev_info,
+                                             shader_props->full_rate),
                        false);
 
    pvr_pds_kick_usc(&kick_usc_pds_prog, NULL, 0U, false, PDS_GENERATE_SIZES);
@@ -396,4 +396,14 @@ void pvr_transfer_frag_store_fini(struct pvr_device *device,
    }
 
    _mesa_hash_table_destroy(store->hash_table, NULL);
+}
+
+/* Leave this at the very end, to avoid leakage of HW-defs here */
+#include "pvr_csb.h"
+
+static uint32_t get_doutu_sample_rate(const struct pvr_device_info *dev_info,
+                                      bool full_rate)
+{
+   return full_rate ? ROGUE_PDSINST_DOUTU_SAMPLE_RATE_FULL
+                    : ROGUE_PDSINST_DOUTU_SAMPLE_RATE_INSTANCE;
 }
