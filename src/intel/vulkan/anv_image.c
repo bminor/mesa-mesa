@@ -4075,14 +4075,3 @@ anv_layout_has_untracked_aux_writes(const struct intel_device_info * const devin
 
    return true;
 }
-
-void anv_GetRenderingAreaGranularityKHR(
-    VkDevice                                    _device,
-    const VkRenderingAreaInfoKHR*               pRenderingAreaInfo,
-    VkExtent2D*                                 pGranularity)
-{
-   *pGranularity = (VkExtent2D) {
-      .width = 1,
-      .height = 1,
-   };
-}
