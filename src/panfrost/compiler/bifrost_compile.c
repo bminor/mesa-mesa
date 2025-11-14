@@ -5510,6 +5510,8 @@ bi_vectorize_filter(const nir_instr *instr, const void *data)
    case nir_op_b2f16:
    case nir_op_f2i16:
    case nir_op_f2u16:
+   case nir_op_f2i8:
+   case nir_op_f2u8:
    case nir_op_extract_u8:
    case nir_op_extract_i8:
    case nir_op_extract_u16:
