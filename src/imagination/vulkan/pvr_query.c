@@ -76,8 +76,7 @@ VkResult pvr_CreateQueryPool(VkDevice _device,
    if (!pool)
       return vk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);
 
-   pool->result_stride =
-      ALIGN_POT(query_size, ROGUE_CR_ISP_OCLQRY_BASE_ADDR_ALIGNMENT);
+   pool->result_stride = ALIGN_POT(query_size, ROGUE_OQUERY_ALIGN);
 
    pool->query_count = pCreateInfo->queryCount;
 
@@ -88,7 +87,7 @@ VkResult pvr_CreateQueryPool(VkDevice _device,
 
    result = pvr_bo_suballoc(&device->suballoc_vis_test,
                             alloc_size,
-                            ROGUE_CR_ISP_OCLQRY_BASE_ADDR_ALIGNMENT,
+                            ROGUE_OQUERY_ALIGN,
                             false,
                             &pool->result_buffer);
    if (result != VK_SUCCESS)
