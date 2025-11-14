@@ -73,9 +73,7 @@ radv_cs_emit_cp_dma(struct radv_device *device, struct radv_cmd_stream *cs, bool
       command |= S_415_RAW_WAIT(1);
 
    /* Src and dst flags. */
-   if (pdev->info.gfx_level >= GFX9 && !(flags & CP_DMA_CLEAR) && src_va == dst_va)
-      header |= S_411_DST_SEL(V_411_NOWHERE); /* prefetch only */
-   else if (cp_dma_tc_l2_flag)
+   if (cp_dma_tc_l2_flag)
       header |= S_411_DST_SEL(V_411_DST_ADDR_TC_L2);
 
    if (flags & CP_DMA_CLEAR)
