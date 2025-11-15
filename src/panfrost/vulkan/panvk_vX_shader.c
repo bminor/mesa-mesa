@@ -141,10 +141,7 @@ panvk_lower_sysvals(nir_builder *b, nir_instr *instr, void *data)
       break;
 
    case nir_intrinsic_load_printf_buffer_address:
-      if (b->shader->info.stage == MESA_SHADER_COMPUTE)
-         val = load_sysval(b, compute, bit_size, printf_buffer_address);
-      else
-         val = load_sysval(b, graphics, bit_size, printf_buffer_address);
+      val = load_sysval(b, common, bit_size, printf_buffer_address);
       break;
 
    case nir_intrinsic_load_input_attachment_target_pan: {
@@ -587,10 +584,7 @@ collect_push_constant(struct nir_builder *b, nir_intrinsic_instr *intr,
 
       /* Flag the push_uniforms sysval as needed if we have an indirect offset.
        */
-      if (b->shader->info.stage == MESA_SHADER_COMPUTE)
-         shader_use_sysval(shader, compute, push_uniforms);
-      else
-         shader_use_sysval(shader, graphics, push_uniforms);
+      shader_use_sysval(shader, common, push_uniforms);
    } else {
       offset = base + nir_src_as_uint(intr->src[0]);
       size = (intr->def.bit_size / 8) * intr->def.num_components;
@@ -641,9 +635,7 @@ move_push_constant(struct nir_builder *b, nir_intrinsic_instr *intr, void *data)
        * .base=SYSVALS_PUSH_CONST_BASE, and we're supposed to force a base of
        * zero in this pass. */
       unsigned push_const_buf_offset = shader_remapped_sysval_offset(
-         shader, b->shader->info.stage == MESA_SHADER_COMPUTE
-                    ? sysval_offset(compute, push_uniforms)
-                    : sysval_offset(graphics, push_uniforms));
+         shader, sysval_offset(common, push_uniforms));
       nir_def *push_const_buf = nir_load_push_constant(
          b, 1, 64, nir_imm_int(b, push_const_buf_offset));
       unsigned push_const_offset = is_sysval ?

@@ -14,7 +14,6 @@ panvk_per_arch(cmd_prepare_dispatch_sysvals)(
 {
    const struct panvk_shader_variant *cs =
       panvk_shader_only_variant(cmdbuf->state.compute.shader);
-   const struct panvk_device *dev = to_panvk_device(cmdbuf->vk.base.device);
 
    BITSET_DECLARE(dirty_sysvals, MAX_SYSVAL_FAUS) = {0};
 
@@ -43,8 +42,6 @@ panvk_per_arch(cmd_prepare_dispatch_sysvals)(
                       cs->cs.local_size.y);
    set_compute_sysval(cmdbuf, dirty_sysvals, local_group_size.z,
                       cs->cs.local_size.z);
-   set_compute_sysval(cmdbuf, dirty_sysvals, printf_buffer_address,
-                      dev->printf.bo->addr.dev);
 
 #if PAN_ARCH < 9
    struct panvk_descriptor_state *desc_state =
