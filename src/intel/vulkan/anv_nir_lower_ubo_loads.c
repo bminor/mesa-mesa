@@ -73,7 +73,7 @@ lower_ubo_load_instr(nir_builder *b, nir_intrinsic_instr *load,
                           aligned_offset + 64, aligned_offset + 80,
                           aligned_offset + 96, aligned_offset + 112);
          nir_def* mask =
-            nir_bcsel(b, nir_ilt(b, offsets, bound),
+            nir_bcsel(b, nir_ult(b, offsets, bound),
                       nir_imm_int(b, 0xFFFFFFFF),
                       nir_imm_int(b, 0x00000000));
 
@@ -102,7 +102,7 @@ lower_ubo_load_instr(nir_builder *b, nir_intrinsic_instr *load,
 
          unsigned load_size = byte_size * load->num_components;
          nir_def *in_bounds =
-            nir_ilt(b, nir_iadd_imm(b, offset, load_size - 1), bound);
+            nir_ult(b, nir_iadd_imm(b, offset, load_size - 1), bound);
 
          nir_push_if(b, in_bounds);
 
