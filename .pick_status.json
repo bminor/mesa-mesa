@@ -6134,7 +6134,7 @@
         "description": "panvk/csf: fix uninitialized read in draw context",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "885805560f97c0b777d47db550ba51234b603a50",
         "notes": null
