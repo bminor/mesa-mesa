@@ -603,6 +603,7 @@ radv_shader_spirv_to_nir(struct radv_device *device, const struct radv_shader_st
 
       NIR_PASS(_, nir, nir_propagate_invariant, pdev->cache_key.invariant_geom);
 
+      nir_gather_clip_cull_distance_sizes_from_vars(nir);
       NIR_PASS(_, nir, nir_lower_clip_cull_distance_array_vars);
 
       if (nir->info.stage == MESA_SHADER_VERTEX || nir->info.stage == MESA_SHADER_TESS_EVAL ||

@@ -1428,15 +1428,15 @@ prelink_lowering(const struct pipe_screen *screen,
       opt_access_options.is_vulkan = false;
       NIR_PASS(_, nir, nir_opt_access, &opt_access_options);
 
+      /* This must be done before calling nir_lower_clip_cull_distance_to_vec4s. */
+      nir_gather_clip_cull_distance_sizes_from_vars(nir);
+
       if (!nir->options->compact_arrays) {
          NIR_PASS(_, nir, nir_lower_clip_cull_distance_to_vec4s);
          NIR_PASS(_, nir, nir_lower_tess_level_array_vars_to_vec);
       }
 
-      /* Combine clip and cull outputs into one array and set:
-       * - shader_info::clip_distance_array_size
-       * - shader_info::cull_distance_array_size
-       */
+      /* Combine clip and cull outputs into one array. */
       NIR_PASS(_, nir, nir_lower_clip_cull_distance_array_vars);
    }
 

@@ -1028,6 +1028,7 @@ dxil_spirv_nir_passes(nir_shader *nir,
 
    NIR_PASS(_, nir, dxil_nir_lower_int_cubemaps, false);
 
+   nir_gather_clip_cull_distance_sizes_from_vars(nir);
    NIR_PASS(_, nir, nir_lower_clip_cull_distance_array_vars);
    NIR_PASS(_, nir, nir_lower_io_vars_to_temporaries, nir_shader_get_entrypoint(nir),
             nir_var_shader_out | nir_var_shader_in);

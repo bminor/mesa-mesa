@@ -26,7 +26,7 @@
 #include "nir_deref.h"
 
 /**
- * This file contains two different lowering passes.
+ * This file contains multiple functions.
  *
  * 1. nir_lower_clip_cull_distance_array_vars()
  *
@@ -52,6 +52,10 @@
  *    is translated into:
  *
  *      gl_ClipDistanceMESA[i>>2][i&3]
+ *
+ * 3. nir_gather_clip_cull_distance_sizes_from_vars
+ *
+ *    It does what it says.
  */
 
 #define GLSL_CLIP_VAR_NAME "gl_ClipDistanceMESA"
@@ -432,9 +436,7 @@ nir_lower_clip_cull_distance_to_vec4s(nir_shader *shader)
 }
 
 static bool
-combine_clip_cull(nir_shader *nir,
-                  nir_variable_mode mode,
-                  bool store_info)
+combine_clip_cull(nir_shader *nir, nir_variable_mode mode)
 {
    nir_variable *cull = NULL;
    nir_variable *clip = NULL;
@@ -447,45 +449,18 @@ combine_clip_cull(nir_shader *nir,
          cull = var;
    }
 
-   if (!cull && !clip) {
-      /* If this is run after optimizations and the variables have been
-       * eliminated, we should update the shader info, because no other
-       * place does that.
-       */
-      if (store_info) {
-         nir->info.clip_distance_array_size = 0;
-         nir->info.cull_distance_array_size = 0;
-      }
+   if (!cull && !clip)
       return false;
-   }
 
-   if (!cull && clip) {
-      /* The GLSL IR lowering pass must have converted these to vectors */
-      if (!clip->data.compact)
-         return false;
+   /* This can't be invoked more than once. */
+   assert(!clip || clip->data.how_declared != nir_var_hidden);
 
-      /* If this pass has already run, don't repeat.  We would think that
-       * the combined clip/cull distance array was clip-only and mess up.
-       */
-      if (clip->data.how_declared == nir_var_hidden)
-         return false;
-   }
-
-   const unsigned clip_array_size = get_unwrapped_array_length(nir, clip);
-   const unsigned cull_array_size = get_unwrapped_array_length(nir, cull);
-
-   if (store_info) {
-      nir->info.clip_distance_array_size = clip_array_size;
-      nir->info.cull_distance_array_size = cull_array_size;
-   }
-
-   if (clip) {
-      assert(clip->data.compact);
+   if (clip)
       clip->data.how_declared = nir_var_hidden;
-   }
 
    if (cull) {
-      assert(cull->data.compact);
+      const unsigned clip_array_size = get_unwrapped_array_length(nir, clip);
+
       cull->data.how_declared = nir_var_hidden;
       cull->data.location = VARYING_SLOT_CLIP_DIST0 + clip_array_size / 4;
       cull->data.location_frac = clip_array_size % 4;
@@ -501,13 +476,11 @@ nir_lower_clip_cull_distance_array_vars(nir_shader *nir)
 
    if (nir->info.stage <= MESA_SHADER_GEOMETRY ||
        nir->info.stage == MESA_SHADER_MESH)
-      progress |= combine_clip_cull(nir, nir_var_shader_out, true);
+      progress |= combine_clip_cull(nir, nir_var_shader_out);
 
    if (nir->info.stage > MESA_SHADER_VERTEX &&
-       nir->info.stage <= MESA_SHADER_FRAGMENT) {
-      progress |= combine_clip_cull(nir, nir_var_shader_in,
-                                    nir->info.stage == MESA_SHADER_FRAGMENT);
-   }
+       nir->info.stage <= MESA_SHADER_FRAGMENT)
+      progress |= combine_clip_cull(nir, nir_var_shader_in);
 
    nir_foreach_function_impl(impl, nir) {
       nir_progress(progress, impl,
@@ -515,4 +488,40 @@ nir_lower_clip_cull_distance_array_vars(nir_shader *nir)
    }
 
    return progress;
+}
+
+/* This initializes shader_info::clip/cull_distance_array_size for the first
+ * time. This should be called before any lowering.
+ */
+void
+nir_gather_clip_cull_distance_sizes_from_vars(nir_shader *nir)
+{
+   nir_variable_mode mode = 0;
+
+   if (nir->info.stage <= MESA_SHADER_GEOMETRY ||
+       nir->info.stage == MESA_SHADER_MESH)
+      mode = nir_var_shader_out;
+   else if (nir->info.stage == MESA_SHADER_FRAGMENT)
+      mode = nir_var_shader_in;
+
+   if (mode) {
+      nir_variable *cull = NULL, *clip = NULL;
+
+      nir_foreach_variable_with_modes(var, nir, mode) {
+         if (var->data.location == VARYING_SLOT_CLIP_DIST0)
+            clip = var;
+         else if (var->data.location == VARYING_SLOT_CULL_DIST0)
+            cull = var;
+      }
+
+      /* The arrays must be "compact". */
+      assert(!clip || clip->data.compact);
+      assert(!cull || cull->data.compact);
+
+      /* nir_lower_clip_cull_distance_array_vars must not have been called. */
+      assert(!clip || clip->data.how_declared != nir_var_hidden);
+
+      nir->info.clip_distance_array_size = get_unwrapped_array_length(nir, clip);
+      nir->info.cull_distance_array_size = get_unwrapped_array_length(nir, cull);
+   }
 }
