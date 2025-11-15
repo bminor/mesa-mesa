@@ -70,6 +70,7 @@ generate_fn_set_fbds_provoking_vertex(struct panvk_device *dev,
       .nr_registers = csif_info->cs_reg_count,
       .nr_kernel_registers = MAX2(csif_info->unpreserved_cs_reg_count, 4),
       .reg_perm = provoking_vertex_fn_reg_perm_cb,
+      .ls_sb_slot = SB_ID(LS),
    };
    cs_builder_init(&b, &conf, fn_mem);
 
