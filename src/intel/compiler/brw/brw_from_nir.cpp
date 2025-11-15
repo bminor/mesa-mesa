@@ -3238,7 +3238,6 @@ static void
 brw_from_nir_emit_tes_intrinsic(nir_to_brw_state &ntb,
                           nir_intrinsic_instr *instr)
 {
-   const intel_device_info *devinfo = ntb.devinfo;
    const brw_builder &bld = ntb.bld;
    brw_shader &s = ntb.s;
 
@@ -3267,79 +3266,12 @@ brw_from_nir_emit_tes_intrinsic(nir_to_brw_state &ntb,
       bld.MOV(retype(dest, BRW_TYPE_UD), s.tes_payload().urb_output);
       break;
 
-   case nir_intrinsic_load_input:
-   case nir_intrinsic_load_per_vertex_input: {
-      assert(instr->def.bit_size == 32);
-      brw_reg indirect_offset = get_indirect_offset(ntb, instr);
-      unsigned imm_offset = nir_intrinsic_base(instr);
-      unsigned first_component = nir_intrinsic_component(instr);
-
-      brw_urb_inst *urb;
-      if (indirect_offset.file == BAD_FILE) {
-         /* Arbitrarily only push up to 32 vec4 slots worth of data,
-          * which is 16 registers (since each holds 2 vec4 slots).
-          */
-         const unsigned max_push_slots = 32;
-         if (imm_offset < max_push_slots) {
-            const brw_reg src = horiz_offset(brw_attr_reg(0, dest.type),
-                                            4 * imm_offset + first_component);
-            brw_reg comps[NIR_MAX_VEC_COMPONENTS];
-            for (unsigned i = 0; i < instr->num_components; i++) {
-               comps[i] = component(src, i);
-            }
-            bld.VEC(dest, comps, instr->num_components);
-
-            tes_prog_data->base.urb_read_length =
-               MAX2(tes_prog_data->base.urb_read_length,
-                    (imm_offset / 2) + 1);
-         } else {
-            /* Replicate the patch handle to all enabled channels */
-            brw_reg srcs[URB_LOGICAL_NUM_SRCS];
-            srcs[URB_LOGICAL_SRC_HANDLE] = s.tes_payload().patch_urb_input;
-
-            if (first_component != 0) {
-               unsigned read_components =
-                  instr->num_components + first_component;
-               brw_reg tmp = bld.vgrf(dest.type, read_components);
-               urb = bld.URB_READ(tmp, srcs, ARRAY_SIZE(srcs));
-               urb->size_written = read_components * REG_SIZE * reg_unit(devinfo);
-               brw_combine_with_vec(bld, dest, offset(tmp, bld, first_component),
-                                    instr->num_components);
-            } else {
-               urb = bld.URB_READ(dest, srcs, ARRAY_SIZE(srcs));
-               urb->size_written = instr->num_components * REG_SIZE * reg_unit(devinfo);
-            }
-            urb->offset = imm_offset * (devinfo->ver >= 20 ? 16 : 1);
-         }
-      } else {
-         /* Indirect indexing - use per-slot offsets as well. */
-
-         /* We can only read two double components with each URB read, so
-          * we send two read messages in that case, each one loading up to
-          * two double components.
-          */
-         unsigned num_components = instr->num_components;
-
-         brw_reg srcs[URB_LOGICAL_NUM_SRCS];
-         srcs[URB_LOGICAL_SRC_HANDLE] = s.tes_payload().patch_urb_input;
-         srcs[URB_LOGICAL_SRC_PER_SLOT_OFFSETS] = indirect_offset;
-
-         if (first_component != 0) {
-            unsigned read_components =
-                num_components + first_component;
-            brw_reg tmp = bld.vgrf(dest.type, read_components);
-            urb = bld.URB_READ(tmp, srcs, ARRAY_SIZE(srcs));
-            brw_combine_with_vec(bld, dest, offset(tmp, bld, first_component),
-                                 num_components);
-         } else {
-            urb = bld.URB_READ(dest, srcs, ARRAY_SIZE(srcs));
-         }
-         urb->offset = imm_offset * (devinfo->ver >= 20 ? 16 : 1);
-         urb->size_written = (num_components + first_component) *
-                              urb->dst.component_size(urb->exec_size);
-      }
+   case nir_intrinsic_load_attribute_payload_intel:
+      tes_prog_data->base.urb_read_length =
+         MAX2(tes_prog_data->base.urb_read_length,
+              DIV_ROUND_UP(nir_src_as_uint(instr->src[0]) + 1, 8));
+      brw_from_nir_emit_intrinsic(ntb, bld, instr);
       break;
-   }
 
    case nir_intrinsic_load_tess_config_intel:
       bld.MOV(retype(dest, BRW_TYPE_UD),

@@ -987,6 +987,8 @@ brw_nir_lower_tes_inputs(nir_shader *nir,
    NIR_PASS(_, nir, nir_opt_constant_folding);
 
    NIR_PASS(_, nir, nir_io_add_const_offset_to_base, nir_var_shader_in);
+
+   NIR_PASS(_, nir, lower_inputs_to_urb_intrinsics, devinfo);
 }
 
 static bool
