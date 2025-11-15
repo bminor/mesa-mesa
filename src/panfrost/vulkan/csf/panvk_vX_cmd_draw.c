@@ -137,7 +137,7 @@ calc_fn_set_fbds_provoking_vertex_idx(struct panvk_cmd_buffer *cmdbuf)
 VkResult
 panvk_per_arch(device_draw_context_init)(struct panvk_device *dev)
 {
-   dev->draw_ctx = vk_alloc(&dev->vk.alloc,
+   dev->draw_ctx = vk_zalloc(&dev->vk.alloc,
             sizeof(struct panvk_device_draw_context),
             _Alignof(struct panvk_device_draw_context),
             VK_SYSTEM_ALLOCATION_SCOPE_DEVICE);
