@@ -170,14 +170,14 @@ radv_get_acceleration_structure_layout(struct radv_device *device,
 
    if (!(state->config.encode_key[0] & RADV_ENCODE_KEY_BATCH_COMPRESS_GFX12)) {
       accel_struct->leaf_nodes_offset = offset;
-      offset += bvh_leaf_size * state->leaf_node_count;
+      offset += bvh_leaf_size * hw_leaf_node_count;
    }
 
    accel_struct->internal_nodes_offset = offset;
    /* Factor out the root node. */
    offset += internal_node_size * (internal_count - 1);
    if (state->config.encode_key[0] & RADV_ENCODE_KEY_BATCH_COMPRESS_GFX12)
-      offset += bvh_leaf_size * state->leaf_node_count;
+      offset += bvh_leaf_size * hw_leaf_node_count;
 
    accel_struct->size = offset;
 }
