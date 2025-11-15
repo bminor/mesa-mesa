@@ -798,9 +798,9 @@ struct dxil_nir_split_clip_cull_distance_params {
  * 
  * This pass can deal with splitting across two axes:
  * 1. Given { float clip[5]; float cull[3]; }, split clip into clip[4] and clip1[1]. This is
- *    what's produced by nir_lower_clip_cull_distance_array_vars.
+ *    what's produced by nir_merge_clip_cull_distance_vars.
  * 2. Given { float clip[4]; float clipcull[4]; }, split clipcull into clip1[1] and cull[3].
- *    This is what's produced by the sequence of nir_lower_clip_cull_distance_array_vars, then
+ *    This is what's produced by the sequence of nir_merge_clip_cull_distance_vars, then
  *    I/O lowering, vectorization, optimization, and I/O un-lowering.
  */
 static bool
@@ -825,7 +825,7 @@ dxil_nir_split_clip_cull_distance_instr(nir_builder *b,
    nir_variable *new_var = params->new_var[new_var_idx];
 
    /* The location should only be inside clip distance, because clip
-    * and cull should've been merged by nir_lower_clip_cull_distance_array_vars()
+    * and cull should've been merged by nir_merge_clip_cull_distance_vars()
     */
    assert(var->data.location == VARYING_SLOT_CLIP_DIST0 ||
           var->data.location == VARYING_SLOT_CLIP_DIST1);

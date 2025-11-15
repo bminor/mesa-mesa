@@ -28,7 +28,7 @@
 /**
  * This file contains multiple functions.
  *
- * 1. nir_lower_clip_cull_distance_array_vars()
+ * 1. nir_merge_clip_cull_distance_vars()
  *
  *    This pass combines clip and cull distance arrays in separate locations
  *    and colocates them both in VARYING_SLOT_CLIP_DIST0.  It does so by
@@ -470,7 +470,7 @@ combine_clip_cull(nir_shader *nir, nir_variable_mode mode)
 }
 
 bool
-nir_lower_clip_cull_distance_array_vars(nir_shader *nir)
+nir_merge_clip_cull_distance_vars(nir_shader *nir)
 {
    bool progress = false;
 
@@ -518,7 +518,7 @@ nir_gather_clip_cull_distance_sizes_from_vars(nir_shader *nir)
       assert(!clip || clip->data.compact);
       assert(!cull || cull->data.compact);
 
-      /* nir_lower_clip_cull_distance_array_vars must not have been called. */
+      /* nir_merge_clip_cull_distance_vars must not have been called. */
       assert(!clip || clip->data.how_declared != nir_var_hidden);
 
       nir->info.clip_distance_array_size = get_unwrapped_array_length(nir, clip);

@@ -1437,7 +1437,7 @@ prelink_lowering(const struct pipe_screen *screen,
       }
 
       /* Combine clip and cull outputs into one array. */
-      NIR_PASS(_, nir, nir_lower_clip_cull_distance_array_vars);
+      NIR_PASS(_, nir, nir_merge_clip_cull_distance_vars);
    }
 
    return true;

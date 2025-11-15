@@ -196,7 +196,7 @@ vk_spirv_to_nir(struct vk_device *device,
     * uninitialized garbage.
     */
    nir_gather_clip_cull_distance_sizes_from_vars(nir);
-   NIR_PASS(_, nir, nir_lower_clip_cull_distance_array_vars);
+   NIR_PASS(_, nir, nir_merge_clip_cull_distance_vars);
 
    if (nir->info.stage == MESA_SHADER_VERTEX ||
        nir->info.stage == MESA_SHADER_TESS_EVAL ||
