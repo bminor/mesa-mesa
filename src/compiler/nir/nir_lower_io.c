@@ -1215,22 +1215,6 @@ nir_lower_io_passes(nir_shader *nir, bool renumber_vs_inputs)
       nir->info.stage != MESA_SHADER_MESH &&
       !(nir->options->support_indirect_inputs & BITFIELD_BIT(nir->info.stage));
 
-   /* Transform feedback requires that indirect outputs are lowered. */
-   bool lower_indirect_outputs =
-      !(nir->options->support_indirect_outputs & BITFIELD_BIT(nir->info.stage)) ||
-      nir->xfb_info;
-
-   /* TODO: This is a hack until a better solution is available.
-    * For all shaders except TCS, lower all outputs to temps because:
-    * - there can be output loads (nobody expects those outside of TCS)
-    * - drivers don't expect when an output is only written in control flow
-    *
-    * "lower_indirect_outputs = true" causes all outputs to be lowered to temps,
-    * which lowers indirect stores, eliminates output loads, and moves all
-    * output stores to the end or GS emits.
-    */
-   lower_indirect_outputs = true;
-
    /* If the driver doesn't support indirect TCS output slot access, lower
     * it to an if-else tree of direct accesses.
     */
@@ -1255,7 +1239,16 @@ nir_lower_io_passes(nir_shader *nir, bool renumber_vs_inputs)
       (nir->info.stage != MESA_SHADER_FRAGMENT ? nir_var_shader_out : 0);
    nir_sort_variables_by_location(nir, varying_var_mask);
 
-   if (lower_indirect_outputs) {
+   /* For VS, TES, GS, FS: Always lower all outputs to temps, which:
+    * - lowers output loads (nobody expects those outside of TCS & MS)
+    * - lowers indirect output slot indexing (also XFB info can't be stored
+    *   in indirect IO intrinsics)
+    * - moves output stores to the end or GS emits
+    */
+   if (nir->info.stage == MESA_SHADER_VERTEX ||
+       nir->info.stage == MESA_SHADER_TESS_EVAL ||
+       nir->info.stage == MESA_SHADER_GEOMETRY ||
+       nir->info.stage == MESA_SHADER_FRAGMENT) {
       NIR_PASS(_, nir, nir_lower_io_vars_to_temporaries,
                nir_shader_get_entrypoint(nir), nir_var_shader_out);
 
