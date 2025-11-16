@@ -1221,20 +1221,6 @@ nir_lower_io_passes(nir_shader *nir, bool renumber_vs_inputs)
                nir_var_shader_out, UINT32_MAX);
    }
 
-   /* TODO: Sorting variables by location is required due to some bug
-    * in nir_lower_io_vars_to_temporaries. If variables are not sorted,
-    * dEQP-GLES31.functional.separate_shader.random.0 fails.
-    *
-    * This isn't needed if nir_assign_io_var_locations is called because it
-    * also sorts variables. However, if IO is lowered sooner than that, we
-    * must sort explicitly here to get what nir_assign_io_var_locations does.
-    */
-   unsigned varying_var_mask =
-      (nir->info.stage != MESA_SHADER_VERTEX &&
-       nir->info.stage != MESA_SHADER_MESH ? nir_var_shader_in : 0) |
-      (nir->info.stage != MESA_SHADER_FRAGMENT ? nir_var_shader_out : 0);
-   nir_sort_variables_by_location(nir, varying_var_mask);
-
    /* For VS, TES, GS, FS: Always lower all outputs to temps, which:
     * - lowers output loads (nobody expects those outside of TCS & MS)
     * - lowers indirect output slot indexing (also XFB info can't be stored
@@ -1245,6 +1231,15 @@ nir_lower_io_passes(nir_shader *nir, bool renumber_vs_inputs)
        nir->info.stage == MESA_SHADER_TESS_EVAL ||
        nir->info.stage == MESA_SHADER_GEOMETRY ||
        nir->info.stage == MESA_SHADER_FRAGMENT) {
+      /* TODO: Sorting variables by location is required due to some bug
+       * in nir_lower_io_vars_to_temporaries. If variables are not sorted,
+       * dEQP-GLES31.functional.separate_shader.random.0 fails.
+       */
+      unsigned varying_var_mask =
+         (nir->info.stage != MESA_SHADER_VERTEX ? nir_var_shader_in : 0) |
+         (nir->info.stage != MESA_SHADER_FRAGMENT ? nir_var_shader_out : 0);
+      nir_sort_variables_by_location(nir, varying_var_mask);
+
       NIR_PASS(_, nir, nir_lower_io_vars_to_temporaries,
                nir_shader_get_entrypoint(nir), nir_var_shader_out);
 
