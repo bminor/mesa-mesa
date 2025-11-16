@@ -914,7 +914,7 @@ panvk_lower_nir(struct panvk_device *dev, nir_shader *nir,
 
    /* Postprocess can add copies back in and lower_io can't handle them */
    NIR_PASS(_, nir, nir_lower_var_copies);
-   NIR_PASS(_, nir, nir_lower_indirect_derefs,
+   NIR_PASS(_, nir, nir_lower_indirect_derefs_to_if_else_trees,
             nir_var_shader_in | nir_var_shader_out, UINT32_MAX);
    NIR_PASS(_, nir, nir_lower_io, nir_var_shader_in | nir_var_shader_out,
             glsl_type_size, nir_lower_io_use_interpolated_input_intrinsics);

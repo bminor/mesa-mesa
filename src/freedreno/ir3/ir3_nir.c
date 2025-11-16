@@ -514,14 +514,14 @@ ir3_nir_lower_io_vars_to_temporaries(nir_shader *s)
    /* Regardless of the above, we need to lower indirect references to
     * compact variables such as clip/cull distances because due to how
     * TCS<->TES IO works we cannot handle indirect accesses that "straddle"
-    * vec4 components. nir_lower_indirect_derefs has a special case for
-    * compact variables, so it will actually lower them even though we pass
-    * in 0 modes.
+    * vec4 components. nir_lower_indirect_derefs_to_if_else_trees has a special
+    * case for compact variables, so it will actually lower them even though we
+    * pass in 0 modes.
     *
     * Using temporaries would be slightly better but
     * nir_lower_io_vars_to_temporaries currently doesn't support TCS i/o.
     */
-   NIR_PASS(_, s, nir_lower_indirect_derefs, 0, UINT32_MAX);
+   NIR_PASS(_, s, nir_lower_indirect_derefs_to_if_else_trees, 0, UINT32_MAX);
 }
 
 /**

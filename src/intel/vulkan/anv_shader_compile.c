@@ -1334,7 +1334,8 @@ anv_shader_lower_nir(struct anv_device *device,
        nir->info.cs.has_cooperative_matrix) {
       anv_fixup_subgroup_size(device, &nir->info);
       NIR_PASS(_, nir, brw_nir_lower_cmat, nir->info.api_subgroup_size);
-      NIR_PASS(_, nir, nir_lower_indirect_derefs, nir_var_function_temp, 16);
+      NIR_PASS(_, nir, nir_lower_indirect_derefs_to_if_else_trees,
+               nir_var_function_temp, 16);
    }
 
    nir_shader_gather_info(nir, nir_shader_get_entrypoint(nir));

@@ -3889,7 +3889,8 @@ const void *nir_to_tgsi_options(struct nir_shader *s,
     * having matching declarations.
     */
    if (s->info.stage == MESA_SHADER_FRAGMENT) {
-      NIR_PASS(_, s, nir_lower_indirect_derefs, nir_var_shader_in, UINT32_MAX);
+      NIR_PASS(_, s, nir_lower_indirect_derefs_to_if_else_trees,
+               nir_var_shader_in, UINT32_MAX);
       NIR_PASS(_, s, nir_remove_dead_variables, nir_var_shader_in, NULL);
    }
 
@@ -3899,7 +3900,7 @@ const void *nir_to_tgsi_options(struct nir_shader *s,
     */
    if (s->info.stage == MESA_SHADER_TESS_CTRL ||
        s->info.stage == MESA_SHADER_TESS_EVAL) {
-      NIR_PASS(_, s, nir_lower_indirect_derefs, 0 , UINT32_MAX);
+      NIR_PASS(_, s, nir_lower_indirect_derefs_to_if_else_trees, 0, UINT32_MAX);
    }
 
    NIR_PASS(_, s, nir_lower_io, nir_var_shader_in | nir_var_shader_out,
@@ -3936,7 +3937,8 @@ const void *nir_to_tgsi_options(struct nir_shader *s,
 
    ntt_optimize_nir(s, screen, options);
 
-   NIR_PASS(_, s, nir_lower_indirect_derefs, no_indirects_mask, UINT32_MAX);
+   NIR_PASS(_, s, nir_lower_indirect_derefs_to_if_else_trees,
+            no_indirects_mask, UINT32_MAX);
 
    /* Lower demote_if to if (cond) { demote } because TGSI doesn't have a DEMOTE_IF. */
    NIR_PASS(_, s, nir_lower_discard_if, nir_lower_demote_if_to_cf);

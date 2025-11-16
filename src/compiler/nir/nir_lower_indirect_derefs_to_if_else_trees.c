@@ -228,8 +228,9 @@ lower_indirects_impl(nir_function_impl *impl, nir_variable_mode modes,
  * that does a binary search on the array index.
  */
 bool
-nir_lower_indirect_derefs(nir_shader *shader, nir_variable_mode modes,
-                          uint32_t max_lower_array_len)
+nir_lower_indirect_derefs_to_if_else_trees(nir_shader *shader,
+                                           nir_variable_mode modes,
+                                           uint32_t max_lower_array_len)
 {
    bool progress = false;
 
@@ -243,7 +244,8 @@ nir_lower_indirect_derefs(nir_shader *shader, nir_variable_mode modes,
 
 /** Lowers indirects on any variables in the given set */
 bool
-nir_lower_indirect_var_derefs(nir_shader *shader, const struct set *vars)
+nir_lower_indirect_var_derefs_to_if_else_trees(nir_shader *shader,
+                                               const struct set *vars)
 {
    bool progress = false;
 

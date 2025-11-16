@@ -1261,8 +1261,8 @@ nir_lower_io_passes(nir_shader *nir, bool renumber_vs_inputs)
        * The problem is that nir_lower_io_vars_to_temporaries doesn't handle TCS.
        */
       if (nir->info.stage == MESA_SHADER_TESS_CTRL) {
-         NIR_PASS(_, nir, nir_lower_indirect_derefs, nir_var_shader_out,
-                  UINT32_MAX);
+         NIR_PASS(_, nir, nir_lower_indirect_derefs_to_if_else_trees,
+                  nir_var_shader_out, UINT32_MAX);
       }
    }
 

@@ -539,7 +539,7 @@ st_link_glsl_to_nir(struct gl_context *ctx,
             (nir_variable_mode)0;
 
          if (mode)
-            nir_lower_indirect_derefs(nir, mode, UINT32_MAX);
+            nir_lower_indirect_derefs_to_if_else_trees(nir, mode, UINT32_MAX);
       }
 
       /* This needs to run after the initial pass of nir_lower_vars_to_ssa, so

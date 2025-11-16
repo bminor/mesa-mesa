@@ -586,7 +586,7 @@ void pco_preprocess_nir(pco_ctx *ctx, nir_shader *nir)
 
    NIR_PASS(_,
             nir,
-            nir_lower_indirect_derefs,
+            nir_lower_indirect_derefs_to_if_else_trees,
             nir_var_shader_in | nir_var_shader_out,
             UINT32_MAX);
 
@@ -605,7 +605,7 @@ void pco_preprocess_nir(pco_ctx *ctx, nir_shader *nir)
 
    NIR_PASS(_,
             nir,
-            nir_lower_indirect_derefs,
+            nir_lower_indirect_derefs_to_if_else_trees,
             nir_var_function_temp,
             UINT32_MAX);
 
@@ -703,12 +703,12 @@ void pco_link_nir(pco_ctx *ctx,
 
       NIR_PASS(_,
                producer,
-               nir_lower_indirect_derefs,
+               nir_lower_indirect_derefs_to_if_else_trees,
                nir_var_shader_in | nir_var_shader_out,
                UINT32_MAX);
       NIR_PASS(_,
                consumer,
-               nir_lower_indirect_derefs,
+               nir_lower_indirect_derefs_to_if_else_trees,
                nir_var_shader_in | nir_var_shader_out,
                UINT32_MAX);
 

@@ -557,9 +557,9 @@ wrapper_unroll(nir_loop *loop)
        * statements that are converted to a loop to take advantage of
        * exiting jump instruction handling. In this case we could make
        * use of a binary seach pattern like we do in
-       * nir_lower_indirect_derefs(), this should allow us to unroll the
-       * loops in an optimal way and should also avoid some of the
-       * register pressure that comes from simply nesting the
+       * nir_lower_indirect_derefs_to_if_else_trees(), this should allow us
+       * to unroll the loops in an optimal way and should also avoid some of
+       * the register pressure that comes from simply nesting the
        * terminators one after the other.
        */
       if (list_length(&loop->info->loop_terminator_list) > 3)

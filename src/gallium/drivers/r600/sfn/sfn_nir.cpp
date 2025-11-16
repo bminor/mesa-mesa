@@ -792,7 +792,8 @@ r600_lower_and_optimize_nir(nir_shader *sh,
 
    /**/
    if (lower_64bit)
-      NIR_PASS(_, sh, nir_lower_indirect_derefs, nir_var_function_temp, 10);
+      NIR_PASS(_, sh, nir_lower_indirect_derefs_to_if_else_trees,
+               nir_var_function_temp, 10);
 
    NIR_PASS(_, sh, nir_opt_constant_folding);
    NIR_PASS(_, sh, nir_io_add_const_offset_to_base, io_modes);

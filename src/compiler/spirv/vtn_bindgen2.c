@@ -237,7 +237,8 @@ compile(void *memctx, const uint32_t *spirv, size_t spirv_size)
    bool scratch_lowered = false;
    NIR_PASS(scratch_lowered, nir, nir_lower_scratch_to_var);
    if (scratch_lowered) {
-      NIR_PASS(_, nir, nir_lower_indirect_derefs, nir_var_function_temp, ~0);
+      NIR_PASS(_, nir, nir_lower_indirect_derefs_to_if_else_trees,
+               nir_var_function_temp, ~0);
    }
 
    /* Prune derefs/variables late, since scratch lowering leaves dead

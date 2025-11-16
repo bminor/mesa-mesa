@@ -1991,7 +1991,8 @@ nir_to_rc(struct nir_shader *s, struct pipe_screen *screen,
     * having matching declarations.
     */
    if (s->info.stage == MESA_SHADER_FRAGMENT) {
-      NIR_PASS(_, s, nir_lower_indirect_derefs, nir_var_shader_in, UINT32_MAX);
+      NIR_PASS(_, s, nir_lower_indirect_derefs_to_if_else_trees,
+               nir_var_shader_in, UINT32_MAX);
       NIR_PASS(_, s, nir_remove_dead_variables, nir_var_shader_in, NULL);
    }
 

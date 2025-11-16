@@ -110,8 +110,8 @@ ir2_optimize_nir(nir_shader *s, bool lower)
    }
 
    OPT_V(s, nir_lower_vars_to_ssa);
-   OPT_V(s, nir_lower_indirect_derefs, nir_var_shader_in | nir_var_shader_out,
-         UINT32_MAX);
+   OPT_V(s, nir_lower_indirect_derefs_to_if_else_trees,
+         nir_var_shader_in | nir_var_shader_out, UINT32_MAX);
 
    if (lower) {
       OPT_V(s, ir3_nir_apply_trig_workarounds);

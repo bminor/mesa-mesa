@@ -1273,7 +1273,8 @@ etna_compile_shader(struct etna_shader_variant *v)
             (nir_lower_io_options)0);
 
    NIR_PASS(_, s, nir_lower_vars_to_ssa);
-   NIR_PASS(_, s, nir_lower_indirect_derefs, nir_var_all, UINT32_MAX);
+   NIR_PASS(_, s, nir_lower_indirect_derefs_to_if_else_trees, nir_var_all,
+            UINT32_MAX);
    NIR_PASS(_, s, etna_nir_lower_texture, &v->key, v->shader->info);
    NIR_PASS(_, s, nir_lower_alu_width, alu_width_cb, NULL);
 

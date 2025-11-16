@@ -246,7 +246,7 @@ st_nir_lower_builtin(nir_shader *shader)
        * be eliminated beforehand to avoid trying to lower one of those
        * builtins
        */
-      progress |= nir_lower_indirect_var_derefs(shader, vars);
+      progress |= nir_lower_indirect_var_derefs_to_if_else_trees(shader, vars);
 
       if (nir_shader_intrinsics_pass(shader, lower_builtin_instr,
                                        nir_metadata_control_flow, NULL)) {

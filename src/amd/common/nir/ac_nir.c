@@ -228,7 +228,8 @@ ac_nir_lower_indirect_derefs(nir_shader *shader,
             glsl_get_natural_size_align_bytes, glsl_get_natural_size_align_bytes);
 
    /* This lowers indirect indexing to if-else ladders. */
-   NIR_PASS(progress, shader, nir_lower_indirect_derefs, nir_var_function_temp, UINT32_MAX);
+   NIR_PASS(progress, shader, nir_lower_indirect_derefs_to_if_else_trees,
+            nir_var_function_temp, UINT32_MAX);
    return progress;
 }
 

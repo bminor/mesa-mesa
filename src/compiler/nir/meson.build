@@ -184,7 +184,7 @@ else
   'nir_lower_idiv.c',
   'nir_lower_image.c',
   'nir_lower_image_atomics_to_global.c',
-  'nir_lower_indirect_derefs.c',
+  'nir_lower_indirect_derefs_to_if_else_trees.c',
   'nir_lower_input_attachments.c',
   'nir_lower_int64.c',
   'nir_lower_interpolation.c',

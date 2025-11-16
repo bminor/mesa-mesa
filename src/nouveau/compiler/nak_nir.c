@@ -1048,7 +1048,7 @@ nak_postprocess_nir(nir_shader *nir,
 
    nir_shader_gather_info(nir, nir_shader_get_entrypoint(nir));
 
-   OPT(nir, nir_lower_indirect_derefs, 0, UINT32_MAX);
+   OPT(nir, nir_lower_indirect_derefs_to_if_else_trees, 0, UINT32_MAX);
 
    if (nir->info.stage == MESA_SHADER_TESS_EVAL) {
       OPT(nir, nir_lower_tess_coord_z,
@@ -1083,7 +1083,7 @@ nak_postprocess_nir(nir_shader *nir,
       break;
 
    case MESA_SHADER_FRAGMENT:
-      OPT(nir, nir_lower_indirect_derefs,
+      OPT(nir, nir_lower_indirect_derefs_to_if_else_trees,
           nir_var_shader_in | nir_var_shader_out, UINT32_MAX);
       OPT(nir, nir_lower_io, nir_var_shader_in | nir_var_shader_out,
           type_size_vec4, nir_lower_io_lower_64bit_to_32_new |

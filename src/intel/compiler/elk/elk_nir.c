@@ -1095,7 +1095,7 @@ elk_preprocess_nir(const struct elk_compiler *compiler, nir_shader *nir,
 
    nir_variable_mode indirect_mask =
       elk_nir_no_indirect_mask(compiler, nir->info.stage);
-   OPT(nir_lower_indirect_derefs, indirect_mask, UINT32_MAX);
+   OPT(nir_lower_indirect_derefs_to_if_else_trees, indirect_mask, UINT32_MAX);
 
    /* Even in cases where we can handle indirect temporaries via scratch, we
     * it can still be expensive.  Lower indirects on small arrays to
@@ -1111,7 +1111,7 @@ elk_preprocess_nir(const struct elk_compiler *compiler, nir_shader *nir,
     * that one kerbal space program shader.
     */
    if (is_scalar && !(indirect_mask & nir_var_function_temp))
-      OPT(nir_lower_indirect_derefs, nir_var_function_temp, 16);
+      OPT(nir_lower_indirect_derefs_to_if_else_trees, nir_var_function_temp, 16);
 
    /* Lower array derefs of vectors for SSBO and UBO loads.  For both UBOs and
     * SSBOs, our back-end is capable of loading an entire vec4 at a time and
@@ -1208,10 +1208,10 @@ elk_nir_link_shaders(const struct elk_compiler *compiler,
        * temporaries so we need to lower indirects on any of the
        * varyings we have demoted here.
        */
-      NIR_PASS(_, producer, nir_lower_indirect_derefs,
+      NIR_PASS(_, producer, nir_lower_indirect_derefs_to_if_else_trees,
                   elk_nir_no_indirect_mask(compiler, producer->info.stage),
                   UINT32_MAX);
-      NIR_PASS(_, consumer, nir_lower_indirect_derefs,
+      NIR_PASS(_, consumer, nir_lower_indirect_derefs_to_if_else_trees,
                   elk_nir_no_indirect_mask(compiler, consumer->info.stage),
                   UINT32_MAX);
 
