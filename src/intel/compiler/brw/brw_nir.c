@@ -1128,6 +1128,7 @@ brw_nir_lower_tcs_outputs(nir_shader *nir,
                           enum tess_primitive_mode tes_primitive_mode)
 {
    NIR_PASS(_, nir, nir_lower_tess_level_array_vars_to_vec);
+   NIR_PASS(_, nir, nir_opt_combine_stores, nir_var_shader_out);
 
    nir_foreach_shader_out_variable(var, nir) {
       var->data.driver_location = var->data.location;
