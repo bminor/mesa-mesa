@@ -1444,7 +1444,7 @@ static int gfx6_compute_surface(struct ac_addrlib *addrlib, const struct radeon_
          if (config->is_3d && surf->bpe < 8) {
             AddrSurfInfoIn.tileMode = ADDR_TM_PRT_2D_TILED_THICK;
          } else {
-            AddrSurfInfoIn.tileMode = ADDR_TM_PRT_2D_TILED_THIN1;
+            AddrSurfInfoIn.tileMode = ADDR_TM_PRT_TILED_THIN1;
          }
       } else {
          if (config->is_3d) {
