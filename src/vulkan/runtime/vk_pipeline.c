@@ -3086,8 +3086,6 @@ vk_get_rt_pipeline_compile_info(struct vk_rt_pipeline_compile_info *info,
             struct vk_rt_shader_group *lib_rt_group = &lib_rt_pipeline->groups[g];
             struct vk_rt_group_compile_info *group = &info->groups[group_index++];
 
-            assert(lib_rt_group->stage_count > 0);
-
             *group = (struct vk_rt_group_compile_info) {
                .type = lib_rt_group->type,
                .stage_count = lib_rt_group->stage_count,
@@ -3097,7 +3095,6 @@ vk_get_rt_pipeline_compile_info(struct vk_rt_pipeline_compile_info *info,
                group->stages[s] =
                   vk_pipeline_stage_from_rt_stage(&lib_rt_group->stages[s]);
             }
-            assert(group->stage_count > 0);
          }
          assert(group_index <= info->group_count);
       }
