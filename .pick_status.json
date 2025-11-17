@@ -864,7 +864,7 @@
         "description": "mesa: fix _mesa_update_texture_matrices()",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "ec978e002f59c8ed829e354f8ca8d9440df487f1",
         "notes": null
