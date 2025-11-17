@@ -150,9 +150,7 @@ nvk_AllocateMemory(VkDevice device,
 
    const enum nvkmd_mem_flags flags = nvk_memory_type_flags(type, handle_types);
 
-   uint32_t alignment = (1ULL << 12);
-   if (flags & NVKMD_MEM_LOCAL)
-      alignment = (1ULL << 16);
+   uint32_t alignment = pdev->nvkmd->bind_align_B;
 
    uint8_t pte_kind = 0, tile_mode = 0;
    if (dedicated_info != NULL) {
