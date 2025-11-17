@@ -426,11 +426,15 @@ calculate_deps(struct schedule_state *state, struct schedule_node *n)
         case V3D_QPU_M_MULTOP:
         case V3D_QPU_M_UMUL24:
                 /* MULTOP sets rtop, and UMUL24 implicitly reads rtop and
-                 * resets it to 0.  We could possibly reorder umul24s relative
-                 * to each other, but for now just keep all the MUL parts in
-                 * order.
+                 * resets it to 0.
                  */
                 add_write_dep(state, &state->last_rtop, n);
+                break;
+        case V3D_QPU_M_UMUL24_RTOP0:
+                /* Read dependency is only needed to avoid inserting an
+                 * UMUL24_RTOP0 in the middle of a MULTOP+UMUL24 sequence.
+                 */
+                add_read_dep(state, state->last_rtop, n);
                 break;
         default:
                 break;

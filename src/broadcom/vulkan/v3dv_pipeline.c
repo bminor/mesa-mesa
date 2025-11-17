@@ -205,6 +205,8 @@ v3dv_pipeline_get_nir_options(const struct v3d_device_info *devinfo)
       .lower_ufind_msb = true,
       .has_fsub = true,
       .has_isub = true,
+      .has_imul24 = true,
+      .has_umul24 = true,
       .has_uclz = true,
       .vertex_id_zero_based = false, /* FIXME: to set this to true, the intrinsic
                                       * needs to be supported */

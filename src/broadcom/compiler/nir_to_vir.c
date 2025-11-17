@@ -1627,6 +1627,12 @@ ntq_emit_alu(struct v3d_compile *c, nir_alu_instr *instr)
         case nir_op_imul:
                 result = vir_UMUL(c, src[0], src[1]);
                 break;
+        case nir_op_umul24:
+                result = vir_UMUL24_RTOP0(c, src[0], src[1]);
+                break;
+        case nir_op_imul24:
+                result = vir_SMUL24(c, src[0], src[1]);
+                break;
 
         case nir_op_seq:
         case nir_op_sne:
