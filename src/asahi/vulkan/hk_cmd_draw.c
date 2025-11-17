@@ -1045,9 +1045,14 @@ hk_upload_vertex_params(struct hk_cmd_buffer *cmd, struct agx_draw draw)
    struct hk_graphics_state *gfx = &cmd->state.gfx;
    struct hk_descriptor_state *desc = &cmd->state.gfx.descriptors;
 
-   struct poly_vertex_params params = {
-      .verts_per_instance = draw.b.count[0],
-   };
+   struct poly_vertex_params params;
+   poly_vertex_params_init(&params, 0);
+
+   /* XXX: We should deduplicate this logic */
+   bool indirect = agx_is_indirect(draw.b) || draw.restart;
+
+   if (!indirect)
+      poly_vertex_params_set_draw(&params, draw.b.count[0], draw.b.count[1]);
 
    if (draw.indexed) {
       unsigned index_size_B = agx_index_size_to_B(draw.index_size);
@@ -1064,9 +1069,6 @@ hk_upload_vertex_params(struct hk_cmd_buffer *cmd, struct agx_draw draw)
 
       struct hk_shader *vs = hk_bound_sw_vs(gfx);
       params.outputs = vs->b.info.outputs;
-
-      /* XXX: We should deduplicate this logic */
-      bool indirect = agx_is_indirect(draw.b) || draw.restart;
 
       if (!indirect) {
          uint32_t verts = draw.b.count[0], instances = draw.b.count[1];
@@ -1144,10 +1146,12 @@ hk_upload_geometry_params(struct hk_cmd_buffer *cmd, struct agx_draw draw)
       mode = u_decomposed_prim(mode);
    }
 
-   struct poly_geometry_params params = {
-      .flat_outputs = fs->info.fs.interp.flat,
-      .input_topology = mode,
-   };
+   const uint32_t wg_size[3] = { 64, 1, 1 };
+
+   struct poly_geometry_params params;
+   poly_geometry_params_init(&params, mode, wg_size, wg_size);
+
+   params.flat_outputs = fs->info.fs.interp.flat;
 
    if (gfx->xfb_enabled) {
       for (unsigned i = 0; i < ARRAY_SIZE(gfx->xfb); ++i) {
@@ -1192,16 +1196,9 @@ hk_upload_geometry_params(struct hk_cmd_buffer *cmd, struct agx_draw draw)
       params.count_buffer = T.gpu;
    }
 
-   /* Workgroup size */
-   params.vs_grid[3] = params.gs_grid[3] = 64;
-   params.vs_grid[4] = params.gs_grid[4] = 1;
-   params.vs_grid[5] = params.gs_grid[5] = 1;
-
    struct poly_gs_info *gsi = &count->info.gs;
 
    if (indirect) {
-      params.vs_grid[2] = params.gs_grid[2] = 1;
-
       if (gsi->shape == POLY_GS_SHAPE_DYNAMIC_INDEXED) {
          /* Need to allocate heap if we haven't yet */
          hk_heap(cmd);
@@ -1213,24 +1210,17 @@ hk_upload_geometry_params(struct hk_cmd_buffer *cmd, struct agx_draw draw)
             poly_gs_rast_vertices(gsi->shape, gsi->max_indices, 1, 0);
       }
    } else {
-      uint32_t verts = draw.b.count[0], instances = draw.b.count[1];
-
-      params.vs_grid[0] = verts;
-      params.gs_grid[0] = u_decomposed_prims_for_vertices(mode, verts);
-
-      params.primitives_log2 = util_logbase2_ceil(params.gs_grid[0]);
-      params.input_primitives = params.gs_grid[0] * instances;
+      poly_geometry_params_set_draw(&params, mode,
+                                    gsi->shape, gsi->max_indices,
+                                    draw.b.count[0], draw.b.count[1]);
 
       unsigned size = params.input_primitives * params.count_buffer_stride;
       if (count->info.gs.prefix_sum && size) {
          params.count_buffer = hk_pool_alloc(cmd, size, 4).gpu;
       }
 
-      cmd->geom_index_count = poly_gs_rast_vertices(
-         gsi->shape, gsi->max_indices, params.gs_grid[0], instances);
-
-      cmd->geom_instance_count = poly_gs_rast_instances(
-         gsi->shape, gsi->max_indices, params.gs_grid[0], instances);
+      cmd->geom_index_count = params.draw.index_count;
+      cmd->geom_instance_count = params.draw.instance_count;
 
       if (gsi->shape == POLY_GS_SHAPE_DYNAMIC_INDEXED) {
          params.output_index_buffer =
