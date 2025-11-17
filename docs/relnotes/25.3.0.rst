@@ -136,7 +136,6 @@ Bug fixes
 - nvk, nak: Broken icons in ENDLESS Legend 2 on a RTX 4080
 - LLVMPipe's \`VkPhysicalDeviceAccelerationStructurePropertiesKHR::maxPrimitiveCount` is lower than Vulkan requires.
 - asahi: DMABuf import of multi-plane YCbCr (NV12 from ISP) not renderer correctly
-- asahi: DMABuf import of multi-plane YCbCr (NV12 from ISP) not renderer correctly
 - brw: Gfx9 sampler messages violate r127 rule
 - radv: No Man's Sky XESS page fault GPU reset
 - r600/sfn: Assertion \`cir.alu_vec.empty()` failed
@@ -234,8 +233,6 @@ Bug fixes
 - nvk: test_conditional_rendering fails on vkd3d-proton
 - Segfault in x11_xlib_display_is_thread_safe
 - [ANV][BMG] Witcher 3 ray tracing freeze on a Arc b580
-- [ANV][BMG] Witcher 3 ray tracing freeze on a Arc b580
-- [ANV][BMG] Witcher 3 ray tracing freeze on a Arc b580
 - anv: optimize utrace overhead from bo memset
 - radv: watching vp9 encoded video with vulkan hwdecode result in artifacts
 - ci: zink-venus-lavapipe errors
@@ -301,7 +298,6 @@ Bug fixes
 - radv: more glcts fails KHR-GL46.shading_language_420pack.initializer_list_initializer*
 - radv: regression in KHR-GL46.gpu_shader5_gl.float_encoding
 - !36097 breaks Xwayland (& others)
-- GPU process crash via WebGPU shader - heap-buffer-overflow in Mesa build_interference_graph
 - GPU process crash via WebGPU shader - heap-buffer-overflow in Mesa build_interference_graph
 - radeonsi: Broken VAAPI video color conversion
 - Gallium HUD broken since !34054
