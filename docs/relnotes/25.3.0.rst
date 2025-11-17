@@ -775,7 +775,7 @@ Caio Oliveira (93):
 - brw: Run validation as soon as we have the CFG around
 - brw: Fix printing of blocks in disassembly when BRW is available
 - util: Avoid invalid access in ralloc_print_info()
-- brw: Add \`FILE *` parameter to dump_assembly
+- brw: Add \`FILE \*\` parameter to dump_assembly
 - brw: Add and use more brw_validate.cpp macros
 - brw: Use uint16_t for size_written
 - brw: Centralize brw_inst allocation
