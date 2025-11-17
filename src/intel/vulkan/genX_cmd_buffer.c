@@ -3193,8 +3193,16 @@ genX(BeginCommandBuffer)(
     *    secondary command buffer is considered to be entirely inside a render
     *    pass. If this is a primary command buffer, then this bit is ignored.
     */
-   if (cmd_buffer->vk.level == VK_COMMAND_BUFFER_LEVEL_PRIMARY)
+   if (cmd_buffer->vk.level == VK_COMMAND_BUFFER_LEVEL_PRIMARY) {
       cmd_buffer->usage_flags &= ~VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
+   } else if (cmd_buffer->usage_flags &
+            VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT) {
+      /* For secondary, if we have RENDER_PASS_CONTINUE_BIT, we can assume the
+       * pipeline mode is 3D. This avoid some stalling/state-emission.
+       */
+      cmd_buffer->state.current_pipeline = _3D;
+   }
+
 
 #if GFX_VER >= 12
    /* Reenable prefetching at the beginning of secondary command buffers. We
@@ -3676,6 +3684,11 @@ genX(CmdExecuteCommands)(
       }
 
       db_mode = secondary->state.current_db_mode;
+
+      /* Set the current pipeline state to the secondary's state if it did
+       * program the PIPELINE_SELECT instruction. */
+      if (secondary->state.current_pipeline != UINT32_MAX)
+         container->state.current_pipeline = secondary->state.current_pipeline;
    }
 
    /* The secondary isn't counted in our VF cache tracking so we need to
@@ -3699,7 +3712,6 @@ genX(CmdExecuteCommands)(
     * where we do any draws or compute dispatches from the container after the
     * secondary has returned.
     */
-   container->state.current_pipeline = UINT32_MAX;
    container->state.current_l3_config = NULL;
    container->state.current_hash_scale = 0;
    container->state.gfx.push_constant_stages = 0;
