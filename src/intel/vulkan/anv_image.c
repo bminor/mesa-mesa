@@ -2926,6 +2926,9 @@ anv_image_bind_address(struct anv_device *device,
                         enum anv_image_memory_binding binding,
                         struct anv_address address)
 {
+   assert(anv_address_physical(address) %
+          image->bindings[binding].memory_range.alignment == 0);
+
    image->bindings[binding].address = address;
 
    /* Map bindings for images with host transfer usage, so that we don't have
