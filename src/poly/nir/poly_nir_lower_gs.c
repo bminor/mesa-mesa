@@ -170,6 +170,23 @@ struct lower_gs_state {
    struct poly_gs_info *info;
 };
 
+/* Helpers for loading from the vertex state buffer */
+static nir_def *
+load_vertex_param_offset(nir_builder *b, uint32_t offset, uint8_t bytes)
+{
+   nir_def *base = nir_load_vertex_param_buffer_poly(b);
+   nir_def *addr = nir_iadd_imm(b, base, offset);
+
+   assert((offset % bytes) == 0 && "must be naturally aligned");
+
+   return nir_load_global_constant(b, 1, bytes * 8, addr);
+}
+
+#define load_vertex_param(b, field)                                            \
+   load_vertex_param_offset(                                                   \
+      b, offsetof(struct poly_vertex_params, field),                           \
+      sizeof(((struct poly_vertex_params *)0)->field))
+
 /* Helpers for loading from the geometry state buffer */
 static nir_def *
 load_geometry_param_offset(nir_builder *b, uint32_t offset, uint8_t bytes)
@@ -249,7 +266,7 @@ vertex_id_for_topology_class(nir_builder *b, nir_def *vert, enum mesa_prim cls)
 {
    nir_def *prim = nir_load_primitive_id(b);
    nir_def *flatshade_first = nir_ieq_imm(b, nir_load_provoking_last(b), 0);
-   nir_def *nr = load_geometry_param(b, gs_grid[0]);
+   nir_def *nr = load_geometry_param(b, grid[0]);
    nir_def *topology = nir_load_input_topology_poly(b);
 
    switch (cls) {
@@ -318,7 +335,7 @@ lower_gs_inputs(nir_builder *b, nir_intrinsic_instr *intr, void *_)
    nir_def *vertex = vertex_id_for_topology_class(
       b, vert_in_prim, b->shader->info.gs.input_primitive);
 
-   nir_def *verts = load_geometry_param(b, vs_grid[0]);
+   nir_def *verts = load_vertex_param(b, grid[0]);
    nir_def *unrolled =
       nir_iadd(b, nir_imul(b, nir_load_instance_id(b), verts), vertex);
 
@@ -335,7 +352,7 @@ static nir_def *
 calc_unrolled_id(nir_builder *b)
 {
    return nir_iadd(
-      b, nir_imul(b, load_instance_id(b), load_geometry_param(b, gs_grid[0])),
+      b, nir_imul(b, load_instance_id(b), load_geometry_param(b, grid[0])),
       load_primitive_id(b));
 }
 
@@ -673,7 +690,7 @@ create_gs_rast_shader(const nir_shader *gs, const struct lower_gs_state *state)
 
    case POLY_GS_SHAPE_STATIC_INDEXED:
    case POLY_GS_SHAPE_STATIC_PER_PRIM: {
-      nir_def *stride = load_geometry_param(b, gs_grid[0]);
+      nir_def *stride = load_geometry_param(b, grid[0]);
 
       rs.output_id = raw_vertex_id;
       rs.instance_id = nir_udiv(b, rs.raw_instance_id, stride);
@@ -728,7 +745,7 @@ create_gs_rast_shader(const nir_shader *gs, const struct lower_gs_state *state)
       struct nir_xfb_info *xfb = gs->xfb_info;
 
       nir_def *unrolled = nir_iadd(
-         b, nir_imul(b, rs.instance_id, load_geometry_param(b, gs_grid[0])),
+         b, nir_imul(b, rs.instance_id, load_geometry_param(b, grid[0])),
          rs.primitive_id);
 
       nir_def *n = nir_imm_int(b, n_);

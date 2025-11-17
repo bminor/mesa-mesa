@@ -1045,8 +1045,10 @@ hk_upload_vertex_params(struct hk_cmd_buffer *cmd, struct agx_draw draw)
    struct hk_graphics_state *gfx = &cmd->state.gfx;
    struct hk_descriptor_state *desc = &cmd->state.gfx.descriptors;
 
+   const uint32_t wg_size[3] = { 64, 1, 1 };
+
    struct poly_vertex_params params;
-   poly_vertex_params_init(&params, 0);
+   poly_vertex_params_init(&params, 0, wg_size);
 
    /* XXX: We should deduplicate this logic */
    bool indirect = agx_is_indirect(draw.b) || draw.restart;
@@ -1149,7 +1151,7 @@ hk_upload_geometry_params(struct hk_cmd_buffer *cmd, struct agx_draw draw)
    const uint32_t wg_size[3] = { 64, 1, 1 };
 
    struct poly_geometry_params params;
-   poly_geometry_params_init(&params, mode, wg_size, wg_size);
+   poly_geometry_params_init(&params, mode, wg_size);
 
    params.flat_outputs = fs->info.fs.interp.flat;
 
@@ -1459,6 +1461,7 @@ hk_launch_gs_prerast(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
    struct hk_shader *count = hk_count_gs_variant(gs);
    struct hk_shader *pre_gs = hk_pre_gs_variant(gs);
 
+   uint64_t vertex_params = desc->root.draw.vertex_params;
    uint64_t geometry_params = desc->root.draw.geometry_params;
    unsigned count_words = count->info.gs.count_words;
    struct agx_workgroup wg = agx_workgroup(64, 1, 1);
@@ -1501,10 +1504,10 @@ hk_launch_gs_prerast(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
                                       AGX_BARRIER_ALL | AGX_PREGFX, gsi);
 
       grid_vs = agx_grid_indirect_local(
-         geometry_params + offsetof(struct poly_geometry_params, vs_grid));
+         vertex_params + offsetof(struct poly_vertex_params, grid));
 
       grid_gs = agx_grid_indirect_local(
-         geometry_params + offsetof(struct poly_geometry_params, gs_grid));
+         geometry_params + offsetof(struct poly_geometry_params, grid));
    } else {
       grid_vs = grid_gs = draw.b;
       grid_gs.count[0] = u_decomposed_prims_for_vertices(mode, draw.b.count[0]);

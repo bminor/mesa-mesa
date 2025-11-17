@@ -193,6 +193,14 @@ struct poly_vertex_params {
     */
    uint32_t verts_per_instance;
 
+   /* Within an indirect VS draw, the grids used to dispatch the VS written
+    * out by the GS indirect setup kernel or the CPU for a direct draw. This is
+    * the "indirect local" format: first 3 is in threads, second 3 is in grid
+    * blocks. This lets us use nontrivial workgroups with indirect draws without
+    * needing any predication.
+    */
+   uint32_t grid[6];
+
    uint32_t _pad;
 
    /* Output buffer for vertex data */
@@ -201,13 +209,18 @@ struct poly_vertex_params {
    /* Mask of outputs present in the output buffer */
    uint64_t outputs;
 } PACKED;
-static_assert(sizeof(struct poly_vertex_params) == 10 * 4);
+static_assert(sizeof(struct poly_vertex_params) == 16 * 4);
 
 static inline void
-poly_vertex_params_init(struct poly_vertex_params *p, uint64_t outputs)
+poly_vertex_params_init(struct poly_vertex_params *p,
+                        uint64_t outputs, const uint32_t wg_size[3])
 {
    *p = (struct poly_vertex_params) {
       .outputs = outputs,
+      .grid = {
+         0, 0, 1, /* x/y are set by poly_vertex_params_set_draw() */
+         wg_size[0], wg_size[1], wg_size[2],
+      },
    };
 }
 
@@ -215,7 +228,10 @@ static inline void
 poly_vertex_params_set_draw(struct poly_vertex_params *p,
                             uint32_t vertex_count, uint32_t instance_count)
 {
+   /* Invoke VS as (vertices, instances) */
    p->verts_per_instance = vertex_count;
+   p->grid[0] = vertex_count;
+   p->grid[1] = instance_count;
 }
 
 static inline uint
@@ -280,14 +296,13 @@ struct poly_geometry_params {
     */
    uint32_t xfb_verts[POLY_MAX_VERTEX_STREAMS];
 
-   /* Within an indirect GS draw, the grids used to dispatch the VS/GS written
+   /* Within an indirect GS draw, the grids used to dispatch the GS written
     * out by the GS indirect setup kernel or the CPU for a direct draw. This is
     * the "indirect local" format: first 3 is in threads, second 3 is in grid
     * blocks. This lets us use nontrivial workgroups with indirect draws without
     * needing any predication.
     */
-   uint32_t vs_grid[6];
-   uint32_t gs_grid[6];
+   uint32_t grid[6];
 
    /* Indirect draw command */
    struct poly_indirect_draw draw;
@@ -314,23 +329,17 @@ struct poly_geometry_params {
     */
    uint32_t input_topology;
 } PACKED;
-static_assert(sizeof(struct poly_geometry_params) == 85 * 4);
+static_assert(sizeof(struct poly_geometry_params) == 79 * 4);
 
 static inline void
 poly_geometry_params_init(struct poly_geometry_params *p,
-                          enum mesa_prim prim,
-                          const uint32_t vs_wg_size[3],
-                          const uint32_t gs_wg_size[3])
+                          enum mesa_prim prim, const uint32_t wg_size[3])
 {
    *p = (struct poly_geometry_params) {
       .input_topology = prim,
-      .vs_grid = {
+      .grid = {
          0, 0, 1, /* x/y are set by poly_geometry_params_set_draw() */
-         vs_wg_size[0], vs_wg_size[1], vs_wg_size[2],
-      },
-      .gs_grid = {
-         0, 0, 1, /* x/y are set by poly_geometry_params_set_draw() */
-         gs_wg_size[0], gs_wg_size[1], gs_wg_size[2],
+         wg_size[0], wg_size[1], wg_size[2],
       },
    };
 }
@@ -345,12 +354,9 @@ poly_geometry_params_set_draw(struct poly_geometry_params *p,
    const uint32_t prim_per_instance =
       u_decomposed_prims_for_vertices(prim, vertex_count);
 
-   /* Invoke VS as (vertices, instances); GS as (primitives, instances) */
-   p->vs_grid[0] = vertex_count;
-   p->vs_grid[1] = instance_count;
-
-   p->gs_grid[0] = prim_per_instance;
-   p->gs_grid[1] = instance_count;
+   /* Invoke GS as (primitives, instances) */
+   p->grid[0] = prim_per_instance;
+   p->grid[1] = instance_count;
 
    p->input_primitives = prim_per_instance * instance_count;
    p->primitives_log2 = util_logbase2_ceil(prim_per_instance);

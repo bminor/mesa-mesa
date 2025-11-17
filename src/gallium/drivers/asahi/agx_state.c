@@ -3928,7 +3928,7 @@ agx_batch_geometry_params(struct agx_batch *batch, uint64_t input_index_buffer,
    const uint32_t wg_size[3] = { 64, 1, 1 };
 
    struct poly_vertex_params vp;
-   poly_vertex_params_init(&vp, batch->ctx->vs->b.info.outputs);
+   poly_vertex_params_init(&vp, batch->ctx->vs->b.info.outputs, wg_size);
 
    if (info->index_size) {
       vp.index_size_B = info->index_size;
@@ -3937,7 +3937,7 @@ agx_batch_geometry_params(struct agx_batch *batch, uint64_t input_index_buffer,
    }
 
    struct poly_geometry_params params;
-   poly_geometry_params_init(&params, info->mode, wg_size, wg_size);
+   poly_geometry_params_init(&params, info->mode, wg_size);
 
    params.flat_outputs =
       batch->ctx->stage[MESA_SHADER_FRAGMENT].shader->info.inputs_flat_shaded;
@@ -4084,6 +4084,7 @@ agx_launch_gs_prerast(struct agx_batch *batch,
 
    assert(!info->primitive_restart && "should have been lowered");
 
+   uint64_t vp = batch->uniforms.vertex_params;
    uint64_t gp = batch->uniforms.geometry_params;
    struct agx_grid grid_vs, grid_gs;
    struct agx_workgroup wg = agx_workgroup(64, 1, 1);
@@ -4116,10 +4117,10 @@ agx_launch_gs_prerast(struct agx_batch *batch,
       libagx_gs_setup_indirect_struct(batch, agx_1d(1), AGX_BARRIER_ALL, gsi);
 
       grid_vs = agx_grid_indirect_local(
-         gp + offsetof(struct poly_geometry_params, vs_grid));
+         vp + offsetof(struct poly_vertex_params, grid));
 
       grid_gs = agx_grid_indirect_local(
-         gp + offsetof(struct poly_geometry_params, gs_grid));
+         gp + offsetof(struct poly_geometry_params, grid));
    } else {
       grid_vs = agx_3d(draws->count, info->instance_count, 1);
 
@@ -4555,8 +4556,10 @@ agx_draw_patches(struct agx_context *ctx, const struct pipe_draw_info *info,
 
    batch->uniforms.vertex_outputs = ctx->vs->b.info.outputs;
 
+   const uint32_t wg_size[3] = { 64, 1, 1 };
+
    struct poly_vertex_params vp;
-   poly_vertex_params_init(&vp, batch->ctx->vs->b.info.outputs);
+   poly_vertex_params_init(&vp, batch->ctx->vs->b.info.outputs, wg_size);
 
    if (info->index_size) {
       size_t ib_extent = 0;
