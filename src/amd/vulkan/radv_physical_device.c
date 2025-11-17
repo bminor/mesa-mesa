@@ -211,6 +211,30 @@ radv_use_bvh8(const struct radv_physical_device *pdev)
    return pdev->info.gfx_level >= GFX12 && !radv_emulate_rt(pdev) && !(instance->debug_flags & RADV_DEBUG_BVH4);
 }
 
+bool
+radv_is_dcc_disabled(const struct radv_physical_device *pdev)
+{
+   const struct radv_instance *instance = radv_physical_device_instance(pdev);
+
+   return instance->debug_flags & RADV_DEBUG_NO_DCC ||
+          (instance->drirc.debug.disable_dcc && pdev->info.gfx_level < GFX12);
+}
+
+bool
+radv_are_dcc_stores_disabled(const struct radv_physical_device *pdev)
+{
+   const struct radv_instance *instance = radv_physical_device_instance(pdev);
+
+   return instance->drirc.debug.disable_dcc_stores && pdev->info.gfx_level < GFX12;
+}
+
+bool
+radv_are_dcc_mips_disabled(const struct radv_physical_device *pdev)
+{
+   const struct radv_instance *instance = radv_physical_device_instance(pdev);
+
+   return instance->drirc.debug.disable_dcc_mips && pdev->info.gfx_level < GFX12;
+}
 static void
 parse_hex(char *out, const char *in, unsigned length)
 {

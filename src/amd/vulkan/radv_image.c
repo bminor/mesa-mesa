@@ -254,7 +254,7 @@ radv_use_dcc_for_image_early(struct radv_device *device, struct radv_image *imag
    const VkImageCompressionControlEXT *compression =
       vk_find_struct_const(pCreateInfo->pNext, IMAGE_COMPRESSION_CONTROL_EXT);
 
-   if (radv_is_dcc_disabled(instance) || (compression && compression->flags == VK_IMAGE_COMPRESSION_DISABLED_EXT)) {
+   if (radv_is_dcc_disabled(pdev) || (compression && compression->flags == VK_IMAGE_COMPRESSION_DISABLED_EXT)) {
       return false;
    }
 
@@ -298,12 +298,11 @@ radv_use_dcc_for_image_early(struct radv_device *device, struct radv_image *imag
    }
 
    /* Force disable DCC for mips to workaround game bugs. */
-   if (instance->drirc.debug.disable_dcc_mips && pCreateInfo->mipLevels > 1)
+   if (radv_are_dcc_mips_disabled(pdev) && pCreateInfo->mipLevels > 1)
       return false;
 
    /* Force disable DCC for stores to workaround game bugs. */
-   if (instance->drirc.debug.disable_dcc_stores && pdev->info.gfx_level < GFX12 &&
-       (pCreateInfo->usage & VK_IMAGE_USAGE_STORAGE_BIT))
+   if (radv_are_dcc_stores_disabled(pdev) && (pCreateInfo->usage & VK_IMAGE_USAGE_STORAGE_BIT))
       return false;
 
    /* DCC MSAA can't work on GFX10.3 and earlier without FMASK. */

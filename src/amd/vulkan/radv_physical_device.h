@@ -297,6 +297,12 @@ bool radv_emulate_rt(const struct radv_physical_device *pdev);
 
 bool radv_use_bvh8(const struct radv_physical_device *pdev);
 
+bool radv_is_dcc_disabled(const struct radv_physical_device *pdev);
+
+bool radv_are_dcc_stores_disabled(const struct radv_physical_device *pdev);
+
+bool radv_are_dcc_mips_disabled(const struct radv_physical_device *pdev);
+
 uint32_t radv_find_memory_index(const struct radv_physical_device *pdev, VkMemoryPropertyFlags flags);
 
 VkResult create_null_physical_device(struct vk_instance *vk_instance);

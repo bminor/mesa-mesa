@@ -114,6 +114,4 @@ const char *radv_get_perftest_option_name(int id);
 
 bool radv_is_rt_wave64_enabled(const struct radv_instance *instance);
 
-bool radv_is_dcc_disabled(const struct radv_instance *instance);
-
 #endif /* RADV_INSTANCE_H */

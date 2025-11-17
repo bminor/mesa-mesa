@@ -313,12 +313,6 @@ radv_is_rt_wave64_enabled(const struct radv_instance *instance)
    return instance->perftest_flags & RADV_PERFTEST_RT_WAVE_64 || instance->drirc.debug.rt_wave64;
 }
 
-bool
-radv_is_dcc_disabled(const struct radv_instance *instance)
-{
-   return instance->debug_flags & RADV_DEBUG_NO_DCC || instance->drirc.debug.disable_dcc;
-}
-
 static const struct vk_instance_extension_table radv_instance_extensions_supported = {
    .KHR_device_group_creation = true,
    .KHR_external_fence_capabilities = true,
