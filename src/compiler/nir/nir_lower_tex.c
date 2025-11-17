@@ -942,6 +942,7 @@ lower_tex_to_txd(nir_builder *b, nir_tex_instr *tex)
    txd->is_array = tex->is_array;
    txd->is_shadow = tex->is_shadow;
    txd->is_new_style_shadow = tex->is_new_style_shadow;
+   txd->is_sparse = tex->is_sparse;
    txd->can_speculate = tex->can_speculate;
 
    /* reuse existing srcs */
@@ -984,6 +985,7 @@ lower_txb_to_txl(nir_builder *b, nir_tex_instr *tex)
    txl->is_array = tex->is_array;
    txl->is_shadow = tex->is_shadow;
    txl->is_new_style_shadow = tex->is_new_style_shadow;
+   txl->is_sparse = tex->is_sparse;
    txl->can_speculate = tex->can_speculate;
 
    /* reuse all but bias src */
