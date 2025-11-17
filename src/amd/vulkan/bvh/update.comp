@@ -42,17 +42,13 @@ void main() {
     VOID_REF dst_ptr = OFFSET(dst_bvh, dst_offset);
     uint32_t src_offset = gl_GlobalInvocationID.x * args.geom_data.stride;
 
-    vk_aabb bounds;
-    bool is_active;
+    vk_aabb bounds = vk_aabb(vec3(0.0f), vec3(0.0f));
     if (args.geom_data.geometry_type == VK_GEOMETRY_TYPE_TRIANGLES_KHR) {
-        is_active = radv_build_triangle(bounds, dst_ptr, args.geom_data, gl_GlobalInvocationID.x, false);
+        radv_build_triangle(bounds, dst_ptr, args.geom_data, gl_GlobalInvocationID.x, false);
     } else {
         VOID_REF src_ptr = OFFSET(args.geom_data.data, src_offset);
-        is_active = radv_build_aabb(bounds, src_ptr, dst_ptr, args.geom_data.geometry_id, gl_GlobalInvocationID.x, false);
+        radv_build_aabb(bounds, src_ptr, dst_ptr, args.geom_data.geometry_id, gl_GlobalInvocationID.x, false);
     }
-
-    if (!is_active)
-        return;
 
     DEREF(INDEX(vk_aabb, args.leaf_bounds, leaf_node_id)) = bounds;
     memoryBarrier(gl_ScopeDevice,
