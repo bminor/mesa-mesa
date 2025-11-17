@@ -3925,19 +3925,27 @@ agx_batch_geometry_params(struct agx_batch *batch, uint64_t input_index_buffer,
                           const struct pipe_draw_start_count_bias *draw,
                           const struct pipe_draw_indirect_info *indirect)
 {
-   struct poly_vertex_params vp = {
-      .index_buffer = input_index_buffer,
-      .index_buffer_range_el = index_buffer_size_B / info->index_size,
-      .verts_per_instance = draw ? draw->count : 0,
-   };
+   const uint32_t wg_size[3] = { 64, 1, 1 };
 
-   struct poly_geometry_params params = {
-      .flat_outputs =
-         batch->ctx->stage[MESA_SHADER_FRAGMENT].shader->info.inputs_flat_shaded,
-      .input_topology = info->mode,
-      .xfb_offs_ptrs = {AGX_ZERO_PAGE_ADDRESS, AGX_ZERO_PAGE_ADDRESS,
-                        AGX_ZERO_PAGE_ADDRESS, AGX_ZERO_PAGE_ADDRESS},
-   };
+   struct poly_vertex_params vp;
+   poly_vertex_params_init(&vp, batch->ctx->vs->b.info.outputs);
+
+   if (info->index_size) {
+      vp.index_size_B = info->index_size;
+      vp.index_buffer = input_index_buffer;
+      vp.index_buffer_range_el = index_buffer_size_B / info->index_size;
+   }
+
+   struct poly_geometry_params params;
+   poly_geometry_params_init(&params, info->mode, wg_size, wg_size);
+
+   params.flat_outputs =
+      batch->ctx->stage[MESA_SHADER_FRAGMENT].shader->info.inputs_flat_shaded;
+
+   params.xfb_offs_ptrs[0] = AGX_ZERO_PAGE_ADDRESS;
+   params.xfb_offs_ptrs[1] = AGX_ZERO_PAGE_ADDRESS;
+   params.xfb_offs_ptrs[2] = AGX_ZERO_PAGE_ADDRESS;
+   params.xfb_offs_ptrs[3] = AGX_ZERO_PAGE_ADDRESS;
 
    for (unsigned i = 0; i < ARRAY_SIZE(batch->ctx->streamout.targets); ++i) {
       struct agx_streamout_target *so =
@@ -3984,8 +3992,7 @@ agx_batch_geometry_params(struct agx_batch *batch, uint64_t input_index_buffer,
    /* Calculate input primitive count for direct draws, and allocate the vertex
     * & count buffers. GPU calculates and allocates for indirect draws.
     */
-   batch->uniforms.vertex_outputs = batch->ctx->vs->b.info.outputs;
-   vp.outputs = batch->uniforms.vertex_outputs;
+   batch->uniforms.vertex_outputs = vp.outputs;
    params.count_buffer_stride = batch->ctx->gs->gs.count_words * 4;
 
    bool prefix_sum = batch->ctx->gs->gs.prefix_sum;
@@ -3995,21 +4002,13 @@ agx_batch_geometry_params(struct agx_batch *batch, uint64_t input_index_buffer,
       params.count_buffer = T.gpu;
    }
 
-   /* Workgroup size */
-   params.vs_grid[3] = params.gs_grid[3] = 64;
-   params.vs_grid[4] = params.gs_grid[4] = 1;
-   params.vs_grid[5] = params.gs_grid[5] = 1;
+   if (!indirect) {
+      poly_vertex_params_set_draw(&vp, draw->count, info->instance_count);
 
-   if (indirect) {
-      params.vs_grid[2] = params.gs_grid[2] = 1;
-   } else {
-      params.vs_grid[0] = draw->count;
-      params.gs_grid[0] =
-         u_decomposed_prims_for_vertices(info->mode, draw->count);
-
-      params.primitives_log2 = util_logbase2_ceil(params.gs_grid[0]);
-
-      params.input_primitives = params.gs_grid[0] * info->instance_count;
+      struct poly_gs_info *gsi = &batch->ctx->gs->gs;
+      poly_geometry_params_set_draw(&params, info->mode,
+                                    gsi->shape, gsi->max_indices,
+                                    draw->count, info->instance_count);
 
       unsigned vb_size = poly_tcs_in_size(draw->count * info->instance_count,
                                           batch->uniforms.vertex_outputs);
@@ -4025,7 +4024,6 @@ agx_batch_geometry_params(struct agx_batch *batch, uint64_t input_index_buffer,
             agx_pool_alloc_aligned(&batch->pool, vb_size, 4).gpu;
       }
 
-      struct poly_gs_info *gsi = &batch->ctx->gs->gs;
       if (gsi->shape == POLY_GS_SHAPE_DYNAMIC_INDEXED) {
          unsigned idx_size = params.input_primitives * gsi->max_indices;
 
@@ -4557,18 +4555,15 @@ agx_draw_patches(struct agx_context *ctx, const struct pipe_draw_info *info,
 
    batch->uniforms.vertex_outputs = ctx->vs->b.info.outputs;
 
-   uint64_t ib = 0;
-   size_t ib_extent = 0;
+   struct poly_vertex_params vp;
+   poly_vertex_params_init(&vp, batch->ctx->vs->b.info.outputs);
 
-   if (info->index_size)
-      ib = agx_index_buffer_ptr(batch, info, draws, &ib_extent);
-
-   struct poly_vertex_params vp = {
-      .index_buffer = ib,
-      .index_buffer_range_el = ib_extent,
-      .verts_per_instance = draws ? draws->count : 0,
-      .outputs = ctx->vs->b.info.outputs,
-   };
+   if (info->index_size) {
+      size_t ib_extent = 0;
+      vp.index_size_B = info->index_size;
+      vp.index_buffer = agx_index_buffer_ptr(batch, info, draws, &ib_extent);
+      vp.index_buffer_range_el = ib_extent;
+   }
 
    /* Setup parameters */
    uint64_t heap = agx_batch_heap(batch);
@@ -4601,6 +4596,8 @@ agx_draw_patches(struct agx_context *ctx, const struct pipe_draw_info *info,
    struct agx_grid vs_grid, tcs_grid, tess_grid;
 
    if (indirect == NULL) {
+      poly_vertex_params_set_draw(&vp, draws->count, info->instance_count);
+
       unsigned in_patches = draws->count / patch_vertices;
       if (in_patches == 0)
          return;
