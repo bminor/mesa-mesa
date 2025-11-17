@@ -203,6 +203,21 @@ struct poly_vertex_params {
 } PACKED;
 static_assert(sizeof(struct poly_vertex_params) == 10 * 4);
 
+static inline void
+poly_vertex_params_init(struct poly_vertex_params *p, uint64_t outputs)
+{
+   *p = (struct poly_vertex_params) {
+      .outputs = outputs,
+   };
+}
+
+static inline void
+poly_vertex_params_set_draw(struct poly_vertex_params *p,
+                            uint32_t vertex_count, uint32_t instance_count)
+{
+   p->verts_per_instance = vertex_count;
+}
+
 static inline uint
 poly_index_buffer_range_el(uint size_el, uint offset_el)
 {
@@ -605,7 +620,7 @@ poly_gs_setup_indirect(uint64_t index_buffer, constant uint *draw,
    uint vertex_count = draw[0];
    uint instance_count = draw[1];
 
-   vp->verts_per_instance = vertex_count;
+   poly_vertex_params_set_draw(vp, vertex_count, instance_count);
    poly_geometry_params_set_draw(p, prim, shape, max_indices,
                                  vertex_count, instance_count);
 
