@@ -6083,7 +6083,6 @@ bifrost_postprocess_nir(nir_shader *nir, unsigned gpu_id)
 
    NIR_PASS(_, nir, nir_lower_alu_width, bi_vectorize_filter, &gpu_id);
    NIR_PASS(_, nir, nir_lower_load_const_to_scalar);
-   NIR_PASS(_, nir, nir_lower_all_phis_to_scalar);
    NIR_PASS(_, nir, nir_lower_flrp, 16 | 32 | 64, false /* always_precise */);
    NIR_PASS(_, nir, nir_lower_var_copies);
    NIR_PASS(_, nir, nir_lower_alu);
@@ -6586,6 +6585,17 @@ bifrost_compile_shader_nir(nir_shader *nir,
    }
 
    bi_optimize_nir(nir, inputs->gpu_id, inputs->robust2_modes);
+
+   {
+      bool scalar_phis_pass = false;
+      unsigned gpu_id = inputs->gpu_id;
+      NIR_PASS(scalar_phis_pass, nir, nir_lower_phis_to_scalar,
+               bi_vectorize_filter, &gpu_id);
+      if (scalar_phis_pass) {
+         NIR_PASS(_, nir, nir_copy_prop);
+         NIR_PASS(_, nir, nir_opt_dce);
+      }
+   }
 
    info->tls_size = nir->scratch_size;
 
