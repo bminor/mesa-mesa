@@ -142,6 +142,16 @@ os_log_message(const char *message)
 #  include "c11/threads.h"
 
 /**
+ * In Android 26+ there is no restriction on the length of the name for a
+ * property, replace the default max length with one large enough to support
+ * all property names.
+ */
+#if ANDROID_API_LEVEL >= 26
+#undef PROPERTY_KEY_MAX
+#define PROPERTY_KEY_MAX 128
+#endif /* ANDROID_API_LEVEL >= 26 */
+
+/**
  * Get an option value from android's property system, as a fallback to
  * getenv() (which is generally less useful on android due to processes
  * typically being forked from the zygote.
