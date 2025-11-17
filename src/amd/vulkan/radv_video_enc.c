@@ -1203,7 +1203,7 @@ radv_enc_slice_header_hevc(struct radv_cmd_buffer *cmd_buffer, const VkVideoEnco
                                            util_logbase2_ceil(sps->num_long_term_ref_pics_sps));
             } else {
                radv_enc_code_fixed_bits(cmd_buffer, lt->poc_lsb_lt[i], sps->log2_max_pic_order_cnt_lsb_minus4 + 4);
-               radv_enc_code_fixed_bits(cmd_buffer, lt->used_by_curr_pic_lt_flag & (1 << i), 1);
+               radv_enc_code_fixed_bits(cmd_buffer, !!(lt->used_by_curr_pic_lt_flag & (1 << i)), 1);
                if (lt->used_by_curr_pic_lt_flag & (1 << i))
                   num_pic_total_curr++;
             }
