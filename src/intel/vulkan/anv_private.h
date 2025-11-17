@@ -6669,9 +6669,12 @@ anv_add_pending_pipe_bits(struct anv_cmd_buffer* cmd_buffer,
                           const char* reason)
 {
    cmd_buffer->state.pending_pipe_bits |= bits;
-   if (INTEL_DEBUG(DEBUG_PIPE_CONTROL)) {
-      anv_cmd_buffer_pending_pipe_debug(cmd_buffer, bits, reason);
+   if (unlikely(u_trace_enabled(&cmd_buffer->device->ds.trace_context))) {
+      if (cmd_buffer->batch.pc_reasons_count < ARRAY_SIZE(cmd_buffer->batch.pc_reasons))
+         cmd_buffer->batch.pc_reasons[cmd_buffer->batch.pc_reasons_count++] = reason;
    }
+   if (INTEL_DEBUG(DEBUG_PIPE_CONTROL))
+      anv_cmd_buffer_pending_pipe_debug(cmd_buffer, bits, reason);
 }
 
 struct anv_performance_configuration_intel {

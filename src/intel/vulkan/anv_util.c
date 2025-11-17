@@ -89,8 +89,6 @@ anv_cmd_buffer_pending_pipe_debug(struct anv_cmd_buffer *cmd_buffer,
    anv_dump_pipe_bits(bits, stream);
    mesa_log_stream_printf(stream, "reason: %s", reason);
 
-   if (cmd_buffer->batch.pc_reasons_count < ARRAY_SIZE(cmd_buffer->batch.pc_reasons))
-      cmd_buffer->batch.pc_reasons[cmd_buffer->batch.pc_reasons_count++] = reason;
    mesa_log_stream_printf(stream, "\n");
 
    mesa_log_stream_destroy(stream);
