@@ -1116,7 +1116,8 @@ brw_allocate_registers(brw_shader &s, bool allow_spilling)
 
    s.debug_optimizer(nir, "pre_register_allocate", 90, 90);
 
-   bool spill_all = allow_spilling && INTEL_DEBUG(DEBUG_SPILL_FS);
+   bool spill_all = allow_spilling && INTEL_DEBUG(DEBUG_SPILL_FS) &&
+      !s.nir->info.internal;
 
    /* Before we schedule anything, stash off the instruction order as an array
     * of brw_inst *.  This way, we can reset it between scheduling passes to
