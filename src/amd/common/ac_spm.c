@@ -13,96 +13,96 @@
 
 /* SPM counters definition. */
 /* GFX10+ */
-static struct ac_spm_counter_descr gfx10_num_l2_hits = {TCP, 0x9};
-static struct ac_spm_counter_descr gfx10_num_l2_misses = {TCP, 0x12};
-static struct ac_spm_counter_descr gfx10_num_scache_hits = {SQ, 0x14f};
-static struct ac_spm_counter_descr gfx10_num_scache_misses = {SQ, 0x150};
-static struct ac_spm_counter_descr gfx10_num_scache_misses_dup = {SQ, 0x151};
-static struct ac_spm_counter_descr gfx10_num_icache_hits = {SQ, 0x12c};
-static struct ac_spm_counter_descr gfx10_num_icache_misses = {SQ, 0x12d};
-static struct ac_spm_counter_descr gfx10_num_icache_misses_dup = {SQ, 0x12e};
-static struct ac_spm_counter_descr gfx10_num_gl1c_hits = {GL1C, 0xe};
-static struct ac_spm_counter_descr gfx10_num_gl1c_misses = {GL1C, 0x12};
-static struct ac_spm_counter_descr gfx10_num_gl2c_hits = {GL2C, 0x3};
-static struct ac_spm_counter_descr gfx10_num_gl2c_misses = {GL2C, 0x23};
+static struct ac_spm_counter_descr gfx10_tcp_perf_sel_req = {TCP, 0x9};
+static struct ac_spm_counter_descr gfx10_tcp_perf_sel_req_miss = {TCP, 0x12};
+static struct ac_spm_counter_descr gfx10_sqc_perf_sel_dcache_hits = {SQ, 0x14f};
+static struct ac_spm_counter_descr gfx10_sqc_perf_sel_dcache_misses = {SQ, 0x150};
+static struct ac_spm_counter_descr gfx10_sqc_perf_sel_dcache_misses_duplicate = {SQ, 0x151};
+static struct ac_spm_counter_descr gfx10_sqc_perf_sel_icache_hits = {SQ, 0x12c};
+static struct ac_spm_counter_descr gfx10_sqc_perf_sel_icache_misses = {SQ, 0x12d};
+static struct ac_spm_counter_descr gfx10_sqc_perf_sel_icache_misses_duplicate = {SQ, 0x12e};
+static struct ac_spm_counter_descr gfx10_gl1c_perf_sel_req = {GL1C, 0xe};
+static struct ac_spm_counter_descr gfx10_gl1c_perf_sel_req_miss = {GL1C, 0x12};
+static struct ac_spm_counter_descr gfx10_gl2c_perf_sel_req = {GL2C, 0x3};
+static struct ac_spm_counter_descr gfx10_gl2c_perf_sel_miss = {GL2C, 0x23};
 
 static struct ac_spm_counter_create_info gfx10_spm_counters[] = {
-   {&gfx10_num_l2_hits},
-   {&gfx10_num_l2_misses},
-   {&gfx10_num_scache_hits},
-   {&gfx10_num_scache_misses},
-   {&gfx10_num_scache_misses_dup},
-   {&gfx10_num_icache_hits},
-   {&gfx10_num_icache_misses},
-   {&gfx10_num_icache_misses_dup},
-   {&gfx10_num_gl1c_hits},
-   {&gfx10_num_gl1c_misses},
-   {&gfx10_num_gl2c_hits},
-   {&gfx10_num_gl2c_misses},
+   {&gfx10_tcp_perf_sel_req},
+   {&gfx10_tcp_perf_sel_req_miss},
+   {&gfx10_sqc_perf_sel_dcache_hits},
+   {&gfx10_sqc_perf_sel_dcache_misses},
+   {&gfx10_sqc_perf_sel_dcache_misses_duplicate},
+   {&gfx10_sqc_perf_sel_icache_hits},
+   {&gfx10_sqc_perf_sel_icache_misses},
+   {&gfx10_sqc_perf_sel_icache_misses_duplicate},
+   {&gfx10_gl1c_perf_sel_req},
+   {&gfx10_gl1c_perf_sel_req_miss},
+   {&gfx10_gl2c_perf_sel_req},
+   {&gfx10_gl2c_perf_sel_miss},
 };
 
 /* GFX10.3+ */
-static struct ac_spm_counter_descr gfx103_num_gl2c_misses = {GL2C, 0x2b};
+static struct ac_spm_counter_descr gfx103_gl2c_perf_sel_miss = {GL2C, 0x2b};
 
 static struct ac_spm_counter_create_info gfx103_spm_counters[] = {
-   {&gfx10_num_l2_hits},
-   {&gfx10_num_l2_misses},
-   {&gfx10_num_scache_hits},
-   {&gfx10_num_scache_misses},
-   {&gfx10_num_scache_misses_dup},
-   {&gfx10_num_icache_hits},
-   {&gfx10_num_icache_misses},
-   {&gfx10_num_icache_misses_dup},
-   {&gfx10_num_gl1c_hits},
-   {&gfx10_num_gl1c_misses},
-   {&gfx10_num_gl2c_hits},
-   {&gfx103_num_gl2c_misses},
+   {&gfx10_tcp_perf_sel_req},
+   {&gfx10_tcp_perf_sel_req_miss},
+   {&gfx10_sqc_perf_sel_dcache_hits},
+   {&gfx10_sqc_perf_sel_dcache_misses},
+   {&gfx10_sqc_perf_sel_dcache_misses_duplicate},
+   {&gfx10_sqc_perf_sel_icache_hits},
+   {&gfx10_sqc_perf_sel_icache_misses},
+   {&gfx10_sqc_perf_sel_icache_misses_duplicate},
+   {&gfx10_gl1c_perf_sel_req},
+   {&gfx10_gl1c_perf_sel_req_miss},
+   {&gfx10_gl2c_perf_sel_req},
+   {&gfx103_gl2c_perf_sel_miss},
 };
 
 /* GFX11+ */
-static struct ac_spm_counter_descr gfx11_num_l2_misses = {TCP, 0x11};
-static struct ac_spm_counter_descr gfx11_num_scache_hits = {SQ_WGP, 0x126};
-static struct ac_spm_counter_descr gfx11_num_scache_misses = {SQ_WGP, 0x127};
-static struct ac_spm_counter_descr gfx11_num_scache_misses_dup = {SQ_WGP, 0x128};
-static struct ac_spm_counter_descr gfx11_num_icache_hits = {SQ_WGP, 0x10e};
-static struct ac_spm_counter_descr gfx11_num_icache_misses = {SQ_WGP, 0x10f};
-static struct ac_spm_counter_descr gfx11_num_icache_misses_dup = {SQ_WGP, 0x110};
+static struct ac_spm_counter_descr gfx11_tcp_perf_sel_req_miss = {TCP, 0x11};
+static struct ac_spm_counter_descr gfx11_sqc_perf_sel_dcache_hits = {SQ_WGP, 0x126};
+static struct ac_spm_counter_descr gfx11_sqc_perf_sel_dcache_misses = {SQ_WGP, 0x127};
+static struct ac_spm_counter_descr gfx11_sqc_perf_sel_dcache_misses_duplicate = {SQ_WGP, 0x128};
+static struct ac_spm_counter_descr gfx11_sqc_perf_sel_icache_hits = {SQ_WGP, 0x10e};
+static struct ac_spm_counter_descr gfx11_sqc_perf_sel_icache_misses = {SQ_WGP, 0x10f};
+static struct ac_spm_counter_descr gfx11_sqc_perf_sel_icache_misses_duplicate = {SQ_WGP, 0x110};
 
 static struct ac_spm_counter_create_info gfx11_spm_counters[] = {
-   {&gfx10_num_l2_hits},
-   {&gfx11_num_l2_misses},
-   {&gfx11_num_scache_hits},
-   {&gfx11_num_scache_misses},
-   {&gfx11_num_scache_misses_dup},
-   {&gfx11_num_icache_hits},
-   {&gfx11_num_icache_misses},
-   {&gfx11_num_icache_misses_dup},
-   {&gfx10_num_gl1c_hits},
-   {&gfx10_num_gl1c_misses},
-   {&gfx10_num_gl2c_hits},
-   {&gfx103_num_gl2c_misses},
+   {&gfx10_tcp_perf_sel_req},
+   {&gfx11_tcp_perf_sel_req_miss},
+   {&gfx11_sqc_perf_sel_dcache_hits},
+   {&gfx11_sqc_perf_sel_dcache_misses},
+   {&gfx11_sqc_perf_sel_dcache_misses_duplicate},
+   {&gfx11_sqc_perf_sel_icache_hits},
+   {&gfx11_sqc_perf_sel_icache_misses},
+   {&gfx11_sqc_perf_sel_icache_misses_duplicate},
+   {&gfx10_gl1c_perf_sel_req},
+   {&gfx10_gl1c_perf_sel_req_miss},
+   {&gfx10_gl2c_perf_sel_req},
+   {&gfx103_gl2c_perf_sel_miss},
 };
 
 /* GFX12+ */
-static struct ac_spm_counter_descr gfx12_num_scache_hits = {SQ_WGP, 0x146};
-static struct ac_spm_counter_descr gfx12_num_scache_misses = {SQ_WGP, 0x147};
-static struct ac_spm_counter_descr gfx12_num_scache_misses_dup = {SQ_WGP, 0x148};
-static struct ac_spm_counter_descr gfx12_num_icache_hits = {SQ_WGP, 0x12e};
-static struct ac_spm_counter_descr gfx12_num_icache_misses = {SQ_WGP, 0x12f};
-static struct ac_spm_counter_descr gfx12_num_icache_misses_dup = {SQ_WGP, 0x130};
-static struct ac_spm_counter_descr gfx12_num_gl2c_misses = {GL2C, 0x2a};
+static struct ac_spm_counter_descr gfx12_sqc_perf_sel_dcache_hits = {SQ_WGP, 0x146};
+static struct ac_spm_counter_descr gfx12_sqc_perf_sel_dcache_misses = {SQ_WGP, 0x147};
+static struct ac_spm_counter_descr gfx12_sqc_perf_sel_dcache_misses_duplicate = {SQ_WGP, 0x148};
+static struct ac_spm_counter_descr gfx12_sqc_perf_sel_icache_hits = {SQ_WGP, 0x12e};
+static struct ac_spm_counter_descr gfx12_sqc_perf_sel_icache_misses = {SQ_WGP, 0x12f};
+static struct ac_spm_counter_descr gfx12_sqc_perf_sel_icache_misses_duplicate = {SQ_WGP, 0x130};
+static struct ac_spm_counter_descr gfx12_gl2c_perf_sel_miss = {GL2C, 0x2a};
 
 static struct ac_spm_counter_create_info gfx12_spm_counters[] = {
-   {&gfx10_num_l2_hits},
-   {&gfx11_num_l2_misses},
-   {&gfx12_num_scache_hits},
-   {&gfx12_num_scache_misses},
-   {&gfx12_num_scache_misses_dup},
-   {&gfx12_num_icache_hits},
-   {&gfx12_num_icache_misses},
-   {&gfx12_num_icache_misses_dup},
-   {&gfx10_num_gl2c_hits},
-   {&gfx12_num_gl2c_misses},
+   {&gfx10_tcp_perf_sel_req},
+   {&gfx11_tcp_perf_sel_req_miss},
+   {&gfx12_sqc_perf_sel_dcache_hits},
+   {&gfx12_sqc_perf_sel_dcache_misses},
+   {&gfx12_sqc_perf_sel_dcache_misses_duplicate},
+   {&gfx12_sqc_perf_sel_icache_hits},
+   {&gfx12_sqc_perf_sel_icache_misses},
+   {&gfx12_sqc_perf_sel_icache_misses_duplicate},
+   {&gfx10_gl2c_perf_sel_req},
+   {&gfx12_gl2c_perf_sel_miss},
 };
 
 static struct ac_spm_block_select *
