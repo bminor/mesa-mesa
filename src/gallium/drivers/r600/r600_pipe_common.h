@@ -77,6 +77,8 @@ struct u_log_context;
 #define DBG_INFO		(1ull << 40)
 #define DBG_NO_WC		(1ull << 41)
 #define DBG_CHECK_VM		(1ull << 42)
+/* shader-db */
+#define DBG_SHADER_DB		(1ull << 43)
 /* gap */
 #define DBG_TEST_VMFAULT_CP	(1ull << 51)
 #define DBG_TEST_VMFAULT_SDMA	(1ull << 52)
