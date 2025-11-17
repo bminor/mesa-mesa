@@ -322,6 +322,7 @@ struct tu_device
    struct vk_meta_device meta;
 
    struct nir_shader *float32_shader;
+   mtx_t softfloat_mutex;
 
    radix_sort_vk_t *radix_sort;
    mtx_t radix_sort_mutex;

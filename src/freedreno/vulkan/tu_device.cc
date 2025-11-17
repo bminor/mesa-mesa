@@ -2739,6 +2739,7 @@ tu_CreateDevice(VkPhysicalDevice physicalDevice,
    mtx_init(&device->vis_stream_suballocator_mtx, mtx_plain);
    mtx_init(&device->mutex, mtx_plain);
    mtx_init(&device->copy_timestamp_cs_pool_mutex, mtx_plain);
+   mtx_init(&device->softfloat_mutex, mtx_plain);
 #ifdef HAVE_PERFETTO
    mtx_init(&device->perfetto.pending_clocks_sync_mtx, mtx_plain);
 #endif
@@ -2825,8 +2826,6 @@ tu_CreateDevice(VkPhysicalDevice physicalDevice,
                                  "failed to initialize ir3 compiler");
       goto fail_compiler;
    }
-
-   tu_init_softfloat32(device);
 
    /* Initialize sparse array for refcounting imported BOs */
    util_sparse_array_init(&device->bo_map, sizeof(struct tu_bo), 512);
@@ -3091,7 +3090,6 @@ fail_global_bo:
 fail_free_zombie_vma:
    util_sparse_array_finish(&device->bo_map);
    u_vector_finish(&device->zombie_vmas);
-   tu_destroy_softfloat32(device);
    ir3_compiler_destroy(device->compiler);
 fail_compiler:
    vk_meta_device_finish(&device->vk, &device->meta);

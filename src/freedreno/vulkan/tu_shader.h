@@ -134,9 +134,6 @@ struct tu_shader_key {
 extern const struct vk_pipeline_cache_object_ops tu_shader_ops;
 
 void
-tu_init_softfloat32(struct tu_device *device);
-
-void
 tu_destroy_softfloat32(struct tu_device *device);
 
 bool

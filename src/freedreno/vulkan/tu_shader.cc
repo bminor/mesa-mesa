@@ -58,9 +58,103 @@ static const struct spirv_to_nir_options tu_spirv_options = {
    .min_ssbo_alignment = 4,
 };
 
+static nir_shader *
+tu_spirv_to_nir_library(struct tu_device *dev,
+                        const uint32_t *words,
+                        size_t word_count)
+{
+   const nir_shader_compiler_options *nir_options =
+      ir3_get_compiler_options(dev->compiler);
+   spirv_to_nir_options spirv_options = tu_spirv_options;
+   spirv_options.create_library = true;
+
+   nir_shader *nir =
+      spirv_to_nir(words, word_count, NULL, 0, MESA_SHADER_COMPUTE,
+                   "main", &spirv_options, nir_options);
+
+   NIR_PASS(_, nir, nir_lower_system_values);
+
+   /* We have to lower away local constant initializers right before we
+    * inline functions.  That way they get properly initialized at the top
+    * of the function and not at the top of its caller.
+    */
+   NIR_PASS(_, nir, nir_lower_variable_initializers, nir_var_function_temp);
+   NIR_PASS(_, nir, nir_lower_returns);
+   NIR_PASS(_, nir, nir_inline_functions);
+   nir_remove_non_exported(nir);
+   NIR_PASS(_, nir, nir_opt_copy_prop);
+   NIR_PASS(_, nir, nir_opt_deref);
+
+   /* We can't deal with constant data, get rid of it */
+   nir_lower_constant_to_temp(nir);
+
+   /* We can go ahead and lower the rest of the constant initializers.  We do
+    * this here so that nir_remove_dead_variables and split_per_member_structs
+    * below see the corresponding stores.
+    */
+   NIR_PASS(_, nir, nir_lower_variable_initializers, (nir_variable_mode)~0);
+
+   NIR_PASS(_, nir, nir_opt_find_array_copies);
+   NIR_PASS(_, nir, nir_opt_copy_prop_vars);
+   NIR_PASS(_, nir, nir_opt_dce);
+
+   NIR_PASS(_, nir, nir_split_var_copies);
+   NIR_PASS(_, nir, nir_lower_var_copies);
+
+   NIR_PASS(_, nir, nir_lower_mediump_vars, nir_var_function_temp);
+   NIR_PASS(_, nir, nir_opt_copy_prop_vars);
+   NIR_PASS(_, nir, nir_opt_combine_stores, nir_var_all);
+
+   /* Do some optimizations to clean up the shader now.  By optimizing the
+    * functions in the library, we avoid having to re-do that work every
+    * time we inline a copy of a function.  Reducing basic blocks also helps
+    * with compile times.
+    */
+   NIR_PASS(_, nir, nir_lower_vars_to_ssa);
+   NIR_PASS(_, nir, nir_remove_dead_variables, nir_var_function_temp, NULL);
+   NIR_PASS(_, nir, nir_opt_copy_prop);
+   NIR_PASS(_, nir, nir_opt_dce);
+   NIR_PASS(_, nir, nir_opt_cse);
+   NIR_PASS(_, nir, nir_opt_gcm, true);
+
+   nir_opt_peephole_select_options peephole_select_options = {};
+   peephole_select_options.limit = 1;
+   NIR_PASS(_, nir, nir_opt_peephole_select, &peephole_select_options);
+   NIR_PASS(_, nir, nir_opt_dce);
+
+   return nir;
+}
+
+static const uint32_t float32_spv[] = {
+#include "float32_spv.h"
+};
+
+void
+tu_init_softfloat32(struct tu_device *dev)
+{
+   if (dev->float32_shader)
+      return;
+
+   mtx_lock(&dev->softfloat_mutex);
+   if (!dev->float32_shader) {
+      dev->float32_shader = tu_spirv_to_nir_library(dev, float32_spv,
+                                                    ARRAY_SIZE(float32_spv));
+   }
+   mtx_unlock(&dev->softfloat_mutex);
+}
+
+void
+tu_destroy_softfloat32(struct tu_device *dev)
+{
+   if (dev->float32_shader)
+      ralloc_free(dev->float32_shader);
+}
+
 static void
 tu_nir_lower_softfloat32(struct tu_device *dev, nir_shader *nir)
 {
+   tu_init_softfloat32(dev);
+
    NIR_PASS(_, nir, nir_lower_floats, dev->float32_shader);
 
    /* Cleanup the result before linking to minimize shader size. */
@@ -159,90 +253,6 @@ tu_spirv_to_nir(struct tu_device *dev,
    }
 
    return nir;
-}
-
-static nir_shader *
-tu_spirv_to_nir_library(struct tu_device *dev,
-                        const uint32_t *words,
-                        size_t word_count)
-{
-   const nir_shader_compiler_options *nir_options =
-      ir3_get_compiler_options(dev->compiler);
-   spirv_to_nir_options spirv_options = tu_spirv_options;
-   spirv_options.create_library = true;
-
-   nir_shader *nir =
-      spirv_to_nir(words, word_count, NULL, 0, MESA_SHADER_COMPUTE,
-                   "main", &spirv_options, nir_options);
-
-   NIR_PASS(_, nir, nir_lower_system_values);
-
-   /* We have to lower away local constant initializers right before we
-    * inline functions.  That way they get properly initialized at the top
-    * of the function and not at the top of its caller.
-    */
-   NIR_PASS(_, nir, nir_lower_variable_initializers, nir_var_function_temp);
-   NIR_PASS(_, nir, nir_lower_returns);
-   NIR_PASS(_, nir, nir_inline_functions);
-   nir_remove_non_exported(nir);
-   NIR_PASS(_, nir, nir_opt_copy_prop);
-   NIR_PASS(_, nir, nir_opt_deref);
-
-   /* We can't deal with constant data, get rid of it */
-   nir_lower_constant_to_temp(nir);
-
-   /* We can go ahead and lower the rest of the constant initializers.  We do
-    * this here so that nir_remove_dead_variables and split_per_member_structs
-    * below see the corresponding stores.
-    */
-   NIR_PASS(_, nir, nir_lower_variable_initializers, (nir_variable_mode)~0);
-
-   NIR_PASS(_, nir, nir_opt_find_array_copies);
-   NIR_PASS(_, nir, nir_opt_copy_prop_vars);
-   NIR_PASS(_, nir, nir_opt_dce);
-
-   NIR_PASS(_, nir, nir_split_var_copies);
-   NIR_PASS(_, nir, nir_lower_var_copies);
-
-   NIR_PASS(_, nir, nir_lower_mediump_vars, nir_var_function_temp);
-   NIR_PASS(_, nir, nir_opt_copy_prop_vars);
-   NIR_PASS(_, nir, nir_opt_combine_stores, nir_var_all);
-
-   /* Do some optimizations to clean up the shader now.  By optimizing the
-    * functions in the library, we avoid having to re-do that work every
-    * time we inline a copy of a function.  Reducing basic blocks also helps
-    * with compile times.
-    */
-   NIR_PASS(_, nir, nir_lower_vars_to_ssa);
-   NIR_PASS(_, nir, nir_remove_dead_variables, nir_var_function_temp, NULL);
-   NIR_PASS(_, nir, nir_opt_copy_prop);
-   NIR_PASS(_, nir, nir_opt_dce);
-   NIR_PASS(_, nir, nir_opt_cse);
-   NIR_PASS(_, nir, nir_opt_gcm, true);
-
-   nir_opt_peephole_select_options peephole_select_options = {};
-   peephole_select_options.limit = 1;
-   NIR_PASS(_, nir, nir_opt_peephole_select, &peephole_select_options);
-   NIR_PASS(_, nir, nir_opt_dce);
-
-   return nir;
-}
-
-static const uint32_t float32_spv[] = {
-#include "float32_spv.h"
-};
-
-void
-tu_init_softfloat32(struct tu_device *dev)
-{
-   dev->float32_shader = tu_spirv_to_nir_library(dev, float32_spv,
-                                                 ARRAY_SIZE(float32_spv));
-}
-
-void
-tu_destroy_softfloat32(struct tu_device *dev)
-{
-   ralloc_free(dev->float32_shader);
 }
 
 static void
