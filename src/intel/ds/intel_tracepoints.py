@@ -128,6 +128,7 @@ def define_tracepoints(args):
 
     # STATE_BASE_ADDRESS emission, only for Anv
     begin_end_tp('sba',
+                 tp_args=[Arg(type='uint8_t', var='mode', c_format='%hhu'),],
                  end_pipelined=False)
 
     # Dynamic rendering tracepoints, only for Anv

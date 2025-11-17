@@ -381,7 +381,8 @@ genX(cmd_buffer_emit_state_base_address)(struct anv_cmd_buffer *cmd_buffer)
 
    cmd_buffer->batch.trace = tmp_trace;
 
-   trace_intel_end_sba(cmd_buffer->batch.trace);
+   trace_intel_end_sba(cmd_buffer->batch.trace,
+                       cmd_buffer->state.pending_db_mode);
 #endif
 
 #if GFX_VERx10 >= 125
