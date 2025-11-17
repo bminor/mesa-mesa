@@ -164,12 +164,22 @@ CMFD3DManager::xReopenDeviceManager( bool bNewDevice )
       ComPtr<IDXGIDevice> spDXGIDevice;
       ComPtr<IDXGIAdapter> spDXGIAdapter;
       ComPtr<IUnknown> spAdapter;
+      ComPtr<ID3D11DeviceContext> spImmediaContext;
+      ComPtr<ID3D11Multithread> spMultithread;
       CHECKHR_GOTO( m_spDeviceManager->GetVideoService( m_hDevice, IID_ID3D11Device, &m_spDevice11 ), done );
       CHECKHR_GOTO( m_spDevice11.As( &spDXGIDevice ), done );
       CHECKHR_GOTO( spDXGIDevice->GetAdapter( &spDXGIAdapter ), done );
       CHECKHR_GOTO( spDXGIAdapter.As( &spAdapter ), done );
       // Create a D3D12 device off of the same adapter this 11 device is on
       CHECKHR_GOTO( CreateD3D12DeviceWithMinimumSupportedFeatureLevel( spAdapter.Get(), m_spDevice ), done );
+
+      // check if the D3D11 device is multithread protected and issue warning
+      m_spDevice11->GetImmediateContext( &spImmediaContext );
+      CHECKHR_GOTO( spImmediaContext.As( &spMultithread ), done );
+      if( !spMultithread->GetMultithreadProtected() )
+      {
+         MFE_WARNING( "[dx12 hmft 0x%p] D3D11 device was created without multithread protected\n", m_logId );
+      }
    }
    // Create a staging queue for MF to signal on input texture GPU completion
    CHECKHR_GOTO( m_spDevice->CreateCommandQueue( &commandQueueDesc, IID_PPV_ARGS( &m_spStagingQueue ) ), done );
