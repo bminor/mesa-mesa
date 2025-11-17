@@ -440,7 +440,7 @@ remap_patch_urb_offsets_instr(nir_builder *b, nir_intrinsic_instr *intrin, void 
         io_sem.location == VARYING_SLOT_TESS_LEVEL_OUTER))
       return false;
 
-   gl_varying_slot varying = nir_intrinsic_base(intrin);
+   gl_varying_slot varying = io_sem.location;
 
    int vue_slot = vue_map->varying_to_slot[varying];
    assert(vue_slot != -1);
@@ -739,7 +739,8 @@ brw_nir_lower_vue_inputs(nir_shader *nir,
                 * VARYING_SLOT_LAYER [.y], VARYING_SLOT_VIEWPORT [.z], and
                 * VARYING_SLOT_PSIZ [.w].
                 */
-               int varying = nir_intrinsic_base(intrin);
+               nir_io_semantics io_sem = nir_intrinsic_io_semantics(intrin);
+               gl_varying_slot varying = io_sem.location;
                int vue_slot;
                switch (varying) {
                case VARYING_SLOT_PSIZ:
