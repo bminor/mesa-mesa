@@ -133,9 +133,6 @@ anv-adl-vkd3d:
     - .anv-test
     - .test-vkd3d-proton
     - .lava-acer-n20q11-r856ltn-p1s2-nissa:x86_64
-  variables:
-    # Random tests fail/crash when trying to run them in parallel
-    FDO_CI_CONCURRENT: 1
 
 anv-tgl-angle-full:
   extends:
