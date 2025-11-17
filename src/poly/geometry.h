@@ -301,6 +301,51 @@ struct poly_geometry_params {
 } PACKED;
 static_assert(sizeof(struct poly_geometry_params) == 85 * 4);
 
+static inline void
+poly_geometry_params_init(struct poly_geometry_params *p,
+                          enum mesa_prim prim,
+                          const uint32_t vs_wg_size[3],
+                          const uint32_t gs_wg_size[3])
+{
+   *p = (struct poly_geometry_params) {
+      .input_topology = prim,
+      .vs_grid = {
+         0, 0, 1, /* x/y are set by poly_geometry_params_set_draw() */
+         vs_wg_size[0], vs_wg_size[1], vs_wg_size[2],
+      },
+      .gs_grid = {
+         0, 0, 1, /* x/y are set by poly_geometry_params_set_draw() */
+         gs_wg_size[0], gs_wg_size[1], gs_wg_size[2],
+      },
+   };
+}
+
+static inline void
+poly_geometry_params_set_draw(struct poly_geometry_params *p,
+                              enum mesa_prim prim,
+                              enum poly_gs_shape shape, uint32_t max_indices,
+                              uint32_t vertex_count, uint32_t instance_count)
+{
+   /* Calculate number of primitives input into the GS */
+   const uint32_t prim_per_instance =
+      u_decomposed_prims_for_vertices(prim, vertex_count);
+
+   /* Invoke VS as (vertices, instances); GS as (primitives, instances) */
+   p->vs_grid[0] = vertex_count;
+   p->vs_grid[1] = instance_count;
+
+   p->gs_grid[0] = prim_per_instance;
+   p->gs_grid[1] = instance_count;
+
+   p->input_primitives = prim_per_instance * instance_count;
+   p->primitives_log2 = util_logbase2_ceil(prim_per_instance);
+
+   p->draw.index_count = poly_gs_rast_vertices(
+      shape, max_indices, prim_per_instance, instance_count);
+   p->draw.instance_count = poly_gs_rast_instances(
+      shape, max_indices, prim_per_instance, instance_count);
+}
+
 /* TCS shared memory layout:
  *
  *    vec4 vs_outputs[VERTICES_IN_INPUT_PATCH][TOTAL_VERTEX_OUTPUTS];
@@ -561,19 +606,8 @@ poly_gs_setup_indirect(uint64_t index_buffer, constant uint *draw,
    uint instance_count = draw[1];
 
    vp->verts_per_instance = vertex_count;
-
-   /* Calculate number of primitives input into the GS */
-   uint prim_per_instance = u_decomposed_prims_for_vertices(prim, vertex_count);
-   p->input_primitives = prim_per_instance * instance_count;
-
-   /* Invoke VS as (vertices, instances); GS as (primitives, instances) */
-   p->vs_grid[0] = vertex_count;
-   p->vs_grid[1] = instance_count;
-
-   p->gs_grid[0] = prim_per_instance;
-   p->gs_grid[1] = instance_count;
-
-   p->primitives_log2 = util_logbase2_ceil(prim_per_instance);
+   poly_geometry_params_set_draw(p, prim, shape, max_indices,
+                                 vertex_count, instance_count);
 
    /* If indexing is enabled, the third word is the offset into the index buffer
     * in elements. Apply that offset now that we have it. For a hardware
@@ -602,17 +636,9 @@ poly_gs_setup_indirect(uint64_t index_buffer, constant uint *draw,
 
    vp->outputs = vs_outputs;
 
-   p->draw = (struct poly_indirect_draw) {
-      .index_count = poly_gs_rast_vertices(
-         shape, max_indices, prim_per_instance, instance_count),
-      .instance_count = poly_gs_rast_instances(
-         shape, max_indices, prim_per_instance, instance_count),
-   };
-
    if (shape == POLY_GS_SHAPE_DYNAMIC_INDEXED) {
       const uint32_t index_offset =
          poly_heap_alloc_nonatomic_offs(heap, p->draw.index_count * 4);
-
       p->draw.first_index = index_offset / 4;
       p->output_index_buffer = (global uint *)(heap->base + index_offset);
    }
