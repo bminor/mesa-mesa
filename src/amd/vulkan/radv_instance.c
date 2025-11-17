@@ -251,8 +251,7 @@ radv_init_dri_debug_options(struct radv_instance *instance)
    if (driQueryOptionb(&drirc->options, "radv_disable_dcc"))
       instance->debug_flags |= RADV_DEBUG_NO_DCC;
 
-   if (driQueryOptionb(&drirc->options, "radv_rt_wave64"))
-      instance->perftest_flags |= RADV_PERFTEST_RT_WAVE_64;
+   drirc->debug.rt_wave64 = driQueryOptionb(&drirc->options, "radv_rt_wave64");
 }
 
 static void
@@ -308,6 +307,12 @@ radv_init_dri_options(struct radv_instance *instance)
    radv_init_dri_performance_options(instance);
    radv_init_dri_features_options(instance);
    radv_init_dri_misc_options(instance);
+}
+
+bool
+radv_is_rt_wave64_enabled(const struct radv_instance *instance)
+{
+   return instance->perftest_flags & RADV_PERFTEST_RT_WAVE_64 || instance->drirc.debug.rt_wave64;
 }
 
 static const struct vk_instance_extension_table radv_instance_extensions_supported = {
