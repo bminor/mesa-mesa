@@ -620,8 +620,9 @@ bool ac_init_spm(const struct radeon_info *info,
       }
    }
 
-   /* On GFX11, the data size written by the hw is in units of segment. */
-   spm->ptr_granularity = info->gfx_level >= GFX11 ? 32 : 1;
+   /* On GFX11-11.5, the data size written by the hw is in units of segment. */
+   spm->ptr_granularity =
+      (info->gfx_level == GFX11 || info->gfx_level == GFX11_5) ? 32 : 1;
 
    return true;
 }
