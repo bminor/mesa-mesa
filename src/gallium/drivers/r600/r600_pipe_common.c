@@ -703,6 +703,10 @@ static const struct debug_named_value common_debug_options[] = {
 	{ "nowc", DBG_NO_WC, "Disable GTT write combining" },
 	{ "check_vm", DBG_CHECK_VM, "Check VM faults and dump debug info." },
 
+	/* shared-db */
+	{ "shaderdb", DBG_SHADER_DB, "Dump shader-db analysis." },
+	{ "precompile", DBG_SHADER_DB, "Synonym for shaderdb. This is needed to maintain the compatibility with the shader-db repository." },
+
 	DEBUG_NAMED_VALUE_END /* must be last */
 };
 

@@ -275,14 +275,16 @@ int r600_pipe_shader_create(struct pipe_context *ctx,
 		goto error;
 	}
 
-	util_debug_message(&rctx->b.debug, SHADER_INFO, "%s shader: %d dw, %d gprs, %d alu_groups, %d loops, %d cf, %d stack",
-		           _mesa_shader_stage_to_abbrev(processor),
-	                   shader->shader.bc.ndw,
-	                   shader->shader.bc.ngpr,
-			   shader->shader.bc.nalu_groups,
-			   shader->shader.num_loops,
-			   shader->shader.bc.ncf,
-			   shader->shader.bc.nstack);
+	if (unlikely(rctx->screen->b.debug_flags & DBG_SHADER_DB)) {
+		util_debug_message(&rctx->b.debug, SHADER_INFO, "%s shader: %d dw, %d gprs, %d alu_groups, %d loops, %d cf, %d stack",
+				   _mesa_shader_stage_to_abbrev(processor),
+				   shader->shader.bc.ndw,
+				   shader->shader.bc.ngpr,
+				   shader->shader.bc.nalu_groups,
+				   shader->shader.num_loops,
+				   shader->shader.bc.ncf,
+				   shader->shader.bc.nstack);
+	}
 
 	if (!sel->nir_blob && sel->nir && sel->ir_type != PIPE_SHADER_IR_TGSI) {
 		struct blob blob;

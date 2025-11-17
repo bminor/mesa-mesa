@@ -3044,7 +3044,7 @@
         "description": "r600: fix error filters compatibility",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "28d6a5af252f9fc56cf75bbc212a84bcb4a9f8e9",
         "notes": null
