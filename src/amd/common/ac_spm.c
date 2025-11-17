@@ -83,6 +83,28 @@ static struct ac_spm_counter_create_info gfx11_spm_counters[] = {
    {&gfx103_num_gl2c_misses},
 };
 
+/* GFX12+ */
+static struct ac_spm_counter_descr gfx12_num_scache_hits = {SQ_WGP, 0x146};
+static struct ac_spm_counter_descr gfx12_num_scache_misses = {SQ_WGP, 0x147};
+static struct ac_spm_counter_descr gfx12_num_scache_misses_dup = {SQ_WGP, 0x148};
+static struct ac_spm_counter_descr gfx12_num_icache_hits = {SQ_WGP, 0x12e};
+static struct ac_spm_counter_descr gfx12_num_icache_misses = {SQ_WGP, 0x12f};
+static struct ac_spm_counter_descr gfx12_num_icache_misses_dup = {SQ_WGP, 0x130};
+static struct ac_spm_counter_descr gfx12_num_gl2c_misses = {GL2C, 0x2a};
+
+static struct ac_spm_counter_create_info gfx12_spm_counters[] = {
+   {&gfx10_num_l2_hits},
+   {&gfx11_num_l2_misses},
+   {&gfx12_num_scache_hits},
+   {&gfx12_num_scache_misses},
+   {&gfx12_num_scache_misses_dup},
+   {&gfx12_num_icache_hits},
+   {&gfx12_num_icache_misses},
+   {&gfx12_num_icache_misses_dup},
+   {&gfx10_num_gl2c_hits},
+   {&gfx12_num_gl2c_misses},
+};
+
 static struct ac_spm_block_select *
 ac_spm_get_block_select(struct ac_spm *spm, const struct ac_pc_block *block)
 {
@@ -491,6 +513,10 @@ bool ac_init_spm(const struct radeon_info *info,
    case GFX11_5:
       create_info_count = ARRAY_SIZE(gfx11_spm_counters);
       create_info = gfx11_spm_counters;
+      break;
+   case GFX12:
+      create_info_count = ARRAY_SIZE(gfx12_spm_counters);
+      create_info = gfx12_spm_counters;
       break;
    default:
       fprintf(stderr, "radv: Failed to initialize SPM because SPM counters aren't implemented.\n");
