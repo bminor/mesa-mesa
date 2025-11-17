@@ -416,6 +416,9 @@ radv_get_build_config(VkDevice _device, struct vk_acceleration_structure_build_s
    if (state->build_info->srcAccelerationStructure == state->build_info->dstAccelerationStructure)
       update_key |= RADV_BUILD_FLAG_UPDATE_IN_PLACE;
 
+   if (device->meta_state.accel_struct_build.build_args.propagate_cull_flags)
+      update_key |= VK_BUILD_FLAG_PROPAGATE_CULL_FLAGS;
+
    state->config.update_key[0] = update_key;
 }
 

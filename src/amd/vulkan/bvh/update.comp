@@ -107,6 +107,8 @@ void main() {
         if (!VK_BUILD_FLAG(RADV_BUILD_FLAG_UPDATE_IN_PLACE)) {
             for (uint32_t i = 0; i < 4; ++i)
                 DEREF(dst_node).children[i] = children[i];
+            if (VK_BUILD_FLAG(VK_BUILD_FLAG_PROPAGATE_CULL_FLAGS))
+                DEREF(dst_node).flags = DEREF(src_node).flags;
         }
 
         for (uint32_t i = 0; i < valid_child_count; ++i) {
