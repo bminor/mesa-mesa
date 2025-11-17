@@ -150,21 +150,11 @@ panvk_per_arch(dispatch_precomp)(struct panvk_precomp_ctx *ctx,
                PANVK_SUBQUEUE_COMPUTE * sizeof(struct panvk_cs_sync64));
       cs_move64_to(b, add_val, 1);
 
-      cs_match(b, iter_sb, cmp_scratch) {
-#define CASE(x)                                                                \
-      cs_case(b, SB_ITER(x)) {                                                 \
-         panvk_instr_sync64_add(cmdbuf, PANVK_SUBQUEUE_COMPUTE, true,          \
-                                MALI_CS_SYNC_SCOPE_CSG, add_val, sync_addr,    \
-                                cs_defer(SB_WAIT_ITER(x),                      \
-                                         SB_ID(DEFERRED_SYNC)));               \
-      }
-
-         CASE(0)
-         CASE(1)
-         CASE(2)
-         CASE(3)
-         CASE(4)
-#undef CASE
+      cs_match_iter_sb(b, x, iter_sb, cmp_scratch) {
+         panvk_instr_sync64_add(cmdbuf, PANVK_SUBQUEUE_COMPUTE, true,
+                                MALI_CS_SYNC_SCOPE_CSG, add_val, sync_addr,
+                                cs_defer(SB_WAIT_ITER(x),
+                                         SB_ID(DEFERRED_SYNC)));
       }
 #endif
 

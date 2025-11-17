@@ -470,6 +470,15 @@ extern const struct vk_command_buffer_ops panvk_per_arch(cmd_buffer_ops);
 
 void panvk_per_arch(cmd_flush_draws)(struct panvk_cmd_buffer *cmdbuf);
 
+#if PAN_ARCH == 10
+/* Match against all possible iter_sb values. The constant iter_sb value for
+ * the current match arm is in '__val'. */
+#define cs_match_iter_sb(__b, __val, __iter_sb, __scratch)                     \
+   cs_match(__b, __iter_sb, __scratch)                                         \
+      for (unsigned __val = 0; __val < PANVK_SB_ITER_COUNT; __val++)           \
+         cs_case(__b, SB_ITER(__val))
+#endif
+
 void panvk_per_arch(cs_next_iter_sb)(struct panvk_cmd_buffer *cmdbuf,
                                      enum panvk_subqueue_id subqueue,
                                      struct cs_index scratch_regs);

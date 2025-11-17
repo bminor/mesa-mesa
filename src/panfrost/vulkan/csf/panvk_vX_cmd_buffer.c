@@ -808,19 +808,9 @@ panvk_per_arch(cs_next_iter_sb)(struct panvk_cmd_buffer *cmdbuf,
       cs_move32_to(b, iter_sb, SB_ITER(0));
    }
 
-   cs_match(b, iter_sb, cmp_scratch) {
-#define CASE(x)                                                                \
-   cs_case(b, SB_ITER(x)) {                                                    \
-      cs_wait_slot(b, SB_ITER(x));                                             \
-      cs_select_sb_entries_for_async_ops(b, SB_ITER(x));                       \
-   }
-
-      CASE(0)
-      CASE(1)
-      CASE(2)
-      CASE(3)
-      CASE(4)
-#undef CASE
+   cs_match_iter_sb(b, x, iter_sb, cmp_scratch) {
+      cs_wait_slot(b, SB_ITER(x));
+      cs_select_sb_entries_for_async_ops(b, SB_ITER(x));
    }
 
    cs_store32(b, iter_sb, cs_subqueue_ctx_reg(b),
