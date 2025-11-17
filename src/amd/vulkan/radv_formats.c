@@ -655,7 +655,7 @@ radv_get_modifier_flags(struct radv_physical_device *pdev, VkFormat format, uint
           (instance->drirc.debug.disable_dcc_stores && pdev->info.gfx_level < GFX12))
          features &= ~VK_FORMAT_FEATURE_2_STORAGE_IMAGE_BIT;
 
-      if (instance->debug_flags & (RADV_DEBUG_NO_DCC | RADV_DEBUG_NO_DISPLAY_DCC))
+      if (radv_is_dcc_disabled(instance) || instance->debug_flags & RADV_DEBUG_NO_DISPLAY_DCC)
          return 0;
    }
 
@@ -1300,9 +1300,8 @@ radv_GetPhysicalDeviceImageFormatProperties2(VkPhysicalDevice physicalDevice,
             pdev->use_hiz ? VK_IMAGE_COMPRESSION_DEFAULT_EXT : VK_IMAGE_COMPRESSION_DISABLED_EXT;
       } else {
          image_compression_props->imageCompressionFlags =
-            ((instance->debug_flags & RADV_DEBUG_NO_DCC) || pdev->info.gfx_level < GFX8)
-               ? VK_IMAGE_COMPRESSION_DISABLED_EXT
-               : VK_IMAGE_COMPRESSION_DEFAULT_EXT;
+            (radv_is_dcc_disabled(instance) || pdev->info.gfx_level < GFX8) ? VK_IMAGE_COMPRESSION_DISABLED_EXT
+                                                                            : VK_IMAGE_COMPRESSION_DEFAULT_EXT;
       }
    }
 
@@ -1313,7 +1312,7 @@ radv_GetPhysicalDeviceImageFormatProperties2(VkPhysicalDevice physicalDevice,
          might_enable_compression |= pdev->use_hiz && (base_info->usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
       } else {
          might_enable_compression |=
-            !(instance->debug_flags & RADV_DEBUG_NO_DCC) && (base_info->usage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+            !radv_is_dcc_disabled(instance) && (base_info->usage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
       }
 
       /**

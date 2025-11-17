@@ -214,6 +214,7 @@ radv_init_dri_debug_options(struct radv_instance *instance)
    struct radv_drirc *drirc = &instance->drirc;
 
    drirc->debug.disable_aniso_single_level = driQueryOptionb(&drirc->options, "radv_disable_aniso_single_level");
+   drirc->debug.disable_dcc = driQueryOptionb(&drirc->options, "radv_disable_dcc");
    drirc->debug.disable_dcc_mips = driQueryOptionb(&drirc->options, "radv_disable_dcc_mips");
    drirc->debug.disable_dcc_stores = driQueryOptionb(&drirc->options, "radv_disable_dcc_stores");
    drirc->debug.disable_depth_storage = driQueryOptionb(&drirc->options, "radv_disable_depth_storage");
@@ -247,9 +248,6 @@ radv_init_dri_debug_options(struct radv_instance *instance)
 
    drirc->debug.override_uniform_offset_alignment =
       driQueryOptioni(&drirc->options, "radv_override_uniform_offset_alignment");
-
-   if (driQueryOptionb(&drirc->options, "radv_disable_dcc"))
-      instance->debug_flags |= RADV_DEBUG_NO_DCC;
 
    drirc->debug.rt_wave64 = driQueryOptionb(&drirc->options, "radv_rt_wave64");
 }
@@ -313,6 +311,12 @@ bool
 radv_is_rt_wave64_enabled(const struct radv_instance *instance)
 {
    return instance->perftest_flags & RADV_PERFTEST_RT_WAVE_64 || instance->drirc.debug.rt_wave64;
+}
+
+bool
+radv_is_dcc_disabled(const struct radv_instance *instance)
+{
+   return instance->debug_flags & RADV_DEBUG_NO_DCC || instance->drirc.debug.disable_dcc;
 }
 
 static const struct vk_instance_extension_table radv_instance_extensions_supported = {

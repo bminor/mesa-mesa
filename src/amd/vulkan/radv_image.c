@@ -254,8 +254,7 @@ radv_use_dcc_for_image_early(struct radv_device *device, struct radv_image *imag
    const VkImageCompressionControlEXT *compression =
       vk_find_struct_const(pCreateInfo->pNext, IMAGE_COMPRESSION_CONTROL_EXT);
 
-   if (instance->debug_flags & RADV_DEBUG_NO_DCC ||
-       (compression && compression->flags == VK_IMAGE_COMPRESSION_DISABLED_EXT)) {
+   if (radv_is_dcc_disabled(instance) || (compression && compression->flags == VK_IMAGE_COMPRESSION_DISABLED_EXT)) {
       return false;
    }
 
