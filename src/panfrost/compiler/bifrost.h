@@ -619,10 +619,13 @@ enum bi_constmod {
 
 struct bi_constants {
    /* Raw constant values */
-   uint64_t raw[6];
+   /* There are at most 6 constants per clause, but internally
+    * we can use an extra slot for modifiers, so give room for 7
+    */
+   uint64_t raw[7];
 
    /* Associated modifier derived from M values */
-   enum bi_constmod mods[6];
+   enum bi_constmod mods[7];
 };
 
 /* FAU selectors for constants are out-of-order, construct the top bits
