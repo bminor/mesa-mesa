@@ -4614,7 +4614,7 @@
         "description": "radeonsi/sqtt: clear out sqtt bo on resize",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "5794a86f1918919435a85be07c58010fb8578a6d",
         "notes": null
