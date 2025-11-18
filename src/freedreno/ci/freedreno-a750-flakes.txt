@@ -10,3 +10,52 @@ dEQP-VK.pipeline.pipeline_library.stencil.nocolor.format.d24_unorm_s8_uint.state
 dEQP-VK.synchronization2.cross_instance.dedicated.write_image_tess_control_read_blit_image.image_128x128_r16_uint_binary_semaphore_fd
 dEQP-VK.texture.shadow.cube_array.nearest_mipmap_nearest.not_equal_d32_sfloat
 dynamic-dEQP-VK.renderpass2.suballocation.attachment_sparse_filling.input_attachment_1
+
+KHR-GL46.es_31_compatibility.shader_storage_buffer_object.advanced-usage-sync-cs
+KHR-GL46.shader_bitfield_operation.bitCount.uvec3_0
+KHR-GL46.shader_draw_parameters_tests.MultiDrawArraysIndirectCountParameters
+KHR-GL46.shader_draw_parameters_tests.MultiDrawElementIndirectCountParameters
+KHR-GL46.shader_draw_parameters_tests.ShaderMultiDrawElementsIndirectParameters
+KHR-GL46.shader_group_vote.all_invocations
+KHR-GL46.shader_group_vote.all_invocations_equal
+KHR-GL46.shader_group_vote.invocations_with_variables
+KHR-GL46.shader_image_load_store.basic-allTargets-loadStoreTES
+KHR-GL46.shader_image_load_store.multiple-uniforms
+KHR-GL46.shader_image_size.advanced-nonMS-tes-float
+KHR-GL46.shader_image_size.advanced-nonMS-tes-int
+KHR-GL46.shader_image_size.advanced-nonMS-tes-uint
+KHR-GL46.shader_image_size.basic-nonMS-tes-float
+KHR-GL46.shader_image_size.basic-nonMS-tes-uint
+KHR-GL46.shader_storage_buffer_object.advanced-usage-sync-cs
+KHR-GL46.tessellation_shader.tessellation_control_to_tessellation_evaluation.gl_PatchVerticesIn
+KHR-GL46.texture_cube_map_array.color_depth_attachments
+KHR-GL46.transform_feedback.draw_xfb_feedbackk_test
+KHR-GLES31.core.shader_bitfield_operation.bitfieldInsert.ivec3_0
+KHR-GLES31.core.shader_storage_buffer_object.advanced-usage-sync-cs
+KHR-GLES31.core.texture_cube_map_array.color_depth_attachments
+custom@buffer flags
+custom@buffer flags@in-0x0-out-0x30
+custom@buffer flags@in-0x0-out-0x20
+custom@buffer flags@in-0x0-out-0x8
+custom@buffer flags@in-0x10-out-0x0
+custom@buffer flags@in-0x10-out-0x10
+custom@buffer flags@in-0x10-out-0x20
+custom@buffer flags@in-0x10-out-0x30
+custom@buffer flags@in-0x10-out-0x8
+custom@buffer flags@in-0x20-out-0x0
+custom@buffer flags@in-0x20-out-0x10
+custom@buffer flags@in-0x20-out-0x20
+custom@buffer flags@in-0x20-out-0x8
+custom@buffer flags@in-0x30-out-0x0
+custom@buffer flags@in-0x30-out-0x10
+custom@buffer flags@in-0x8-out-0x0
+custom@buffer flags@in-0x30-out-0x20
+custom@buffer flags@in-0x30-out-0x8
+custom@buffer flags@in-0x8-out-0x10
+custom@buffer flags@in-0x8-out-0x20
+custom@buffer flags@in-0x8-out-0x30
+custom@buffer flags@in-0x8-out-0x8
+dEQP-GLES31.functional.image_load_store.2d_array.store.rgba8_single_layer
+dEQP-GLES31.functional.ssbo.layout.single_basic_type.packed.mediump_ivec2
+dEQP-GLES31.functional.ssbo.layout.single_basic_type.std140.row_major_mediump_mat4x2
+dEQP-GLES31.functional.ssbo.layout.single_basic_type.std430.highp_uvec2

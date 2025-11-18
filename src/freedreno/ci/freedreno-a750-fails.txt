@@ -1,8 +1,4 @@
-KHR-GL46.shader_draw_parameters_tests.MultiDrawElementIndirectCountParameters,Fail
-KHR-GL46.shader_draw_parameters_tests.ShaderMultiDrawElementsIndirectParameters,Fail
-KHR-GL46.shader_image_load_store.basic-allTargets-loadStoreTES,Fail
 KHR-GL46.shader_image_load_store.basic-allTargets-store,Fail
-KHR-GL46.shader_image_load_store.multiple-uniforms,Fail
 KHR-GL46.shader_image_size.basic-nonMS-tes-int,Fail
 KHR-GL46.tessellation_shader.tessellation_control_to_tessellation_evaluation.gl_tessLevel,Fail
 KHR-GL46.tessellation_shader.tessellation_shader_tessellation.TES,Fail
@@ -16,7 +12,6 @@ KHR-GLES3.framebuffer_blit.multisampled_to_singlesampled_blit_depth_config_test,
 KHR-GLES31.core.texture_stencil8.multisample,Fail
 KHR-GLES31.core.vertex_attrib_binding.advanced-iterations,Fail
 dEQP-GLES2.functional.texture.mipmap.cube.projected.nearest_linear,Fail
-dEQP-GLES3.functional.polygon_offset.fixed16_render_with_units,Fail
 
 gmem-dEQP-VK.clipping.user_defined.clip_cull_distance_dynamic_index.vert_geom.6_2,Fail
 gmem-dEQP-VK.clipping.user_defined.clip_cull_distance_dynamic_index.vert_geom.6_2_fragmentshader_read,Fail
@@ -102,3 +97,5 @@ program@execute@builtin@builtin-float-nextafter-1.0.generated@nextafter float8,F
 # Initial ANGLE failures
 angle-dEQP-GLES2.functional.shaders.algorithm.rgb_to_hsl_vertex,Fail
 angle-dEQP-GLES2.functional.texture.mipmap.cube.projected.nearest_linear,Fail
+
+KHR-GL46.shader_atomic_counters.basic-usage-tes,Fail
