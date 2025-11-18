@@ -10,3 +10,8 @@ angle-KHR-GLES31.core.shader_atomic_counters.advanced-usage-multi-stage,Fail
 angle-KHR-GLES31.core.shader_storage_buffer_object.advanced-matrix-vsfs,Fail
 angle-KHR-GLES31.core.shader_storage_buffer_object.advanced-usage-sync-vsfs,Fail
 angle-KHR-GLES31.core.texture_cube_map_array.sampling,Fail
+
+# deqp calls glCompressedTexImage2D with 0x8b90 which is GL_PALETTE4_RGB8_OES
+# ANGLE now exposes paletted textures to ES2+, and there's a CTS bug caught by this
+# https://gitlab.khronos.org/opengl/API/-/issues/278
+angle-dEQP-GLES2.functional.negative_api.texture.generatemipmap_zero_level_array_compressed,Fail
