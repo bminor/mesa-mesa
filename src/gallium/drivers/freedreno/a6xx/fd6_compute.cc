@@ -35,7 +35,7 @@ cs_program_emit_local_size(struct fd_context *ctx, fd_crb &crb,
     * which is always set to THREAD128.
     */
    enum a6xx_threadsize thrsz = v->info.double_threadsize ? THREAD128 : THREAD64;
-   enum a6xx_threadsize thrsz_cs = ctx->screen->info->a6xx
+   enum a6xx_threadsize thrsz_cs = ctx->screen->info->props
       .supports_double_threadsize ? thrsz : THREAD128;
 
    if (CHIP == A7XX) {
@@ -98,7 +98,7 @@ cs_program_emit(struct fd_context *ctx, fd_crb &crb, struct ir3_shader_variant *
     * which is always set to THREAD128.
     */
    enum a6xx_threadsize thrsz = v->info.double_threadsize ? THREAD128 : THREAD64;
-   enum a6xx_threadsize thrsz_cs = ctx->screen->info->a6xx
+   enum a6xx_threadsize thrsz_cs = ctx->screen->info->props
       .supports_double_threadsize ? thrsz : THREAD128;
 
    if (CHIP == A6XX) {
@@ -113,11 +113,11 @@ cs_program_emit(struct fd_context *ctx, fd_crb &crb, struct ir3_shader_variant *
          .threadsize = thrsz_cs,
       ));
 
-      if (!ctx->screen->info->a6xx.supports_double_threadsize) {
+      if (!ctx->screen->info->props.supports_double_threadsize) {
          crb.add(SP_PS_WAVE_CNTL(CHIP, .threadsize = thrsz));
       }
 
-      if (ctx->screen->info->a6xx.has_lpac) {
+      if (ctx->screen->info->props.has_lpac) {
          crb.add(A6XX_SP_CS_WIE_CNTL_0(
             .wgidconstid = work_group_id,
             .wgsizeconstid = INVALID_REG,
@@ -181,7 +181,7 @@ fd6_launch_grid(struct fd_context *ctx, const struct pipe_grid_info *info) in_dt
    fd6_barrier_flush<CHIP>(cs, ctx->batch);
 
    bool emit_instrlen_workaround =
-      cp->v->instrlen > ctx->screen->info->a6xx.instr_cache_size;
+      cp->v->instrlen > ctx->screen->info->props.instr_cache_size;
 
    /* There appears to be a HW bug where in some rare circumstances it appears
     * to accidentally use the FS instrlen instead of the CS instrlen, which
@@ -234,7 +234,7 @@ fd6_launch_grid(struct fd_context *ctx, const struct pipe_grid_info *info) in_dt
          .constantrammode = mode,
       ));
 
-      if (CHIP == A6XX && ctx->screen->info->a6xx.has_lpac) {
+      if (CHIP == A6XX && ctx->screen->info->props.has_lpac) {
          crb.add(HLSQ_CS_CTRL_REG1(CHIP,
             .shared_size = shared_size,
             .constantrammode = mode,
@@ -328,14 +328,14 @@ fd6_get_compute_state_info(struct pipe_context *pctx, void *cso, struct pipe_com
    cinfo->simd_sizes = threadsize_base;
    cinfo->preferred_simd_size = threadsize_base;
 
-   if (info->a6xx.supports_double_threadsize && v->info.double_threadsize) {
+   if (info->props.supports_double_threadsize && v->info.double_threadsize) {
 
       cinfo->max_threads *= 2;
       cinfo->simd_sizes |= (threadsize_base * 2);
       cinfo->preferred_simd_size *= 2;
    }
 
-   unsigned reg_file_size_vec4 = info->a6xx.reg_size_vec4 * threadsize_base * info->wave_granularity;
+   unsigned reg_file_size_vec4 = info->props.reg_size_vec4 * threadsize_base * info->wave_granularity;
    unsigned vec4_regs_per_thread = MAX2(v->info.max_reg + 1, 1);
 
    cinfo->max_threads = MIN2(cinfo->max_threads, reg_file_size_vec4 / vec4_regs_per_thread);

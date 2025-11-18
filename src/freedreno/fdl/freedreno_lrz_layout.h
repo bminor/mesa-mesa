@@ -138,7 +138,7 @@ fdl6_lrz_layout_init(struct fdl_lrz_layout *lrz_layout,
       layout->width0 + extra_width, layout->height0 + extra_height,
       layout->nr_samples, array_layers);
 
-   if (!dev_info->a6xx.enable_lrz_fast_clear) {
+   if (!dev_info->props.enable_lrz_fast_clear) {
       lrz_layout->lrz_fc_size = 0;
    }
 
@@ -146,8 +146,8 @@ fdl6_lrz_layout_init(struct fdl_lrz_layout *lrz_layout,
    uint32_t lrz_size = lrz_layout->lrz_buffer_size *
       (dev_info->chip >= 7 ? 2 : 1);
 
-   if (dev_info->a6xx.enable_lrz_fast_clear ||
-       dev_info->a6xx.has_lrz_dir_tracking) {
+   if (dev_info->props.enable_lrz_fast_clear ||
+       dev_info->props.has_lrz_dir_tracking) {
       lrz_layout->lrz_fc_offset =
          lrz_layout->lrz_offset + lrz_size;
       lrz_size += sizeof(fd_lrzfc_layout<CHIP>);

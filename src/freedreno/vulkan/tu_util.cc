@@ -379,7 +379,7 @@ tu_tiling_config_update_pipe_layout(struct tu_vsc_config *vsc,
     * area can prevent bin merging from happening. Maximize the size of each
     * pipe instead of minimizing it.
     */
-   if (fdm && dev->physical_device->info->a6xx.has_bin_mask &&
+   if (fdm && dev->physical_device->info->props.has_bin_mask &&
        !TU_DEBUG(NO_BIN_MERGING)) {
       vsc->pipe0.width = 4;
       vsc->pipe0.height = 8;

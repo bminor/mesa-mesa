@@ -557,30 +557,30 @@ r2d_teardown(struct tu_cmd_buffer *cmd,
 static void
 r2d_run(struct tu_cmd_buffer *cmd, struct tu_cs *cs)
 {
-   if (cmd->device->physical_device->info->a6xx.magic.RB_DBG_ECO_CNTL_blit !=
-       cmd->device->physical_device->info->a6xx.magic.RB_DBG_ECO_CNTL) {
+   if (cmd->device->physical_device->info->props.magic.RB_DBG_ECO_CNTL_blit !=
+       cmd->device->physical_device->info->props.magic.RB_DBG_ECO_CNTL) {
       /* This a non-context register, so we have to WFI before changing. */
       tu_cs_emit_wfi(cs);
       tu_cs_emit_write_reg(
          cs, REG_A6XX_RB_DBG_ECO_CNTL,
-         cmd->device->physical_device->info->a6xx.magic.RB_DBG_ECO_CNTL_blit);
+         cmd->device->physical_device->info->props.magic.RB_DBG_ECO_CNTL_blit);
    }
 
    /* TODO: try to track when there has been a draw without any intervening
     * WFI or CP_EVENT_WRITE and only WFI then.
     */
-   if (cmd->device->physical_device->info->a6xx.blit_wfi_quirk)
+   if (cmd->device->physical_device->info->props.blit_wfi_quirk)
       tu_cs_emit_wfi(cs);
 
    tu_cs_emit_pkt7(cs, CP_BLIT, 1);
    tu_cs_emit(cs, CP_BLIT_0_OP(BLIT_OP_SCALE));
 
-   if (cmd->device->physical_device->info->a6xx.magic.RB_DBG_ECO_CNTL_blit !=
-       cmd->device->physical_device->info->a6xx.magic.RB_DBG_ECO_CNTL) {
+   if (cmd->device->physical_device->info->props.magic.RB_DBG_ECO_CNTL_blit !=
+       cmd->device->physical_device->info->props.magic.RB_DBG_ECO_CNTL) {
       tu_cs_emit_wfi(cs);
       tu_cs_emit_write_reg(
          cs, REG_A6XX_RB_DBG_ECO_CNTL,
-         cmd->device->physical_device->info->a6xx.magic.RB_DBG_ECO_CNTL);
+         cmd->device->physical_device->info->props.magic.RB_DBG_ECO_CNTL);
    }
 }
 
@@ -1581,7 +1581,7 @@ r3d_setup(struct tu_cmd_buffer *cmd,
    if (!cmd->state.pass) {
       tu_emit_cache_flush_ccu<CHIP>(cmd, cs, TU_CMD_CCU_SYSMEM);
       tu6_emit_window_scissor(cs, 0, 0, 0x3fff, 0x3fff);
-      if (cmd->device->physical_device->info->a7xx.has_hw_bin_scaling) {
+      if (cmd->device->physical_device->info->props.has_hw_bin_scaling) {
          tu_cs_emit_regs(cs, A7XX_GRAS_BIN_FOVEAT());
          tu_cs_emit_regs(cs, A7XX_RB_BIN_FOVEAT());
       }
@@ -3891,7 +3891,7 @@ use_generic_clear_for_image_clear(struct tu_cmd_buffer *cmd,
                                   struct tu_image *image)
 {
    const struct fd_dev_info *info = cmd->device->physical_device->info;
-   return info->a7xx.has_generic_clear &&
+   return info->props.has_generic_clear &&
           /* A7XX supports R9G9B9E5_FLOAT as color attachment and supports
            * generic clears for it. A7XX TODO: allow R9G9B9E5_FLOAT
            * attachments.
@@ -3901,7 +3901,7 @@ use_generic_clear_for_image_clear(struct tu_cmd_buffer *cmd,
            * dimensions (e.g. 960x540), and having GMEM renderpass afterwards
            * may lead to a GPU fault on A7XX.
            */
-          !(info->a7xx.r8g8_faulty_fast_clear_quirk && image_is_r8g8(image));
+          !(info->props.r8g8_faulty_fast_clear_quirk && image_is_r8g8(image));
 }
 
 template <chip CHIP>
@@ -4685,7 +4685,7 @@ tu_CmdClearAttachments(VkCommandBuffer commandBuffer,
       tu_lrz_disable_during_renderpass<CHIP>(cmd, "CmdClearAttachments");
    }
 
-   if (cmd->device->physical_device->info->a7xx.has_generic_clear &&
+   if (cmd->device->physical_device->info->props.has_generic_clear &&
        /* Both having predication and not knowing layout could be solved
         * by cs patching, which is exactly what prop driver is doing.
         * We don't implement it because we don't expect a reasonable impact.

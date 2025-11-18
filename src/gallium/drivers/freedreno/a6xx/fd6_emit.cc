@@ -770,7 +770,7 @@ fd6_emit_ccu_cntl(fd_cs &cs, struct fd_screen *screen, bool gmem)
 {
    const struct fd6_gmem_config *cfg = gmem ? &screen->config_gmem : &screen->config_sysmem;
    enum a6xx_ccu_cache_size color_cache_size = !gmem ? CCU_CACHE_SIZE_FULL :
-      (enum a6xx_ccu_cache_size)(screen->info->a6xx.gmem_ccu_color_cache_fraction);
+      (enum a6xx_ccu_cache_size)(screen->info->props.gmem_ccu_color_cache_fraction);
    uint32_t color_offset = cfg->color_ccu_offset & 0x1fffff;
    uint32_t color_offset_hi = cfg->color_ccu_offset >> 21;
 
@@ -789,7 +789,7 @@ fd6_emit_ccu_cntl(fd_cs &cs, struct fd_screen *screen, bool gmem)
          )
       );
 
-      if (screen->info->a7xx.has_gmem_vpc_attr_buf) {
+      if (screen->info->props.has_gmem_vpc_attr_buf) {
          fd_crb(cs, 3)
             .add(VPC_ATTR_BUF_GMEM_SIZE(CHIP, cfg->vpc_attr_buf_size))
             .add(VPC_ATTR_BUF_GMEM_BASE(CHIP, cfg->vpc_attr_buf_offset))
@@ -801,9 +801,9 @@ fd6_emit_ccu_cntl(fd_cs &cs, struct fd_screen *screen, bool gmem)
       fd_pkt4(cs, 1)
          .add(RB_CCU_CNTL(CHIP,
             .gmem_fast_clear_disable =
-               !screen->info->a6xx.has_gmem_fast_clear,
+               !screen->info->props.has_gmem_fast_clear,
             .concurrent_resolve =
-               screen->info->a6xx.concurrent_resolve,
+               screen->info->props.concurrent_resolve,
             .depth_offset_hi = depth_offset_hi,
             .color_offset_hi = color_offset_hi,
             .depth_cache_size = CCU_CACHE_SIZE_FULL,
@@ -832,7 +832,7 @@ fd6_emit_static_non_context_regs(struct fd_context *ctx, fd_cs &cs)
 {
    struct fd_screen *screen = ctx->screen;
 
-   fd_ncrb<CHIP> ncrb(cs, 28 + ARRAY_SIZE(screen->info->a6xx.magic_raw));
+   fd_ncrb<CHIP> ncrb(cs, 28 + ARRAY_SIZE(screen->info->props.magic_raw));
 
    if (CHIP >= A7XX) {
       /* On A7XX, RB_CCU_CNTL was broken into two registers, RB_CCU_CNTL which has
@@ -842,13 +842,13 @@ fd6_emit_static_non_context_regs(struct fd_context *ctx, fd_cs &cs)
        * events are required.
        */
       ncrb.add(RB_CCU_CNTL(CHIP,
-         .gmem_fast_clear_disable = true, // !screen->info->a6xx.has_gmem_fast_clear,
-         .concurrent_resolve = screen->info->a6xx.concurrent_resolve,
+         .gmem_fast_clear_disable = true, // !screen->info->props.has_gmem_fast_clear,
+         .concurrent_resolve = screen->info->props.concurrent_resolve,
       ));
    }
 
-   for (size_t i = 0; i < ARRAY_SIZE(screen->info->a6xx.magic_raw); i++) {
-      auto magic_reg = screen->info->a6xx.magic_raw[i];
+   for (size_t i = 0; i < ARRAY_SIZE(screen->info->props.magic_raw); i++) {
+      auto magic_reg = screen->info->props.magic_raw[i];
       if (!magic_reg.reg)
          break;
 
@@ -856,7 +856,7 @@ fd6_emit_static_non_context_regs(struct fd_context *ctx, fd_cs &cs)
       switch(magic_reg.reg) {
          case REG_A6XX_TPL1_DBG_ECO_CNTL1:
             value = (value & ~A6XX_TPL1_DBG_ECO_CNTL1_TP_UBWC_FLAG_HINT) |
-                    (screen->info->a7xx.enable_tp_ubwc_flag_hint
+                    (screen->info->props.enable_tp_ubwc_flag_hint
                         ? A6XX_TPL1_DBG_ECO_CNTL1_TP_UBWC_FLAG_HINT
                         : 0);
             break;
@@ -865,11 +865,11 @@ fd6_emit_static_non_context_regs(struct fd_context *ctx, fd_cs &cs)
       ncrb.add({ .reg = magic_reg.reg, .value = value });
    }
 
-   ncrb.add(A6XX_RB_DBG_ECO_CNTL(.dword = screen->info->a6xx.magic.RB_DBG_ECO_CNTL));
+   ncrb.add(A6XX_RB_DBG_ECO_CNTL(.dword = screen->info->props.magic.RB_DBG_ECO_CNTL));
    ncrb.add(A6XX_SP_NC_MODE_CNTL_2(.f16_no_inf = true));
 
    ncrb.add(A6XX_SP_PERFCTR_SHADER_MASK(.dword = 0x3f));
-   if (CHIP == A6XX && !screen->info->a6xx.is_a702)
+   if (CHIP == A6XX && !screen->info->props.is_a702)
       ncrb.add(TPL1_UNKNOWN_B605(CHIP, .dword = 0x44));
    if (CHIP == A6XX) {
       ncrb.add(HLSQ_UNKNOWN_BE00(CHIP, .dword = 0x80));
@@ -893,7 +893,7 @@ fd6_emit_static_non_context_regs(struct fd_context *ctx, fd_cs &cs)
       ncrb.add(TPL1_BICUBIC_WEIGHTS_TABLE_REG(CHIP, 4, 0x3f0243f0));
    }
 
-   if (screen->info->a7xx.has_hw_bin_scaling) {
+   if (screen->info->props.has_hw_bin_scaling) {
       ncrb.add(GRAS_BIN_FOVEAT(CHIP));
       ncrb.add(RB_BIN_FOVEAT(CHIP));
    }
@@ -920,7 +920,7 @@ fd6_emit_static_context_regs(struct fd_context *ctx, fd_cs &cs)
    crb.add(SP_GFX_USIZE(CHIP));
    crb.add(A6XX_TPL1_PS_ROTATION_CNTL());
 
-   crb.add(A6XX_RB_RBP_CNTL(.dword = screen->info->a6xx.magic.RB_RBP_CNTL));
+   crb.add(A6XX_RB_RBP_CNTL(.dword = screen->info->props.magic.RB_RBP_CNTL));
    crb.add(A6XX_SP_UNKNOWN_A9A8());
 
    crb.add(A6XX_SP_MODE_CNTL(
@@ -1033,7 +1033,7 @@ fd6_emit_static_context_regs(struct fd_context *ctx, fd_cs &cs)
     * so any leftover early preamble doesn't get executed. Other stages don't
     * seem to be affected.
     */
-   if (screen->info->a6xx.has_early_preamble) {
+   if (screen->info->props.has_early_preamble) {
       crb.add(A6XX_SP_PS_CNTL_0());
    }
 }

@@ -214,7 +214,7 @@ fd_init_shader_caps(struct fd_screen *screen)
       case MESA_SHADER_GEOMETRY:
          if (!is_a6xx(screen))
             continue;
-         if (screen->info->a6xx.is_a702)
+         if (screen->info->props.is_a702)
             continue;
          break;
       case MESA_SHADER_COMPUTE:
@@ -233,10 +233,10 @@ fd_init_shader_caps(struct fd_screen *screen)
       caps->max_control_flow_depth = 8; /* XXX */
 
       caps->max_inputs = is_a6xx(screen) && i != MESA_SHADER_GEOMETRY ?
-         screen->info->a6xx.vs_max_inputs_count : 16;
+         screen->info->props.vs_max_inputs_count : 16;
 
       caps->max_outputs =
-         (is_a6xx(screen) && !screen->info->a6xx.is_a702) ? 32 : 16;
+         (is_a6xx(screen) && !screen->info->props.is_a702) ? 32 : 16;
 
       caps->max_temps = 64; /* Max native temporaries. */
 
@@ -337,7 +337,7 @@ fd_init_compute_caps(struct fd_screen *screen)
 
    caps->max_threads_per_block = info->threadsize_base * info->max_waves;
 
-   if (is_a6xx(screen) && info->a6xx.supports_double_threadsize)
+   if (is_a6xx(screen) && info->props.supports_double_threadsize)
       caps->max_threads_per_block *= 2;
 
    caps->max_global_size = screen->ram_size;
@@ -446,10 +446,10 @@ fd_init_screen_caps(struct fd_screen *screen)
 
    caps->sampler_reduction_minmax =
    caps->sampler_reduction_minmax_arb =
-      is_a6xx(screen) && screen->info->a6xx.has_sampler_minmax;
+      is_a6xx(screen) && screen->info->props.has_sampler_minmax;
 
    caps->programmable_sample_locations =
-      is_a6xx(screen) && screen->info->a6xx.has_sample_locations;
+      is_a6xx(screen) && screen->info->props.has_sample_locations;
 
    caps->polygon_offset_clamp = is_a4xx(screen) || is_a5xx(screen) || is_a6xx(screen);
 
@@ -489,7 +489,7 @@ fd_init_screen_caps(struct fd_screen *screen)
    caps->doubles = is_ir3(screen);
 
    if (is_a6xx(screen)) {
-      if (screen->info->a6xx.is_a702) {
+      if (screen->info->props.is_a702) {
          /* a702 family is a special case, no gs/tess: */
          caps->glsl_feature_level = 140;
          caps->essl_feature_level = 310;
@@ -548,7 +548,7 @@ fd_init_screen_caps(struct fd_screen *screen)
 
    caps->max_viewports = is_a6xx(screen) ? 16 : 1;
 
-   caps->max_varyings = (is_a6xx(screen) && !screen->info->a6xx.is_a702) ? 31 : 16;
+   caps->max_varyings = (is_a6xx(screen) && !screen->info->props.is_a702) ? 31 : 16;
 
    /* We don't really have a limit on this, it all goes into the main
     * memory buffer. Needs to be at least 120 / 4 (minimum requirement
@@ -596,7 +596,7 @@ fd_init_screen_caps(struct fd_screen *screen)
 
    /* Stream output. */
    caps->max_vertex_streams =
-      (is_a6xx(screen) && !screen->info->a6xx.is_a702) ?  /* has SO + GS */
+      (is_a6xx(screen) && !screen->info->props.is_a702) ?  /* has SO + GS */
          PIPE_MAX_SO_BUFFERS : 0;
    caps->max_stream_output_buffers = is_ir3(screen) ? PIPE_MAX_SO_BUFFERS : 0;
    caps->stream_output_pause_resume =

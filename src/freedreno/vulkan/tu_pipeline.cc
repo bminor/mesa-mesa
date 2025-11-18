@@ -418,7 +418,7 @@ tu6_emit_dynamic_offset(struct tu_cs *cs,
    if (!xs)
       return;
 
-   if (cs->device->physical_device->info->a7xx.load_shader_consts_via_preamble) {
+   if (cs->device->physical_device->info->props.load_shader_consts_via_preamble) {
       if (shader->const_state.dynamic_offsets_ubo.size == 0)
          return;
 
@@ -494,7 +494,7 @@ tu6_setup_streamout(struct tu_cs *cs,
 #define A6XX_SO_PROG_DWORDS 64
    uint32_t prog[A6XX_SO_PROG_DWORDS * IR3_MAX_SO_STREAMS] = {};
    BITSET_DECLARE(valid_dwords, A6XX_SO_PROG_DWORDS * IR3_MAX_SO_STREAMS) = {0};
-   bool has_pc_dgen_so_cntl = cs->device->physical_device->info->a6xx.has_pc_dgen_so_cntl;
+   bool has_pc_dgen_so_cntl = cs->device->physical_device->info->props.has_pc_dgen_so_cntl;
 
    /* TODO: streamout state should be in a non-GMEM draw state */
 
@@ -617,7 +617,7 @@ tu6_emit_const(struct tu_cs *cs, uint32_t opcode, enum tu_geom_consts_type type,
    assert(size % 4 == 0);
    dwords = (uint32_t *)&((uint8_t *)dwords)[offset];
 
-   if (!cs->device->physical_device->info->a7xx.load_shader_consts_via_preamble) {
+   if (!cs->device->physical_device->info->props.load_shader_consts_via_preamble) {
       uint32_t base;
       switch (type) {
       case TU_CONSTS_PRIMITIVE_MAP:
@@ -967,7 +967,7 @@ tu6_emit_vpc(struct tu_cs *cs,
     * an input primitive type with adjacency, an output primitive type of
     * points, and a high enough vertex count causes a hang.
     */
-   if (cs->device->physical_device->info->a7xx.gs_vpc_adjacency_quirk &&
+   if (cs->device->physical_device->info->props.gs_vpc_adjacency_quirk &&
        gs && gs->gs.output_primitive == MESA_PRIM_POINTS &&
        linkage.max_loc > 4) {
       linkage.max_loc = MAX2(linkage.max_loc, 9);
@@ -1121,7 +1121,7 @@ tu6_patch_control_points_size(struct tu_device *dev,
                               const struct tu_program_state *program,
                               uint32_t patch_control_points)
 {
-   if (dev->physical_device->info->a7xx.load_shader_consts_via_preamble) {
+   if (dev->physical_device->info->props.load_shader_consts_via_preamble) {
 #define EMIT_CONST_DWORDS(const_dwords) (6 + const_dwords + 4)
       return EMIT_CONST_DWORDS(4) +
          EMIT_CONST_DWORDS(HS_PARAMS_SIZE) + 2 + 2 + 2;
@@ -1186,7 +1186,7 @@ tu6_emit_patch_control_points(struct tu_cs *cs,
    const uint32_t vs_hs_local_mem_size = 16384;
 
    uint32_t max_patches_per_wave;
-   if (dev->physical_device->info->a6xx.tess_use_shared) {
+   if (dev->physical_device->info->props.tess_use_shared) {
       /* HS invocations for a patch are always within the same wave,
        * making barriers less expensive. VS can't have barriers so we
        * don't care about VS invocations being in the same wave.
@@ -2340,7 +2340,7 @@ tu_emit_program_state(struct tu_cs *sub_cs,
    prog->per_view_viewport =
       !last_variant->writes_viewport &&
       shaders[MESA_SHADER_FRAGMENT]->fs.has_fdm &&
-      dev->physical_device->info->a6xx.has_per_view_viewport;
+      dev->physical_device->info->props.has_per_view_viewport;
    prog->per_layer_viewport = last_shader->per_layer_viewport;
    prog->fake_single_viewport = prog->per_view_viewport ||
       prog->per_layer_viewport;
@@ -3280,10 +3280,10 @@ tu6_rast_size(struct tu_device *dev,
               bool per_view_viewport,
               bool disable_fs)
 {
-   if (CHIP == A6XX && dev->physical_device->info->a6xx.is_a702) {
+   if (CHIP == A6XX && dev->physical_device->info->props.is_a702) {
       return 17;
    } else if (CHIP == A6XX) {
-      return 15 + (dev->physical_device->info->a6xx.has_legacy_pipeline_shading_rate ? 8 : 0);
+      return 15 + (dev->physical_device->info->props.has_legacy_pipeline_shading_rate ? 8 : 0);
    } else {
       return 27;
    }
@@ -3332,7 +3332,7 @@ tu6_emit_rast(struct tu_cs *cs,
    tu_cs_emit_regs(cs,
                    PC_DGEN_RAST_CNTL(CHIP, polygon_mode));
 
-   if (CHIP == A7XX || cs->device->physical_device->info->a6xx.is_a702) {
+   if (CHIP == A7XX || cs->device->physical_device->info->props.is_a702) {
       tu_cs_emit_regs(cs,
                      A6XX_VPC_PS_RAST_CNTL(polygon_mode));
    }
@@ -3395,7 +3395,7 @@ tu6_emit_rast(struct tu_cs *cs,
                    A6XX_GRAS_SU_POINT_MINMAX(.min = 1.0f / 16.0f, .max = 4092.0f),
                    A6XX_GRAS_SU_POINT_SIZE(1.0f));
 
-   if (CHIP == A6XX && cs->device->physical_device->info->a6xx.has_legacy_pipeline_shading_rate) {
+   if (CHIP == A6XX && cs->device->physical_device->info->props.has_legacy_pipeline_shading_rate) {
       tu_cs_emit_regs(cs, A6XX_RB_UNKNOWN_8A00());
       tu_cs_emit_regs(cs, A6XX_RB_UNKNOWN_8A10());
       tu_cs_emit_regs(cs, A6XX_RB_UNKNOWN_8A20());
@@ -3511,7 +3511,7 @@ tu6_emit_rb_depth_cntl(struct tu_cs *cs,
        */
       if (ds->depth.bounds_test.enable &&
           !ds->depth.test_enable &&
-          cs->device->physical_device->info->a6xx.depth_bounds_require_depth_test_quirk) {
+          cs->device->physical_device->info->props.depth_bounds_require_depth_test_quirk) {
          depth_test = true;
          zfunc = FUNC_ALWAYS;
       }
@@ -3847,7 +3847,7 @@ tu_pipeline_builder_emit_state(struct tu_pipeline_builder *builder,
          (lib->state &
           VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT);
    }
-   if (!builder->device->physical_device->info->a6xx.has_coherent_ubwc_flag_caches) {
+   if (!builder->device->physical_device->info->props.has_coherent_ubwc_flag_caches) {
       DRAW_STATE_COND(prim_mode_sysmem,
                       TU_DYNAMIC_STATE_PRIM_MODE_SYSMEM,
                       has_raster_order_state,
@@ -3858,7 +3858,7 @@ tu_pipeline_builder_emit_state(struct tu_pipeline_builder *builder,
                       &pipeline->prim_order.sysmem_single_prim_mode);
    }
 
-   if (builder->device->physical_device->info->a6xx.has_attachment_shading_rate) {
+   if (builder->device->physical_device->info->props.has_attachment_shading_rate) {
       bool has_fsr_att =
          builder->graphics_state.pipeline_flags &
          VK_PIPELINE_CREATE_2_RENDERING_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR;
@@ -4054,7 +4054,7 @@ tu_emit_draw_state(struct tu_cmd_buffer *cmd)
    DRAW_STATE(blend_constants, VK_DYNAMIC_STATE_BLEND_CONSTANTS,
               &cmd->vk.dynamic_graphics_state.cb);
 
-   if (cmd->device->physical_device->info->a6xx.has_attachment_shading_rate) {
+   if (cmd->device->physical_device->info->props.has_attachment_shading_rate) {
       DRAW_STATE_COND(fragment_shading_rate,
                TU_DYNAMIC_STATE_A7XX_FRAGMENT_SHADING_RATE,
                cmd->state.dirty & (TU_CMD_DIRTY_SUBPASS | TU_CMD_DIRTY_SHADING_RATE),
@@ -4089,7 +4089,7 @@ tu_emit_draw_state(struct tu_cmd_buffer *cmd)
                    cmd->state.shaders[MESA_SHADER_TESS_EVAL],
                    &cmd->state.program,
                    cmd->vk.dynamic_graphics_state.ts.patch_control_points);
-   if (!cmd->device->physical_device->info->a6xx.has_coherent_ubwc_flag_caches) {
+   if (!cmd->device->physical_device->info->props.has_coherent_ubwc_flag_caches) {
       DRAW_STATE_COND(prim_mode_sysmem,
                       TU_DYNAMIC_STATE_PRIM_MODE_SYSMEM,
                       cmd->state.dirty & (TU_CMD_DIRTY_RAST_ORDER |

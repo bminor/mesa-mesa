@@ -170,12 +170,12 @@ fd6_screen_init(struct pipe_screen *pscreen)
    screen->max_rts = A6XX_MAX_RENDER_TARGETS;
 
    uint32_t depth_cache_size =
-      screen->info->num_ccu * screen->info->a6xx.sysmem_per_ccu_depth_cache_size;
+      screen->info->num_ccu * screen->info->props.sysmem_per_ccu_depth_cache_size;
    uint32_t color_cache_size =
-      (screen->info->num_ccu * screen->info->a6xx.sysmem_per_ccu_color_cache_size);
+      (screen->info->num_ccu * screen->info->props.sysmem_per_ccu_color_cache_size);
    uint32_t color_cache_size_gmem =
       color_cache_size /
-      (1 << screen->info->a6xx.gmem_ccu_color_cache_fraction);
+      (1 << screen->info->props.gmem_ccu_color_cache_fraction);
 
    struct fd6_gmem_config *gmem = &screen->config_gmem;
    struct fd6_gmem_config *sysmem = &screen->config_sysmem;
@@ -183,11 +183,11 @@ fd6_screen_init(struct pipe_screen *pscreen)
    sysmem->depth_ccu_offset = 0;
    sysmem->color_ccu_offset = sysmem->depth_ccu_offset + depth_cache_size;
 
-   if (screen->info->a7xx.has_gmem_vpc_attr_buf) {
-      sysmem->vpc_attr_buf_size = screen->info->a7xx.sysmem_vpc_attr_buf_size;
+   if (screen->info->props.has_gmem_vpc_attr_buf) {
+      sysmem->vpc_attr_buf_size = screen->info->props.sysmem_vpc_attr_buf_size;
       sysmem->vpc_attr_buf_offset = sysmem->color_ccu_offset + color_cache_size;
 
-      gmem->vpc_attr_buf_size = screen->info->a7xx.gmem_vpc_attr_buf_size;
+      gmem->vpc_attr_buf_size = screen->info->props.gmem_vpc_attr_buf_size;
       gmem->vpc_attr_buf_offset = screen->gmemsize_bytes -
          (gmem->vpc_attr_buf_size * screen->info->num_ccu);
 

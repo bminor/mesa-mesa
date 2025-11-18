@@ -1045,7 +1045,7 @@ emit_begin_occlusion_query(struct tu_cmd_buffer *cmdbuf,
    tu_cs_emit_regs(cs,
                    A6XX_RB_SAMPLE_COUNTER_CNTL(.copy = true));
 
-   if (!cmdbuf->device->physical_device->info->a7xx.has_event_write_sample_count) {
+   if (!cmdbuf->device->physical_device->info->props.has_event_write_sample_count) {
       tu_cs_emit_regs(cs,
                         A6XX_RB_SAMPLE_COUNTER_BASE(.qword = begin_iova));
       tu_cs_emit_pkt7(cs, CP_EVENT_WRITE, 1);
@@ -1178,7 +1178,7 @@ emit_begin_perf_query_raw(struct tu_cmd_buffer *cmdbuf,
    struct tu_perf_query_raw *perf_query = &pool->perf_query.raw;
    uint32_t last_pass = ~0;
    bool has_pred_bit =
-      cmdbuf->device->physical_device->info->a6xx.has_pred_bit;
+      cmdbuf->device->physical_device->info->props.has_pred_bit;
 
    if (cmdbuf->state.pass && !has_pred_bit) {
       cmdbuf->state.rp.draw_cs_writes_to_cond_pred = true;
@@ -1457,7 +1457,7 @@ emit_end_occlusion_query(struct tu_cmd_buffer *cmdbuf,
    uint64_t result_iova = occlusion_query_iova(pool, query, result);
    uint64_t end_iova = occlusion_query_iova(pool, query, end);
 
-   if (!cmdbuf->device->physical_device->info->a7xx.has_event_write_sample_count) {
+   if (!cmdbuf->device->physical_device->info->props.has_event_write_sample_count) {
       tu_cs_emit_pkt7(cs, CP_MEM_WRITE, 4);
       tu_cs_emit_qw(cs, end_iova);
       tu_cs_emit_qw(cs, 0xffffffffffffffffull);
@@ -1468,7 +1468,7 @@ emit_end_occlusion_query(struct tu_cmd_buffer *cmdbuf,
    tu_cs_emit_regs(cs,
                    A6XX_RB_SAMPLE_COUNTER_CNTL(.copy = true));
 
-   if (!cmdbuf->device->physical_device->info->a7xx.has_event_write_sample_count) {
+   if (!cmdbuf->device->physical_device->info->props.has_event_write_sample_count) {
       tu_cs_emit_regs(cs,
                         A6XX_RB_SAMPLE_COUNTER_BASE(.qword = end_iova));
       tu_cs_emit_pkt7(cs, CP_EVENT_WRITE, 1);
@@ -1520,7 +1520,7 @@ emit_end_occlusion_query(struct tu_cmd_buffer *cmdbuf,
 
       tu_cs_emit_wfi(cs);
 
-      if (cmdbuf->device->physical_device->info->a7xx.has_generic_clear) {
+      if (cmdbuf->device->physical_device->info->props.has_generic_clear) {
          /* If the next renderpass uses the same depth attachment, clears it
           * with generic clear - ZPASS_DONE may somehow read stale values that
           * are apparently invalidated by CCU_INVALIDATE_DEPTH.
@@ -1679,7 +1679,7 @@ emit_end_perf_query_raw(struct tu_cmd_buffer *cmdbuf,
    uint64_t result_iova;
    uint32_t last_pass = ~0;
    bool has_pred_bit =
-      cmdbuf->device->physical_device->info->a6xx.has_pred_bit;
+      cmdbuf->device->physical_device->info->props.has_pred_bit;
 
    /* Wait for the profiled work to finish so that collected counter values
     * are as accurate as possible.

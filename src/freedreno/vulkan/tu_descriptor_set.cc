@@ -62,9 +62,9 @@ descriptor_size(struct tu_device *dev,
        * two separate descriptors are required.
        */
       return A6XX_TEX_CONST_DWORDS * 4 * (1 +
-         COND(dev->physical_device->info->a6xx.storage_16bit &&
-              !dev->physical_device->info->a6xx.has_isam_v, 1) +
-         COND(dev->physical_device->info->a7xx.storage_8bit, 1));
+         COND(dev->physical_device->info->props.storage_16bit &&
+              !dev->physical_device->info->props.has_isam_v, 1) +
+         COND(dev->physical_device->info->props.storage_8bit, 1));
    case VK_DESCRIPTOR_TYPE_INLINE_UNIFORM_BLOCK:
       return binding->descriptorCount;
    case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR:
@@ -988,18 +988,18 @@ write_buffer_descriptor_addr(const struct tu_device *device,
    /* This prevents any misconfiguration, but 16-bit descriptor capable of both
     * 16-bit and 32-bit access through isam.v will of course only be functional
     * when 16-bit storage is supported. */
-   assert(!info->a6xx.has_isam_v || info->a6xx.storage_16bit);
+   assert(!info->props.has_isam_v || info->props.storage_16bit);
    /* Any configuration enabling 8-bit storage support will also provide 16-bit
     * storage support and 16-bit descriptors capable of 32-bit isam loads. This
     * indirectly ensures we won't need more than two descriptors for access of
     * any size.
     */
-   assert(!info->a7xx.storage_8bit || (info->a6xx.storage_16bit &&
-                                       info->a6xx.has_isam_v));
+   assert(!info->props.storage_8bit || (info->props.storage_16bit &&
+                                       info->props.has_isam_v));
 
    unsigned num_descriptors = 1 +
-      COND(info->a6xx.storage_16bit && !info->a6xx.has_isam_v, 1) +
-      COND(info->a7xx.storage_8bit, 1);
+      COND(info->props.storage_16bit && !info->props.has_isam_v, 1) +
+      COND(info->props.storage_8bit, 1);
    memset(dst, 0, num_descriptors * A6XX_TEX_CONST_DWORDS * sizeof(uint32_t));
 
    if (!buffer_info || buffer_info->address == 0)
@@ -1010,7 +1010,7 @@ write_buffer_descriptor_addr(const struct tu_device *device,
    unsigned offset = va & 0x3f;
    uint32_t range = buffer_info->range;
 
-   if (info->a6xx.storage_16bit) {
+   if (info->props.storage_16bit) {
       dst[0] = A6XX_TEX_CONST_0_TILE_MODE(TILE6_LINEAR) | A6XX_TEX_CONST_0_FMT(FMT6_16_UINT);
       dst[1] = DIV_ROUND_UP(range, 2);
       dst[2] =
@@ -1025,7 +1025,7 @@ write_buffer_descriptor_addr(const struct tu_device *device,
    /* Set up the 32-bit descriptor when 16-bit storage isn't supported or the
     * 16-bit descriptor cannot be used for 32-bit loads through isam.v.
     */
-   if (!info->a6xx.storage_16bit || !info->a6xx.has_isam_v) {
+   if (!info->props.storage_16bit || !info->props.has_isam_v) {
       dst[0] = A6XX_TEX_CONST_0_TILE_MODE(TILE6_LINEAR) | A6XX_TEX_CONST_0_FMT(FMT6_32_UINT);
       dst[1] = DIV_ROUND_UP(range, 4);
       dst[2] =
@@ -1037,7 +1037,7 @@ write_buffer_descriptor_addr(const struct tu_device *device,
       dst += A6XX_TEX_CONST_DWORDS;
    }
 
-   if (info->a7xx.storage_8bit) {
+   if (info->props.storage_8bit) {
       dst[0] = A6XX_TEX_CONST_0_TILE_MODE(TILE6_LINEAR) | A6XX_TEX_CONST_0_FMT(FMT6_8_UINT);
       dst[1] = range;
       dst[2] =

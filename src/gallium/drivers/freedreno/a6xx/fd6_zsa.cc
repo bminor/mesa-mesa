@@ -100,7 +100,7 @@ fd6_zsa_state_create(struct pipe_context *pctx,
     *  dEQP-VK.dynamic_state.ds_state.depth_bounds_1
     */
    if (cso->depth_bounds_test && !cso->depth_enabled &&
-       ctx->screen->info->a6xx.depth_bounds_require_depth_test_quirk) {
+       ctx->screen->info->props.depth_bounds_require_depth_test_quirk) {
       force_z_test_enable = true;
       depth_func = FUNC_ALWAYS;
    }

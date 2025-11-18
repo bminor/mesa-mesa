@@ -168,7 +168,7 @@ fdl6_layout_image(struct fdl_layout *layout, const struct fd_dev_info *info,
    if (util_format_is_depth_or_stencil(params->format))
       layout->tile_all = true;
 
-   if (layout->ubwc && !info->a6xx.has_ubwc_linear_mipmap_fallback)
+   if (layout->ubwc && !info->props.has_ubwc_linear_mipmap_fallback)
       layout->tile_all = true;
 
    /* in layer_first layout, the level (slice) contains just one

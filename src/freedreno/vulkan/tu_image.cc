@@ -332,7 +332,7 @@ ubwc_possible(struct tu_device *device,
               bool use_z24uint_s8uint)
 {
    /* TODO: enable for a702 */
-   if (info->a6xx.is_a702)
+   if (info->props.is_a702)
       return false;
 
    /* UBWC isn't possible with sparse residency, because unbound blocks may
@@ -355,10 +355,10 @@ ubwc_possible(struct tu_device *device,
     * all 1's prior to a740.  Disable UBWC for snorm.
     */
    if (vk_format_is_snorm(format) &&
-       !info->a7xx.ubwc_unorm_snorm_int_compatible)
+       !info->props.ubwc_unorm_snorm_int_compatible)
       return false;
 
-   if (!info->a6xx.has_8bpp_ubwc &&
+   if (!info->props.has_8bpp_ubwc &&
        vk_format_get_blocksizebits(format) == 8 &&
        vk_format_get_plane_count(format) == 1)
       return false;
@@ -382,7 +382,7 @@ ubwc_possible(struct tu_device *device,
     * and we can't change the descriptor so we can't do this.
     */
    if (((usage | stencil_usage) & VK_IMAGE_USAGE_STORAGE_BIT) &&
-       !info->a7xx.supports_uav_ubwc) {
+       !info->props.supports_uav_ubwc) {
       return false;
    }
 
@@ -391,7 +391,7 @@ ubwc_possible(struct tu_device *device,
     * ordinary draw calls writing read/depth. WSL blob seem to use ubwc
     * sometimes for depth/stencil.
     */
-   if (info->a6xx.broken_ds_ubwc_quirk &&
+   if (info->props.broken_ds_ubwc_quirk &&
        vk_format_is_depth_or_stencil(format))
       return false;
 
@@ -416,7 +416,7 @@ ubwc_possible(struct tu_device *device,
        (stencil_usage & (VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT)))
       return false;
 
-   if (!info->a6xx.has_z24uint_s8uint &&
+   if (!info->props.has_z24uint_s8uint &&
        (format == VK_FORMAT_D24_UNORM_S8_UINT ||
         format == VK_FORMAT_X8_D24_UNORM_PACK32) &&
        samples > VK_SAMPLE_COUNT_1_BIT) {
@@ -727,7 +727,7 @@ tu_image_init(struct tu_device *device, struct tu_image *image,
          vk_find_struct_const(pCreateInfo->pNext, IMAGE_FORMAT_LIST_CREATE_INFO);
       if (!tu6_mutable_format_list_ubwc_compatible(device->physical_device->info,
                                                    fmt_list)) {
-         bool mutable_ubwc_fc = device->physical_device->info->a7xx.ubwc_all_formats_compatible;
+         bool mutable_ubwc_fc = device->physical_device->info->props.ubwc_all_formats_compatible;
 
          /* NV12 uses a special compression scheme for the Y channel which
           * doesn't support reinterpretation. We have to fall back to linear

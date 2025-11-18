@@ -166,16 +166,15 @@ class A6xxGPUInfo(GPUInfo):
 
         self.num_ccu = num_ccu
 
-        self.a6xx = Struct()
-        self.a7xx = Struct()
+        self.props = Struct()
 
-        self.a6xx.magic = Struct()
+        self.props.magic = Struct()
 
         for name, val in magic_regs.items():
-            setattr(self.a6xx.magic, name, val)
+            setattr(self.props.magic, name, val)
 
         if raw_magic_regs:
-            self.a6xx.magic_raw = [[int(r[0]), r[1]] for r in raw_magic_regs]
+            self.props.magic_raw = [[int(r[0]), r[1]] for r in raw_magic_regs]
 
         templates = template if isinstance(template, list) else [template]
         for template in templates:
@@ -311,12 +310,12 @@ class A6XXProps(dict):
             A6XXProps.unique_props[(name, gen)] = val
 
     def apply_props(self, gpu_info):
-        self.apply_gen_props("a6xx", gpu_info)
+        self.apply_gen_props("props", gpu_info)
 
 
 class A7XXProps(A6XXProps):
     def apply_props(self, gpu_info):
-        self.apply_gen_props("a7xx", gpu_info)
+        self.apply_gen_props("props", gpu_info)
 
 
 # Props could be modified with env var:

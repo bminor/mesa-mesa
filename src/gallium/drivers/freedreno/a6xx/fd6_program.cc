@@ -186,7 +186,7 @@ emit_shader_regs(struct fd_context *ctx, fd_cs &cs, const struct ir3_shader_vari
          crb.add(SP_PS_VGS_CNTL(CHIP));
       break;
    case MESA_SHADER_COMPUTE:
-      thrsz = ctx->screen->info->a6xx.supports_double_threadsize ? thrsz : THREAD128;
+      thrsz = ctx->screen->info->props.supports_double_threadsize ? thrsz : THREAD128;
       crb.add(A6XX_SP_CS_CNTL_0(
          .halfregfootprint = so->info.max_half_reg + 1,
          .fullregfootprint = so->info.max_reg + 1,
@@ -235,7 +235,7 @@ fd6_emit_shader(struct fd_context *ctx, fd_cs &cs, const struct ir3_shader_varia
 
    if (CHIP == A6XX) {
       uint32_t shader_preload_size =
-         MIN2(so->instrlen, ctx->screen->info->a6xx.instr_cache_size);
+         MIN2(so->instrlen, ctx->screen->info->props.instr_cache_size);
 
       fd_pkt7(cs, fd6_stage2opcode(so->type), 3)
          .add(CP_LOAD_STATE6_0(
@@ -261,7 +261,7 @@ setup_stream_out_disable(struct fd_context *ctx)
 {
    unsigned nreg = 2;
 
-   if (ctx->screen->info->a6xx.tess_use_shared)
+   if (ctx->screen->info->props.tess_use_shared)
       nreg++;
 
    fd_crb crb(ctx->pipe, nreg);
@@ -269,7 +269,7 @@ setup_stream_out_disable(struct fd_context *ctx)
    crb.add(VPC_SO_MAPPING_WPTR(CHIP));
    crb.add(VPC_SO_CNTL(CHIP));
 
-   if (ctx->screen->info->a6xx.tess_use_shared) {
+   if (ctx->screen->info->props.tess_use_shared) {
       crb.add(PC_DGEN_SO_CNTL(CHIP));
    }
 
@@ -334,7 +334,7 @@ setup_stream_out(struct fd_context *ctx, struct fd6_program_state *state,
    }
 
    const bool emit_pc_so_stream_cntl =
-         ctx->screen->info->a6xx.tess_use_shared &&
+         ctx->screen->info->props.tess_use_shared &&
          v->type == MESA_SHADER_TESS_EVAL;
 
    unsigned nreg = 5 + prog_count;
@@ -664,7 +664,7 @@ emit_vpc(fd_crb &crb, const struct program_builder *b)
     * an input primitive type with adjacency, an output primitive type of
     * points, and a high enough vertex count causes a hang.
     */
-   if (b->ctx->screen->info->a7xx.gs_vpc_adjacency_quirk &&
+   if (b->ctx->screen->info->props.gs_vpc_adjacency_quirk &&
        b->gs && b->gs->gs.output_primitive == MESA_PRIM_POINTS &&
        linkage.max_loc > 4) {
       linkage.max_loc = MAX2(linkage.max_loc, 9);
@@ -1055,7 +1055,7 @@ emit_fs_inputs(fd_crb &crb, const struct program_builder *b)
       }
    }
 
-   crb.add(SP_LB_PARAM_LIMIT(CHIP, b->ctx->screen->info->a6xx.prim_alloc_threshold));
+   crb.add(SP_LB_PARAM_LIMIT(CHIP, b->ctx->screen->info->props.prim_alloc_threshold));
    crb.add(SP_REG_PROG_ID_0(CHIP,
       .faceregid = face_regid,
       .sampleid = samp_id_regid,
@@ -1264,7 +1264,7 @@ setup_stateobj(fd_cs &cs, const struct program_builder *b)
       const uint32_t vs_hs_local_mem_size = 16384;
 
       uint32_t max_patches_per_wave;
-      if (b->ctx->screen->info->a6xx.tess_use_shared) {
+      if (b->ctx->screen->info->props.tess_use_shared) {
          /* HS invocations for a patch are always within the same wave,
          * making barriers less expensive. VS can't have barriers so we
          * don't care about VS invocations being in the same wave.

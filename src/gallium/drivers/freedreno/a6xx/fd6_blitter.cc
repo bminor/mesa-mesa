@@ -279,19 +279,19 @@ emit_blit_fini(struct fd_context *ctx, fd_cs &cs)
 
    fd6_event_write<CHIP>(ctx, cs, FD_LABEL);
 
-   if (info->a6xx.magic.RB_DBG_ECO_CNTL != info->a6xx.magic.RB_DBG_ECO_CNTL_blit) {
+   if (info->props.magic.RB_DBG_ECO_CNTL != info->props.magic.RB_DBG_ECO_CNTL_blit) {
       fd_pkt7(cs, CP_WAIT_FOR_IDLE, 0);
       fd_pkt4(cs, 1)
-         .add(A6XX_RB_DBG_ECO_CNTL(.dword = info->a6xx.magic.RB_DBG_ECO_CNTL_blit));
+         .add(A6XX_RB_DBG_ECO_CNTL(.dword = info->props.magic.RB_DBG_ECO_CNTL_blit));
    }
 
    fd_pkt7(cs, CP_BLIT, 1)
       .add(CP_BLIT_0(.op = BLIT_OP_SCALE));
 
-   if (info->a6xx.magic.RB_DBG_ECO_CNTL != info->a6xx.magic.RB_DBG_ECO_CNTL_blit) {
+   if (info->props.magic.RB_DBG_ECO_CNTL != info->props.magic.RB_DBG_ECO_CNTL_blit) {
       fd_pkt7(cs, CP_WAIT_FOR_IDLE, 0);
       fd_pkt4(cs, 1)
-         .add(A6XX_RB_DBG_ECO_CNTL(.dword = info->a6xx.magic.RB_DBG_ECO_CNTL));
+         .add(A6XX_RB_DBG_ECO_CNTL(.dword = info->props.magic.RB_DBG_ECO_CNTL));
    }
 }
 
@@ -1414,7 +1414,7 @@ handle_zs_blit(struct fd_context *ctx,
       /* non-UBWC Z24_UNORM_S8_UINT_AS_R8G8B8A8 is broken on a630, fall back to
        * 8888_unorm.
        */
-      if (!ctx->screen->info->a6xx.has_z24uint_s8uint) {
+      if (!ctx->screen->info->props.has_z24uint_s8uint) {
          if (!src->layout.ubwc && !dst->layout.ubwc) {
             blit.src.format = PIPE_FORMAT_RGBA8888_UINT;
             blit.dst.format = PIPE_FORMAT_RGBA8888_UINT;

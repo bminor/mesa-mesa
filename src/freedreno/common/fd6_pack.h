@@ -125,9 +125,9 @@ public:
     *
     *      set_bin_size<CHIP>(crb, gmem, {
     *            .render_mode = RENDERING_PASS,
-    *            .force_lrz_write_dis = !screen->info->a6xx.has_lrz_feedback,
+    *            .force_lrz_write_dis = !screen->info->props.has_lrz_feedback,
     *            .buffers_location = BUFFERS_IN_GMEM,
-    *            .lrz_feedback_zmode_mask = screen->info->a6xx.has_lrz_feedback
+    *            .lrz_feedback_zmode_mask = screen->info->props.has_lrz_feedback
     *                                          ? LRZ_FEEDBACK_EARLY_Z_LATE_Z
     *                                          : LRZ_FEEDBACK_NONE,
     *      });

@@ -66,7 +66,7 @@ occlusion_resume(struct fd_acc_query *aq, struct fd_batch *batch)
    fd_pkt4(cs, 1)
       .add(A6XX_RB_SAMPLE_COUNTER_CNTL(.copy = true));
 
-   if (!ctx->screen->info->a7xx.has_event_write_sample_count) {
+   if (!ctx->screen->info->props.has_event_write_sample_count) {
       fd_pkt4(cs, 2)
          .add(A6XX_RB_SAMPLE_COUNTER_BASE(query_sample(aq, start)));
 
@@ -109,7 +109,7 @@ occlusion_pause(struct fd_acc_query *aq, struct fd_batch *batch) assert_dt
    struct fd_context *ctx = batch->ctx;
    fd_cs cs(batch->draw);
 
-   if (!ctx->screen->info->a7xx.has_event_write_sample_count) {
+   if (!ctx->screen->info->props.has_event_write_sample_count) {
       fd_pkt7(cs, CP_MEM_WRITE, 4)
          .add(A5XX_CP_MEM_WRITE_ADDR(query_sample(aq, stop)))
          .add(0xffffffff)
@@ -123,7 +123,7 @@ occlusion_pause(struct fd_acc_query *aq, struct fd_batch *batch) assert_dt
 
    ASSERT_ALIGNED(struct fd6_query_sample, stop, 16);
 
-   if (!ctx->screen->info->a7xx.has_event_write_sample_count) {
+   if (!ctx->screen->info->props.has_event_write_sample_count) {
       fd_pkt4(cs, 2)
          .add(A6XX_RB_SAMPLE_COUNTER_BASE(query_sample(aq, stop)));
 

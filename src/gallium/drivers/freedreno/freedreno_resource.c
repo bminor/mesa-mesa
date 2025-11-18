@@ -1295,7 +1295,7 @@ get_best_layout(struct fd_screen *screen,
       return FD_LAYOUT_LINEAR;
    }
 
-   bool ubwc_ok = is_a6xx(screen) && !screen->info->a6xx.is_a702;
+   bool ubwc_ok = is_a6xx(screen) && !screen->info->props.is_a702;
    if (FD_DBG(NOUBWC))
       ubwc_ok = false;
 

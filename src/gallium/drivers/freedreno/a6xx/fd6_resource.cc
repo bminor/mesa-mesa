@@ -31,13 +31,13 @@ ok_ubwc_format(struct pipe_screen *pscreen, enum pipe_format pfmt, unsigned nr_s
    /*
     * TODO: no UBWC on a702?
     */
-   if (info->a6xx.is_a702)
+   if (info->props.is_a702)
       return false;
 
    switch (pfmt) {
    case PIPE_FORMAT_Z24X8_UNORM:
       /* MSAA+UBWC does not work without FMT6_Z24_UINT_S8_UINT: */
-      return info->a6xx.has_z24uint_s8uint || (nr_samples <= 1);
+      return info->props.has_z24uint_s8uint || (nr_samples <= 1);
 
    case PIPE_FORMAT_X24S8_UINT:
    case PIPE_FORMAT_Z24_UNORM_S8_UINT:
@@ -46,7 +46,7 @@ ok_ubwc_format(struct pipe_screen *pscreen, enum pipe_format pfmt, unsigned nr_s
        * fd_resource_uncompress() at the point of stencil sampling because
        * that itself uses stencil sampling in the fd_blitter_blit path.
        */
-      return info->a6xx.has_z24uint_s8uint;
+      return info->props.has_z24uint_s8uint;
 
    case PIPE_FORMAT_R8_G8B8_420_UNORM:
       /* The difference between NV12 and R8_G8B8_420_UNORM is only where the
@@ -67,7 +67,7 @@ ok_ubwc_format(struct pipe_screen *pscreen, enum pipe_format pfmt, unsigned nr_s
     * all 1's prior to a740.  Disable UBWC for snorm.
     */
    if (util_format_is_snorm(pfmt) &&
-       !info->a7xx.ubwc_unorm_snorm_int_compatible)
+       !info->props.ubwc_unorm_snorm_int_compatible)
       return false;
 
    /* A690 seem to have broken UBWC for depth/stencil, it requires
@@ -75,7 +75,7 @@ ok_ubwc_format(struct pipe_screen *pscreen, enum pipe_format pfmt, unsigned nr_s
     * ordinary draw calls writing read/depth. WSL blob seem to use ubwc
     * sometimes for depth/stencil.
     */
-   if (info->a6xx.broken_ds_ubwc_quirk &&
+   if (info->props.broken_ds_ubwc_quirk &&
        util_format_is_depth_or_stencil(pfmt))
       return false;
 
@@ -109,7 +109,7 @@ ok_ubwc_format(struct pipe_screen *pscreen, enum pipe_format pfmt, unsigned nr_s
    case FMT6_Z24_UNORM_S8_UINT_AS_R8G8B8A8:
       return true;
    case FMT6_8_UNORM:
-      return info->a6xx.has_8bpp_ubwc;
+      return info->props.has_8bpp_ubwc;
    default:
       return false;
    }
@@ -150,7 +150,7 @@ valid_ubwc_format_cast(struct fd_resource *rsc, enum pipe_format format)
    /* If we support z24s8 ubwc then allow casts between the various
     * permutations of z24s8:
     */
-   if (info->a6xx.has_z24uint_s8uint && is_z24s8(format) && is_z24s8(orig_format))
+   if (info->props.has_z24uint_s8uint && is_z24s8(format) && is_z24s8(orig_format))
       return true;
 
    enum fd6_ubwc_compat_type type = fd6_ubwc_compat_mode(info, orig_format);

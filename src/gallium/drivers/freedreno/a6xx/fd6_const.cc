@@ -44,7 +44,7 @@ fd6_upload_emit_driver_ubo(struct fd_context *ctx, fd_cs &cs,
 {
    struct pipe_context *pctx = &ctx->base;
 
-   assert(ctx->screen->info->chip >= 7 && ctx->screen->info->a7xx.load_shader_consts_via_preamble);
+   assert(ctx->screen->info->chip >= 7 && ctx->screen->info->props.load_shader_consts_via_preamble);
 
    if (!sizedwords || (base < 0))
       return;
@@ -162,7 +162,7 @@ emit_stage_tess_consts(fd_cs &cs, const struct ir3_shader_variant *v,
 {
    const struct ir3_const_state *const_state = ir3_const_state(v);
 
-   if (CHIP == A7XX && ctx->screen->info->a7xx.load_shader_consts_via_preamble) {
+   if (CHIP == A7XX && ctx->screen->info->props.load_shader_consts_via_preamble) {
       int base = const_state->primitive_param_ubo.idx;
 
       fd6_upload_emit_driver_ubo(ctx, cs, v, base, num_params, params);
@@ -371,7 +371,7 @@ emit_driver_params(const struct ir3_shader_variant *v, fd_cs &dpconstobj,
                    const struct pipe_draw_indirect_info *indirect,
                    const struct ir3_driver_params_vs *vertex_params)
 {
-   if (CHIP == A7XX && ctx->screen->info->a7xx.load_shader_consts_via_preamble) {
+   if (CHIP == A7XX && ctx->screen->info->props.load_shader_consts_via_preamble) {
       const struct ir3_const_state *const_state = ir3_const_state(v);
       int base = const_state->driver_params_ubo.idx;
 
@@ -388,7 +388,7 @@ static inline void
 emit_hs_driver_params(const struct ir3_shader_variant *v, fd_cs &dpconstobj,
                       struct fd_context *ctx)
 {
-   if (CHIP == A7XX && ctx->screen->info->a7xx.load_shader_consts_via_preamble) {
+   if (CHIP == A7XX && ctx->screen->info->props.load_shader_consts_via_preamble) {
       const struct ir3_const_state *const_state = ir3_const_state(v);
       struct ir3_driver_params_tcs hs_params = ir3_build_driver_params_tcs(ctx);
       int base = const_state->driver_params_ubo.idx;
@@ -478,7 +478,7 @@ fd6_emit_cs_driver_params(struct fd_context *ctx, fd_cs &cs,
                           const struct ir3_shader_variant *v,
                           const struct pipe_grid_info *info)
 {
-   if (CHIP == A7XX && ctx->screen->info->a7xx.load_shader_consts_via_preamble) {
+   if (CHIP == A7XX && ctx->screen->info->props.load_shader_consts_via_preamble) {
       const struct ir3_const_state *const_state = ir3_const_state(v);
       struct ir3_driver_params_cs compute_params =
          ir3_build_driver_params_cs(v, info);

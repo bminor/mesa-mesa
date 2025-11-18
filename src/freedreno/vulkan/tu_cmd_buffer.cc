@@ -330,7 +330,7 @@ tu6_emit_flushes(struct tu_cmd_buffer *cmd_buffer,
        !(flushes & TU_CMD_FLAG_CACHE_INVALIDATE))
       tu_cs_emit_pkt7(cs, CP_CCHE_INVALIDATE, 0);
    if (CHIP >= A7XX && (flushes & TU_CMD_FLAG_RTU_INVALIDATE) &&
-       cmd_buffer->device->physical_device->info->a7xx.has_rt_workaround)
+       cmd_buffer->device->physical_device->info->props.has_rt_workaround)
       tu_emit_rt_workaround(cmd_buffer, cs);
    if (flushes & TU_CMD_FLAG_WAIT_MEM_WRITES)
       tu_cs_emit_pkt7(cs, CP_WAIT_MEM_WRITES, 0);
@@ -502,7 +502,7 @@ template <chip CHIP>
 static void
 emit_vpc_attr_buf(struct tu_cs *cs, struct tu_device *dev, bool gmem)
 {
-   if (!dev->physical_device->info->a7xx.has_gmem_vpc_attr_buf)
+   if (!dev->physical_device->info->props.has_gmem_vpc_attr_buf)
       return;
 
    tu_cs_emit_regs(cs,
@@ -556,7 +556,7 @@ emit_rb_ccu_cntl(struct tu_cs *cs, struct tu_device *dev, bool gmem)
    depth_offset &= 0x1fffff;
 
    enum a6xx_ccu_cache_size color_cache_size = !gmem ? CCU_CACHE_SIZE_FULL : !gmem ? CCU_CACHE_SIZE_FULL :
-      (a6xx_ccu_cache_size)(dev->physical_device->info->a6xx.gmem_ccu_color_cache_fraction);
+      (a6xx_ccu_cache_size)(dev->physical_device->info->props.gmem_ccu_color_cache_fraction);
 
    if (CHIP == A7XX) {
       tu_cs_emit_regs(cs, A7XX_RB_CCU_CACHE_CNTL(
@@ -570,9 +570,9 @@ emit_rb_ccu_cntl(struct tu_cs *cs, struct tu_device *dev, bool gmem)
    } else {
       tu_cs_emit_regs(cs, RB_CCU_CNTL(CHIP,
          .gmem_fast_clear_disable =
-            !dev->physical_device->info->a6xx.has_gmem_fast_clear,
+            !dev->physical_device->info->props.has_gmem_fast_clear,
          .concurrent_resolve =
-            dev->physical_device->info->a6xx.concurrent_resolve,
+            dev->physical_device->info->props.concurrent_resolve,
          .depth_offset_hi = 0,
          .color_offset_hi = color_offset_hi,
          .depth_cache_size = CCU_CACHE_SIZE_FULL,
@@ -629,7 +629,7 @@ tu_emit_cache_flush_ccu(struct tu_cmd_buffer *cmd_buffer,
    if (ccu_state != cmd_buffer->state.ccu_state) {
       emit_rb_ccu_cntl<CHIP>(cs, cmd_buffer->device,
                              ccu_state == TU_CMD_CCU_GMEM);
-      if (cmd_buffer->device->physical_device->info->a7xx.has_gmem_vpc_attr_buf) {
+      if (cmd_buffer->device->physical_device->info->props.has_gmem_vpc_attr_buf) {
          tu7_thread_control(cs, CP_SET_THREAD_BOTH);
 
          emit_vpc_attr_buf<CHIP>(cs, cmd_buffer->device,
@@ -874,7 +874,7 @@ tu6_emit_render_cntl<A6XX>(struct tu_cmd_buffer *cmd,
                      bool binning)
 {
    /* doesn't RB_RENDER_CNTL set differently for binning pass: */
-   bool no_track = !cmd->device->physical_device->info->a6xx.has_cp_reg_write;
+   bool no_track = !cmd->device->physical_device->info->props.has_cp_reg_write;
    uint32_t cntl = 0;
    cntl |= A6XX_RB_RENDER_CNTL_CCUSINGLECACHELINESIZE(2);
    if (binning) {
@@ -1046,7 +1046,7 @@ void
 tu6_apply_depth_bounds_workaround(struct tu_device *device,
                                   uint32_t *rb_depth_cntl)
 {
-   if (!device->physical_device->info->a6xx.depth_bounds_require_depth_test_quirk)
+   if (!device->physical_device->info->props.depth_bounds_require_depth_test_quirk)
       return;
 
    /* On some GPUs it is necessary to enable z test for depth bounds test when
@@ -1088,7 +1088,7 @@ tu_cs_emit_draw_state(struct tu_cs *cs, uint32_t id, struct tu_draw_state state)
        * longer depends on dynamic state, so we reuse the gmem state for
        * everything:
        */
-      if (cs->device->physical_device->info->a6xx.has_coherent_ubwc_flag_caches) {
+      if (cs->device->physical_device->info->props.has_coherent_ubwc_flag_caches) {
          enable_mask = CP_SET_DRAW_STATE__0_GMEM |
                        CP_SET_DRAW_STATE__0_SYSMEM |
                        CP_SET_DRAW_STATE__0_BINNING;
@@ -1100,7 +1100,7 @@ tu_cs_emit_draw_state(struct tu_cs *cs, uint32_t id, struct tu_draw_state state)
       enable_mask = CP_SET_DRAW_STATE__0_SYSMEM;
       break;
    case TU_DRAW_STATE_DYNAMIC + TU_DYNAMIC_STATE_PRIM_MODE_SYSMEM:
-      if (!cs->device->physical_device->info->a6xx.has_coherent_ubwc_flag_caches) {
+      if (!cs->device->physical_device->info->props.has_coherent_ubwc_flag_caches) {
          /* By also applying the state during binning we ensure that there
          * is no rotation applied, by previous A6XX_GRAS_SC_CNTL::rotation.
          */
@@ -1449,7 +1449,7 @@ tu6_emit_tile_select(struct tu_cmd_buffer *cmd,
    }
 
    bool bin_scale_en =
-      cmd->device->physical_device->info->a7xx.has_hw_bin_scaling &&
+      cmd->device->physical_device->info->props.has_hw_bin_scaling &&
       views <= MAX_HW_SCALED_VIEWS && !cmd->state.rp.shared_viewport &&
       bin_is_scaled;
 
@@ -1468,10 +1468,10 @@ tu6_emit_tile_select(struct tu_cmd_buffer *cmd,
       cs, tiling->tile0.width, tiling->tile0.height,
       {
          .render_mode = RENDERING_PASS,
-         .force_lrz_write_dis = !phys_dev->info->a6xx.has_lrz_feedback,
+         .force_lrz_write_dis = !phys_dev->info->props.has_lrz_feedback,
          .buffers_location = BUFFERS_IN_GMEM,
          .lrz_feedback_zmode_mask =
-            phys_dev->info->a6xx.has_lrz_feedback && !bin_is_scaled
+            phys_dev->info->props.has_lrz_feedback && !bin_is_scaled
                ? (hw_binning ? LRZ_FEEDBACK_EARLY_Z_OR_EARLY_Z_LATE_Z :
                   LRZ_FEEDBACK_EARLY_Z_LATE_Z)
                : LRZ_FEEDBACK_NONE,
@@ -1508,7 +1508,7 @@ tu6_emit_tile_select(struct tu_cmd_buffer *cmd,
 
    if (hw_binning) {
       bool abs_mask =
-         cmd->device->physical_device->info->a7xx.has_abs_bin_mask;
+         cmd->device->physical_device->info->props.has_abs_bin_mask;
       tu_cs_emit_pkt7(cs, CP_WAIT_FOR_ME, 0);
 
       tu_cs_emit_pkt7(cs, CP_SET_MODE, 1);
@@ -1561,7 +1561,7 @@ tu6_emit_tile_select(struct tu_cmd_buffer *cmd,
             MAX2(MIN2((int32_t)y1 + bin.extent.height - bin_offset.y, MAX_VIEWPORT_SIZE) - bins[i].offset.y, 0);
       }
 
-      if (cmd->device->physical_device->info->a7xx.has_hw_bin_scaling) {
+      if (cmd->device->physical_device->info->props.has_hw_bin_scaling) {
          if (bin_scale_en) {
             VkExtent2D frag_areas[MAX_HW_SCALED_VIEWS];
             for (unsigned i = 0; i < MAX_HW_SCALED_VIEWS; i++) {
@@ -1634,7 +1634,7 @@ tu6_emit_tile_select(struct tu_cmd_buffer *cmd,
          tu_cs_emit_wfi(cs);
       }
       tu_cs_emit_pkt7(cs, CP_WAIT_FOR_ME, 0);
-   } else if (cmd->device->physical_device->info->a7xx.has_hw_bin_scaling) {
+   } else if (cmd->device->physical_device->info->props.has_hw_bin_scaling) {
       tu_cs_emit_regs(cs, A7XX_GRAS_BIN_FOVEAT());
       tu_cs_emit_regs(cs, A7XX_RB_BIN_FOVEAT());
    }
@@ -1930,14 +1930,14 @@ tu6_init_static_regs(struct tu_device *dev, struct tu_cs *cs)
 
       tu_cs_emit_regs(cs, RB_CCU_CNTL(A7XX,
          .gmem_fast_clear_disable =
-           !dev->physical_device->info->a6xx.has_gmem_fast_clear,
+           !dev->physical_device->info->props.has_gmem_fast_clear,
          .concurrent_resolve_mode = resolve_mode,
          .concurrent_unresolve_mode = unresolve_mode,
       ));
    }
 
-   for (size_t i = 0; i < ARRAY_SIZE(phys_dev->info->a6xx.magic_raw); i++) {
-      auto magic_reg = phys_dev->info->a6xx.magic_raw[i];
+   for (size_t i = 0; i < ARRAY_SIZE(phys_dev->info->props.magic_raw); i++) {
+      auto magic_reg = phys_dev->info->props.magic_raw[i];
       if (!magic_reg.reg)
          break;
 
@@ -1945,7 +1945,7 @@ tu6_init_static_regs(struct tu_device *dev, struct tu_cs *cs)
       switch(magic_reg.reg) {
          case REG_A6XX_TPL1_DBG_ECO_CNTL1:
             value = (value & ~A6XX_TPL1_DBG_ECO_CNTL1_TP_UBWC_FLAG_HINT) |
-                    (phys_dev->info->a7xx.enable_tp_ubwc_flag_hint
+                    (phys_dev->info->props.enable_tp_ubwc_flag_hint
                         ? A6XX_TPL1_DBG_ECO_CNTL1_TP_UBWC_FLAG_HINT
                         : 0);
             break;
@@ -1954,7 +1954,7 @@ tu6_init_static_regs(struct tu_device *dev, struct tu_cs *cs)
       tu_cs_emit_write_reg(cs, magic_reg.reg, value);
    }
 
-   if (dev->physical_device->info->a6xx.has_attachment_shading_rate) {
+   if (dev->physical_device->info->props.has_attachment_shading_rate) {
       tu_cs_emit_write_reg(cs, REG_A7XX_GRAS_LRZ_QUALITY_LOOKUP_TABLE(0),
                            fd_gras_shading_rate_lut(0));
       tu_cs_emit_write_reg(cs, REG_A7XX_GRAS_LRZ_QUALITY_LOOKUP_TABLE(1),
@@ -1963,7 +1963,7 @@ tu6_init_static_regs(struct tu_device *dev, struct tu_cs *cs)
 
    tu_cs_emit_write_reg(cs, REG_A6XX_SP_NC_MODE_CNTL_2, 0);
    tu_cs_emit_write_reg(cs, REG_A6XX_SP_PERFCTR_SHADER_MASK, 0x3f);
-   if (CHIP == A6XX && !cs->device->physical_device->info->a6xx.is_a702)
+   if (CHIP == A6XX && !cs->device->physical_device->info->props.is_a702)
       tu_cs_emit_write_reg(cs, REG_A6XX_TPL1_UNKNOWN_B605, 0x44);
    if (CHIP == A6XX) {
       tu_cs_emit_write_reg(cs, REG_A6XX_HLSQ_UNKNOWN_BE00, 0x80);
@@ -2038,9 +2038,9 @@ tu6_init_static_regs(struct tu_device *dev, struct tu_cs *cs)
       tu_cond_exec_start(cs, CP_COND_REG_EXEC_0_MODE(THREAD_MODE) |
                              CP_COND_REG_EXEC_0_BR);
    tu_cs_emit_write_reg(cs, REG_A6XX_RB_DBG_ECO_CNTL,
-                        phys_dev->info->a6xx.magic.RB_DBG_ECO_CNTL);
+                        phys_dev->info->props.magic.RB_DBG_ECO_CNTL);
    tu_cs_emit_write_reg(cs, REG_A6XX_RB_RBP_CNTL,
-                        phys_dev->info->a6xx.magic.RB_RBP_CNTL);
+                        phys_dev->info->props.magic.RB_RBP_CNTL);
    if (CHIP >= A7XX)
       tu_cond_exec_end(cs);
 
@@ -2077,7 +2077,7 @@ tu6_init_static_regs(struct tu_device *dev, struct tu_cs *cs)
     * so any leftover early preamble doesn't get executed. Other stages don't
     * seem to be affected.
     */
-   if (phys_dev->info->a6xx.has_early_preamble) {
+   if (phys_dev->info->props.has_early_preamble) {
       tu_cs_emit_regs(cs, A6XX_SP_PS_CNTL_0());
    }
 
@@ -2211,7 +2211,7 @@ tu6_init_hw(struct tu_cmd_buffer *cmd, struct tu_cs *cs)
 
    tu_disable_draw_states(cmd, cs);
 
-   if (phys_dev->info->a7xx.cmdbuf_start_a725_quirk) {
+   if (phys_dev->info->props.cmdbuf_start_a725_quirk) {
       tu_cs_reserve(cs, 3 + 4);
       tu_cs_emit_pkt7(cs, CP_COND_REG_EXEC, 2);
       tu_cs_emit(cs, CP_COND_REG_EXEC_0_MODE(THREAD_MODE) |
@@ -2578,7 +2578,7 @@ tu_emit_input_attachments(struct tu_cmd_buffer *cmd,
             A6XX_TEX_CONST_0_SWAP__MASK |
             A6XX_TEX_CONST_0_SWIZ_X__MASK | A6XX_TEX_CONST_0_SWIZ_Y__MASK |
             A6XX_TEX_CONST_0_SWIZ_Z__MASK | A6XX_TEX_CONST_0_SWIZ_W__MASK);
-         if (!cmd->device->physical_device->info->a6xx.has_z24uint_s8uint) {
+         if (!cmd->device->physical_device->info->props.has_z24uint_s8uint) {
             dst[0] |= A6XX_TEX_CONST_0_FMT(FMT6_8_8_8_8_UINT) |
                A6XX_TEX_CONST_0_SWIZ_X(A6XX_TEX_W) |
                A6XX_TEX_CONST_0_SWIZ_Y(A6XX_TEX_ZERO) |
@@ -2961,10 +2961,10 @@ tu6_sysmem_render_begin(struct tu_cmd_buffer *cmd, struct tu_cs *cs,
    tu6_emit_bin_size<CHIP>(cs, 0, 0, {
       .render_mode = RENDERING_PASS,
       .force_lrz_write_dis =
-         !cmd->device->physical_device->info->a6xx.has_lrz_feedback,
+         !cmd->device->physical_device->info->props.has_lrz_feedback,
       .buffers_location = BUFFERS_IN_SYSMEM,
       .lrz_feedback_zmode_mask =
-         cmd->device->physical_device->info->a6xx.has_lrz_feedback
+         cmd->device->physical_device->info->props.has_lrz_feedback
             ? LRZ_FEEDBACK_EARLY_Z_OR_EARLY_Z_LATE_Z
             : LRZ_FEEDBACK_NONE,
    });
@@ -3005,7 +3005,7 @@ tu6_sysmem_render_begin(struct tu_cmd_buffer *cmd, struct tu_cs *cs,
    tu_cs_emit(cs, 0x0);
 
    /* Reset bin scaling. */
-   if (cmd->device->physical_device->info->a7xx.has_hw_bin_scaling) {
+   if (cmd->device->physical_device->info->props.has_hw_bin_scaling) {
       tu_cs_emit_regs(cs, A7XX_GRAS_BIN_FOVEAT());
       tu_cs_emit_regs(cs, A7XX_RB_BIN_FOVEAT());
    }
@@ -3229,7 +3229,7 @@ tu6_tile_render_begin(struct tu_cmd_buffer *cmd, struct tu_cs *cs,
    tu_cs_emit(cs, 0x0);
 
    /* Reset bin scaling. */
-   if (phys_dev->info->a7xx.has_hw_bin_scaling) {
+   if (phys_dev->info->props.has_hw_bin_scaling) {
       tu_cs_emit_regs(cs, A7XX_GRAS_BIN_FOVEAT());
       tu_cs_emit_regs(cs, A7XX_RB_BIN_FOVEAT());
    }
@@ -3265,7 +3265,7 @@ tu6_tile_render_begin(struct tu_cmd_buffer *cmd, struct tu_cs *cs,
                                  .render_mode = BINNING_PASS,
                                  .buffers_location = BUFFERS_IN_GMEM,
                                  .lrz_feedback_zmode_mask =
-                                    phys_dev->info->a6xx.has_lrz_feedback
+                                    phys_dev->info->props.has_lrz_feedback
                                        ? LRZ_FEEDBACK_EARLY_Z_LATE_Z
                                        : LRZ_FEEDBACK_NONE
                               });
@@ -3723,7 +3723,7 @@ tu_render_pipe_fdm(struct tu_cmd_buffer *cmd, uint32_t pipe,
    uint32_t height = ty2 - ty1;
    unsigned views = tu_fdm_num_layers(cmd);
    bool has_abs_mask =
-      cmd->device->physical_device->info->a7xx.has_abs_bin_mask;
+      cmd->device->physical_device->info->props.has_abs_bin_mask;
 
    struct tu_tile_config tiles[width * height];
 
@@ -3832,7 +3832,7 @@ tu_cmd_render_tiles(struct tu_cmd_buffer *cmd,
 
    bool has_fdm = fdm || (TU_DEBUG(FDM) && cmd->state.pass->has_fdm);
    bool merge_tiles = has_fdm && !TU_DEBUG(NO_BIN_MERGING) &&
-      cmd->device->physical_device->info->a6xx.has_bin_mask;
+      cmd->device->physical_device->info->props.has_bin_mask;
 
    /* If not using FDM make sure not to accidentally apply the offsets */
    if (!has_fdm)
@@ -6436,7 +6436,7 @@ tu_emit_subpass_begin_gmem(struct tu_cmd_buffer *cmd, struct tu_resolve_group *r
                                     cond_load_allowed, true);
    }
 
-   if (!cmd->device->physical_device->info->a7xx.has_generic_clear) {
+   if (!cmd->device->physical_device->info->props.has_generic_clear) {
       /* Emit gmem clears that are first used in this subpass. */
       emitted_scissor = false;
       for (uint32_t i = 0; i < cmd->state.pass->attachment_count; ++i) {
@@ -6464,7 +6464,7 @@ template <chip CHIP>
 static void
 tu_emit_subpass_begin_sysmem(struct tu_cmd_buffer *cmd)
 {
-   if (cmd->device->physical_device->info->a7xx.has_generic_clear &&
+   if (cmd->device->physical_device->info->props.has_generic_clear &&
        !cmd->state.subpass->unresolve_count)
       return;
 
@@ -6574,7 +6574,7 @@ tu_emit_subpass_begin(struct tu_cmd_buffer *cmd)
 
    tu_emit_subpass_begin_gmem<CHIP>(cmd, &resolve_group);
    tu_emit_subpass_begin_sysmem<CHIP>(cmd);
-   if (cmd->device->physical_device->info->a7xx.has_generic_clear) {
+   if (cmd->device->physical_device->info->props.has_generic_clear) {
       tu7_emit_subpass_clear(cmd, &resolve_group);
    }
 
@@ -6835,7 +6835,7 @@ tu_CmdBeginRendering(VkCommandBuffer commandBuffer,
     * disable LRZ when resuming/suspending unless we can track on the GPU.
     */
    if ((resuming || suspending) &&
-       !cmd->device->physical_device->info->a6xx.has_lrz_dir_tracking) {
+       !cmd->device->physical_device->info->props.has_lrz_dir_tracking) {
       cmd->state.lrz.valid = false;
    } else {
       if (resuming)
@@ -7099,7 +7099,7 @@ tu6_emit_inline_ubo(struct tu_cs *cs,
                     mesa_shader_stage type,
                     struct tu_descriptor_state *descriptors)
 {
-   assert(const_state->num_inline_ubos == 0 || !cs->device->physical_device->info->a7xx.load_shader_consts_via_preamble);
+   assert(const_state->num_inline_ubos == 0 || !cs->device->physical_device->info->props.load_shader_consts_via_preamble);
 
    /* Emit loads of inline uniforms. These load directly from the uniform's
     * storage space inside the descriptor set.
@@ -7177,7 +7177,7 @@ tu_emit_inline_ubo(struct tu_cs *cs,
    if (!const_state->num_inline_ubos)
       return;
 
-   if (cs->device->physical_device->info->a7xx.load_inline_uniforms_via_preamble_ldgk) {
+   if (cs->device->physical_device->info->props.load_inline_uniforms_via_preamble_ldgk) {
       tu7_emit_inline_ubo(cs, const_state, ir_const_state, constlen, type, descriptors);
    } else {
       tu6_emit_inline_ubo(cs, const_state, constlen, type, descriptors);
@@ -7237,7 +7237,7 @@ tu6_const_size(struct tu_cmd_buffer *cmd,
       dwords += shared_consts->dwords + 1;
    }
 
-   bool ldgk = cmd->device->physical_device->info->a7xx.load_inline_uniforms_via_preamble_ldgk;
+   bool ldgk = cmd->device->physical_device->info->props.load_inline_uniforms_via_preamble_ldgk;
    if (compute) {
       dwords +=
          tu6_user_consts_size(&cmd->state.shaders[MESA_SHADER_COMPUTE]->const_state, ldgk, MESA_SHADER_COMPUTE);
@@ -7846,7 +7846,7 @@ tu6_draw_common(struct tu_cmd_buffer *cmd,
                tess_params->output_lower_left));
    }
 
-   if (cmd->device->physical_device->info->a7xx.has_rt_workaround &&
+   if (cmd->device->physical_device->info->props.has_rt_workaround &&
        cmd->state.program.uses_ray_intersection) {
       tu_cs_emit_pkt7(cs, CP_SET_MARKER, 1);
       tu_cs_emit(cs, A6XX_CP_SET_MARKER_0_SHADER_USES_RT);
@@ -7881,7 +7881,7 @@ tu6_draw_common(struct tu_cmd_buffer *cmd,
    if (dirty_lrz) {
       struct tu_cs cs;
       uint32_t size = 8 +
-                      (cmd->device->physical_device->info->a6xx.lrz_track_quirk ? 2 : 0) +
+                      (cmd->device->physical_device->info->props.lrz_track_quirk ? 2 : 0) +
                       (CHIP >= A7XX ? 2 : 0); // A7XX has extra packets from LRZ_CNTL2.
 
       cmd->state.lrz_and_depth_plane_state =
@@ -8097,7 +8097,7 @@ tu6_emit_empty_vs_params(struct tu_cmd_buffer *cmd)
    if (cmd->state.last_vs_params.empty)
       return;
 
-   if (cmd->device->physical_device->info->a7xx.load_shader_consts_via_preamble) {
+   if (cmd->device->physical_device->info->props.load_shader_consts_via_preamble) {
       struct tu_cs cs;
       cmd->state.vs_params = tu_cs_draw_state(&cmd->sub_cs, &cs, 2);
 
@@ -8373,7 +8373,7 @@ tu_CmdDrawIndirect(VkCommandBuffer commandBuffer,
 
    tu6_emit_empty_vs_params<CHIP>(cmd);
 
-   if (cmd->device->physical_device->info->a6xx.indirect_draw_wfm_quirk)
+   if (cmd->device->physical_device->info->props.indirect_draw_wfm_quirk)
       draw_wfm(cmd);
 
    tu6_draw_common<CHIP>(cmd, cs, false, 0);
@@ -8404,7 +8404,7 @@ tu_CmdDrawIndexedIndirect(VkCommandBuffer commandBuffer,
 
    tu6_emit_empty_vs_params<CHIP>(cmd);
 
-   if (cmd->device->physical_device->info->a6xx.indirect_draw_wfm_quirk)
+   if (cmd->device->physical_device->info->props.indirect_draw_wfm_quirk)
       draw_wfm(cmd);
 
    tu6_draw_common<CHIP>(cmd, cs, true, 0);
@@ -8599,7 +8599,7 @@ tu_emit_compute_driver_params(struct tu_cmd_buffer *cmd,
    unsigned subgroup_size = variant->info.subgroup_size;
    unsigned subgroup_shift = util_logbase2(subgroup_size);
 
-   if (cmd->device->physical_device->info->a7xx.load_shader_consts_via_preamble) {
+   if (cmd->device->physical_device->info->props.load_shader_consts_via_preamble) {
       uint32_t num_consts = const_state->driver_params_ubo.size;
       if (num_consts == 0)
          return;
@@ -8784,7 +8784,7 @@ tu_dispatch(struct tu_cmd_buffer *cmd,
 
    bool emit_instrlen_workaround =
       shader->variant->instrlen >
-      cmd->device->physical_device->info->a6xx.instr_cache_size;
+      cmd->device->physical_device->info->props.instr_cache_size;
 
    /* We don't use draw states for dispatches, so the bound pipeline
     * could be overwritten by reg stomping in a renderpass or blit.
@@ -8990,7 +8990,7 @@ tu_dispatch(struct tu_cmd_buffer *cmd,
       }
    }
 
-   if (cmd->device->physical_device->info->a7xx.has_rt_workaround &&
+   if (cmd->device->physical_device->info->props.has_rt_workaround &&
        shader->variant->info.uses_ray_intersection) {
       tu_cs_emit_pkt7(cs, CP_SET_MARKER, 1);
       tu_cs_emit(cs, A6XX_CP_SET_MARKER_0_SHADER_USES_RT);
@@ -9413,7 +9413,7 @@ tu_barrier(struct tu_cmd_buffer *cmd,
     * we can't use that to insert the flush. Instead we use the shader source
     * stage.
     */
-   if (cmd->device->physical_device->info->a7xx.ubwc_coherency_quirk &&
+   if (cmd->device->physical_device->info->props.ubwc_coherency_quirk &&
        (srcStage &
         (VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT |
          VK_PIPELINE_STAGE_2_TESSELLATION_CONTROL_SHADER_BIT |

@@ -138,7 +138,7 @@ fd6_memory_barrier(struct pipe_context *pctx, unsigned flags)
       * with these opcodes, but the alternative would add unnecessary WAIT_FOR_ME's
       * before draw opcodes that don't need it.
       */
-      if (fd_context(pctx)->screen->info->a6xx.indirect_draw_wfm_quirk) {
+      if (fd_context(pctx)->screen->info->props.indirect_draw_wfm_quirk) {
          flushes |= FD6_WAIT_FOR_ME;
       }
    }

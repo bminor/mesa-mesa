@@ -149,7 +149,7 @@ static void
 tu6_write_lrz_reg(struct tu_cmd_buffer *cmd, struct tu_cs *cs,
                   struct tu_reg_value reg)
 {
-   if (cmd->device->physical_device->info->a6xx.lrz_track_quirk) {
+   if (cmd->device->physical_device->info->props.lrz_track_quirk) {
       tu_cs_emit_pkt7(cs, CP_REG_WRITE, 3);
       tu_cs_emit(cs, CP_REG_WRITE_0_TRACKER(TRACK_LRZ));
       tu_cs_emit(cs, reg.reg);
@@ -214,7 +214,7 @@ tu_lrz_init_state(struct tu_cmd_buffer *cmd,
    bool clears_depth = att->clear_mask &
       (VK_IMAGE_ASPECT_COLOR_BIT | VK_IMAGE_ASPECT_DEPTH_BIT);
    bool has_gpu_tracking =
-      cmd->device->physical_device->info->a6xx.has_lrz_dir_tracking;
+      cmd->device->physical_device->info->props.has_lrz_dir_tracking;
 
    if (!has_gpu_tracking && !clears_depth)
       return;
@@ -265,7 +265,7 @@ tu_lrz_init_secondary(struct tu_cmd_buffer *cmd,
                       const struct tu_render_pass_attachment *att)
 {
    bool has_gpu_tracking =
-      cmd->device->physical_device->info->a6xx.has_lrz_dir_tracking;
+      cmd->device->physical_device->info->props.has_lrz_dir_tracking;
 
    if (!has_gpu_tracking)
       return;
@@ -356,7 +356,7 @@ tu_lrz_begin_renderpass(struct tu_cmd_buffer *cmd)
          lrz_img_count++;
    }
 
-   if (cmd->device->physical_device->info->a6xx.has_lrz_dir_tracking &&
+   if (cmd->device->physical_device->info->props.has_lrz_dir_tracking &&
        cmd->state.pass->subpass_count > 1 && lrz_img_count > 1) {
       /* Theoretically we could switch between LRZ buffers during the binning
        * and tiling passes, but it is untested and would add complexity for
@@ -802,7 +802,7 @@ template <chip CHIP>
 void
 tu_lrz_sysmem_begin(struct tu_cmd_buffer *cmd, struct tu_cs *cs)
 {
-   if (cmd->device->physical_device->info->a6xx.has_lrz_feedback) {
+   if (cmd->device->physical_device->info->props.has_lrz_feedback) {
       tu_lrz_tiling_begin<CHIP>(cmd, cs);
       return;
    }
@@ -816,7 +816,7 @@ tu_lrz_sysmem_begin(struct tu_cmd_buffer *cmd, struct tu_cs *cs)
 
    struct tu_lrz_state *lrz = &cmd->state.lrz;
 
-   if (cmd->device->physical_device->info->a6xx.has_lrz_dir_tracking) {
+   if (cmd->device->physical_device->info->props.has_lrz_dir_tracking) {
       tu_disable_lrz<CHIP>(cmd, cs, lrz->image_view->image);
       /* Make sure depth view comparison will fail. */
       tu6_write_lrz_reg(cmd, cs,
@@ -847,7 +847,7 @@ template <chip CHIP>
 void
 tu_lrz_sysmem_end(struct tu_cmd_buffer *cmd, struct tu_cs *cs)
 {
-   if (cmd->device->physical_device->info->a6xx.has_lrz_feedback) {
+   if (cmd->device->physical_device->info->props.has_lrz_feedback) {
       tu_lrz_tiling_end<CHIP>(cmd, cs);
       return;
    }
@@ -862,7 +862,7 @@ void
 tu_disable_lrz(struct tu_cmd_buffer *cmd, struct tu_cs *cs,
                struct tu_image *image)
 {
-   if (!cmd->device->physical_device->info->a6xx.has_lrz_dir_tracking)
+   if (!cmd->device->physical_device->info->props.has_lrz_dir_tracking)
       return;
 
    if (!image->lrz_layout.lrz_total_size)
@@ -921,7 +921,7 @@ template <chip CHIP>
 void
 tu_disable_lrz_cpu(struct tu_device *device, struct tu_image *image)
 {
-   if (!device->physical_device->info->a6xx.has_lrz_dir_tracking)
+   if (!device->physical_device->info->props.has_lrz_dir_tracking)
       return;
 
    if (!image->lrz_layout.lrz_total_size)
@@ -970,7 +970,7 @@ tu_lrz_clear_depth_image(struct tu_cmd_buffer *cmd,
                          const VkImageSubresourceRange *pRanges)
 {
    if (!rangeCount || !image->lrz_layout.lrz_total_size ||
-       !cmd->device->physical_device->info->a6xx.has_lrz_dir_tracking)
+       !cmd->device->physical_device->info->props.has_lrz_dir_tracking)
       return;
 
    /* We cannot predict which depth subresource would be used later on,

@@ -432,7 +432,7 @@ bool
 fd6_texture_format_supported(const struct fd_dev_info *info, enum pipe_format format,
                              enum a6xx_tile_mode tile_mode, bool is_mutable)
 {
-   if (info->a6xx.is_a702) {
+   if (info->props.is_a702) {
       /* BPTC is removed */
       switch (format) {
       case PIPE_FORMAT_BPTC_RGBA_UNORM:

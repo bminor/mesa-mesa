@@ -101,7 +101,7 @@ static bool
 tu_format_linear_filtering_supported(struct tu_physical_device *physical_device,
                                      VkFormat vk_format)
 {
-   if (physical_device->info->a6xx.is_a702) {
+   if (physical_device->info->props.is_a702) {
       switch (vk_format) {
       case VK_FORMAT_D16_UNORM:
       case VK_FORMAT_D24_UNORM_S8_UINT:
@@ -184,7 +184,7 @@ tu_physical_device_get_format_properties(
          if (ycbcr_info->n_planes > 1) {
             optimal |= VK_FORMAT_FEATURE_2_COSITED_CHROMA_SAMPLES_BIT |
                        VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_YCBCR_CONVERSION_LINEAR_FILTER_BIT;
-            if (physical_device->info->a6xx.has_separate_chroma_filter)
+            if (physical_device->info->props.has_separate_chroma_filter)
                optimal |= VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_YCBCR_CONVERSION_SEPARATE_RECONSTRUCTION_FILTER_BIT;
          }
       } else {
@@ -807,7 +807,7 @@ tu_GetPhysicalDeviceImageFormatProperties2(
                         (base_info->usage & ~VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT),
                         (base_info->usage & ~VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT),
                         physical_device->info, VK_SAMPLE_COUNT_1_BIT, 1,
-                        physical_device->info->a6xx.has_z24uint_s8uint));
+                        physical_device->info->props.has_z24uint_s8uint));
    }
 
    return VK_SUCCESS;

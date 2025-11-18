@@ -72,7 +72,7 @@ fd6_image_descriptor(struct fd_context *ctx, const struct pipe_image_view *buf,
 
       struct fdl6_view view;
       fdl6_view_init<CHIP>(&view, &layouts, &args,
-                           ctx->screen->info->a6xx.has_z24uint_s8uint);
+                           ctx->screen->info->props.has_z24uint_s8uint);
 
       memcpy(descriptor, view.storage_descriptor, sizeof(view.storage_descriptor));
    } else if (buf->resource->target == PIPE_BUFFER) {
@@ -112,7 +112,7 @@ fd6_image_descriptor(struct fd_context *ctx, const struct pipe_image_view *buf,
       struct fd_resource *rsc = fd_resource(buf->resource);
       const struct fdl_layout *layouts[3] = { &rsc->layout, NULL, NULL };
       fdl6_view_init<CHIP>(&view, layouts, &args,
-                           ctx->screen->info->a6xx.has_z24uint_s8uint);
+                           ctx->screen->info->props.has_z24uint_s8uint);
 
       memcpy(descriptor, view.storage_descriptor, sizeof(view.storage_descriptor));
    }

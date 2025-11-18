@@ -571,7 +571,7 @@ tu_render_pass_cond_config(struct tu_device *device,
    /* With generic clears CmdClearAttachments isn't a draw and doesn't
     * contribute to bin's geometry.
     */
-   if (device->physical_device->info->a7xx.has_generic_clear)
+   if (device->physical_device->info->props.has_generic_clear)
       return;
 
    for (uint32_t i = 0; i < pass->attachment_count; i++) {

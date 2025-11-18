@@ -70,6 +70,9 @@ struct fd_dev_info {
    };
 
    struct {
+      /*
+       * A6XX / gen6
+       */
       uint32_t reg_size_vec4;
 
       /* The size (in instrlen units (128 bytes)) of instruction cache where
@@ -263,9 +266,11 @@ struct fd_dev_info {
 
       /* True if PC_DGEN_SO_CNTL is present. */
       bool has_pc_dgen_so_cntl;
-   } a6xx;
 
-   struct {
+      /*
+       * A7XX / gen7
+       */
+
       /* stsc may need to be done twice for the same range to workaround
        * _something_, observed in blob's disassembly.
        */
@@ -382,7 +387,7 @@ struct fd_dev_info {
        * driver.
        */
       bool has_hw_bin_scaling;
-   } a7xx;
+   } props;
 };
 
 struct fd_dev_id {

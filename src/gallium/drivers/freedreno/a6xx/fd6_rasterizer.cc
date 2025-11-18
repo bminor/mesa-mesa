@@ -95,7 +95,7 @@ __fd6_setup_rasterizer_stateobj(struct fd_context *ctx,
    crb.add(PC_DGEN_RAST_CNTL(CHIP, mode));
 
    if (CHIP == A7XX ||
-       (CHIP == A6XX && ctx->screen->info->a6xx.is_a702)) {
+       (CHIP == A6XX && ctx->screen->info->props.is_a702)) {
       crb.add(VPC_PS_RAST_CNTL(CHIP, mode));
    }
 
@@ -119,7 +119,7 @@ __fd6_setup_rasterizer_stateobj(struct fd_context *ctx,
       crb.add(RB_VIEWPORT_ZCLAMP_MAX(CHIP, 1.0f));
    }
 
-   if (CHIP == A6XX && ctx->screen->info->a6xx.has_legacy_pipeline_shading_rate) {
+   if (CHIP == A6XX && ctx->screen->info->props.has_legacy_pipeline_shading_rate) {
       crb.add(RB_UNKNOWN_8A00(CHIP));
       crb.add(RB_UNKNOWN_8A10(CHIP));
       crb.add(RB_UNKNOWN_8A20(CHIP));

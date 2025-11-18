@@ -96,7 +96,7 @@ setup_border_color(struct fd_screen *screen,
                    struct fd6_bcolor_entry *e)
 {
    STATIC_ASSERT(sizeof(struct fd6_bcolor_entry) == FD6_BORDER_COLOR_SIZE);
-   const bool has_z24uint_s8uint = screen->info->a6xx.has_z24uint_s8uint;
+   const bool has_z24uint_s8uint = screen->info->props.has_z24uint_s8uint;
    const union pipe_color_union *bc = &sampler->border_color;
 
    enum pipe_format format = sampler->border_color_format;
@@ -462,7 +462,7 @@ fd6_sampler_view_update(struct fd_context *ctx,
 
       struct fdl6_view view;
       fdl6_view_init<CHIP>(&view, &layouts, &args,
-                           ctx->screen->info->a6xx.has_z24uint_s8uint);
+                           ctx->screen->info->props.has_z24uint_s8uint);
 
       memcpy(so->descriptor, view.descriptor, sizeof(so->descriptor));
    } else if (cso->target == PIPE_BUFFER) {
@@ -511,7 +511,7 @@ fd6_sampler_view_update(struct fd_context *ctx,
       };
       struct fdl6_view view;
       fdl6_view_init<CHIP>(&view, layouts, &args,
-                           ctx->screen->info->a6xx.has_z24uint_s8uint);
+                           ctx->screen->info->props.has_z24uint_s8uint);
       memcpy(so->descriptor, view.descriptor, sizeof(so->descriptor));
    }
 }

@@ -76,7 +76,7 @@ tu_nir_lower_multiview(nir_shader *nir, uint32_t mask, struct tu_device *dev)
       .allowed_per_view_outputs = VARYING_BIT_POS
    };
 
-   if (!dev->physical_device->info->a6xx.supports_multiview_mask)
+   if (!dev->physical_device->info->props.supports_multiview_mask)
       NIR_PASS(progress, nir, lower_multiview_mask, &options.view_mask);
 
    unsigned num_views = util_logbase2(mask) + 1;
@@ -86,7 +86,7 @@ tu_nir_lower_multiview(nir_shader *nir, uint32_t mask, struct tu_device *dev)
     * tests pass on a640/a650 and fail on a630.
     */
    unsigned max_views_for_multipos =
-      dev->physical_device->info->a6xx.supports_multiview_mask ? 16 : 10;
+      dev->physical_device->info->props.supports_multiview_mask ? 16 : 10;
 
    /* Speculatively assign output locations so that we know num_outputs. We
     * will assign output locations for real after this pass.
