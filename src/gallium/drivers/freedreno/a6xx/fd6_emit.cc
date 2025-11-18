@@ -868,7 +868,6 @@ fd6_emit_static_non_context_regs(struct fd_context *ctx, fd_cs &cs)
    ncrb.add(A6XX_RB_DBG_ECO_CNTL(.dword = screen->info->a6xx.magic.RB_DBG_ECO_CNTL));
    ncrb.add(A6XX_SP_NC_MODE_CNTL_2(.f16_no_inf = true));
 
-   ncrb.add(A6XX_SP_DBG_ECO_CNTL(.dword = screen->info->a6xx.magic.SP_DBG_ECO_CNTL));
    ncrb.add(A6XX_SP_PERFCTR_SHADER_MASK(.dword = 0x3f));
    if (CHIP == A6XX && !screen->info->a6xx.is_a702)
       ncrb.add(TPL1_UNKNOWN_B605(CHIP, .dword = 0x44));

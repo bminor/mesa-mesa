@@ -1962,8 +1962,6 @@ tu6_init_static_regs(struct tu_device *dev, struct tu_cs *cs)
    }
 
    tu_cs_emit_write_reg(cs, REG_A6XX_SP_NC_MODE_CNTL_2, 0);
-   tu_cs_emit_write_reg(cs, REG_A6XX_SP_DBG_ECO_CNTL,
-                        phys_dev->info->a6xx.magic.SP_DBG_ECO_CNTL);
    tu_cs_emit_write_reg(cs, REG_A6XX_SP_PERFCTR_SHADER_MASK, 0x3f);
    if (CHIP == A6XX && !cs->device->physical_device->info->a6xx.is_a702)
       tu_cs_emit_write_reg(cs, REG_A6XX_TPL1_UNKNOWN_B605, 0x44);
