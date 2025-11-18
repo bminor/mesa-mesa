@@ -645,8 +645,9 @@ pvr_device_init_view_index_init_programs(struct pvr_device *device)
 {
    uint32_t *staging_buffer = NULL;
    VkResult result;
+   unsigned i;
 
-   for (unsigned i = 0; i < PVR_MAX_MULTIVIEW; ++i) {
+   for (i = 0; i < PVR_MAX_MULTIVIEW; ++i) {
       uint32_t staging_buffer_size;
       struct pvr_pds_view_index_init_program *program =
          &device->view_index_init_info[i];
@@ -696,7 +697,7 @@ pvr_device_init_view_index_init_programs(struct pvr_device *device)
    vk_free(&device->vk.alloc, staging_buffer);
 
    if (result != VK_SUCCESS)
-      for (uint32_t u = 0; u < PVR_MAX_MULTIVIEW; ++u)
+      for (uint32_t u = 0; u < i; ++u)
          pvr_bo_suballoc_free(device->view_index_init_programs[u].pvr_bo);
 
    return result;
@@ -984,12 +985,12 @@ err_pvr_finish_compute_idfwdf:
 err_pvr_destroy_compute_query_programs:
    pvr_device_destroy_compute_query_programs(device);
 
-err_pvr_free_compute_empty:
-   pvr_bo_suballoc_free(device->pds_compute_empty_program.pvr_bo);
-
 err_pvr_free_view_index:
    for (uint32_t u = 0; u < PVR_MAX_MULTIVIEW; ++u)
       pvr_bo_suballoc_free(device->view_index_init_programs[u].pvr_bo);
+
+err_pvr_free_compute_empty:
+   pvr_bo_suballoc_free(device->pds_compute_empty_program.pvr_bo);
 
 err_pvr_free_compute_fence:
    pvr_bo_suballoc_free(device->pds_compute_fence_program.pvr_bo);
