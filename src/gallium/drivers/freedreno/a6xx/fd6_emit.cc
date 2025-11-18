@@ -878,7 +878,6 @@ fd6_emit_static_non_context_regs(struct fd_context *ctx, fd_cs &cs)
    }
 
    ncrb.add(VPC_DBG_ECO_CNTL(CHIP, .dword = screen->info->a6xx.magic.VPC_DBG_ECO_CNTL));
-   ncrb.add(GRAS_DBG_ECO_CNTL(CHIP, .dword = screen->info->a6xx.magic.GRAS_DBG_ECO_CNTL));
    if (CHIP == A6XX)
       ncrb.add(HLSQ_DBG_ECO_CNTL(CHIP, .dword = screen->info->a6xx.magic.HLSQ_DBG_ECO_CNTL));
    ncrb.add(A6XX_SP_CHICKEN_BITS(.dword = screen->info->a6xx.magic.SP_CHICKEN_BITS));

@@ -1974,8 +1974,6 @@ tu6_init_static_regs(struct tu_device *dev, struct tu_cs *cs)
 
    tu_cs_emit_write_reg(cs, REG_A6XX_VPC_DBG_ECO_CNTL,
                         phys_dev->info->a6xx.magic.VPC_DBG_ECO_CNTL);
-   tu_cs_emit_write_reg(cs, REG_A6XX_GRAS_DBG_ECO_CNTL,
-                        phys_dev->info->a6xx.magic.GRAS_DBG_ECO_CNTL);
    if (CHIP == A6XX) {
       tu_cs_emit_write_reg(cs, REG_A6XX_HLSQ_DBG_ECO_CNTL,
                            phys_dev->info->a6xx.magic.HLSQ_DBG_ECO_CNTL);
