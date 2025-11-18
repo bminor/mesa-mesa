@@ -378,20 +378,8 @@ anv_encode_as(VkCommandBuffer commandBuffer, const struct vk_acceleration_struct
    };
    anv_bvh_build_set_args(commandBuffer, &args, sizeof(args));
 
-   /* L1/L2 caches flushes should have been dealt with by pipeline barriers.
-    * Unfortunately some platforms require L3 flush because CS (reading the
-    * ir_internal_node_count paramters from vk_ir_header) is not L3 coherent.
-    */
-   if (!ANV_DEVINFO_HAS_COHERENT_L3_CS(cmd_buffer->device->info)) {
-      anv_add_pending_pipe_bits(cmd_buffer, ANV_PIPE_DATA_CACHE_FLUSH_BIT,
-                                "ir internal node count for dispatch");
-   }
-
-   struct anv_address indirect_addr =
-      anv_address_from_u64(intermediate_header_addr +
-                            offsetof(struct vk_ir_header, ir_internal_node_count));
-   anv_genX(cmd_buffer->device->info, cmd_buffer_dispatch_indirect)
-      (cmd_buffer, indirect_addr, true /* is_unaligned_size_x */);
+   anv_genX(cmd_buffer->device->info, cmd_dispatch_unaligned)
+      (commandBuffer, MAX2(state->leaf_node_count, 1), 1, 1);
 }
 
 static VkResult
