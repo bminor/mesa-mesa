@@ -5484,12 +5484,15 @@ radv_emit_fsr_surface_state(struct radv_cmd_buffer *cmd_buffer)
    const struct radv_physical_device *pdev = radv_device_physical(device);
    const struct radv_rendering_state *render = &cmd_buffer->state.render;
    const bool vrs_surface_enable = render->vrs_att.iview != NULL;
+   uint8_t rate = V_0283D0_VRS_SHADING_RATE_1X1, mode = V_0283D0_SC_VRS_COMB_MODE_PASSTHRU;
    struct radv_cmd_stream *cs = cmd_buffer->cs;
    unsigned xmax = 0, ymax = 0;
    uint8_t swizzle_mode = 0;
    uint64_t va = 0;
 
    assert(pdev->info.gfx_level >= GFX11);
+
+   ASSERTED unsigned cdw_max = radeon_check_space(device->ws, cs->b, 16);
 
    if (vrs_surface_enable) {
       const struct radv_image_view *vrs_iview = render->vrs_att.iview;
@@ -5504,7 +5507,13 @@ radv_emit_fsr_surface_state(struct radv_cmd_buffer *cmd_buffer)
       ymax = vrs_iview->vk.extent.height - 1;
 
       swizzle_mode = vrs_image->planes[0].surface.u.gfx9.swizzle_mode;
+   } else if (cmd_buffer->state.uses_vrs_coarse_shading) {
+      mode = V_0283D0_SC_VRS_COMB_MODE_OVERRIDE;
+      rate = V_0283D0_VRS_SHADING_RATE_2X2;
    }
+
+   const uint32_t pa_sc_vrs_override_cntl = S_0283D0_VRS_SURFACE_ENABLE(vrs_surface_enable) |
+                                            S_0283D0_VRS_OVERRIDE_RATE_COMBINER_MODE(mode) | S_0283D0_VRS_RATE(rate);
 
    radeon_begin(cs);
    if (pdev->info.gfx_level >= GFX12) {
@@ -5515,7 +5524,7 @@ radv_emit_fsr_surface_state(struct radv_cmd_buffer *cmd_buffer)
          gfx12_set_context_reg(R_0283F8_PA_SC_VRS_RATE_SIZE_XY, S_0283F8_X_MAX(xmax) | S_0283F8_Y_MAX(ymax));
          gfx12_set_context_reg(R_0283E0_PA_SC_VRS_INFO, S_0283E0_RATE_SW_MODE(swizzle_mode));
       }
-      gfx12_set_context_reg(R_0283D0_PA_SC_VRS_OVERRIDE_CNTL, S_0283D0_VRS_SURFACE_ENABLE(vrs_surface_enable));
+      gfx12_set_context_reg(R_0283D0_PA_SC_VRS_OVERRIDE_CNTL, pa_sc_vrs_override_cntl);
       gfx12_end_context_regs();
    } else if (pdev->info.has_set_context_pairs_packed) {
       gfx11_begin_packed_context_regs();
@@ -5524,7 +5533,7 @@ radv_emit_fsr_surface_state(struct radv_cmd_buffer *cmd_buffer)
          gfx11_set_context_reg(R_0283F4_PA_SC_VRS_RATE_BASE_EXT, S_0283F4_BASE_256B(va >> 40));
          gfx11_set_context_reg(R_0283F8_PA_SC_VRS_RATE_SIZE_XY, S_0283F8_X_MAX(xmax) | S_0283F8_Y_MAX(ymax));
       }
-      gfx11_set_context_reg(R_0283D0_PA_SC_VRS_OVERRIDE_CNTL, S_0283D0_VRS_SURFACE_ENABLE(vrs_surface_enable));
+      gfx11_set_context_reg(R_0283D0_PA_SC_VRS_OVERRIDE_CNTL, pa_sc_vrs_override_cntl);
       gfx11_end_packed_context_regs();
    } else {
       if (vrs_surface_enable) {
@@ -5533,9 +5542,11 @@ radv_emit_fsr_surface_state(struct radv_cmd_buffer *cmd_buffer)
          radeon_emit(S_0283F4_BASE_256B(va >> 40));
          radeon_emit(S_0283F8_X_MAX(xmax) | S_0283F8_Y_MAX(ymax));
       }
-      radeon_set_context_reg(R_0283D0_PA_SC_VRS_OVERRIDE_CNTL, S_0283D0_VRS_SURFACE_ENABLE(vrs_surface_enable));
+      radeon_set_context_reg(R_0283D0_PA_SC_VRS_OVERRIDE_CNTL, pa_sc_vrs_override_cntl);
    }
    radeon_end();
+
+   assert(cs->b->cdw <= cdw_max);
 }
 
 static void
@@ -7687,6 +7698,8 @@ radv_BeginCommandBuffer(VkCommandBuffer commandBuffer, const VkCommandBufferBegi
                               RADV_CMD_DIRTY_DB_SHADER_CONTROL | RADV_CMD_DIRTY_FRAGMENT_OUTPUT;
    if (pdev->info.rbplus_allowed)
       cmd_buffer->state.dirty |= RADV_CMD_DIRTY_RBPLUS;
+   if (pdev->info.gfx_level >= GFX11)
+      cmd_buffer->state.dirty |= RADV_CMD_DIRTY_FSR_SURFACE_STATE;
 
    cmd_buffer->state.dirty_dynamic |= RADV_DYNAMIC_ALL;
 
@@ -8836,6 +8849,9 @@ radv_bind_rt_pipeline(struct radv_cmd_buffer *cmd_buffer, struct radv_ray_tracin
 static ALWAYS_INLINE void
 radv_bind_graphics_pipeline(struct radv_cmd_buffer *cmd_buffer, struct radv_graphics_pipeline *graphics_pipeline)
 {
+   const struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
+   const struct radv_physical_device *pdev = radv_device_physical(device);
+
    /* Bind the non-dynamic graphics state from the pipeline unconditionally because some PSO might
     * have been overwritten between two binds of the same pipeline.
     */
@@ -8882,7 +8898,12 @@ radv_bind_graphics_pipeline(struct radv_cmd_buffer *cmd_buffer, struct radv_grap
    cmd_buffer->state.ia_multi_vgt_param = graphics_pipeline->ia_multi_vgt_param;
 
    cmd_buffer->state.uses_vrs = graphics_pipeline->uses_vrs;
-   cmd_buffer->state.uses_vrs_coarse_shading = graphics_pipeline->uses_vrs_coarse_shading;
+
+   if (cmd_buffer->state.uses_vrs_coarse_shading != graphics_pipeline->uses_vrs_coarse_shading) {
+      cmd_buffer->state.uses_vrs_coarse_shading = graphics_pipeline->uses_vrs_coarse_shading;
+      if (pdev->info.gfx_level >= GFX11)
+         cmd_buffer->state.dirty |= RADV_CMD_DIRTY_FSR_SURFACE_STATE;
+   }
 }
 
 VKAPI_ATTR void VKAPI_CALL
@@ -15577,6 +15598,9 @@ radv_CmdBindDescriptorBufferEmbeddedSamplers2EXT(
 static void
 radv_reset_pipeline_state(struct radv_cmd_buffer *cmd_buffer, VkPipelineBindPoint pipelineBindPoint)
 {
+   const struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
+   const struct radv_physical_device *pdev = radv_device_physical(device);
+
    switch (pipelineBindPoint) {
    case VK_PIPELINE_BIND_POINT_COMPUTE:
       if (cmd_buffer->state.compute_pipeline) {
@@ -15619,7 +15643,11 @@ radv_reset_pipeline_state(struct radv_cmd_buffer *cmd_buffer, VkPipelineBindPoin
          }
 
          cmd_buffer->state.uses_vrs = false;
-         cmd_buffer->state.uses_vrs_coarse_shading = false;
+         if (cmd_buffer->state.uses_vrs_coarse_shading) {
+            cmd_buffer->state.uses_vrs_coarse_shading = false;
+            if (pdev->info.gfx_level >= GFX11)
+               cmd_buffer->state.dirty |= RADV_CMD_DIRTY_FSR_SURFACE_STATE;
+         }
 
          cmd_buffer->state.emitted_graphics_pipeline = NULL;
       }
