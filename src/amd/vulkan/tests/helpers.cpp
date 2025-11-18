@@ -13,14 +13,11 @@ PFN_vkVoidFunction VKAPI_CALL vk_icdGetInstanceProcAddr(VkInstance instance, con
 
 radv_test::radv_test()
 {
-   /* Force the driver to create a noop device that doesn't require AMDGPU. */
-   setenv("RADV_FORCE_FAMILY", "navi21", 1);
 }
 
 radv_test::~radv_test()
 {
    assert(envvars.size() == 0);
-   unsetenv("RADV_FORCE_FAMILY");
 }
 
 void

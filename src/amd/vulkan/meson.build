@@ -349,5 +349,9 @@ if with_radv_tests
     ),
     suite : ['compiler', 'nir'],
     protocol : 'gtest',
+    env : [
+      'LD_PRELOAD=@0@'.format(libamdgpu_noop_drm_shim.full_path()),
+      'AMDGPU_GPU_ID=navi21',
+    ],
   )
 endif

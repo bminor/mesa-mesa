@@ -370,6 +370,9 @@ endif
 if with_radv_tests and not with_amd_vk
   error('RADV tests require RADV')
 endif
+if with_radv_tests and not with_tools.contains('drm-shim')
+  error('RADV tests require AMDGPU drm-shim')
+endif
 
 with_microsoft_clc = get_option('microsoft-clc').enabled()
 with_spirv_to_dxil = get_option('spirv-to-dxil')
