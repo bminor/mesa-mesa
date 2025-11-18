@@ -168,13 +168,13 @@ class A6xxGPUInfo(GPUInfo):
 
         self.props = Struct()
 
-        self.props.magic = Struct()
+        self.magic = Struct()
 
         for name, val in magic_regs.items():
-            setattr(self.props.magic, name, val)
+            setattr(self.magic, name, val)
 
         if raw_magic_regs:
-            self.props.magic_raw = [[int(r[0]), r[1]] for r in raw_magic_regs]
+            self.magic_raw = [[int(r[0]), r[1]] for r in raw_magic_regs]
 
         templates = template if isinstance(template, list) else [template]
         for template in templates:

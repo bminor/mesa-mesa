@@ -279,19 +279,19 @@ emit_blit_fini(struct fd_context *ctx, fd_cs &cs)
 
    fd6_event_write<CHIP>(ctx, cs, FD_LABEL);
 
-   if (info->props.magic.RB_DBG_ECO_CNTL != info->props.magic.RB_DBG_ECO_CNTL_blit) {
+   if (info->magic.RB_DBG_ECO_CNTL != info->magic.RB_DBG_ECO_CNTL_blit) {
       fd_pkt7(cs, CP_WAIT_FOR_IDLE, 0);
       fd_pkt4(cs, 1)
-         .add(A6XX_RB_DBG_ECO_CNTL(.dword = info->props.magic.RB_DBG_ECO_CNTL_blit));
+         .add(A6XX_RB_DBG_ECO_CNTL(.dword = info->magic.RB_DBG_ECO_CNTL_blit));
    }
 
    fd_pkt7(cs, CP_BLIT, 1)
       .add(CP_BLIT_0(.op = BLIT_OP_SCALE));
 
-   if (info->props.magic.RB_DBG_ECO_CNTL != info->props.magic.RB_DBG_ECO_CNTL_blit) {
+   if (info->magic.RB_DBG_ECO_CNTL != info->magic.RB_DBG_ECO_CNTL_blit) {
       fd_pkt7(cs, CP_WAIT_FOR_IDLE, 0);
       fd_pkt4(cs, 1)
-         .add(A6XX_RB_DBG_ECO_CNTL(.dword = info->props.magic.RB_DBG_ECO_CNTL));
+         .add(A6XX_RB_DBG_ECO_CNTL(.dword = info->magic.RB_DBG_ECO_CNTL));
    }
 }
 

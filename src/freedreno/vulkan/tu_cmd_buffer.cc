@@ -1936,8 +1936,8 @@ tu6_init_static_regs(struct tu_device *dev, struct tu_cs *cs)
       ));
    }
 
-   for (size_t i = 0; i < ARRAY_SIZE(phys_dev->info->props.magic_raw); i++) {
-      auto magic_reg = phys_dev->info->props.magic_raw[i];
+   for (size_t i = 0; i < ARRAY_SIZE(phys_dev->info->magic_raw); i++) {
+      auto magic_reg = phys_dev->info->magic_raw[i];
       if (!magic_reg.reg)
          break;
 
@@ -2038,9 +2038,9 @@ tu6_init_static_regs(struct tu_device *dev, struct tu_cs *cs)
       tu_cond_exec_start(cs, CP_COND_REG_EXEC_0_MODE(THREAD_MODE) |
                              CP_COND_REG_EXEC_0_BR);
    tu_cs_emit_write_reg(cs, REG_A6XX_RB_DBG_ECO_CNTL,
-                        phys_dev->info->props.magic.RB_DBG_ECO_CNTL);
+                        phys_dev->info->magic.RB_DBG_ECO_CNTL);
    tu_cs_emit_write_reg(cs, REG_A6XX_RB_RBP_CNTL,
-                        phys_dev->info->props.magic.RB_RBP_CNTL);
+                        phys_dev->info->magic.RB_RBP_CNTL);
    if (CHIP >= A7XX)
       tu_cond_exec_end(cs);
 

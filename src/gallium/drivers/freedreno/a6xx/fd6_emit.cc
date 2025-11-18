@@ -832,7 +832,7 @@ fd6_emit_static_non_context_regs(struct fd_context *ctx, fd_cs &cs)
 {
    struct fd_screen *screen = ctx->screen;
 
-   fd_ncrb<CHIP> ncrb(cs, 28 + ARRAY_SIZE(screen->info->props.magic_raw));
+   fd_ncrb<CHIP> ncrb(cs, 28 + ARRAY_SIZE(screen->info->magic_raw));
 
    if (CHIP >= A7XX) {
       /* On A7XX, RB_CCU_CNTL was broken into two registers, RB_CCU_CNTL which has
@@ -847,8 +847,8 @@ fd6_emit_static_non_context_regs(struct fd_context *ctx, fd_cs &cs)
       ));
    }
 
-   for (size_t i = 0; i < ARRAY_SIZE(screen->info->props.magic_raw); i++) {
-      auto magic_reg = screen->info->props.magic_raw[i];
+   for (size_t i = 0; i < ARRAY_SIZE(screen->info->magic_raw); i++) {
+      auto magic_reg = screen->info->magic_raw[i];
       if (!magic_reg.reg)
          break;
 
@@ -865,7 +865,7 @@ fd6_emit_static_non_context_regs(struct fd_context *ctx, fd_cs &cs)
       ncrb.add({ .reg = magic_reg.reg, .value = value });
    }
 
-   ncrb.add(A6XX_RB_DBG_ECO_CNTL(.dword = screen->info->props.magic.RB_DBG_ECO_CNTL));
+   ncrb.add(A6XX_RB_DBG_ECO_CNTL(.dword = screen->info->magic.RB_DBG_ECO_CNTL));
    ncrb.add(A6XX_SP_NC_MODE_CNTL_2(.f16_no_inf = true));
 
    ncrb.add(A6XX_SP_PERFCTR_SHADER_MASK(.dword = 0x3f));
@@ -920,7 +920,7 @@ fd6_emit_static_context_regs(struct fd_context *ctx, fd_cs &cs)
    crb.add(SP_GFX_USIZE(CHIP));
    crb.add(A6XX_TPL1_PS_ROTATION_CNTL());
 
-   crb.add(A6XX_RB_RBP_CNTL(.dword = screen->info->props.magic.RB_RBP_CNTL));
+   crb.add(A6XX_RB_RBP_CNTL(.dword = screen->info->magic.RB_RBP_CNTL));
    crb.add(A6XX_SP_UNKNOWN_A9A8());
 
    crb.add(A6XX_SP_MODE_CNTL(

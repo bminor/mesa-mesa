@@ -305,13 +305,13 @@ emit_lrz_clears(struct fd_batch *batch)
 
          fd6_emit_flushes<CHIP>(ctx, cs, FD6_FLUSH_CACHE);
 
-         if (ctx->screen->info->props.magic.RB_DBG_ECO_CNTL_blit !=
-             ctx->screen->info->props.magic.RB_DBG_ECO_CNTL) {
+         if (ctx->screen->info->magic.RB_DBG_ECO_CNTL_blit !=
+             ctx->screen->info->magic.RB_DBG_ECO_CNTL) {
             /* This a non-context register, so we have to WFI before changing. */
             fd_pkt7(cs, CP_WAIT_FOR_IDLE, 0);
             fd_pkt4(cs, 1)
                .add(A6XX_RB_DBG_ECO_CNTL(
-                  .dword = ctx->screen->info->props.magic.RB_DBG_ECO_CNTL_blit
+                  .dword = ctx->screen->info->magic.RB_DBG_ECO_CNTL_blit
                ));
          }
       }
@@ -325,12 +325,12 @@ emit_lrz_clears(struct fd_batch *batch)
    if (count > 0) {
       fd_cs cs(fd_batch_get_prologue(batch));
 
-      if (ctx->screen->info->props.magic.RB_DBG_ECO_CNTL_blit !=
-          ctx->screen->info->props.magic.RB_DBG_ECO_CNTL) {
+      if (ctx->screen->info->magic.RB_DBG_ECO_CNTL_blit !=
+          ctx->screen->info->magic.RB_DBG_ECO_CNTL) {
          fd_pkt7(cs, CP_WAIT_FOR_IDLE, 0);
          fd_pkt4(cs, 1)
             .add(A6XX_RB_DBG_ECO_CNTL(
-               .dword = ctx->screen->info->props.magic.RB_DBG_ECO_CNTL
+               .dword = ctx->screen->info->magic.RB_DBG_ECO_CNTL
             ));
       }
 

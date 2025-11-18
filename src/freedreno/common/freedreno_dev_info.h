@@ -70,6 +70,17 @@ struct fd_dev_info {
    };
 
    struct {
+      uint32_t RB_DBG_ECO_CNTL;
+      uint32_t RB_DBG_ECO_CNTL_blit;
+      uint32_t RB_RBP_CNTL;
+   } magic;
+
+   struct {
+         uint32_t reg;
+         uint32_t value;
+   } magic_raw[64];
+
+   struct {
       /*
        * A6XX / gen6
        */
@@ -228,17 +239,6 @@ struct fd_dev_info {
 
       /* A702 cuts A LOT of things.. */
       bool is_a702;
-
-      struct {
-         uint32_t RB_DBG_ECO_CNTL;
-         uint32_t RB_DBG_ECO_CNTL_blit;
-         uint32_t RB_RBP_CNTL;
-      } magic;
-
-      struct {
-            uint32_t reg;
-            uint32_t value;
-      } magic_raw[64];
 
       /* maximum number of descriptor sets */
       uint32_t max_sets;

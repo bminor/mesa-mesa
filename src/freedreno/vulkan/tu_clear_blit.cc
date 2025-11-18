@@ -557,13 +557,13 @@ r2d_teardown(struct tu_cmd_buffer *cmd,
 static void
 r2d_run(struct tu_cmd_buffer *cmd, struct tu_cs *cs)
 {
-   if (cmd->device->physical_device->info->props.magic.RB_DBG_ECO_CNTL_blit !=
-       cmd->device->physical_device->info->props.magic.RB_DBG_ECO_CNTL) {
+   if (cmd->device->physical_device->info->magic.RB_DBG_ECO_CNTL_blit !=
+       cmd->device->physical_device->info->magic.RB_DBG_ECO_CNTL) {
       /* This a non-context register, so we have to WFI before changing. */
       tu_cs_emit_wfi(cs);
       tu_cs_emit_write_reg(
          cs, REG_A6XX_RB_DBG_ECO_CNTL,
-         cmd->device->physical_device->info->props.magic.RB_DBG_ECO_CNTL_blit);
+         cmd->device->physical_device->info->magic.RB_DBG_ECO_CNTL_blit);
    }
 
    /* TODO: try to track when there has been a draw without any intervening
@@ -575,12 +575,12 @@ r2d_run(struct tu_cmd_buffer *cmd, struct tu_cs *cs)
    tu_cs_emit_pkt7(cs, CP_BLIT, 1);
    tu_cs_emit(cs, CP_BLIT_0_OP(BLIT_OP_SCALE));
 
-   if (cmd->device->physical_device->info->props.magic.RB_DBG_ECO_CNTL_blit !=
-       cmd->device->physical_device->info->props.magic.RB_DBG_ECO_CNTL) {
+   if (cmd->device->physical_device->info->magic.RB_DBG_ECO_CNTL_blit !=
+       cmd->device->physical_device->info->magic.RB_DBG_ECO_CNTL) {
       tu_cs_emit_wfi(cs);
       tu_cs_emit_write_reg(
          cs, REG_A6XX_RB_DBG_ECO_CNTL,
-         cmd->device->physical_device->info->props.magic.RB_DBG_ECO_CNTL);
+         cmd->device->physical_device->info->magic.RB_DBG_ECO_CNTL);
    }
 }
 

@@ -113,13 +113,13 @@ template<chip CHIP>
 static void
 cs_restore_emit(fd_cs &cs, struct a6xx_backend *a6xx_backend)
 {
-   fd_ncrb<CHIP> ncrb(cs, 2 + ARRAY_SIZE(a6xx_backend->info->props.magic_raw));
+   fd_ncrb<CHIP> ncrb(cs, 2 + ARRAY_SIZE(a6xx_backend->info->magic_raw));
 
    ncrb.add(A6XX_SP_PERFCTR_SHADER_MASK(.cs = true));
    ncrb.add(A6XX_SP_NC_MODE_CNTL_2());
 
-   for (size_t i = 0; i < ARRAY_SIZE(a6xx_backend->info->props.magic_raw); i++) {
-      auto magic_reg = a6xx_backend->info->props.magic_raw[i];
+   for (size_t i = 0; i < ARRAY_SIZE(a6xx_backend->info->magic_raw); i++) {
+      auto magic_reg = a6xx_backend->info->magic_raw[i];
       if (!magic_reg.reg)
          break;
 
