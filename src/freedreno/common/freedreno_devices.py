@@ -301,21 +301,12 @@ add_gpus([
         threadsize_base = 32,
     ))
 
-
-class A6XXProps(dict):
+class GPUProps(dict):
     unique_props = dict()
-    def apply_gen_props(self, gen, gpu_info):
+    def apply_props(self, gpu_info):
         for name, val in self.items():
-            setattr(getattr(gpu_info, gen), name, val)
-            A6XXProps.unique_props[(name, gen)] = val
-
-    def apply_props(self, gpu_info):
-        self.apply_gen_props("props", gpu_info)
-
-
-class A7XXProps(A6XXProps):
-    def apply_props(self, gpu_info):
-        self.apply_gen_props("props", gpu_info)
+            setattr(getattr(gpu_info, "props"), name, val)
+            GPUProps.unique_props[(name, "props")] = val
 
 
 # Props could be modified with env var:
@@ -323,7 +314,7 @@ class A7XXProps(A6XXProps):
 # e.g.
 #  FD_DEV_FEATURES=has_fs_tex_prefetch=0:max_sets=4
 
-a6xx_base = A6XXProps(
+a6xx_base = GPUProps(
         has_cp_reg_write = True,
         has_8bpp_ubwc = True,
         has_gmem_fast_clear = True,
@@ -350,7 +341,7 @@ a6xx_base = A6XXProps(
 # device-info parameters are keyed to the sub-generation.  These templates
 # reduce the copypaste
 
-a6xx_gen1_low = A6XXProps(
+a6xx_gen1_low = GPUProps(
         reg_size_vec4 = 48,
         instr_cache_size = 64,
         indirect_draw_wfm_quirk = True,
@@ -367,14 +358,14 @@ a6xx_gen1_low = A6XXProps(
         supports_double_threadsize = False,
     )
 
-a6xx_gen1 = A6XXProps(
+a6xx_gen1 = GPUProps(
         reg_size_vec4 = 96,
         instr_cache_size = 64,
         indirect_draw_wfm_quirk = True,
         depth_bounds_require_depth_test_quirk = True,
     )
 
-a6xx_gen2 = A6XXProps(
+a6xx_gen2 = GPUProps(
         reg_size_vec4 = 96,
         instr_cache_size = 64, # TODO
         supports_multiview_mask = True,
@@ -385,7 +376,7 @@ a6xx_gen2 = A6XXProps(
         has_8bpp_ubwc = False,
     )
 
-a6xx_gen3 = A6XXProps(
+a6xx_gen3 = GPUProps(
         reg_size_vec4 = 64,
         # Blob limits it to 128 but we hang with 128
         instr_cache_size = 127,
@@ -410,7 +401,7 @@ a6xx_gen3 = A6XXProps(
         has_pc_dgen_so_cntl = True,
     )
 
-a6xx_gen4 = A6XXProps(
+a6xx_gen4 = GPUProps(
         reg_size_vec4 = 64,
         # Blob limits it to 128 but we hang with 128
         instr_cache_size = 127,
@@ -493,7 +484,7 @@ add_gpus([
         GPUId(619),
     ], A6xxGPUInfo(
         CHIP.A6XX,
-        [a6xx_base, a6xx_gen1, A6XXProps(blit_wfi_quirk = True)],
+        [a6xx_base, a6xx_gen1, GPUProps(blit_wfi_quirk = True)],
         num_ccu = 1,
         tile_align_w = 32,
         tile_align_h = 32,
@@ -560,7 +551,7 @@ add_gpus([
         GPUId(chip_id=0xffff06020300, name="Adreno623"),
     ], A6xxGPUInfo(
         CHIP.A6XX,
-        [a6xx_base, a6xx_gen3, A6XXProps(lrz_track_quirk = False)],
+        [a6xx_base, a6xx_gen3, GPUProps(lrz_track_quirk = False)],
         num_ccu = 2,
         tile_align_w = 96,
         tile_align_h = 16,
@@ -834,7 +825,7 @@ add_gpus([
         GPUId(chip_id=0xffff06090000, name="FD690"), # Default no-speedbin fallback
     ], A6xxGPUInfo(
         CHIP.A6XX,
-        [a6xx_base, a6xx_gen4, A6XXProps(broken_ds_ubwc_quirk = True)],
+        [a6xx_base, a6xx_gen4, GPUProps(broken_ds_ubwc_quirk = True)],
         num_ccu = 8,
         tile_align_w = 64,
         tile_align_h = 32,
@@ -870,7 +861,7 @@ add_gpus([
         GPUId(chip_id=0xffff07002000, name="FD702"), # Default no-speedbin fallback
     ], A6xxGPUInfo(
         CHIP.A6XX, # NOT a mistake!
-        [a6xx_base, a6xx_gen1_low, A6XXProps(
+        [a6xx_base, a6xx_gen1_low, GPUProps(
             has_cp_reg_write = False,
             has_gmem_fast_clear = True,
             sysmem_per_ccu_depth_cache_size = 8 * 1024, # ??????
@@ -913,7 +904,7 @@ add_gpus([
     ))
 
 # Based on a6xx_base + a6xx_gen4
-a7xx_base = A6XXProps(
+a7xx_base = GPUProps(
         has_gmem_fast_clear = True,
         has_hw_multiview = True,
         has_fs_tex_prefetch = True,
@@ -967,14 +958,14 @@ a7xx_base = A6XXProps(
         has_pc_dgen_so_cntl = True,
     )
 
-a7xx_gen1 = A7XXProps(
+a7xx_gen1 = GPUProps(
         supports_uav_ubwc = True,
         fs_must_have_non_zero_constlen_quirk = True,
         enable_tp_ubwc_flag_hint = True,
         reading_shading_rate_requires_smask_quirk = True,
     )
 
-a7xx_gen2 = A7XXProps(
+a7xx_gen2 = GPUProps(
         stsc_duplication_quirk = True,
         has_event_write_sample_count = True,
         ubwc_unorm_snorm_int_compatible = True,
@@ -990,7 +981,7 @@ a7xx_gen2 = A7XXProps(
         has_hw_bin_scaling = True,
     )
 
-a7xx_gen3 = A7XXProps(
+a7xx_gen3 = GPUProps(
         has_event_write_sample_count = True,
         load_inline_uniforms_via_preamble_ldgk = True,
         load_shader_consts_via_preamble = True,
@@ -1127,7 +1118,7 @@ add_gpus([
         GPUId(chip_id=0xffff07030002, name="FD725"),
     ], A6xxGPUInfo(
         CHIP.A7XX,
-        [a7xx_base, a7xx_gen1, A7XXProps(cmdbuf_start_a725_quirk = True)],
+        [a7xx_base, a7xx_gen1, GPUProps(cmdbuf_start_a725_quirk = True)],
         num_ccu = 4,
         tile_align_w = 64,
         tile_align_h = 32,
@@ -1163,7 +1154,7 @@ add_gpus([
         GPUId(chip_id=0x43030B00, name="FD735")
     ], A6xxGPUInfo(
         CHIP.A7XX,
-        [a7xx_base, a7xx_gen2, A7XXProps(enable_tp_ubwc_flag_hint = True)],
+        [a7xx_base, a7xx_gen2, GPUProps(enable_tp_ubwc_flag_hint = True)],
         num_ccu = 3,
         tile_align_w = 96,
         tile_align_h = 32,
@@ -1248,7 +1239,7 @@ add_gpus([
         GPUId(chip_id=0xffff43050a00, name="FDA32"),
     ], A6xxGPUInfo(
         CHIP.A7XX,
-        [a7xx_base, a7xx_gen2, A7XXProps(cmdbuf_start_a725_quirk = True)],
+        [a7xx_base, a7xx_gen2, GPUProps(cmdbuf_start_a725_quirk = True)],
         num_ccu = 6,
         tile_align_w = 96,
         tile_align_h = 32,
@@ -1309,7 +1300,7 @@ add_gpus([
         GPUId(chip_id=0xffff43050b00, name="FD740v3"),
     ], A6xxGPUInfo(
         CHIP.A7XX,
-        [a7xx_base, a7xx_gen2, A7XXProps(enable_tp_ubwc_flag_hint = True)],
+        [a7xx_base, a7xx_gen2, GPUProps(enable_tp_ubwc_flag_hint = True)],
         num_ccu = 6,
         tile_align_w = 96,
         tile_align_h = 32,
@@ -1462,5 +1453,5 @@ fd_dev_info_apply_dbg_options(struct fd_dev_info *info)
 }
 """
 
-print(Template(template).render(s=s, unique_props=A6XXProps.unique_props))
+print(Template(template).render(s=s, unique_props=GPUProps.unique_props))
 
