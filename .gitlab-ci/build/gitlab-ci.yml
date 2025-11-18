@@ -713,6 +713,7 @@ debian-vulkan:
     VULKAN_DRIVERS: amd,asahi,broadcom,freedreno,intel,intel_hasvk,panfrost,virtio,imagination,microsoft-experimental,nouveau,kosmickrisp
     EXTRA_OPTION: >
       -D vulkan-layers=device-select,overlay
+      -D tools=drm-shim
       -D build-radv-tests=true
       -D build-aco-tests=true
       -D intel-rt=disabled
