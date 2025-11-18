@@ -2019,7 +2019,7 @@ fd6_emit_sysmem_prep(struct fd_batch *batch) assert_dt
          .add(GRAS_MODE_CNTL(CHIP, 0x2));
    }
 
-   with_crb (cs, 11) {
+   with_crb (cs, 10) {
       set_window_offset<CHIP>(crb, 0, 0);
 
       set_bin_size<CHIP>(crb, NULL, {
@@ -2040,7 +2040,6 @@ fd6_emit_sysmem_prep(struct fd_batch *batch) assert_dt
             .rt6_sysmem = true,
             .rt7_sysmem = true,
          ));
-         crb.add(RB_CCU_DBG_ECO_CNTL(CHIP, batch->ctx->screen->info->a6xx.magic.RB_CCU_DBG_ECO_CNTL));
          crb.add(GRAS_LRZ_CB_CNTL(CHIP, 0x0));
       }
 

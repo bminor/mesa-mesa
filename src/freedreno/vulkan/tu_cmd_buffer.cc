@@ -2982,8 +2982,6 @@ tu6_sysmem_render_begin(struct tu_cmd_buffer *cmd, struct tu_cs *cs,
          .rt6_sysmem = true,
          .rt7_sysmem = true,
       ));
-      tu_cs_emit_regs(cs,
-         A7XX_RB_CCU_DBG_ECO_CNTL(cmd->device->physical_device->info->a6xx.magic.RB_CCU_DBG_ECO_CNTL));
 
       tu_cs_emit_regs(cs, GRAS_MODE_CNTL(A7XX, 0x2));
       tu_cs_emit_regs(cs, A7XX_RB_UNKNOWN_8E09(0x4));

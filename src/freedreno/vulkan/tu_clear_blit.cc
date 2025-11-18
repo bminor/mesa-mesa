@@ -1609,8 +1609,6 @@ r3d_setup(struct tu_cmd_buffer *cmd,
             .rt6_sysmem = true,
             .rt7_sysmem = true,
          ));
-         tu_cs_emit_regs(cs,
-            A7XX_RB_CCU_DBG_ECO_CNTL(cmd->device->physical_device->info->a6xx.magic.RB_CCU_DBG_ECO_CNTL));
       }
    }
 
