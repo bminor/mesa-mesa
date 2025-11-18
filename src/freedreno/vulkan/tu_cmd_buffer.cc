@@ -1984,8 +1984,6 @@ tu6_init_static_regs(struct tu_device *dev, struct tu_cs *cs)
       tu_cs_emit_regs(cs, A6XX_HLSQ_SHARED_CONSTS(.enable = false));
    tu_cs_emit_write_reg(cs, REG_A6XX_UCHE_UNKNOWN_0E12,
                         phys_dev->info->a6xx.magic.UCHE_UNKNOWN_0E12);
-   tu_cs_emit_write_reg(cs, REG_A6XX_UCHE_CLIENT_PF,
-                        phys_dev->info->a6xx.magic.UCHE_CLIENT_PF);
    tu_cs_emit_write_reg(cs, REG_A6XX_SP_UNKNOWN_A9A8, 0);
    tu_cs_emit_regs(cs, A6XX_SP_MODE_CNTL(.constant_demotion_enable = true,
                                             .isammode = ISAMMODE_GL,

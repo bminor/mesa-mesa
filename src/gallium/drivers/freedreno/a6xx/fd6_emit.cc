@@ -882,7 +882,6 @@ fd6_emit_static_non_context_regs(struct fd_context *ctx, fd_cs &cs)
       ncrb.add(HLSQ_DBG_ECO_CNTL(CHIP, .dword = screen->info->a6xx.magic.HLSQ_DBG_ECO_CNTL));
 
    ncrb.add(UCHE_UNKNOWN_0E12(CHIP, .dword = screen->info->a6xx.magic.UCHE_UNKNOWN_0E12));
-   ncrb.add(UCHE_CLIENT_PF(CHIP, .dword = screen->info->a6xx.magic.UCHE_CLIENT_PF));
 
    if (CHIP == A6XX) {
       ncrb.add(HLSQ_SHARED_CONSTS(CHIP));
