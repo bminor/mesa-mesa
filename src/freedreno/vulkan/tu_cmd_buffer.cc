@@ -1991,8 +1991,6 @@ tu6_init_static_regs(struct tu_device *dev, struct tu_cs *cs)
 
    tu_cs_emit_regs(cs, A6XX_VFD_MODE_CNTL(.vertex = true, .instance = true));
    tu_cs_emit_write_reg(cs, REG_A6XX_RB_MODE_CNTL, 0x00000010);
-   tu_cs_emit_write_reg(cs, REG_A6XX_PC_MODE_CNTL,
-                        phys_dev->info->a6xx.magic.PC_MODE_CNTL);
 
    tu_cs_emit_regs(cs, GRAS_MODE_CNTL(CHIP));
 
@@ -2035,8 +2033,6 @@ tu6_init_static_regs(struct tu_device *dev, struct tu_cs *cs)
    tu_cs_emit_regs(cs, SP_REG_PROG_ID_3(CHIP, .dword = 0xfc));
 
    tu_cs_emit_write_reg(cs, REG_A6XX_VFD_RENDER_MODE, 0x00000000);
-
-   tu_cs_emit_write_reg(cs, REG_A6XX_PC_MODE_CNTL, phys_dev->info->a6xx.magic.PC_MODE_CNTL);
 
    tu_cs_emit_regs(cs, A6XX_RB_ALPHA_TEST_CNTL()); /* always disable alpha test */
 

@@ -941,7 +941,6 @@ fd6_emit_static_context_regs(struct fd_context *ctx, fd_cs &cs)
    if (CHIP == A6XX)
       crb.add(VPC_UNKNOWN_9107(CHIP));
    crb.add(A6XX_RB_MODE_CNTL(.dword = 0x00000010));
-   crb.add(PC_MODE_CNTL(CHIP, .dword=screen->info->a6xx.magic.PC_MODE_CNTL));
    crb.add(GRAS_LRZ_PS_INPUT_CNTL(CHIP));
    crb.add(A6XX_GRAS_LRZ_PS_SAMPLEFREQ_CNTL());
    crb.add(GRAS_MODE_CNTL(CHIP, .dword = 0x2));
