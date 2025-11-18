@@ -1849,7 +1849,7 @@ build_fs_prolog(nir_builder *b, const void *key)
    agx_nir_fs_prolog(b, key);
 
    /* Lower load_stat_query_address_agx, needed for FS statistics */
-   NIR_PASS(_, b->shader, hk_lower_uvs_index, 0);
+   NIR_PASS(_, b->shader, hk_lower_uvs_index, MESA_SHADER_FRAGMENT, 0);
    NIR_PASS(_, b->shader, nir_shader_intrinsics_pass, lower_fs_root,
             nir_metadata_control_flow, NULL);
 }
