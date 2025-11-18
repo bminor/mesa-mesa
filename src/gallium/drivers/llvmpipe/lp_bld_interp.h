@@ -92,6 +92,9 @@ struct lp_build_interp_soa_context
    LLVMValueRef num_loop;
    LLVMTypeRef sample_pos_array_type;
    LLVMValueRef sample_pos_array;
+   LLVMValueRef statemask_store;
+   LLVMValueRef smask;
+   LLVMValueRef smask_all;
 
    LLVMValueRef x;
    LLVMValueRef y;
@@ -130,6 +133,7 @@ lp_build_interp_soa_init(struct lp_build_interp_soa_context *bld,
                          LLVMValueRef num_loop,
                          LLVMBuilderRef builder,
                          struct lp_type type,
+                         LLVMValueRef smask,
                          LLVMValueRef a0_ptr,
                          LLVMValueRef dadx_ptr,
                          LLVMValueRef dady_ptr,

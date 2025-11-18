@@ -3365,6 +3365,14 @@ generate_fragment(struct llvmpipe_context *lp,
       LLVMValueRef mask_store =
          lp_build_array_alloca(gallivm, mask_type,
                                num_loop_samp, "mask_store");
+
+      /*
+       * XXX: might be worth storing the x/y pos of a sample compacted
+       * into a int32 (we only need the upper 12 bits of the floats), rather
+       * than as 2 separate floats, making access quite a bit easier in
+       * interpolation (as we always access them both simultaneously), just
+       * doing unpack shuffle.
+       */
       LLVMTypeRef flt_type = LLVMFloatTypeInContext(gallivm->context);
       LLVMValueRef glob_sample_pos =
          LLVMAddGlobal(gallivm->module,
@@ -3429,31 +3437,16 @@ generate_fragment(struct llvmpipe_context *lp,
       LLVMValueRef color_store[PIPE_MAX_COLOR_BUFS][TGSI_NUM_CHANNELS];
       bool pixel_center_integer = nir->info.fs.pixel_center_integer;
 
-      /*
-       * The shader input interpolation info is not explicitely baked in the
-       * shader key, but everything it derives from (TGSI, and flatshade) is
-       * already included in the shader key.
-       */
-      lp_build_interp_soa_init(&interp,
-                               gallivm,
-                               nir->num_inputs,
-                               inputs,
-                               pixel_center_integer,
-                               key->coverage_samples,
-                               LLVMTypeOf(sample_pos_array),
-                               glob_sample_pos,
-                               num_loop,
-                               builder, fs_type,
-                               a0_ptr, dadx_ptr, dady_ptr,
-                               x, y);
+      LLVMValueRef smask_val = NULL;
+      if (key->multisample) {
+         smask_val =
+            LLVMBuildLoad2(builder, int32_type,
+                           lp_jit_context_sample_mask(gallivm, variant->jit_context_type, context_ptr),
+                           "");
+      }
 
       for (unsigned i = 0; i < num_fs; i++) {
          if (key->multisample) {
-            LLVMValueRef smask_val =
-               LLVMBuildLoad2(builder, int32_type,
-                              lp_jit_context_sample_mask(gallivm, variant->jit_context_type, context_ptr),
-                              "");
-
             /*
              * For multisampling, extract the per-sample mask from the
              * incoming 64-bit mask, store to the per sample mask storage. Or
@@ -3497,6 +3490,24 @@ generate_fragment(struct llvmpipe_context *lp,
             LLVMBuildStore(builder, mask, mask_ptr);
          }
       }
+
+      /*
+       * The shader input interpolation info is not explicitely baked in the
+       * shader key, but everything it derives from (TGSI, and flatshade) is
+       * already included in the shader key.
+       */
+      lp_build_interp_soa_init(&interp,
+                               gallivm,
+                               nir->num_inputs,
+                               inputs,
+                               pixel_center_integer,
+                               key->coverage_samples,
+                               LLVMTypeOf(sample_pos_array),
+                               glob_sample_pos,
+                               num_loop,
+                               builder, fs_type, smask_val,
+                               a0_ptr, dadx_ptr, dady_ptr,
+                               x, y);
 
       generate_fs_loop(gallivm,
                        shader, key,

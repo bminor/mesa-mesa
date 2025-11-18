@@ -186,6 +186,20 @@ calc_offsets(struct lp_build_context *coeff_bld,
 }
 
 
+/*
+ * Calculate offset for centroid interpolation (i.e. select the right
+ * position for interpolation). According to d3d11 rules,
+ * https://microsoft.github.io/DirectX-Specs/d3d/archive/D3D11_3_FunctionalSpec.htm#3.5.5%20Centroid%20Sampling%20of%20Attributes,
+ * 1) if all samples are covered (the spec is not explicit on this, but
+ *    "covered" here according to tests includes the state sample mask (making
+ *    things easier as our mask always includes this)), select center.
+ * 2) Otherwise, select position from sample that has lowest index that is
+ *    covered (spec states this takes state sample mask into account).
+ * 3) Else, if no sample is covered (e.g. helper pixels), use center if
+ *    state sample mask covers all samples, otherwise use position from sample
+ *    with lowest index that is covered by state sample mask.
+ * Other APIs seem to have less strict rules or don't explicitly state them.
+ */
 static void
 calc_centroid_offsets(struct lp_build_interp_soa_context *bld,
                       struct gallivm_state *gallivm,
@@ -197,19 +211,33 @@ calc_centroid_offsets(struct lp_build_interp_soa_context *bld,
 {
    struct lp_build_context *coeff_bld = &bld->coeff_bld;
    LLVMBuilderRef builder = gallivm->builder;
-   LLVMValueRef s_mask_and = NULL;
+   LLVMValueRef cov_mask_and = NULL;
+   LLVMValueRef cov_mask_or = NULL;
    LLVMValueRef centroid_x_offset = pix_center_offset;
    LLVMValueRef centroid_y_offset = pix_center_offset;
+   LLVMValueRef cent_x_off_none = pix_center_offset;
+   LLVMValueRef cent_y_off_none = pix_center_offset;
+   /*
+    * Use backward loop so the last covered sample is the one with the
+    * lowest index.
+    */
    for (int s = bld->coverage_samples - 1; s >= 0; s--) {
-      LLVMValueRef sample_cov;
-      LLVMValueRef s_mask_idx = LLVMBuildMul(builder, bld->num_loop, lp_build_const_int32(gallivm, s), "");
+      LLVMValueRef sample_cov, state_mask;
+      LLVMValueRef s_mask_idx = LLVMBuildMul(builder, bld->num_loop,
+                                             lp_build_const_int32(gallivm, s), "");
 
       s_mask_idx = LLVMBuildAdd(builder, s_mask_idx, loop_iter, "");
       sample_cov = lp_build_pointer_get2(builder, mask_type, mask_store, s_mask_idx);
-      if (s == bld->coverage_samples - 1)
-         s_mask_and = sample_cov;
-      else
-         s_mask_and = LLVMBuildAnd(builder, s_mask_and, sample_cov, "");
+      state_mask = lp_build_pointer_get2(builder, mask_type, bld->statemask_store,
+                                         lp_build_const_int32(gallivm, s));
+      if (s == bld->coverage_samples - 1) {
+         cov_mask_and = sample_cov;
+         cov_mask_or = sample_cov;
+      }
+      else {
+         cov_mask_and = LLVMBuildAnd(builder, cov_mask_and, sample_cov, "");
+         cov_mask_or = LLVMBuildOr(builder, cov_mask_or, sample_cov, "");
+      }
 
       LLVMValueRef x_val_idx = lp_build_const_int32(gallivm, s * 2);
       LLVMValueRef y_val_idx = lp_build_const_int32(gallivm, s * 2 + 1);
@@ -222,9 +250,17 @@ calc_centroid_offsets(struct lp_build_interp_soa_context *bld,
       y_val_idx = lp_build_broadcast_scalar(coeff_bld, y_val_idx);
       centroid_x_offset = lp_build_select(coeff_bld, sample_cov, x_val_idx, centroid_x_offset);
       centroid_y_offset = lp_build_select(coeff_bld, sample_cov, y_val_idx, centroid_y_offset);
+      /* This is a lot of selects... */
+      cent_x_off_none = lp_build_select(coeff_bld, state_mask, x_val_idx, cent_x_off_none);
+      cent_y_off_none = lp_build_select(coeff_bld, state_mask, y_val_idx, cent_y_off_none);
    }
-   *centroid_x = lp_build_select(coeff_bld, s_mask_and, pix_center_offset, centroid_x_offset);
-   *centroid_y = lp_build_select(coeff_bld, s_mask_and, pix_center_offset, centroid_y_offset);
+   cent_x_off_none = lp_build_select(coeff_bld, bld->smask_all, pix_center_offset, cent_x_off_none);
+   cent_y_off_none = lp_build_select(coeff_bld, bld->smask_all, pix_center_offset, cent_y_off_none);
+   centroid_x_offset = lp_build_select(coeff_bld, cov_mask_or, centroid_x_offset, cent_x_off_none);
+   centroid_y_offset = lp_build_select(coeff_bld, cov_mask_or, centroid_y_offset, cent_y_off_none);
+
+   *centroid_x = lp_build_select(coeff_bld, cov_mask_and, pix_center_offset, centroid_x_offset);
+   *centroid_y = lp_build_select(coeff_bld, cov_mask_and, pix_center_offset, centroid_y_offset);
 }
 
 
@@ -763,6 +799,7 @@ lp_build_interp_soa_init(struct lp_build_interp_soa_context *bld,
                          LLVMValueRef num_loop,
                          LLVMBuilderRef builder,
                          struct lp_type type,
+                         LLVMValueRef smask,
                          LLVMValueRef a0_ptr,
                          LLVMValueRef dadx_ptr,
                          LLVMValueRef dady_ptr,
@@ -833,6 +870,44 @@ lp_build_interp_soa_init(struct lp_build_interp_soa_context *bld,
    bld->num_loop = num_loop;
    bld->sample_pos_array_type = sample_pos_array_type;
    bld->sample_pos_array = sample_pos_array;
+   bld->smask = smask;
+   bld->smask_all = NULL;
+   if (coverage_samples > 1) {
+      /* this couldn't be more ugly */
+      LLVMBuilderRef builder = gallivm->builder;
+      LLVMTypeRef mask_type = lp_build_int_vec_type(gallivm, type);
+      LLVMValueRef all_samples = lp_build_const_int32(gallivm, (1 << coverage_samples) - 1);
+      smask = LLVMBuildAnd(builder, smask, all_samples, "");
+      LLVMValueRef smask_all = LLVMBuildICmp(gallivm->builder, LLVMIntEQ, smask, all_samples, "");
+      smask_all = LLVMBuildSExt(builder, smask_all, LLVMInt32TypeInContext(gallivm->context), "");
+      bld->smask_all = lp_build_broadcast(gallivm, mask_type, smask_all);
+
+      /*
+       * This kind of duplicates what we do in generate_fragment(), but the
+       * array is smaller as it's only dependent on the state mask.
+       * XXX: should just precalculate the centroid position value if no sample
+       * is covered, since that obviously doesn't depend on the actual fragment,
+       * only the state sample mask.
+       */
+      bld->statemask_store = lp_build_array_alloca(gallivm, mask_type,
+                                                   lp_build_const_int32(gallivm, coverage_samples),
+                                                   "statemask_store");
+      for (unsigned s = 0; s < coverage_samples; s++) {
+         LLVMValueRef sindexi = lp_build_const_int32(gallivm, s);
+         LLVMValueRef statemask_ptr =
+            LLVMBuildGEP2(builder, mask_type, bld->statemask_store, &sindexi, 1,
+                          "statemask_ptr");
+         LLVMValueRef smask_bit =
+            LLVMBuildAnd(builder, smask,
+                         lp_build_const_int32(gallivm, (1 << s)), "");
+         LLVMValueRef cmp =
+            LLVMBuildICmp(builder, LLVMIntNE, smask_bit,
+                          lp_build_const_int32(gallivm, 0), "");
+         smask_bit = LLVMBuildSExt(builder, cmp, LLVMInt32TypeInContext(gallivm->context), "");
+         smask_bit = lp_build_broadcast(gallivm, mask_type, smask_bit);
+         LLVMBuildStore(builder, smask_bit, statemask_ptr);
+      }
+   }
 
    pos_init(bld, x0, y0);
 
