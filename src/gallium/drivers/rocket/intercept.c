@@ -5,6 +5,7 @@
 
 #include <dlfcn.h>
 #include <fcntl.h>
+#include <inttypes.h>
 #include <linux/limits.h>
 #include <stdarg.h>
 #include <stdint.h>
@@ -67,7 +68,7 @@ static struct bo *
 find_bo(uint64_t dma_address, unsigned *offset)
 {
    for (int j = 0; j < context.next_handle_id; j++) {
-      fprintf(stderr, "needle %lx hay %lx i %d\n", dma_address,
+      fprintf(stderr, "needle %" PRIx64 " hay %" PRIx64 " i %d\n", dma_address,
               context.bos[j].dma_addr, j);
       if (dma_address >= context.bos[j].dma_addr &&
           dma_address < context.bos[j].dma_addr + context.bos[j].size) {
@@ -85,7 +86,7 @@ dump_buffer(const char *name, uint64_t dma_address, unsigned size)
    unsigned offset = 0;
    struct bo *bo = find_bo(dma_address, &offset);
 
-   fprintf(stderr, "dump_buffer name %s dma 0x%lx size %u bo %p\n", name,
+   fprintf(stderr, "dump_buffer name %s dma 0x%" PRIx64 " size %u bo %p\n", name,
            dma_address, size, bo);
 
    if (size == 0 || size + offset > bo->size)
