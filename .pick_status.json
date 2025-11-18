@@ -614,7 +614,7 @@
         "description": "radv: fix RB+ for depth-only with unused attachments",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "4580293ab2cb37dc4299c607933c370b3a743529",
         "notes": null

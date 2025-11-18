@@ -11720,7 +11720,7 @@ radv_emit_cb_render_state(struct radv_cmd_buffer *cmd_buffer)
    if (cmd_buffer->state.custom_blend_mode) {
       cb_color_control |= S_028808_MODE(cmd_buffer->state.custom_blend_mode);
    } else {
-      if (d->color_write_mask) {
+      if (render->color_att_count > 0 && d->color_write_mask) {
          cb_color_control |= S_028808_MODE(V_028808_CB_NORMAL);
       } else {
          cb_color_control |= S_028808_MODE(V_028808_CB_DISABLE);
