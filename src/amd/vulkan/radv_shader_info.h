@@ -334,7 +334,7 @@ void radv_nir_shader_info_pass(struct radv_device *device, const struct nir_shad
                                const enum radv_pipeline_type pipeline_type, bool consider_force_vrs,
                                struct radv_shader_info *info);
 
-void radv_get_legacy_gs_info(const struct radv_device *device, struct radv_shader_info *gs_info);
+void radv_get_legacy_gs_info(const struct radv_device *device, struct radv_shader_info *es_info, struct radv_shader_info *gs_info);
 
 void gfx10_get_ngg_info(const struct radv_device *device, struct radv_shader_info *es_info,
                         struct radv_shader_info *gs_info, struct gfx10_ngg_info *out);

@@ -12729,18 +12729,27 @@ radv_bind_graphics_shaders(struct radv_cmd_buffer *cmd_buffer)
 
    radv_bind_gs_copy_shader(cmd_buffer, gs_copy_shader);
 
-   /* Determine NGG GS info. */
+   /* Determine GS info. */
    if (cmd_buffer->state.shaders[MESA_SHADER_GEOMETRY] &&
-       cmd_buffer->state.shaders[MESA_SHADER_GEOMETRY]->info.is_ngg &&
        cmd_buffer->state.shaders[MESA_SHADER_GEOMETRY]->info.merged_shader_compiled_separately) {
       struct radv_shader *es = cmd_buffer->state.shaders[MESA_SHADER_TESS_EVAL]
                                   ? cmd_buffer->state.shaders[MESA_SHADER_TESS_EVAL]
                                   : cmd_buffer->state.shaders[MESA_SHADER_VERTEX];
       struct radv_shader *gs = cmd_buffer->state.shaders[MESA_SHADER_GEOMETRY];
 
-      gfx10_ngg_set_esgs_ring_itemsize(device, &es->info, &gs->info, &gs->info.ngg_info);
-      gfx10_get_ngg_info(device, &es->info, &gs->info, &gs->info.ngg_info);
-      radv_precompute_registers_hw_ngg(device, &gs->config, &gs->info);
+      if (cmd_buffer->state.shaders[MESA_SHADER_GEOMETRY]->info.is_ngg) {
+         gfx10_ngg_set_esgs_ring_itemsize(device, &es->info, &gs->info, &gs->info.ngg_info);
+         gfx10_get_ngg_info(device, &es->info, &gs->info, &gs->info.ngg_info);
+         radv_precompute_registers_hw_ngg(device, &gs->config, &gs->info);
+      } else {
+         radv_get_legacy_gs_info(device, &es->info, &gs->info);
+         radv_precompute_registers_hw_gs(device, &es->info, &gs->info);
+
+         cmd_buffer->esgs_ring_size_needed =
+            MAX2(cmd_buffer->esgs_ring_size_needed, gs->info.legacy_gs_info.esgs_ring_size);
+         cmd_buffer->gsvs_ring_size_needed =
+            MAX2(cmd_buffer->gsvs_ring_size_needed, gs->info.legacy_gs_info.gsvs_ring_size);
+      }
    }
 
    const struct radv_shader *ps = cmd_buffer->state.shaders[MESA_SHADER_FRAGMENT];
