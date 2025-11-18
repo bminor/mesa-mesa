@@ -230,7 +230,6 @@ struct fd_dev_info {
          uint32_t RB_DBG_ECO_CNTL;
          uint32_t RB_DBG_ECO_CNTL_blit;
          uint32_t RB_RBP_CNTL;
-         uint32_t VPC_DBG_ECO_CNTL;
          uint32_t UCHE_UNKNOWN_0E12;
 
          uint32_t RB_CCU_DBG_ECO_CNTL;
