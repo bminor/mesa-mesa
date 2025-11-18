@@ -265,6 +265,7 @@ si_sqtt_resize_bo(struct si_context *sctx)
    /* Destroy the previous thread trace BO. */
    struct pb_buffer_lean *bo = sctx->sqtt->bo;
    radeon_bo_reference(sctx->screen->ws, &bo, NULL);
+   sctx->sqtt->bo = NULL;
 
    /* Double the size of the thread trace buffer per SE. */
    sctx->sqtt->buffer_size *= 2;
@@ -490,7 +491,7 @@ void si_handle_sqtt(struct si_context *sctx, struct radeon_cmdbuf *rcs)
 
          if (sctx->spm.ptr)
             sctx->ws->buffer_unmap(sctx->ws, sctx->spm.bo);
-      } else {
+      } else if (sctx->sqtt->bo) {
          if (!sctx->sqtt->trigger_file) {
             sctx->sqtt->start_frame = num_frames + 10;
          }
