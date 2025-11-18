@@ -723,6 +723,8 @@ radv_shader_need_push_constants_upload(const struct radv_shader *shader)
    return loc->sgpr_idx != -1;
 }
 
+void radv_precompute_registers_hw_gs(struct radv_device *device, struct radv_shader_info *es_info, struct radv_shader_info *gs_info);
+
 void radv_precompute_registers_hw_ngg(struct radv_device *device, const struct ac_shader_config *config,
                                       struct radv_shader_info *info);
 

@@ -1628,60 +1628,59 @@ radv_precompute_registers_hw_vs(struct radv_device *device, struct radv_shader_b
    }
 }
 
-static void
-radv_precompute_registers_hw_gs(struct radv_device *device, struct radv_shader_binary *binary)
+void
+radv_precompute_registers_hw_gs(struct radv_device *device, struct radv_shader_info *es_info, struct radv_shader_info *gs_info)
 {
    const struct radv_physical_device *pdev = radv_device_physical(device);
-   struct radv_shader_info *info = &binary->info;
 
-   info->regs.gs.vgt_esgs_ring_itemsize = info->gs_ring_info.esgs_itemsize;
+   gs_info->regs.gs.vgt_esgs_ring_itemsize = es_info ? es_info->esgs_itemsize / 4 : gs_info->gs_ring_info.esgs_itemsize;
 
-   info->regs.gs.vgt_gs_max_prims_per_subgroup =
-      S_028A94_MAX_PRIMS_PER_SUBGROUP(info->gs_ring_info.gs_inst_prims_in_subgroup);
+   gs_info->regs.gs.vgt_gs_max_prims_per_subgroup =
+      S_028A94_MAX_PRIMS_PER_SUBGROUP(gs_info->gs_ring_info.gs_inst_prims_in_subgroup);
 
-   info->regs.vgt_gs_onchip_cntl = S_028A44_ES_VERTS_PER_SUBGRP(info->gs_ring_info.es_verts_per_subgroup) |
-                                   S_028A44_GS_PRIMS_PER_SUBGRP(info->gs_ring_info.gs_prims_per_subgroup) |
-                                   S_028A44_GS_INST_PRIMS_IN_SUBGRP(info->gs_ring_info.gs_inst_prims_in_subgroup);
+   gs_info->regs.vgt_gs_onchip_cntl = S_028A44_ES_VERTS_PER_SUBGRP(gs_info->gs_ring_info.es_verts_per_subgroup) |
+                                      S_028A44_GS_PRIMS_PER_SUBGRP(gs_info->gs_ring_info.gs_prims_per_subgroup) |
+                                      S_028A44_GS_INST_PRIMS_IN_SUBGRP(gs_info->gs_ring_info.gs_inst_prims_in_subgroup);
 
-   const uint32_t gs_max_out_vertices = info->gs.vertices_out;
-   const uint8_t max_stream = info->gs.num_components_per_stream[3]   ? 3
-                              : info->gs.num_components_per_stream[2] ? 2
-                              : info->gs.num_components_per_stream[1] ? 1
+   const uint32_t gs_max_out_vertices = gs_info->gs.vertices_out;
+   const uint8_t max_stream = gs_info->gs.num_components_per_stream[3]   ? 3
+                              : gs_info->gs.num_components_per_stream[2] ? 2
+                              : gs_info->gs.num_components_per_stream[1] ? 1
                                                                       : 0;
-   const uint8_t *num_components = info->gs.num_components_per_stream;
+   const uint8_t *num_components = gs_info->gs.num_components_per_stream;
 
    uint32_t offset = num_components[0] * gs_max_out_vertices;
-   info->regs.gs.vgt_gsvs_ring_offset[0] = offset;
+   gs_info->regs.gs.vgt_gsvs_ring_offset[0] = offset;
 
    if (max_stream >= 1)
       offset += num_components[1] * gs_max_out_vertices;
-   info->regs.gs.vgt_gsvs_ring_offset[1] = offset;
+   gs_info->regs.gs.vgt_gsvs_ring_offset[1] = offset;
 
    if (max_stream >= 2)
       offset += num_components[2] * gs_max_out_vertices;
-   info->regs.gs.vgt_gsvs_ring_offset[2] = offset;
+   gs_info->regs.gs.vgt_gsvs_ring_offset[2] = offset;
 
    if (max_stream >= 3)
       offset += num_components[3] * gs_max_out_vertices;
-   info->regs.gs.vgt_gsvs_ring_itemsize = offset;
+   gs_info->regs.gs.vgt_gsvs_ring_itemsize = offset;
 
    for (uint32_t i = 0; i < 4; i++)
-      info->regs.gs.vgt_gs_vert_itemsize[i] = (max_stream >= i) ? num_components[i] : 0;
+      gs_info->regs.gs.vgt_gs_vert_itemsize[i] = (max_stream >= i) ? num_components[i] : 0;
 
-   const uint32_t gs_num_invocations = info->gs.invocations;
-   info->regs.gs.vgt_gs_instance_cnt =
+   const uint32_t gs_num_invocations = gs_info->gs.invocations;
+   gs_info->regs.gs.vgt_gs_instance_cnt =
       S_028B90_CNT(MIN2(gs_num_invocations, 127)) | S_028B90_ENABLE(gs_num_invocations > 0);
 
-   info->regs.spi_shader_pgm_rsrc3_gs =
+   gs_info->regs.spi_shader_pgm_rsrc3_gs =
       ac_apply_cu_en(S_00B21C_CU_EN(0xffff) | S_00B21C_WAVE_LIMIT(0x3F), C_00B21C_CU_EN, 0, &pdev->info);
 
    if (pdev->info.gfx_level >= GFX10) {
-      info->regs.spi_shader_pgm_rsrc4_gs =
+      gs_info->regs.spi_shader_pgm_rsrc4_gs =
          ac_apply_cu_en(S_00B204_CU_EN_GFX10(0xffff) | S_00B204_SPI_SHADER_LATE_ALLOC_GS_GFX10(0), C_00B204_CU_EN_GFX10,
                         16, &pdev->info);
    }
 
-   info->regs.vgt_gs_max_vert_out = info->gs.vertices_out;
+   gs_info->regs.vgt_gs_max_vert_out = gs_info->gs.vertices_out;
 }
 
 void
@@ -2031,7 +2030,7 @@ radv_precompute_registers(struct radv_device *device, struct radv_shader_binary 
       if (info->is_ngg) {
          radv_precompute_registers_hw_ngg(device, &binary->config, &binary->info);
       } else {
-         radv_precompute_registers_hw_gs(device, binary);
+         radv_precompute_registers_hw_gs(device, NULL, &binary->info);
       }
       break;
    case MESA_SHADER_MESH:

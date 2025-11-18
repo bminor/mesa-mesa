@@ -2949,7 +2949,7 @@ radv_graphics_shaders_compile(struct radv_device *device, struct vk_pipeline_cac
    }
 
    if (stages[MESA_SHADER_GEOMETRY].nir && !stages[MESA_SHADER_GEOMETRY].info.is_ngg)
-      radv_get_legacy_gs_info(device, &stages[MESA_SHADER_GEOMETRY].info);
+      radv_get_legacy_gs_info(device, NULL, &stages[MESA_SHADER_GEOMETRY].info);
 
    /* Compile NIR shaders to AMD assembly. */
    radv_graphics_shaders_nir_to_asm(device, cache, stages, gfx_state, keep_executable_info, keep_statistic_info,
