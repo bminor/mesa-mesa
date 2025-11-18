@@ -2155,6 +2155,8 @@ set_tiler_idvs_flags(struct cs_builder *b, struct panvk_cmd_buffer *cmdbuf,
       ia->primitive_topology == VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
    bool writes_layer = vs->info.outputs_written & VARYING_BIT_LAYER;
    bool extended_fifo = writes_point_size || vs->info.vs.needs_extended_fifo;
+   bool writes_prim_id = vs->info.outputs_written & VARYING_BIT_PRIMITIVE_ID;
+   bool fs_reads_prim_id = fs ? fs->info.fs.reads_primitive_id : false;
 
    bool dirty = gfx_state_dirty(cmdbuf, VS) || fs_user_dirty(cmdbuf) ||
                 dyn_gfx_state_dirty(cmdbuf, IA_PRIMITIVE_RESTART_ENABLE) ||
@@ -2165,8 +2167,8 @@ set_tiler_idvs_flags(struct cs_builder *b, struct panvk_cmd_buffer *cmdbuf,
    if (dirty) {
       pan_pack(&tiler_idvs_flags, PRIMITIVE_FLAGS, cfg) {
          cfg.draw_mode = translate_prim_topology(ia->primitive_topology);
-         cfg.primitive_index_enable =
-            fs ? fs->info.fs.reads_primitive_id : false;
+         cfg.primitive_index_enable = fs_reads_prim_id;
+         cfg.primitive_index_override = writes_prim_id && fs_reads_prim_id;
 
 #if PAN_ARCH < 13
          cfg.point_size_array_format = writes_point_size
