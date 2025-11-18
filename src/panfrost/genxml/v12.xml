@@ -1313,7 +1313,7 @@
     <field name="Index type" size="3" start="0:8" type="Index Type" default="None"/>
     <field name="Point size array format" size="2" start="0:11" type="Point Size Array Format"/>
     <field name="Primitive Index Enable" size="1" start="0:13" type="bool"/>
-    <field name="Primitive Index Writeback" size="1" start="0:14" type="bool"/>
+    <field name="Primitive Index Override" size="1" start="0:14" type="bool"/>
     <field name="Allow rotating primitives" size="1" start="0:15" type="bool"/>
     <field name="Low Depth Cull" size="1" start="0:16" type="bool" default="true"/>
     <field name="High Depth Cull" size="1" start="0:17" type="bool" default="true"/>
@@ -1355,7 +1355,7 @@
     <field name="Draw mode" size="8" start="0:0" type="Draw Mode" default="None"/>
     <field name="Index type" size="3" start="0:8" type="Index Type" default="None"/>
     <field name="Primitive Index Enable" size="1" start="0:13" type="bool"/>
-    <field name="Primitive Index Writeback" size="1" start="0:14" type="bool"/>
+    <field name="Primitive Index Override" size="1" start="0:14" type="bool"/>
     <field name="Allow rotating primitives" size="1" start="0:15" type="bool"/>
     <field name="Low Depth Cull" size="1" start="0:16" type="bool" default="true"/>
     <field name="High Depth Cull" size="1" start="0:17" type="bool" default="true"/>
