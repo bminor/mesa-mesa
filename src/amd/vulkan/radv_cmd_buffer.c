@@ -5478,7 +5478,7 @@ radv_emit_mip_change_flush_default(struct radv_cmd_buffer *cmd_buffer)
 }
 
 static void
-radv_gfx11_emit_vrs_surface(struct radv_cmd_buffer *cmd_buffer)
+radv_emit_fsr_surface_state(struct radv_cmd_buffer *cmd_buffer)
 {
    const struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    const struct radv_physical_device *pdev = radv_device_physical(device);
@@ -5488,6 +5488,8 @@ radv_gfx11_emit_vrs_surface(struct radv_cmd_buffer *cmd_buffer)
    unsigned xmax = 0, ymax = 0;
    uint8_t swizzle_mode = 0;
    uint64_t va = 0;
+
+   assert(pdev->info.gfx_level >= GFX11);
 
    if (vrs_surface_enable) {
       const struct radv_image_view *vrs_iview = render->vrs_att.iview;
@@ -5686,9 +5688,6 @@ radv_emit_framebuffer_state(struct radv_cmd_buffer *cmd_buffer)
    } else {
       radv_gfx6_emit_null_ds_state(cmd_buffer);
    }
-
-   if (pdev->info.gfx_level >= GFX11)
-      radv_gfx11_emit_vrs_surface(cmd_buffer);
 
    assert(cs->b->cdw <= cdw_max);
 }
@@ -9757,6 +9756,9 @@ radv_CmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBufferCou
                }
             }
          }
+
+         if (primary->state.render.active && (primary->state.dirty & RADV_CMD_DIRTY_FSR_SURFACE_STATE))
+            radv_emit_fsr_surface_state(primary);
       }
 
       if (secondary->gang.cs) {
@@ -10162,6 +10164,8 @@ radv_CmdBeginRendering(VkCommandBuffer commandBuffer, const VkRenderingInfo *pRe
       cmd_buffer->state.dirty |= RADV_CMD_DIRTY_RBPLUS;
    if (pdev->info.gfx_level >= GFX10_3)
       cmd_buffer->state.dirty |= RADV_CMD_DIRTY_FSR_STATE;
+   if (pdev->info.gfx_level >= GFX11)
+      cmd_buffer->state.dirty |= RADV_CMD_DIRTY_FSR_SURFACE_STATE;
 
    if (render->vrs_att.iview && pdev->info.gfx_level == GFX10_3) {
       if (render->ds_att.iview &&
@@ -12562,6 +12566,11 @@ radv_emit_all_graphics_states(struct radv_cmd_buffer *cmd_buffer, const struct r
    if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_FRAMEBUFFER) {
       radv_emit_framebuffer_state(cmd_buffer);
       cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_FRAMEBUFFER;
+   }
+
+   if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_FSR_SURFACE_STATE) {
+      radv_emit_fsr_surface_state(cmd_buffer);
+      cmd_buffer->state.dirty &= ~RADV_CMD_DIRTY_FSR_SURFACE_STATE;
    }
 
    if (cmd_buffer->state.dirty & RADV_CMD_DIRTY_GUARDBAND) {
