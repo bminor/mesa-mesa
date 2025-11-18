@@ -468,7 +468,6 @@ add_gpus([
         ubwc_swizzle = 0x7,
         macrotile_mode = 0,
         magic_regs = dict(
-            PC_POWER_CNTL = 0,
             TPL1_DBG_ECO_CNTL = 0,
             GRAS_DBG_ECO_CNTL = 0,
             SP_CHICKEN_BITS = 0,
@@ -482,6 +481,10 @@ add_gpus([
             VPC_DBG_ECO_CNTL = 0x0,
             UCHE_UNKNOWN_0E12 = 0x10000000,
         ),
+        raw_magic_regs = [
+            [A6XXRegs.REG_A6XX_PC_POWER_CNTL, 0],
+            [A6XXRegs.REG_A6XX_VFD_POWER_CNTL, 0],
+        ],
     ))
 
 add_gpus([
@@ -502,7 +505,6 @@ add_gpus([
         highest_bank_bit = 14,
         macrotile_mode = 0,
         magic_regs = dict(
-            PC_POWER_CNTL = 0,
             TPL1_DBG_ECO_CNTL = 0x00108000,
             GRAS_DBG_ECO_CNTL = 0x00000880,
             SP_CHICKEN_BITS = 0x00000430,
@@ -515,7 +517,11 @@ add_gpus([
             RB_RBP_CNTL = 0x00000001,
             VPC_DBG_ECO_CNTL = 0x0,
             UCHE_UNKNOWN_0E12 = 0x00000001
-        )
+        ),
+        raw_magic_regs = [
+            [A6XXRegs.REG_A6XX_PC_POWER_CNTL, 0],
+            [A6XXRegs.REG_A6XX_VFD_POWER_CNTL, 0],
+        ],
     ))
 
 add_gpus([
@@ -531,7 +537,6 @@ add_gpus([
         wave_granularity = 2,
         fibers_per_sp = 128 * 16,
         magic_regs = dict(
-            PC_POWER_CNTL = 0,
             TPL1_DBG_ECO_CNTL = 0x01008000,
             GRAS_DBG_ECO_CNTL = 0x0,
             SP_CHICKEN_BITS = 0x00000400,
@@ -544,7 +549,11 @@ add_gpus([
             RB_RBP_CNTL = 0x0,
             VPC_DBG_ECO_CNTL = 0x02000000,
             UCHE_UNKNOWN_0E12 = 0x00000001
-        )
+        ),
+        raw_magic_regs = [
+            [A6XXRegs.REG_A6XX_PC_POWER_CNTL, 0],
+            [A6XXRegs.REG_A6XX_VFD_POWER_CNTL, 0],
+        ],
     ))
 
 add_gpus([
@@ -561,7 +570,6 @@ add_gpus([
         wave_granularity = 2,
         fibers_per_sp = 128 * 2 * 16,
         magic_regs = dict(
-            PC_POWER_CNTL = 0,
             # this seems to be a chicken bit that fixes cubic filtering:
             TPL1_DBG_ECO_CNTL = 0x01008000,
             GRAS_DBG_ECO_CNTL = 0x0,
@@ -575,7 +583,11 @@ add_gpus([
             RB_RBP_CNTL = 0x0,
             VPC_DBG_ECO_CNTL = 0x02000000,
             UCHE_UNKNOWN_0E12 = 0x00000001
-        )
+        ),
+        raw_magic_regs = [
+            [A6XXRegs.REG_A6XX_PC_POWER_CNTL, 0],
+            [A6XXRegs.REG_A6XX_VFD_POWER_CNTL, 0],
+        ],
     ))
 
 add_gpus([
@@ -593,7 +605,6 @@ add_gpus([
         highest_bank_bit = 15,
         macrotile_mode = 0,
         magic_regs = dict(
-            PC_POWER_CNTL = 1,
             TPL1_DBG_ECO_CNTL = 0x00108000,
             GRAS_DBG_ECO_CNTL = 0x00000880,
             SP_CHICKEN_BITS = 0x00001430,
@@ -606,7 +617,11 @@ add_gpus([
             RB_RBP_CNTL = 0x00000001,
             VPC_DBG_ECO_CNTL = 0x0,
             UCHE_UNKNOWN_0E12 = 0x10000001
-        )
+        ),
+        raw_magic_regs = [
+            [A6XXRegs.REG_A6XX_PC_POWER_CNTL, 1],
+            [A6XXRegs.REG_A6XX_VFD_POWER_CNTL, 1],
+        ],
     ))
 
 add_gpus([
@@ -624,7 +639,6 @@ add_gpus([
         highest_bank_bit = 15,
         macrotile_mode = 0,
         magic_regs = dict(
-            PC_POWER_CNTL = 1,
             TPL1_DBG_ECO_CNTL = 0x00008000,
             GRAS_DBG_ECO_CNTL = 0x0,
             SP_CHICKEN_BITS = 0x00000420,
@@ -637,7 +651,11 @@ add_gpus([
             RB_RBP_CNTL = 0x00000001,
             VPC_DBG_ECO_CNTL = 0x02000000,
             UCHE_UNKNOWN_0E12 = 0x00000001
-        )
+        ),
+        raw_magic_regs = [
+            [A6XXRegs.REG_A6XX_PC_POWER_CNTL, 1],
+            [A6XXRegs.REG_A6XX_VFD_POWER_CNTL, 1],
+        ],
     ))
 
 add_gpus([
@@ -655,7 +673,6 @@ add_gpus([
         highest_bank_bit = 15,
         macrotile_mode = 0,
         magic_regs = dict(
-            PC_POWER_CNTL = 3,
             TPL1_DBG_ECO_CNTL = 0x00108000,
             GRAS_DBG_ECO_CNTL = 0x0,
             SP_CHICKEN_BITS = 0x00001430,
@@ -668,7 +685,11 @@ add_gpus([
             RB_RBP_CNTL = 0x00000001,
             VPC_DBG_ECO_CNTL = 0x02000000,
             UCHE_UNKNOWN_0E12 = 0x00000001
-        )
+        ),
+        raw_magic_regs = [
+            [A6XXRegs.REG_A6XX_PC_POWER_CNTL, 3],
+            [A6XXRegs.REG_A6XX_VFD_POWER_CNTL, 3],
+        ],
     ))
 
 add_gpus([
@@ -685,7 +706,6 @@ add_gpus([
         fibers_per_sp = 128 * 2 * 16,
         highest_bank_bit = 16,
         magic_regs = dict(
-            PC_POWER_CNTL = 2,
             # this seems to be a chicken bit that fixes cubic filtering:
             TPL1_DBG_ECO_CNTL = 0x01008000,
             GRAS_DBG_ECO_CNTL = 0x0,
@@ -699,7 +719,11 @@ add_gpus([
             RB_RBP_CNTL = 0x0,
             VPC_DBG_ECO_CNTL = 0x02000000,
             UCHE_UNKNOWN_0E12 = 0x00000001
-        )
+        ),
+        raw_magic_regs = [
+            [A6XXRegs.REG_A6XX_PC_POWER_CNTL, 2],
+            [A6XXRegs.REG_A6XX_VFD_POWER_CNTL, 2],
+        ],
     ))
 
 add_gpus([
@@ -722,7 +746,6 @@ add_gpus([
         fibers_per_sp = 128 * 2 * 16,
         highest_bank_bit = 14,
         magic_regs = dict(
-            PC_POWER_CNTL = 1,
             TPL1_DBG_ECO_CNTL = 0x05008000,
             GRAS_DBG_ECO_CNTL = 0x0,
             SP_CHICKEN_BITS = 0x00001400,
@@ -735,7 +758,11 @@ add_gpus([
             RB_RBP_CNTL = 0x0,
             VPC_DBG_ECO_CNTL = 0x02000000,
             UCHE_UNKNOWN_0E12 = 0x00000001
-        )
+        ),
+        raw_magic_regs = [
+            [A6XXRegs.REG_A6XX_PC_POWER_CNTL, 1],
+            [A6XXRegs.REG_A6XX_VFD_POWER_CNTL, 1],
+        ],
     ))
 
 add_gpus([
@@ -752,7 +779,6 @@ add_gpus([
         fibers_per_sp = 128 * 2 * 16,
         highest_bank_bit = 16,
         magic_regs = dict(
-            PC_POWER_CNTL = 2,
             TPL1_DBG_ECO_CNTL = 0x05008000,
             GRAS_DBG_ECO_CNTL = 0x0,
             SP_CHICKEN_BITS = 0x00001400,
@@ -765,7 +791,11 @@ add_gpus([
             RB_RBP_CNTL = 0x0,
             VPC_DBG_ECO_CNTL = 0x02000000,
             UCHE_UNKNOWN_0E12 = 0x00000001
-        )
+        ),
+        raw_magic_regs = [
+            [A6XXRegs.REG_A6XX_PC_POWER_CNTL, 2],
+            [A6XXRegs.REG_A6XX_VFD_POWER_CNTL, 2],
+        ],
     ))
 
 add_gpus([
@@ -782,7 +812,6 @@ add_gpus([
         wave_granularity = 2,
         fibers_per_sp = 128 * 4 * 16,
         magic_regs = dict(
-            PC_POWER_CNTL = 2,
             TPL1_DBG_ECO_CNTL = 0x05008000,
             GRAS_DBG_ECO_CNTL = 0x0,
             SP_CHICKEN_BITS = 0x00001400,
@@ -795,7 +824,11 @@ add_gpus([
             RB_RBP_CNTL = 0x0,
             VPC_DBG_ECO_CNTL = 0x02000000,
             UCHE_UNKNOWN_0E12 = 0x00000001
-        )
+        ),
+        raw_magic_regs = [
+            [A6XXRegs.REG_A6XX_PC_POWER_CNTL, 2],
+            [A6XXRegs.REG_A6XX_VFD_POWER_CNTL, 2],
+        ],
     ))
 
 add_gpus([
@@ -813,7 +846,6 @@ add_gpus([
         fibers_per_sp = 128 * 2 * 16,
         highest_bank_bit = 16,
         magic_regs = dict(
-            PC_POWER_CNTL = 7,
             TPL1_DBG_ECO_CNTL = 0x04c00000,
             GRAS_DBG_ECO_CNTL = 0x0,
             SP_CHICKEN_BITS = 0x00001400,
@@ -829,6 +861,8 @@ add_gpus([
         ),
         raw_magic_regs = [
             [A6XXRegs.REG_A6XX_SP_UNKNOWN_AAF2, 0x00c00000],
+            [A6XXRegs.REG_A6XX_PC_POWER_CNTL, 7],
+            [A6XXRegs.REG_A6XX_VFD_POWER_CNTL, 7],
         ],
     ))
 
@@ -861,7 +895,6 @@ add_gpus([
         max_waves = 16,
         # has_early_preamble = True,  # for VS/FS but not CS?
         magic_regs = dict(
-            PC_POWER_CNTL = 0,
             TPL1_DBG_ECO_CNTL = 0x8000,
             GRAS_DBG_ECO_CNTL = 0,
             SP_CHICKEN_BITS = 0x1400,
@@ -875,6 +908,10 @@ add_gpus([
             VPC_DBG_ECO_CNTL = 0x0,
             UCHE_UNKNOWN_0E12 = 0x1,
         ),
+        raw_magic_regs = [
+            [A6XXRegs.REG_A6XX_PC_POWER_CNTL, 0],
+            [A6XXRegs.REG_A6XX_VFD_POWER_CNTL, 0],
+        ],
     ))
 
 # Based on a6xx_base + a6xx_gen4
@@ -1035,7 +1072,6 @@ a730_raw_magic_regs = [
     ]
 
 a740_magic_regs = dict(
-        # PC_POWER_CNTL = 7,
         TPL1_DBG_ECO_CNTL = 0x11100000,
         GRAS_DBG_ECO_CNTL = 0x00004800,
         SP_CHICKEN_BITS = 0x10001400,
@@ -1277,7 +1313,6 @@ add_gpus([
         wave_granularity = 2,
         fibers_per_sp = 128 * 2 * 16,
         magic_regs = dict(
-            # PC_POWER_CNTL = 7,
             TPL1_DBG_ECO_CNTL = 0x11100000,
             GRAS_DBG_ECO_CNTL = 0x00004800,
             SP_CHICKEN_BITS = 0x10001400,

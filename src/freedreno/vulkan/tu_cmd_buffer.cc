@@ -2140,21 +2140,11 @@ template <chip CHIP>
 static void
 tu_emit_bin_preamble(struct tu_device *dev, struct tu_cs *cs, bool bv)
 {
-   struct tu_physical_device *phys_dev = dev->physical_device;
-
    tu6_init_static_regs<CHIP>(dev, cs);
 
    if (!bv)
       emit_rb_ccu_cntl<CHIP>(cs, dev, true);
    emit_vpc_attr_buf<CHIP>(cs, dev, true);
-
-   if (CHIP == A6XX) {
-      tu_cs_emit_regs(cs,
-                     A6XX_PC_POWER_CNTL(phys_dev->info->a6xx.magic.PC_POWER_CNTL));
-
-      tu_cs_emit_regs(cs,
-                     A6XX_VFD_POWER_CNTL(phys_dev->info->a6xx.magic.PC_POWER_CNTL));
-   }
 
    if (CHIP == A7XX && !bv) {
       tu7_emit_tile_render_begin_regs(cs);
@@ -2479,14 +2469,6 @@ tu6_emit_binning_pass(struct tu_cmd_buffer *cmd, struct tu_cs *cs,
                    A6XX_VFD_RENDER_MODE(.render_mode = BINNING_PASS));
 
    update_vsc_pipe(cmd, cs, phys_dev->info->num_vsc_pipes);
-
-   if (CHIP == A6XX) {
-      tu_cs_emit_regs(cs,
-                     A6XX_PC_POWER_CNTL(phys_dev->info->a6xx.magic.PC_POWER_CNTL));
-
-      tu_cs_emit_regs(cs,
-                     A6XX_VFD_POWER_CNTL(phys_dev->info->a6xx.magic.PC_POWER_CNTL));
-   }
 
    tu_emit_event_write<CHIP>(cmd, cs, FD_VSC_BINNING_START);
 
@@ -3315,14 +3297,6 @@ tu6_tile_render_begin(struct tu_cmd_buffer *cmd, struct tu_cs *cs,
       tu6_emit_render_cntl<CHIP>(cmd, cmd->state.subpass, cs, true);
 
       tu6_emit_binning_pass<CHIP>(cmd, cs, fdm_offsets, use_cb);
-
-      if (CHIP == A6XX) {
-         tu_cs_emit_regs(cs,
-                        A6XX_PC_POWER_CNTL(phys_dev->info->a6xx.magic.PC_POWER_CNTL));
-
-         tu_cs_emit_regs(cs,
-                        A6XX_VFD_POWER_CNTL(phys_dev->info->a6xx.magic.PC_POWER_CNTL));
-      }
 
       /* Enable early return from CP_INDIRECT_BUFFER once the visibility stream
        * is done.  We don't enable this if there are stores in a non-final

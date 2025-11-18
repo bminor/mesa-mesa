@@ -3177,7 +3177,7 @@ by a particular renderpass/blit.
 	<reg32 offset="0x9804" name="PC_MODE_CNTL" low="0" high="7" variants="A6XX-A7XX" usage="rp_blit"/>
 	<reg32 offset="0x9b00" name="PC_MODE_CNTL" low="0" high="14" variants="A8XX" usage="rp_blit"/>
 
-	<reg32 offset="0x9805" name="PC_POWER_CNTL" low="0" high="2" usage="rp_blit"/>
+	<reg32 offset="0x9805" name="PC_POWER_CNTL" low="0" high="2" variants="A6XX" usage="rp_blit"/>
 
 	<bitset name="a6xx_pc_ps_cntl" inline="yes">
 		<bitfield name="PRIMITIVEIDEN" pos="0" type="boolean"/>
@@ -3457,7 +3457,7 @@ by a particular renderpass/blit.
 		</reg32>
 	</array>
 
-	<reg32 offset="0xa0f8" name="VFD_POWER_CNTL" low="0" high="2" usage="rp_blit"/>
+	<reg32 offset="0xa0f8" name="VFD_POWER_CNTL" low="0" high="2" variants="A6XX" usage="rp_blit"/>
 
 	<reg32 offset="0xa600" name="VFD_DBG_ECO_CNTL" variants="A7XX-" usage="init"/>
 

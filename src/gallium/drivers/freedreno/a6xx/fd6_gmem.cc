@@ -961,13 +961,6 @@ emit_binning_pass(fd_cs &cs, struct fd_batch *batch) assert_dt
 
    update_vsc_pipe<CHIP>(cs, batch);
 
-   if (CHIP == A6XX) {
-      fd_pkt4(cs, 1)
-         .add(A6XX_PC_POWER_CNTL(screen->info->a6xx.magic.PC_POWER_CNTL));
-      fd_pkt4(cs, 1)
-         .add(A6XX_VFD_POWER_CNTL(screen->info->a6xx.magic.PC_POWER_CNTL));
-   }
-
    fd6_event_write<CHIP>(batch->ctx, cs, FD_VSC_BINNING_START);
 
    fd_crb(cs, 2)
@@ -1071,12 +1064,7 @@ fd6_build_preemption_preamble(struct fd_context *ctx)
    fd6_emit_static_regs<CHIP>(cs, ctx);
    fd6_emit_ccu_cntl<CHIP>(cs, screen, false);
 
-   if (CHIP == A6XX) {
-      fd_pkt4(cs, 1)
-         .add(A6XX_PC_POWER_CNTL(screen->info->a6xx.magic.PC_POWER_CNTL));
-      fd_pkt4(cs, 1)
-         .add(A6XX_VFD_POWER_CNTL(screen->info->a6xx.magic.PC_POWER_CNTL));
-   } else if (CHIP >= A7XX) {
+   if (CHIP >= A7XX) {
       fd7_emit_static_binning_regs<CHIP>(cs);
    }
 
@@ -1180,13 +1168,6 @@ fd6_emit_tile_init(struct fd_batch *batch) assert_dt
          });
 
          crb.add(A6XX_VFD_RENDER_MODE(RENDERING_PASS));
-      }
-
-      if (CHIP == A6XX) {
-         fd_pkt4(cs, 1)
-            .add(A6XX_PC_POWER_CNTL(screen->info->a6xx.magic.PC_POWER_CNTL));
-         fd_pkt4(cs, 1)
-            .add(A6XX_VFD_POWER_CNTL(screen->info->a6xx.magic.PC_POWER_CNTL));
       }
 
       fd_pkt7(cs, CP_SKIP_IB2_ENABLE_GLOBAL, 1)
@@ -1320,13 +1301,6 @@ fd6_emit_tile_prep(struct fd_batch *batch, const struct fd_tile *tile)
          });
 
          crb.add(A6XX_VFD_RENDER_MODE(RENDERING_PASS));
-      }
-
-      if (CHIP == A6XX) {
-         fd_pkt4(cs, 1)
-            .add(A6XX_PC_POWER_CNTL(screen->info->a6xx.magic.PC_POWER_CNTL));
-         fd_pkt4(cs, 1)
-            .add(A6XX_VFD_POWER_CNTL(screen->info->a6xx.magic.PC_POWER_CNTL));
       }
 
       fd_pkt7(cs, CP_SKIP_IB2_ENABLE_GLOBAL, 1)

@@ -227,7 +227,6 @@ struct fd_dev_info {
       bool is_a702;
 
       struct {
-         uint32_t PC_POWER_CNTL;
          uint32_t TPL1_DBG_ECO_CNTL;
          uint32_t GRAS_DBG_ECO_CNTL;
          uint32_t SP_CHICKEN_BITS;
