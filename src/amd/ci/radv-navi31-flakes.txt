@@ -1,2 +1,5 @@
 dEQP-VK.api.copy_and_blit.core.image_to_buffer_transfer_queue.2d_images.mip_copies_eac_r11g11_unorm_block_64x64_5_layers
 dEQP-VK.video.encode.av1.720x480_10le_420.i_15.tiling_1x2_lf_lr_cdef_layered_dpb
+
+# CTS bug https://gitlab.khronos.org/Tracker/vk-gl-cts/-/issues/6173
+dEQP-VK.transform_feedback.primitives_generated_query.concurrent.pipeline_statistics_2.*
