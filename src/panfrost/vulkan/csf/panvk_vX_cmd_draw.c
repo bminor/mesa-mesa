@@ -2153,15 +2153,8 @@ set_tiler_idvs_flags(struct cs_builder *b, struct panvk_cmd_buffer *cmdbuf,
    bool writes_point_size =
       vs->info.vs.writes_point_size &&
       ia->primitive_topology == VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
-   bool multiview = cmdbuf->state.gfx.render.view_mask;
    bool writes_layer = vs->info.outputs_written & VARYING_BIT_LAYER;
-
-   /* Multiview shaders depend on the FIFO format for indexing per-view
-    * output writes. We don't currently patch these offsets in the no_psiz
-    * variant, so we still need the extended format even though the shader
-    * does not write point size. */
-   bool extended_fifo = writes_point_size || writes_layer ||
-                        (vs->info.vs.writes_point_size && multiview);
+   bool extended_fifo = writes_point_size || vs->info.vs.needs_extended_fifo;
 
    bool dirty = gfx_state_dirty(cmdbuf, VS) || fs_user_dirty(cmdbuf) ||
                 dyn_gfx_state_dirty(cmdbuf, IA_PRIMITIVE_RESTART_ENABLE) ||

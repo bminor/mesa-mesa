@@ -1410,8 +1410,12 @@ bi_emit_store_vary(bi_builder *b, nir_intrinsic_instr *instr)
             /* We don't patch these offsets in the no_psiz variant, so if
              * multiview is enabled we can't switch to the basic format by
              * using no_psiz */
-            bool extended_position_fifo = b->shader->nir->info.outputs_written &
-               (VARYING_BIT_LAYER | VARYING_BIT_PSIZ);
+            const uint64_t outputs = b->shader->nir->info.outputs_written;
+            bool extended_position_fifo =
+               valhal_writes_extended_fifo(outputs, false, true);
+            /* Must be the same with and without no_psiz */
+            assert(valhal_writes_extended_fifo(outputs, true, true) ==
+                   extended_position_fifo);
             unsigned position_fifo_stride = extended_position_fifo ? 8 : 4;
             index_offset += view_index * position_fifo_stride;
          }
@@ -6860,10 +6864,10 @@ bi_compile_variant(nir_shader *nir,
 
       if (idvs == BI_IDVS_ALL) {
          /* Varying shader is only enabled if we can have any kind of varying
-          * written (that mean not position, layer or point size) */
+          * written (that mean not position, or an extended FIFO attribute) */
          info->vs.secondary_enable =
             (nir->info.outputs_written &
-             ~(VARYING_BIT_POS | VARYING_BIT_LAYER | VARYING_BIT_PSIZ)) != 0;
+             ~(VARYING_BIT_POS | VALHAL_EX_FIFO_VARYING_BITS)) != 0;
       }
    }
 

@@ -246,6 +246,11 @@ struct pan_shader_info {
       struct {
          bool writes_point_size;
 
+         /* True if this shader needs the extended FIFO format for
+          * more than just point size.
+          */
+         bool needs_extended_fifo;
+
          /* If the primary shader writes point size, the Valhall
           * driver may need a variant that does not write point
           * size. Offset to such a shader in the program binary.

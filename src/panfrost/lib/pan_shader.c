@@ -95,6 +95,10 @@ pan_shader_compile(nir_shader *s, struct pan_compile_inputs *inputs,
       info->vs.writes_point_size =
          s->info.outputs_written & VARYING_BIT_PSIZ;
 
+      info->vs.needs_extended_fifo = arch >= 9 &&
+         valhal_writes_extended_fifo(s->info.outputs_written,
+                                     true, inputs->view_mask != 0);
+
       if (arch >= 9) {
          info->varyings.output_count =
             util_last_bit(s->info.outputs_written >> VARYING_SLOT_VAR0);
