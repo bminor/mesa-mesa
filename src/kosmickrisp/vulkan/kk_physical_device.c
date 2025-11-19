@@ -86,7 +86,7 @@ kk_get_device_extensions(const struct kk_instance *instance,
       .EXT_sampler_filter_minmax = false,
       .EXT_scalar_block_layout = true,
       .EXT_separate_stencil_usage = true,
-      .EXT_shader_viewport_index_layer = false,
+      .EXT_shader_viewport_index_layer = true,
 
       /* Vulkan 1.3 */
       .KHR_copy_commands2 = true,
@@ -161,6 +161,7 @@ kk_get_device_features(
       .imageCubeArray = true,
       .independentBlend = true,
       .logicOp = true,
+      .multiViewport = true,
       .robustBufferAccess = true,
       .samplerAnisotropy = true,
       .shaderInt16 = true,

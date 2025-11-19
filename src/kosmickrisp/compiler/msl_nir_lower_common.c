@@ -217,6 +217,14 @@ msl_ensure_vertex_position_output(nir_shader *nir)
 static bool
 msl_fs_io_types(nir_builder *b, nir_intrinsic_instr *intr, void *data)
 {
+   if (intr->intrinsic == nir_intrinsic_load_input) {
+      struct nir_io_semantics io = nir_intrinsic_io_semantics(intr);
+      if (io.location == VARYING_SLOT_VIEWPORT) {
+         nir_intrinsic_set_dest_type(intr, nir_type_uint32);
+         return true;
+      }
+   }
+
    if (intr->intrinsic == nir_intrinsic_store_output) {
       struct nir_io_semantics io = nir_intrinsic_io_semantics(intr);
       if (io.location == FRAG_RESULT_SAMPLE_MASK) {
@@ -256,7 +264,8 @@ msl_vs_io_types(nir_builder *b, nir_intrinsic_instr *intr, void *data)
 {
    if (intr->intrinsic == nir_intrinsic_store_output) {
       struct nir_io_semantics io = nir_intrinsic_io_semantics(intr);
-      if (io.location == VARYING_SLOT_LAYER) {
+      if (io.location == VARYING_SLOT_LAYER ||
+          io.location == VARYING_SLOT_VIEWPORT) {
          nir_intrinsic_set_src_type(intr, nir_type_uint32);
          return true;
       }
