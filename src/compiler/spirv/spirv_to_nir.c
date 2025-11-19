@@ -5490,6 +5490,7 @@ vtn_handle_execution_mode(struct vtn_builder *b, struct vtn_value *entry_point,
 
    case SpvExecutionModeLocalSize:
       if (mesa_shader_stage_uses_workgroup(b->shader->info.stage)) {
+         b->shader->info.workgroup_size_variable = false;
          b->shader->info.workgroup_size[0] = mode->operands[0];
          b->shader->info.workgroup_size[1] = mode->operands[1];
          b->shader->info.workgroup_size[2] = mode->operands[2];
@@ -5826,6 +5827,7 @@ vtn_handle_execution_mode_id(struct vtn_builder *b, struct vtn_value *entry_poin
    switch (mode->exec_mode) {
    case SpvExecutionModeLocalSizeId:
       if (mesa_shader_stage_uses_workgroup(b->shader->info.stage)) {
+         b->shader->info.workgroup_size_variable = false;
          b->shader->info.workgroup_size[0] = vtn_constant_uint(b, mode->operands[0]);
          b->shader->info.workgroup_size[1] = vtn_constant_uint(b, mode->operands[1]);
          b->shader->info.workgroup_size[2] = vtn_constant_uint(b, mode->operands[2]);
@@ -7300,6 +7302,7 @@ spirv_to_nir(const uint32_t *words, size_t word_count,
 
    b->shader = nir_shader_create(b, stage, nir_options);
    b->shader->info.float_controls_execution_mode = options->float_controls_execution_mode;
+   b->shader->info.workgroup_size_variable = true;
    b->shader->info.cs.shader_index = options->shader_index;
    b->shader->has_debug_info = options->debug_info;
    _mesa_blake3_compute(words, word_count * sizeof(uint32_t), b->shader->info.source_blake3);
@@ -7429,21 +7432,23 @@ spirv_to_nir(const uint32_t *words, size_t word_count,
    /* Parse execution modes that depend on IDs. Must happen after we have
     * constants parsed.
     */
-   if (!options->create_library)
+   if (!options->create_library) {
       vtn_foreach_execution_mode(b, b->entry_point,
                                  vtn_handle_execution_mode_id, NULL);
 
-   if (b->workgroup_size_builtin) {
-      vtn_assert(mesa_shader_stage_uses_workgroup(stage));
-      vtn_assert(b->workgroup_size_builtin->type->type ==
-                 glsl_vector_type(GLSL_TYPE_UINT, 3));
+      if (b->workgroup_size_builtin) {
+         vtn_assert(mesa_shader_stage_uses_workgroup(stage));
+         vtn_assert(b->workgroup_size_builtin->type->type ==
+                    glsl_vector_type(GLSL_TYPE_UINT, 3));
 
-      nir_const_value *const_size =
-         b->workgroup_size_builtin->constant->values;
+         nir_const_value *const_size =
+            b->workgroup_size_builtin->constant->values;
 
-      b->shader->info.workgroup_size[0] = const_size[0].u32;
-      b->shader->info.workgroup_size[1] = const_size[1].u32;
-      b->shader->info.workgroup_size[2] = const_size[2].u32;
+         b->shader->info.workgroup_size_variable = false;
+         b->shader->info.workgroup_size[0] = const_size[0].u32;
+         b->shader->info.workgroup_size[1] = const_size[1].u32;
+         b->shader->info.workgroup_size[2] = const_size[2].u32;
+      }
    }
 
    /* Set types on all vtn_values */

@@ -801,7 +801,6 @@ clc_spirv_to_dxil(struct clc_libclc *lib,
       clc_error(logger, "spirv_to_nir() failed");
       goto err_free_dxil;
    }
-   nir->info.workgroup_size_variable = true;
 
    NIR_PASS(_, nir, nir_lower_goto_ifs);
    NIR_PASS(_, nir, nir_opt_dead_cf);

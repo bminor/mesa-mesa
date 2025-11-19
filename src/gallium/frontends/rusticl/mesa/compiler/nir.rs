@@ -369,15 +369,6 @@ impl NirShader {
         unsafe { (*self.nir.as_ptr()).info.num_subgroups }
     }
 
-    pub fn set_workgroup_size_variable_if_zero(&mut self) {
-        let nir = self.nir.as_ptr();
-        unsafe {
-            (*nir)
-                .info
-                .set_workgroup_size_variable((*nir).info.workgroup_size[0] == 0);
-        }
-    }
-
     pub fn set_workgroup_size(&mut self, size: [u16; 3]) {
         let nir = unsafe { self.nir.as_mut() };
         nir.info.set_workgroup_size_variable(false);

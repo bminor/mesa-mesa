@@ -706,7 +706,6 @@ fn compile_nir_to_args(
     nir.set_fp_rounding_mode_rtne();
 
     nir_pass!(nir, nir_scale_fdiv);
-    nir.set_workgroup_size_variable_if_zero();
     nir.structurize();
     nir_pass!(
         nir,
