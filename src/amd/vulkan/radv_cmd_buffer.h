@@ -563,9 +563,10 @@ struct radv_enc_state {
    unsigned bits_output;
    unsigned bits_size;
    bool emulation_prevention;
-   bool is_even_frame;
    unsigned task_id;
    uint32_t *copy_start;
+   VkVideoEncodeRateControlModeFlagBitsKHR rate_control_mode;
+   uint32_t rate_control_num_layers;
 };
 
 struct radv_cmd_buffer_upload {

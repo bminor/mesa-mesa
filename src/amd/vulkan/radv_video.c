@@ -3238,6 +3238,9 @@ radv_CmdBeginVideoCodingKHR(VkCommandBuffer commandBuffer, const VkVideoBeginCod
 
    cmd_buffer->video.vid = vid;
    cmd_buffer->video.params = params;
+
+   if (cmd_buffer->video.vid->encode)
+      radv_video_enc_begin_video_coding(cmd_buffer, pBeginInfo);
 }
 
 static void
