@@ -429,49 +429,67 @@ radv_enc_task_info(struct radv_cmd_buffer *cmd_buffer, bool feedback)
    RADEON_ENC_END();
 }
 
+static VkExtent2D
+radv_enc_aligned_coded_extent(const struct radv_physical_device *pdev, VkVideoCodecOperationFlagsKHR op,
+                              VkExtent2D extent)
+{
+   uint32_t alignment_width;
+   uint32_t alignment_height;
+
+   switch (op) {
+   case VK_VIDEO_CODEC_OPERATION_ENCODE_H264_BIT_KHR:
+      alignment_width = 16;
+      alignment_height = 16;
+      break;
+   case VK_VIDEO_CODEC_OPERATION_ENCODE_H265_BIT_KHR:
+      alignment_width = 64;
+      alignment_height = 16;
+      break;
+   case VK_VIDEO_CODEC_OPERATION_ENCODE_AV1_BIT_KHR:
+      if (pdev->enc_hw_ver == RADV_VIDEO_ENC_HW_4) {
+         alignment_width = 64;
+         alignment_height = 16;
+      } else {
+         alignment_width = 8;
+         alignment_height = 2;
+      }
+      break;
+   default:
+      UNREACHABLE("Unsupported operation");
+   }
+
+   return (VkExtent2D){
+      .width = align(extent.width, alignment_width),
+      .height = align(extent.height, alignment_height),
+   };
+}
+
 static void
 radv_enc_session_init(struct radv_cmd_buffer *cmd_buffer, const struct VkVideoEncodeInfoKHR *enc_info)
 {
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    const struct radv_physical_device *pdev = radv_device_physical(device);
    struct radv_video_session *vid = cmd_buffer->video.vid;
-   unsigned alignment_w = 16;
-   unsigned alignment_h = 16;
-   if (vid->vk.op == VK_VIDEO_CODEC_OPERATION_ENCODE_H265_BIT_KHR) {
-      alignment_w = 64;
-   } else if (vid->vk.op == VK_VIDEO_CODEC_OPERATION_ENCODE_AV1_BIT_KHR) {
-      if (pdev->enc_hw_ver == RADV_VIDEO_ENC_HW_4) {
-         alignment_w = 64;
-      } else if (pdev->enc_hw_ver == RADV_VIDEO_ENC_HW_5) {
-         alignment_w = 8;
-         alignment_h = 2;
-      }
-   }
-
-   if (pdev->info.vcn_ip_version == VCN_4_0_2 || pdev->info.vcn_ip_version == VCN_4_0_5 ||
-       pdev->info.vcn_ip_version == VCN_4_0_6)
-      vid->enc_session.WA_flags = 1;
-
-   uint32_t w = enc_info->srcPictureResource.codedExtent.width;
-   uint32_t h = enc_info->srcPictureResource.codedExtent.height;
-   vid->enc_session.aligned_picture_width = align(w, alignment_w);
-   vid->enc_session.aligned_picture_height = align(h, alignment_h);
-   vid->enc_session.padding_width = vid->enc_session.aligned_picture_width - w;
-   vid->enc_session.padding_height = vid->enc_session.aligned_picture_height - h;
+   VkExtent2D aligned_extent =
+      radv_enc_aligned_coded_extent(pdev, vid->vk.op, enc_info->srcPictureResource.codedExtent);
+   uint32_t width = enc_info->srcPictureResource.codedExtent.width;
+   uint32_t height = enc_info->srcPictureResource.codedExtent.height;
+   uint32_t padding_width = aligned_extent.width - width;
+   uint32_t padding_height = aligned_extent.height - height;
 
    RADEON_ENC_BEGIN(pdev->vcn_enc_cmds.session_init);
-   RADEON_ENC_CS(vid->enc_session.encode_standard);
-   RADEON_ENC_CS(vid->enc_session.aligned_picture_width);
-   RADEON_ENC_CS(vid->enc_session.aligned_picture_height);
-   RADEON_ENC_CS(vid->enc_session.padding_width);
-   RADEON_ENC_CS(vid->enc_session.padding_height);
-   RADEON_ENC_CS(vid->enc_session.pre_encode_mode);
-   RADEON_ENC_CS(vid->enc_session.pre_encode_chroma_enabled);
+   RADEON_ENC_CS(vid->enc_standard);
+   RADEON_ENC_CS(aligned_extent.width);
+   RADEON_ENC_CS(aligned_extent.height);
+   RADEON_ENC_CS(padding_width);
+   RADEON_ENC_CS(padding_height);
+   RADEON_ENC_CS(0);
+   RADEON_ENC_CS(0);
    if (pdev->enc_hw_ver >= RADV_VIDEO_ENC_HW_3)
-      RADEON_ENC_CS(vid->enc_session.slice_output_enabled);
-   RADEON_ENC_CS(vid->enc_session.display_remote);
+      RADEON_ENC_CS(0);
+   RADEON_ENC_CS(0);
    if (pdev->enc_hw_ver == RADV_VIDEO_ENC_HW_4)
-      RADEON_ENC_CS(vid->enc_session.WA_flags);
+      RADEON_ENC_CS(vid->enc_wa_flags);
    if (pdev->enc_hw_ver >= RADV_VIDEO_ENC_HW_4)
       RADEON_ENC_CS(0);
    RADEON_ENC_END();
@@ -2355,11 +2373,11 @@ radv_enc_av1_tile_config(struct radv_cmd_buffer *cmd_buffer, const VkVideoEncode
       vk_find_struct_const(enc_info->pNext, VIDEO_ENCODE_AV1_PICTURE_INFO_KHR);
    const StdVideoEncodeAV1PictureInfo *av1_pic = av1_picture_info->pStdPictureInfo;
    struct radv_video_session *vid = cmd_buffer->video.vid;
+   VkExtent2D aligned_extent =
+      radv_enc_aligned_coded_extent(pdev, vid->vk.op, enc_info->srcPictureResource.codedExtent);
 
-   uint32_t w = vid->enc_session.aligned_picture_width;
-   uint32_t h = vid->enc_session.aligned_picture_height;
-   uint32_t sb_w = DIV_ROUND_UP(w, 64);
-   uint32_t sb_h = DIV_ROUND_UP(h, 64);
+   uint32_t sb_w = DIV_ROUND_UP(aligned_extent.width, 64);
+   uint32_t sb_h = DIV_ROUND_UP(aligned_extent.height, 64);
 
    vid->tile_config.tile_widths[0] = 0;
    vid->tile_config.tile_height[0] = 0;
@@ -2367,7 +2385,7 @@ radv_enc_av1_tile_config(struct radv_cmd_buffer *cmd_buffer, const VkVideoEncode
 
    if (av1_pic->pTileInfo) {
       /* 2 cols only supported for width > 4096. */
-      if (w <= 4096 && av1_pic->pTileInfo->TileCols > 1) {
+      if (aligned_extent.width <= 4096 && av1_pic->pTileInfo->TileCols > 1) {
          vid->tile_config.num_tile_cols = 1;
          vid->tile_config.num_tile_rows = MIN2(av1_pic->pTileInfo->TileRows * av1_pic->pTileInfo->TileCols, sb_h);
          vid->tile_config.uniform_tile_spacing = util_is_power_of_two_or_zero(vid->tile_config.num_tile_rows);
@@ -2389,10 +2407,10 @@ radv_enc_av1_tile_config(struct radv_cmd_buffer *cmd_buffer, const VkVideoEncode
                                                         ? RENCODE_AV1_CONTEXT_UPDATE_TILE_ID_MODE_DEFAULT
                                                         : RENCODE_AV1_CONTEXT_UPDATE_TILE_ID_MODE_CUSTOMIZED;
    } else {
-      vid->tile_config.num_tile_cols = w > 4096 ? 2 : 1;
-      uint32_t max_tile_width = DIV_ROUND_UP(w, vid->tile_config.num_tile_cols);
+      vid->tile_config.num_tile_cols = aligned_extent.width > 4096 ? 2 : 1;
+      uint32_t max_tile_width = DIV_ROUND_UP(aligned_extent.width, vid->tile_config.num_tile_cols);
       uint32_t max_tile_height = (4096 * 2304) / max_tile_width;
-      vid->tile_config.num_tile_rows = DIV_ROUND_UP(h, max_tile_height);
+      vid->tile_config.num_tile_rows = DIV_ROUND_UP(aligned_extent.height, max_tile_height);
       vid->tile_config.uniform_tile_spacing = util_is_power_of_two_or_zero(vid->tile_config.num_tile_rows);
       vid->tile_config.context_update_tile_id = 0;
       vid->tile_config.context_update_tile_id_mode = RENCODE_AV1_CONTEXT_UPDATE_TILE_ID_MODE_DEFAULT;
@@ -2505,6 +2523,8 @@ radv_enc_av1_obu_instruction(struct radv_cmd_buffer *cmd_buffer, const VkVideoEn
    bool frame_is_intra =
       av1_pic->frame_type == STD_VIDEO_AV1_FRAME_TYPE_KEY || av1_pic->frame_type == STD_VIDEO_AV1_FRAME_TYPE_INTRA_ONLY;
    bool error_resilient_mode = false;
+   VkExtent2D aligned_extent =
+      radv_enc_aligned_coded_extent(pdev, vid->vk.op, enc_info->srcPictureResource.codedExtent);
 
    radv_enc_reset(cmd_buffer);
 
@@ -2614,11 +2634,11 @@ radv_enc_av1_obu_instruction(struct radv_cmd_buffer *cmd_buffer, const VkVideoEn
       else {
          if (frame_size_override) {
             /*  frame_width_minus_1  */
-            uint32_t val = vid->enc_session.aligned_picture_width - 1;
+            uint32_t val = aligned_extent.width - 1;
             uint32_t used_bits = radv_enc_value_bits(val);
             radv_enc_code_fixed_bits(cmd_buffer, val, used_bits);
             /*  frame_height_minus_1  */
-            val = vid->enc_session.aligned_picture_height - 1;
+            val = aligned_extent.height - 1;
             used_bits = radv_enc_value_bits(val);
             radv_enc_code_fixed_bits(cmd_buffer, val, used_bits);
          }
@@ -2650,8 +2670,8 @@ radv_enc_av1_obu_instruction(struct radv_cmd_buffer *cmd_buffer, const VkVideoEn
 
    if (pdev->enc_hw_ver >= RADV_VIDEO_ENC_HW_5) {
       /*  tile_info  */
-      uint32_t sb_cols = DIV_ROUND_UP(vid->enc_session.aligned_picture_width, 64);
-      uint32_t sb_rows = DIV_ROUND_UP(vid->enc_session.aligned_picture_height, 64);
+      uint32_t sb_cols = DIV_ROUND_UP(aligned_extent.width, 64);
+      uint32_t sb_rows = DIV_ROUND_UP(aligned_extent.height, 64);
       uint32_t min_log2_tile_cols = radv_enc_av1_tile_log2(64, sb_cols);
       uint32_t min_log2_tiles = MAX2(min_log2_tile_cols, radv_enc_av1_tile_log2(64 * 36, sb_rows * sb_cols));
       uint32_t tile_cols_log2 = radv_enc_av1_tile_log2(1, vid->tile_config.num_tile_cols);

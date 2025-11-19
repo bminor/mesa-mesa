@@ -56,7 +56,8 @@ struct radv_video_session {
    struct radv_image *intra_only_dpb;
 
    unsigned dbg_frame_cnt;
-   rvcn_enc_session_init_t enc_session;
+   uint32_t enc_standard;
+   uint32_t enc_wa_flags;
    rvcn_enc_layer_control_t rc_layer_control;
    rvcn_enc_rate_ctl_layer_init_t rc_layer_init[RADV_ENC_MAX_RATE_LAYER];
    rvcn_enc_rate_ctl_per_picture_t rc_per_pic[RADV_ENC_MAX_RATE_LAYER];

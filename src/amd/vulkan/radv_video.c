@@ -534,14 +534,7 @@ radv_CreateVideoSessionKHR(VkDevice _device, const VkVideoSessionCreateInfoKHR *
       break;
    case VK_VIDEO_CODEC_OPERATION_ENCODE_H264_BIT_KHR:
       vid->encode = true;
-      vid->enc_session.encode_standard = RENCODE_ENCODE_STANDARD_H264;
-      vid->enc_session.aligned_picture_width = align(vid->vk.max_coded.width, 16);
-      vid->enc_session.aligned_picture_height = align(vid->vk.max_coded.height, 16);
-      vid->enc_session.padding_width = vid->enc_session.aligned_picture_width - vid->vk.max_coded.width;
-      vid->enc_session.padding_height = vid->enc_session.aligned_picture_height - vid->vk.max_coded.height;
-      vid->enc_session.display_remote = 0;
-      vid->enc_session.pre_encode_mode = 0;
-      vid->enc_session.pre_encode_chroma_enabled = 0;
+      vid->enc_standard = RENCODE_ENCODE_STANDARD_H264;
       switch (vid->vk.enc_usage.tuning_mode) {
       case VK_VIDEO_ENCODE_TUNING_MODE_DEFAULT_KHR:
       default:
@@ -559,14 +552,7 @@ radv_CreateVideoSessionKHR(VkDevice _device, const VkVideoSessionCreateInfoKHR *
       break;
    case VK_VIDEO_CODEC_OPERATION_ENCODE_H265_BIT_KHR:
       vid->encode = true;
-      vid->enc_session.encode_standard = RENCODE_ENCODE_STANDARD_HEVC;
-      vid->enc_session.aligned_picture_width = align(vid->vk.max_coded.width, 64);
-      vid->enc_session.aligned_picture_height = align(vid->vk.max_coded.height, 64);
-      vid->enc_session.padding_width = vid->enc_session.aligned_picture_width - vid->vk.max_coded.width;
-      vid->enc_session.padding_height = vid->enc_session.aligned_picture_height - vid->vk.max_coded.height;
-      vid->enc_session.display_remote = 0;
-      vid->enc_session.pre_encode_mode = 0;
-      vid->enc_session.pre_encode_chroma_enabled = 0;
+      vid->enc_standard = RENCODE_ENCODE_STANDARD_HEVC;
       switch (vid->vk.enc_usage.tuning_mode) {
       case VK_VIDEO_ENCODE_TUNING_MODE_DEFAULT_KHR:
       default:
@@ -584,14 +570,11 @@ radv_CreateVideoSessionKHR(VkDevice _device, const VkVideoSessionCreateInfoKHR *
       break;
    case VK_VIDEO_CODEC_OPERATION_ENCODE_AV1_BIT_KHR:
       vid->encode = true;
-      vid->enc_session.encode_standard = RENCODE_ENCODE_STANDARD_AV1;
-      vid->enc_session.aligned_picture_width = align(vid->vk.max_coded.width, 64);
-      vid->enc_session.aligned_picture_height = align(vid->vk.max_coded.height, 64);
-      vid->enc_session.padding_width = vid->enc_session.aligned_picture_width - vid->vk.max_coded.width;
-      vid->enc_session.padding_height = vid->enc_session.aligned_picture_height - vid->vk.max_coded.height;
-      vid->enc_session.display_remote = 0;
-      vid->enc_session.pre_encode_mode = 0;
-      vid->enc_session.pre_encode_chroma_enabled = 0;
+      vid->enc_standard = RENCODE_ENCODE_STANDARD_AV1;
+      if (pdev->info.vcn_ip_version == VCN_4_0_2 || pdev->info.vcn_ip_version == VCN_4_0_5 ||
+          pdev->info.vcn_ip_version == VCN_4_0_6) {
+         vid->enc_wa_flags = 1;
+      }
       switch (vid->vk.enc_usage.tuning_mode) {
       case VK_VIDEO_ENCODE_TUNING_MODE_DEFAULT_KHR:
       default:
