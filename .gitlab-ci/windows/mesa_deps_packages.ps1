@@ -36,22 +36,23 @@ $MACHINE_PATH=[System.Environment]::GetEnvironmentVariable('PATH', [System.Envir
 Write-Output "Before winget install USER_PATH:$USER_PATH MACHINE_PATH:$MACHINE_PATH"
 
 $Packages = @(
-  'Microsoft.WindowsWDK.10.0.26100',
-  'Python.Python.3.13',
-  'Ninja-build.Ninja',
-  'Kitware.CMake',
-  'Git.Git',
-  'WinFlexBison.win_flex_bison',
-  'bloodrock.pkg-config-lite'
+  'Microsoft.WindowsWDK.10.0.26100,10.1.26100.6584',
+  'Python.Python.3.13,3.13.9',
+  'Ninja-build.Ninja,1.13.1',
+  'Kitware.CMake,4.1.3',
+  'Git.Git,2.52.0',
+  'WinFlexBison.win_flex_bison,2.5.24',
+  'bloodrock.pkg-config-lite,0.28-1'
 )
 
 $ProgressPreference = "SilentlyContinue"
 New-Item -Force -ItemType 'directory' -Name 'flexbison' -Path 'C:\temp'
 foreach ($package in $Packages)
 {
-  Write-Output "Installing $package with winget"
+  $package_id, $package_version = $package -split ',', 2
+  Write-Output "Installing $package_id with version $package_version by winget"
   For ($i = 0; $i -lt 5; $i++) {
-    winget install --verbose --silent --accept-package-agreements --source winget --exact --id $package --log C:\temp\wdk-install.log
+    winget install --verbose --silent --accept-package-agreements --source winget --exact --id $package_id --version $package_version --log C:\temp\wdk-install.log
     $packages_installed = $?
     if ($packages_installed) {
       Break
