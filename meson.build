@@ -375,6 +375,9 @@ endif
 if with_aco_tests and not with_amd_vk
   error('ACO tests require Radv')
 endif
+if with_aco_tests and not with_tools.contains('drm-shim')
+  error('ACO tests require AMDGPU drm-shim')
+endif
 if with_radv_tests and not with_amd_vk
   error('RADV tests require RADV')
 endif
