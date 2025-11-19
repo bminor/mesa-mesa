@@ -1399,21 +1399,6 @@ v3d_instr_delay_cb(nir_instr *instr, void *data)
    return 0;
 }
 
-static bool
-should_split_wrmask(const nir_instr *instr, const void *data)
-{
-        nir_intrinsic_instr *intr = nir_instr_as_intrinsic(instr);
-        switch (intr->intrinsic) {
-        case nir_intrinsic_store_ssbo:
-        case nir_intrinsic_store_shared:
-        case nir_intrinsic_store_global:
-        case nir_intrinsic_store_scratch:
-                return true;
-        default:
-                return false;
-        }
-}
-
 static nir_intrinsic_instr *
 nir_instr_as_constant_ubo_load(nir_instr *inst)
 {
@@ -1857,7 +1842,7 @@ v3d_attempt_compile(struct v3d_compile *c)
                  glsl_get_natural_size_align_bytes);
 
         NIR_PASS(_, c->s, v3d_nir_lower_global_2x32);
-        NIR_PASS(_, c->s, nir_lower_wrmasks, should_split_wrmask, c->s);
+        NIR_PASS(_, c->s, nir_lower_wrmasks);
         NIR_PASS(_, c->s, v3d_nir_lower_load_store_bitsize);
         NIR_PASS(_, c->s, v3d_nir_lower_scratch);
 

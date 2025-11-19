@@ -427,22 +427,6 @@ ir3_optimize_loop(struct ir3_compiler *compiler,
 }
 
 static bool
-should_split_wrmask(const nir_instr *instr, const void *data)
-{
-   nir_intrinsic_instr *intr = nir_instr_as_intrinsic(instr);
-
-   switch (intr->intrinsic) {
-   case nir_intrinsic_store_ssbo:
-   case nir_intrinsic_store_shared:
-   case nir_intrinsic_store_global:
-   case nir_intrinsic_store_scratch:
-      return true;
-   default:
-      return false;
-   }
-}
-
-static bool
 ir3_nir_lower_ssbo_size_filter(const nir_instr *instr, const void *data)
 {
    return instr->type == nir_instr_type_intrinsic &&
@@ -705,7 +689,7 @@ ir3_finalize_nir(struct ir3_compiler *compiler,
    NIR_PASS(_, s, nir_lower_frexp);
    NIR_PASS(_, s, nir_lower_amul, ir3_glsl_type_size);
 
-   OPT(s, nir_lower_wrmasks, should_split_wrmask, s);
+   OPT(s, nir_lower_wrmasks);
 
    OPT(s, nir_lower_tex, &tex_options);
    OPT(s, nir_lower_load_const_to_scalar);
@@ -1223,7 +1207,7 @@ ir3_nir_lower_variant(struct ir3_shader_variant *so,
    }
 
    /* Lower scratch writemasks */
-   progress |= OPT(s, nir_lower_wrmasks, should_split_wrmask, s);
+   progress |= OPT(s, nir_lower_wrmasks);
    progress |= OPT(s, nir_lower_atomics, atomic_supported);
 
    if (OPT(s, nir_lower_locals_to_regs, 1)) {

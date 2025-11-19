@@ -5413,26 +5413,6 @@ va_gather_stats(bi_context *ctx, unsigned size, struct valhall_stats *out)
                       MAX3(stats.v, stats.t, stats.ls));
 }
 
-/* Split stores to memory. We don't split stores to vertex outputs, since
- * nir_lower_io_vars_to_temporaries will ensure there's only a single write.
- */
-
-static bool
-should_split_wrmask(const nir_instr *instr, UNUSED const void *data)
-{
-   nir_intrinsic_instr *intr = nir_instr_as_intrinsic(instr);
-
-   switch (intr->intrinsic) {
-   case nir_intrinsic_store_ssbo:
-   case nir_intrinsic_store_shared:
-   case nir_intrinsic_store_global:
-   case nir_intrinsic_store_scratch:
-      return true;
-   default:
-      return false;
-   }
-}
-
 /*
  * Some operations are only available as 32-bit instructions. 64-bit floats are
  * unsupported and ints are lowered with nir_lower_int64.  Certain 8-bit and
@@ -5704,7 +5684,7 @@ bi_optimize_loop_nir(nir_shader *nir, unsigned gpu_id, bool allow_copies)
       NIR_PASS(progress, nir, nir_opt_deref);
 
       NIR_PASS(progress, nir, nir_lower_vars_to_ssa);
-      NIR_PASS(progress, nir, nir_lower_wrmasks, should_split_wrmask, NULL);
+      NIR_PASS(progress, nir, nir_lower_wrmasks);
 
       if (allow_copies) {
          /* Only run this pass in the first call to bi_optimize_nir. Later
