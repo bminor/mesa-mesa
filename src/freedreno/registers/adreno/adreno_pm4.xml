@@ -1269,8 +1269,15 @@ opcode: CP_LOAD_STATE4 (30) (4 dwords)
 <domain name="CP_REG_TO_MEM" width="32" prefix="chip">
 	<reg32 offset="0" name="0">
 		<bitfield name="REG" low="0" high="17" type="hex"/>
-		<!-- number of registers/dwords copied is max(CNT, 1). -->
+		<!--
+			Number of registers/dwords copied is max(CNT, 1).
+			With 64B it gets rounded to the next 64B boundary.
+		-->
 		<bitfield name="CNT" low="18" high="29" type="uint"/>
+		<!--
+			Treat things as 64B, allowing for a 64B atomic read of
+			registers.
+		-->
 		<bitfield name="64B" pos="30" type="boolean"/>
 		<bitfield name="ACCUMULATE" pos="31" type="boolean"/>
 	</reg32>
