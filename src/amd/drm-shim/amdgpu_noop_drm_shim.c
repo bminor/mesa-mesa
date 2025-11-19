@@ -8,6 +8,7 @@
 #include <string.h>
 #include "amdgpu_devices.h"
 #include "common/amd_family.h"
+#include "drm-shim/amdgpu_noop_drm_shim.h"
 #include "drm-shim/drm_shim.h"
 #include "drm-uapi/amdgpu_drm.h"
 #include "util/log.h"
@@ -199,10 +200,9 @@ static ioctl_fn_t amdgpu_ioctls[] = {
    [DRM_AMDGPU_SCHED] = amdgpu_ioctl_noop,
 };
 
-static void
-amdgpu_select_device()
+void
+drm_shim_amdgpu_select_device(const char *gpu_id)
 {
-   const char *gpu_id = os_get_option("AMDGPU_GPU_ID");
    if (gpu_id) {
       for (uint32_t i = 0; i < num_amdgpu_devices; i++) {
          const struct amdgpu_device *dev = &amdgpu_devices[i];
@@ -224,7 +224,9 @@ amdgpu_select_device()
 void
 drm_shim_driver_init(void)
 {
-   amdgpu_select_device();
+   const char *gpu_id = os_get_option("AMDGPU_GPU_ID");
+
+   drm_shim_amdgpu_select_device(gpu_id);
 
    shim_device.bus_type = DRM_BUS_PCI;
    shim_device.driver_name = "amdgpu";
