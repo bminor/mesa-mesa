@@ -647,7 +647,7 @@ radv_get_legacy_gs_info(const struct radv_device *device, struct radv_shader_inf
 {
    const struct radv_physical_device *pdev = radv_device_physical(device);
    struct radv_legacy_gs_info *out = &gs_info->legacy_gs_info;
-   const unsigned esgs_vertex_stride = es_info ? es_info->esgs_itemsize : out->esgs_itemsize * 4;
+   const unsigned esgs_vertex_stride = es_info ? es_info->esgs_itemsize : out->esgs_itemsize;
    ac_legacy_gs_subgroup_info info;
 
    ac_legacy_gs_compute_subgroup_info(gs_info->gs.input_prim, gs_info->gs.vertices_out, gs_info->gs.invocations,
@@ -709,7 +709,7 @@ gather_shader_info_gs(struct radv_device *device, const nir_shader *nir, struct 
    if (info->is_ngg)
       gather_shader_info_ngg_query(device, info);
    else
-      info->legacy_gs_info.esgs_itemsize = radv_compute_esgs_itemsize(device, info->gs.num_linked_inputs) / 4;
+      info->legacy_gs_info.esgs_itemsize = radv_compute_esgs_itemsize(device, info->gs.num_linked_inputs);
 }
 
 static void

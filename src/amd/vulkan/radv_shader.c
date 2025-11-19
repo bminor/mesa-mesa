@@ -1646,7 +1646,7 @@ radv_precompute_registers_hw_gs(struct radv_device *device, struct radv_shader_i
 {
    const struct radv_physical_device *pdev = radv_device_physical(device);
 
-   gs_info->regs.gs.vgt_esgs_ring_itemsize = es_info ? es_info->esgs_itemsize / 4 : gs_info->legacy_gs_info.esgs_itemsize;
+   gs_info->regs.gs.vgt_esgs_ring_itemsize = es_info ? es_info->esgs_itemsize / 4 : gs_info->legacy_gs_info.esgs_itemsize /4;
 
    gs_info->regs.gs.vgt_gs_max_prims_per_subgroup =
       S_028A94_MAX_PRIMS_PER_SUBGROUP(gs_info->legacy_gs_info.gs_inst_prims_in_subgroup);

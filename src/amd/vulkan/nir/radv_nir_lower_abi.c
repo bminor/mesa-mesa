@@ -243,7 +243,7 @@ lower_abi_instr(nir_builder *b, nir_intrinsic_instr *intrin, void *state)
          replacement = ac_nir_load_arg(b, &s->args->ac, s->args->vgt_esgs_ring_itemsize);
       } else {
          const unsigned stride =
-            s->info->is_ngg ? s->info->ngg_info.vgt_esgs_ring_itemsize : s->info->legacy_gs_info.esgs_itemsize;
+            s->info->is_ngg ? s->info->ngg_info.vgt_esgs_ring_itemsize : s->info->legacy_gs_info.esgs_itemsize / 4;
          replacement = nir_imm_int(b, stride);
       }
       break;
