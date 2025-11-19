@@ -811,6 +811,7 @@ anv_h265_decode_video(struct anv_cmd_buffer *cmd_buffer,
                ref.ReferenceListEntry[i].ListEntry = dpb_idx[slot_idx];
                ref.ReferenceListEntry[i].ReferencePicturetbValue = CLAMP(diff_poc, -128, 127) & 0xff;
                ref.ReferenceListEntry[i].TopField = true;
+               ref.ReferenceListEntry[i].LongTermReference = ref_slots[0][i].lt;
             }
          }
       }
@@ -830,6 +831,7 @@ anv_h265_decode_video(struct anv_cmd_buffer *cmd_buffer,
                ref.ReferenceListEntry[i].ListEntry = dpb_idx[slot_idx];
                ref.ReferenceListEntry[i].ReferencePicturetbValue = CLAMP(diff_poc, -128, 127) & 0xff;
                ref.ReferenceListEntry[i].TopField = true;
+               ref.ReferenceListEntry[i].LongTermReference = ref_slots[1][i].lt;
             }
          }
       }
