@@ -10,6 +10,7 @@
 #include "common/amd_family.h"
 #include "common/nir/ac_nir.h"
 
+#include "drm-shim/amdgpu_noop_drm_shim.h"
 #include <llvm-c/Target.h>
 
 #include <mutex>
@@ -32,8 +33,8 @@ static nir_shader_compiler_options nir_options;
 static nir_builder _nb;
 nir_builder *nb;
 
-static VkInstance instance_cache[CHIP_LAST] = {VK_NULL_HANDLE};
-static VkDevice device_cache[CHIP_LAST] = {VK_NULL_HANDLE};
+static VkInstance vk_instance = VK_NULL_HANDLE;
+static VkDevice vk_device = VK_NULL_HANDLE;
 static std::mutex create_device_mutex;
 
 #define FUNCTION_LIST                                                                              \
@@ -683,10 +684,15 @@ get_vk_device(enum radeon_family family)
 
    std::lock_guard<std::mutex> guard(create_device_mutex);
 
-   if (device_cache[family])
-      return device_cache[family];
+   /* Destroy previous device/instance because the winsys in RADV is
+    * refcounted.
+    */
+   if (vk_device)
+      DestroyDevice(vk_device, NULL);
+   if (vk_instance)
+      DestroyInstance(vk_instance, NULL);
 
-   setenv("RADV_FORCE_FAMILY", ac_get_family_name(family), 1);
+   drm_shim_amdgpu_select_device(ac_get_family_name(family));
 
    VkApplicationInfo app_info = {};
    app_info.pApplicationName = "aco_tests";
@@ -695,16 +701,16 @@ get_vk_device(enum radeon_family family)
    instance_create_info.pApplicationInfo = &app_info;
    instance_create_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
    ASSERTED VkResult result = ((PFN_vkCreateInstance)vk_icdGetInstanceProcAddr(
-      NULL, "vkCreateInstance"))(&instance_create_info, NULL, &instance_cache[family]);
+      NULL, "vkCreateInstance"))(&instance_create_info, NULL, &vk_instance);
    assert(result == VK_SUCCESS);
 
-#define ITEM(n) n = (PFN_vk##n)vk_icdGetInstanceProcAddr(instance_cache[family], "vk" #n);
+#define ITEM(n) n = (PFN_vk##n)vk_icdGetInstanceProcAddr(vk_instance, "vk" #n);
    FUNCTION_LIST
 #undef ITEM
 
    uint32_t device_count = 1;
    VkPhysicalDevice device = VK_NULL_HANDLE;
-   result = EnumeratePhysicalDevices(instance_cache[family], &device_count, &device);
+   result = EnumeratePhysicalDevices(vk_instance, &device_count, &device);
    assert(result == VK_SUCCESS);
    assert(device != VK_NULL_HANDLE);
 
@@ -713,20 +719,16 @@ get_vk_device(enum radeon_family family)
    static const char* extensions[] = {"VK_KHR_pipeline_executable_properties"};
    device_create_info.enabledExtensionCount = sizeof(extensions) / sizeof(extensions[0]);
    device_create_info.ppEnabledExtensionNames = extensions;
-   result = CreateDevice(device, &device_create_info, NULL, &device_cache[family]);
+   result = CreateDevice(device, &device_create_info, NULL, &vk_device);
 
-   return device_cache[family];
+   return vk_device;
 }
 
 static struct DestroyDevices {
    ~DestroyDevices()
    {
-      for (unsigned i = 0; i < CHIP_LAST; i++) {
-         if (!device_cache[i])
-            continue;
-         DestroyDevice(device_cache[i], NULL);
-         DestroyInstance(instance_cache[i], NULL);
-      }
+      DestroyDevice(vk_device, NULL);
+      DestroyInstance(vk_instance, NULL);
    }
 } destroy_devices;
 
