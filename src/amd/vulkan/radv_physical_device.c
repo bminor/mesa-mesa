@@ -2494,7 +2494,7 @@ radv_physical_device_try_create(struct radv_instance *instance, drmDevicePtr drm
    radv_get_physical_device_properties(pdev);
 
    if ((instance->debug_flags & RADV_DEBUG_INFO))
-      ac_print_gpu_info(&pdev->info, stdout);
+      ac_print_gpu_info(stdout, &pdev->info, pdev->local_fd);
 
    radv_init_physical_device_decoder(pdev);
    radv_init_physical_device_encoder(pdev);

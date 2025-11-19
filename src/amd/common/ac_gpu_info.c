@@ -595,10 +595,6 @@ ac_query_gpu_info(int fd, void *dev_p, struct radeon_info *info,
    for (unsigned i = 0; info->name[i] && i < ARRAY_SIZE(info->lowercase_name) - 1; i++)
       info->lowercase_name[i] = tolower(info->name[i]);
 
-   char proc_fd[64];
-   snprintf(proc_fd, sizeof(proc_fd), "/proc/self/fd/%u", fd);
-   UNUSED int _result = readlink(proc_fd, info->dev_filename, sizeof(info->dev_filename));
-
 #define VCN_IP_VERSION(mj, mn, rv) (((mj) << 16) | ((mn) << 8) | (rv))
 
    for (unsigned i = AMD_IP_VCN_DEC; i <= AMD_IP_VCN_JPEG; ++i) {
@@ -1646,12 +1642,18 @@ void ac_compute_device_uuid(const struct radeon_info *info, char *uuid, size_t s
    uint_uuid[3] = info->pci.func;
 }
 
-void ac_print_gpu_info(const struct radeon_info *info, FILE *f)
+void ac_print_gpu_info(FILE *f, const struct radeon_info *info, int fd)
 {
    fprintf(f, "Device info:\n");
    fprintf(f, "    name = %s\n", info->name);
    fprintf(f, "    marketing_name = %s\n", info->marketing_name);
-   fprintf(f, "    dev_filename = %s\n", info->dev_filename);
+
+   char proc_fd[32];
+   char dev_filename[32];
+   snprintf(proc_fd, sizeof(proc_fd), "/proc/self/fd/%u", fd);
+   if (readlink(proc_fd, dev_filename, sizeof(dev_filename)) != -1)
+      fprintf(f, "    dev_filename = %s\n", dev_filename);
+
    fprintf(f, "    num_se = %i\n", info->num_se);
    fprintf(f, "    num_rb = %i\n", info->num_rb);
    fprintf(f, "    num_cu = %i\n", info->num_cu);

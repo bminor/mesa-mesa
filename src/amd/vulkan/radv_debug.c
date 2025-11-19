@@ -1047,7 +1047,7 @@ radv_check_gpu_hangs(struct radv_queue *queue, const struct radv_winsys_submit_i
          break;
       case RADV_DEVICE_FAULT_CHUNK_GPU_INFO:
          radv_dump_device_name(device, f);
-         ac_print_gpu_info(&pdev->info, f);
+         ac_print_gpu_info(f, &pdev->info, pdev->local_fd);
          break;
       case RADV_DEVICE_FAULT_CHUNK_DMESG:
          radv_dump_dmesg(f);

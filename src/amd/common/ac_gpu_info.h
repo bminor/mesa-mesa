@@ -36,7 +36,6 @@ struct radeon_info {
    const char *name;
    char lowercase_name[32];
    const char *marketing_name;
-   char dev_filename[32];
    uint32_t num_se;           /* only enabled SEs */
    uint32_t num_rb;           /* only enabled RBs */
    uint32_t num_cu;           /* only enabled CUs */
@@ -358,7 +357,7 @@ enum ac_query_gpu_info_result ac_query_gpu_info(int fd, void *dev_p, struct rade
 void ac_compute_driver_uuid(char *uuid, size_t size);
 
 void ac_compute_device_uuid(const struct radeon_info *info, char *uuid, size_t size);
-void ac_print_gpu_info(const struct radeon_info *info, FILE *f);
+void ac_print_gpu_info(FILE *f, const struct radeon_info *info, int fd);
 int ac_get_gs_table_depth(enum amd_gfx_level gfx_level, enum radeon_family family);
 void ac_get_raster_config(const struct radeon_info *info, uint32_t *raster_config_p,
                           uint32_t *raster_config_1_p, uint32_t *se_tile_repeat_p);

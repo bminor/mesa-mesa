@@ -1416,7 +1416,7 @@ static struct pipe_screen *radeonsi_screen_create_impl(struct radeon_winsys *ws,
    si_init_screen_caps(sscreen);
 
    if (sscreen->debug_flags & DBG(INFO))
-      ac_print_gpu_info(&sscreen->info, stdout);
+      ac_print_gpu_info(stdout, &sscreen->info, ws->get_fd(ws));
 
    slab_create_parent(&sscreen->pool_transfers, sizeof(struct si_transfer), 64);
 
