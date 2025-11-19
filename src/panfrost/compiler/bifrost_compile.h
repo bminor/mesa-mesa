@@ -93,7 +93,7 @@ void bifrost_compile_shader_nir(nir_shader *nir,
                                 struct pan_shader_info *info);
 
 #define VALHAL_EX_FIFO_VARYING_BITS \
-   (VARYING_BIT_PSIZ | VARYING_BIT_LAYER)
+   (VARYING_BIT_PSIZ | VARYING_BIT_LAYER | VARYING_BIT_PRIMITIVE_ID)
 
 static inline bool
 valhal_writes_extended_fifo(uint64_t outputs_written,

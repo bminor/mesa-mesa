@@ -1205,6 +1205,7 @@ va_shader_output_from_semantics(const nir_io_semantics *sem)
       return VA_SHADER_OUTPUT_POSITION;
    case VARYING_SLOT_PSIZ:
    case VARYING_SLOT_LAYER:
+   case VARYING_SLOT_PRIMITIVE_ID:
       return VA_SHADER_OUTPUT_ATTRIB;
    default:
       return VA_SHADER_OUTPUT_VARY;
@@ -1398,6 +1399,11 @@ bi_emit_store_vary(bi_builder *b, nir_intrinsic_instr *instr)
 
       if (sem.location == VARYING_SLOT_PSIZ)
          assert(T_size == 16 && "should've been lowered");
+
+      if (sem.location == VARYING_SLOT_PRIMITIVE_ID) {
+         assert(nr == 1 && src_bit_sz == 32);
+         pos_attr_offset = 12;
+      }
 
       bool varying = (output_type == VA_SHADER_OUTPUT_VARY);
 
