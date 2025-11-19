@@ -285,13 +285,7 @@ def banner_command(argv):
        Return a string corresponding to the command, with platform-specific
        paths removed."""
 
-    def makePosixRelative(someArg):
-        # Do not use relative for /tmp/ to avoid effects of checkout location
-        if os.path.exists(someArg) and someArg != "/tmp/":
-            return str(PurePosixPath(Path(os.path.relpath(someArg))))
-        return someArg
-
-    return ' '.join(map(makePosixRelative, argv))
+    return os.path.basename(argv[0])
 
 def envGetOrDefault(key, default=None):
     if key in os.environ:
