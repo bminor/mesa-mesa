@@ -944,7 +944,7 @@ lvp_get_properties(const struct lvp_physical_device *device, struct vk_propertie
       .maxTessellationEvaluationInputComponents = 128,
       .maxTessellationEvaluationOutputComponents = 128,
       .maxGeometryShaderInvocations             = device->pscreen->caps.max_gs_invocations,
-      .maxGeometryInputComponents               = 64,
+      .maxGeometryInputComponents               = 128,
       .maxGeometryOutputComponents              = 128,
       .maxGeometryOutputVertices                = device->pscreen->caps.max_geometry_output_vertices,
       .maxGeometryTotalOutputComponents         = device->pscreen->caps.max_geometry_total_output_components,

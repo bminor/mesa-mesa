@@ -10,9 +10,6 @@ dEQP-VK.pipeline.pipeline_library.multisample.sample_rate_a2c.static_a2c,Fail
 dEQP-VK.pipeline.fast_linked_library.multisample.sample_rate_a2c.static_a2c,Fail
 
 # New fails in 1.4.3.3
-dEQP-VK.draw.dynamic_rendering.complete_secondary_cmd_buff.multiple_interpolation.structured.with_sample_decoration.4_samples,Fail
-dEQP-VK.draw.dynamic_rendering.partial_secondary_cmd_buff.multiple_interpolation.structured.with_sample_decoration.4_samples,Fail
-dEQP-VK.draw.dynamic_rendering.primary_cmd_buff.multiple_interpolation.structured.with_sample_decoration.4_samples,Fail
 dEQP-VK.glsl.builtin.precision_fp16_storage16b.asinh.compute.scalar,Crash
 dEQP-VK.glsl.builtin.precision_fp16_storage16b.asinh.compute.vec3,Crash
 dEQP-VK.glsl.builtin.precision_fp16_storage16b.atanh.compute.vec4,Crash
