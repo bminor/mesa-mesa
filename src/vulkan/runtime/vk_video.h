@@ -295,6 +295,7 @@ struct vk_video_h265_reference {
    StdVideoDecodeH265ReferenceInfoFlags flags;
    uint32_t slot_index;
    int32_t pic_order_cnt;
+   bool lt;
 };
 
 int vk_video_h265_poc_by_slot(const struct VkVideoDecodeInfoKHR *frame_info, int slot);

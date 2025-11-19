@@ -1244,10 +1244,15 @@ vk_fill_video_h265_reference_info(const VkVideoDecodeInfoKHR *frame_info,
          const uint8_t *cur_rps = rps[i];
 
          for (j = 0; (cur_rps[j] != 0xff) && ((j + ref_idx) < 8); j++) {
+
             ref_slots_tmp[list_idx][j + ref_idx].slot_index = cur_rps[j];
             ref_slots_tmp[list_idx][j + ref_idx].pic_order_cnt =
                vk_video_h265_poc_by_slot(frame_info, cur_rps[j]);
+            if (i == 2)
+               ref_slots_tmp[list_idx][j + ref_idx].lt = true;
          }
+         /* TODO handle pps_curr_pic_ref_enabled_flag here */
+
          ref_idx += j;
       }
 
@@ -1259,9 +1264,11 @@ vk_fill_video_h265_reference_info(const VkVideoDecodeInfoKHR *frame_info,
                ref_slots_tmp[list_idx][slice_params->list_entry_lx[list_idx][i]].slot_index;
             ref_slots[list_idx][i].pic_order_cnt =
                ref_slots_tmp[list_idx][slice_params->list_entry_lx[list_idx][i]].pic_order_cnt;
+            ref_slots[list_idx][i].lt =
+               ref_slots_tmp[list_idx][slice_params->list_entry_lx[list_idx][i]].lt;
          }
       } else {
-         memcpy(ref_slots, &ref_slots_tmp, sizeof(ref_slots_tmp));
+         memcpy(ref_slots[list_idx], &ref_slots_tmp[list_idx], sizeof(ref_slots_tmp[list_idx]));
       }
    }
 }
@@ -1534,12 +1541,12 @@ vk_video_parse_h265_slice_header(const struct VkVideoDecodeInfoKHR *frame_info,
 
          for (unsigned i = 0; i < num_refs; i++) {
             if (i < num_lt_sps) {
+               int lt_idx_sps = 0;
                if (sps->num_long_term_ref_pics_sps > 1)
-                  /* lt_idx_sps */
-                  vl_rbsp_u(&rbsp,
+                  lt_idx_sps = vl_rbsp_u(&rbsp,
                         util_logbase2_ceil(sps->num_long_term_ref_pics_sps));
 
-               if (sps->pLongTermRefPicsSps->used_by_curr_pic_lt_sps_flag)
+               if (sps->pLongTermRefPicsSps->used_by_curr_pic_lt_sps_flag & (1 << lt_idx_sps))
                   nb_refs++;
             } else {
                /* poc_lsb_lt */

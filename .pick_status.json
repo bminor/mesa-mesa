@@ -3054,7 +3054,7 @@
         "description": "vulkan/video: Fix H.265 long-term reference handling",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "896f95a37ef6c21ebdb5084bce1cf3288e6d596a",
         "notes": null
