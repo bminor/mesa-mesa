@@ -3249,25 +3249,21 @@ radv_video_patch_encode_session_parameters(struct radv_device *device, struct vk
       break;
    case VK_VIDEO_CODEC_OPERATION_ENCODE_H265_BIT_KHR: {
       for (unsigned i = 0; i < params->h265_enc.h265_sps_count; i++) {
-         uint32_t pic_width_in_luma_samples =
-             params->h265_enc.h265_sps[i].base.pic_width_in_luma_samples;
-         uint32_t pic_height_in_luma_samples =
-             params->h265_enc.h265_sps[i].base.pic_height_in_luma_samples;
-         uint32_t aligned_pic_width = align(pic_width_in_luma_samples, 64);
-         uint32_t aligned_pic_height = align(pic_height_in_luma_samples, 16);
+         VkExtent2D extent = {
+            .width = params->h265_enc.h265_sps[i].base.pic_width_in_luma_samples,
+            .height = params->h265_enc.h265_sps[i].base.pic_height_in_luma_samples,
+         };
+         VkExtent2D aligned_extent = radv_enc_aligned_coded_extent(pdev, params->op, extent);
 
          /* Override the unaligned pic_{width,height} and make up for it with conformance window
           * cropping */
-         params->h265_enc.h265_sps[i].base.pic_width_in_luma_samples = aligned_pic_width;
-         params->h265_enc.h265_sps[i].base.pic_height_in_luma_samples = aligned_pic_height;
+         params->h265_enc.h265_sps[i].base.pic_width_in_luma_samples = aligned_extent.width;
+         params->h265_enc.h265_sps[i].base.pic_height_in_luma_samples = aligned_extent.height;
 
-         if (aligned_pic_width != pic_width_in_luma_samples ||
-             aligned_pic_height != pic_height_in_luma_samples) {
+         if (aligned_extent.width != extent.width || aligned_extent.height != extent.height) {
             params->h265_enc.h265_sps[i].base.flags.conformance_window_flag = 1;
-            params->h265_enc.h265_sps[i].base.conf_win_right_offset +=
-               (aligned_pic_width - pic_width_in_luma_samples) / 2;
-            params->h265_enc.h265_sps[i].base.conf_win_bottom_offset +=
-               (aligned_pic_height - pic_height_in_luma_samples) / 2;
+            params->h265_enc.h265_sps[i].base.conf_win_right_offset += (aligned_extent.width - extent.width) / 2;
+            params->h265_enc.h265_sps[i].base.conf_win_bottom_offset += (aligned_extent.height - extent.height) / 2;
          }
 
          /* VCN supports only the following block sizes (resulting in 64x64 CTBs with any coding
@@ -3295,22 +3291,18 @@ radv_video_patch_encode_session_parameters(struct radv_device *device, struct vk
    }
    case VK_VIDEO_CODEC_OPERATION_ENCODE_AV1_BIT_KHR: {
       /* If the resolution isn't aligned, we need to override it. */
-      uint16_t frame_width = params->av1_enc.seq_hdr.base.max_frame_width_minus_1 + 1;
-      uint16_t frame_height = params->av1_enc.seq_hdr.base.max_frame_height_minus_1 + 1;
-      if (pdev->enc_hw_ver == RADV_VIDEO_ENC_HW_4) {
-         frame_width = align(frame_width, 64);
-         frame_height = align(frame_height, 16);
-      } else if (pdev->enc_hw_ver == RADV_VIDEO_ENC_HW_5) {
-         frame_width = align(frame_width, 8);
-         frame_height = align(frame_height, 2);
-      }
-      params->av1_enc.seq_hdr.base.max_frame_width_minus_1 = frame_width - 1;
-      params->av1_enc.seq_hdr.base.max_frame_height_minus_1 = frame_height - 1;
+      VkExtent2D extent = {
+         .width = params->av1_enc.seq_hdr.base.max_frame_width_minus_1 + 1,
+         .height = params->av1_enc.seq_hdr.base.max_frame_height_minus_1 + 1,
+      };
+      VkExtent2D aligned_extent = radv_enc_aligned_coded_extent(pdev, params->op, extent);
+      params->av1_enc.seq_hdr.base.max_frame_width_minus_1 = aligned_extent.width - 1;
+      params->av1_enc.seq_hdr.base.max_frame_height_minus_1 = aligned_extent.height - 1;
 
       /* Also override the bit length if they're too small now */
-      if (frame_width >= (1 << (params->av1_enc.seq_hdr.base.frame_width_bits_minus_1 + 1)))
+      if (aligned_extent.width >= (1 << (params->av1_enc.seq_hdr.base.frame_width_bits_minus_1 + 1)))
          params->av1_enc.seq_hdr.base.frame_width_bits_minus_1++;
-      if (frame_height >= (1 << (params->av1_enc.seq_hdr.base.frame_height_bits_minus_1 + 1)))
+      if (aligned_extent.height >= (1 << (params->av1_enc.seq_hdr.base.frame_height_bits_minus_1 + 1)))
          params->av1_enc.seq_hdr.base.frame_height_bits_minus_1++;
 
       /* AMD does not support loop restoration */
