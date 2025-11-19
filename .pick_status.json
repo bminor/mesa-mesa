@@ -794,7 +794,7 @@
         "description": "ci/microsoft: Downgrading WinFlexBison.win_flex_bison to version 2.5.24",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "9592686ca0d106dbdc3af6ecd30a3a350a63c582",
         "notes": null
