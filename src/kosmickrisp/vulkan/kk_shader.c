@@ -318,7 +318,7 @@ kk_lower_vs(nir_shader *nir, const struct vk_graphics_pipeline_state *state)
       nir_shader_intrinsics_pass(nir, msl_nir_vs_remove_point_size_write,
                                  nir_metadata_control_flow, NULL);
 
-   NIR_PASS(_, nir, msl_nir_layer_id_type);
+   NIR_PASS(_, nir, msl_nir_vs_io_types);
 }
 
 static void
@@ -404,10 +404,7 @@ kk_lower_fs(nir_shader *nir, const struct vk_graphics_pipeline_state *state)
    NIR_PASS(_, nir, nir_shader_intrinsics_pass, kk_nir_swizzle_fragment_output,
             nir_metadata_control_flow, (void *)state);
 
-   /* Metal's sample mask is uint. */
-   NIR_PASS(_, nir, msl_nir_sample_mask_type);
-
-   NIR_PASS(_, nir, msl_nir_fix_stencil_type);
+   NIR_PASS(_, nir, msl_nir_fs_io_types);
 
    if (state->ms && state->ms->rasterization_samples &&
        state->ms->sample_mask != UINT16_MAX)

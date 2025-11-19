@@ -215,69 +215,60 @@ msl_ensure_vertex_position_output(nir_shader *nir)
 }
 
 static bool
-msl_sample_mask_uint(nir_builder *b, nir_intrinsic_instr *intr, void *data)
+msl_fs_io_types(nir_builder *b, nir_intrinsic_instr *intr, void *data)
 {
    if (intr->intrinsic == nir_intrinsic_store_output) {
       struct nir_io_semantics io = nir_intrinsic_io_semantics(intr);
-      if (io.location == FRAG_RESULT_SAMPLE_MASK)
+      if (io.location == FRAG_RESULT_SAMPLE_MASK) {
          nir_intrinsic_set_src_type(intr, nir_type_uint32);
+         return true;
+      } else if (io.location == FRAG_RESULT_STENCIL) {
+         nir_alu_type type = nir_intrinsic_src_type(intr);
+         nir_intrinsic_set_src_type(
+            intr, nir_type_uint | nir_alu_type_get_type_size(type));
+         return true;
+      }
+   }
+
+   if (intr->intrinsic == nir_intrinsic_load_output) {
+      struct nir_io_semantics io = nir_intrinsic_io_semantics(intr);
+      if (io.location == FRAG_RESULT_STENCIL) {
+         nir_alu_type type = nir_intrinsic_dest_type(intr);
+         nir_intrinsic_set_dest_type(
+            intr, nir_type_uint | nir_alu_type_get_type_size(type));
+         return true;
+      }
    }
 
    return false;
 }
 
 bool
-msl_nir_sample_mask_type(nir_shader *nir)
+msl_nir_fs_io_types(nir_shader *nir)
 {
    assert(nir->info.stage == MESA_SHADER_FRAGMENT);
-   return nir_shader_intrinsics_pass(nir, msl_sample_mask_uint,
-                                     nir_metadata_all, NULL);
-}
-
-static bool
-msl_layer_id_uint(nir_builder *b, nir_intrinsic_instr *intr, void *data)
-{
-   if (intr->intrinsic == nir_intrinsic_store_output) {
-      struct nir_io_semantics io = nir_intrinsic_io_semantics(intr);
-      if (io.location == VARYING_SLOT_LAYER)
-         nir_intrinsic_set_src_type(intr, nir_type_uint32);
-   }
-
-   return false;
-}
-
-bool
-msl_nir_layer_id_type(nir_shader *nir)
-{
-   assert(nir->info.stage == MESA_SHADER_VERTEX);
-   return nir_shader_intrinsics_pass(nir, msl_layer_id_uint, nir_metadata_all,
+   return nir_shader_intrinsics_pass(nir, msl_fs_io_types, nir_metadata_all,
                                      NULL);
 }
 
 static bool
-stencil_type(nir_builder *b, nir_intrinsic_instr *intr, void *data)
+msl_vs_io_types(nir_builder *b, nir_intrinsic_instr *intr, void *data)
 {
-   if (intr->intrinsic == nir_intrinsic_store_output &&
-       nir_intrinsic_io_semantics(intr).location == FRAG_RESULT_STENCIL) {
-      nir_alu_type type = nir_intrinsic_src_type(intr);
-      nir_intrinsic_set_src_type(
-         intr, nir_type_uint | nir_alu_type_get_type_size(type));
-      return true;
+   if (intr->intrinsic == nir_intrinsic_store_output) {
+      struct nir_io_semantics io = nir_intrinsic_io_semantics(intr);
+      if (io.location == VARYING_SLOT_LAYER) {
+         nir_intrinsic_set_src_type(intr, nir_type_uint32);
+         return true;
+      }
    }
-   if (intr->intrinsic == nir_intrinsic_load_output &&
-       nir_intrinsic_io_semantics(intr).location == FRAG_RESULT_STENCIL) {
-      nir_alu_type type = nir_intrinsic_dest_type(intr);
-      nir_intrinsic_set_dest_type(
-         intr, nir_type_uint | nir_alu_type_get_type_size(type));
-      return true;
-   }
+
    return false;
 }
 
 bool
-msl_nir_fix_stencil_type(nir_shader *nir)
+msl_nir_vs_io_types(nir_shader *nir)
 {
-   assert(nir->info.stage == MESA_SHADER_FRAGMENT);
-
-   return nir_shader_intrinsics_pass(nir, stencil_type, nir_metadata_all, NULL);
+   assert(nir->info.stage == MESA_SHADER_VERTEX);
+   return nir_shader_intrinsics_pass(nir, msl_vs_io_types, nir_metadata_all,
+                                     NULL);
 }
