@@ -1172,6 +1172,43 @@ alu_opt_info_is_valid(opt_ctx& ctx, alu_opt_info& info)
 bool
 alu_opt_gather_info(opt_ctx& ctx, Instruction* instr, alu_opt_info& info)
 {
+   if (instr->opcode == aco_opcode::p_insert &&
+       (instr->operands[1].constantValue() + 1) * instr->operands[2].constantValue() == 32) {
+      info = {};
+      info.pass_flags = instr->pass_flags;
+      info.defs.push_back(instr->definitions[0]);
+      info.operands.push_back({Operand::c32(32 - instr->operands[2].constantValue())});
+      info.operands.push_back({instr->operands[0]});
+      if (instr->definitions[0].regClass() == s1) {
+         info.defs.push_back(instr->definitions[1]);
+         info.opcode = aco_opcode::v_lshl_b32;
+         info.format = Format::SOP2;
+         std::swap(info.operands[0], info.operands[1]);
+      } else {
+         info.opcode = aco_opcode::v_lshlrev_b32;
+         info.format = Format::VOP2;
+      }
+      return true;
+   } else if ((instr->opcode == aco_opcode::p_insert ||
+               (instr->opcode == aco_opcode::p_extract && instr->operands[3].constantEquals(0))) &&
+              instr->operands[1].constantEquals(0)) {
+      info = {};
+      info.pass_flags = instr->pass_flags;
+      info.defs.push_back(instr->definitions[0]);
+      info.operands.push_back(
+         {Operand::c32(instr->operands[2].constantEquals(8) ? 0xffu : 0xffffu)});
+      info.operands.push_back({instr->operands[0]});
+      if (instr->definitions[0].regClass() == s1) {
+         info.defs.push_back(instr->definitions[1]);
+         info.opcode = aco_opcode::s_and_b32;
+         info.format = Format::SOP2;
+      } else {
+         info.opcode = aco_opcode::v_and_b32;
+         info.format = Format::VOP2;
+      }
+      return true;
+   }
+
    if (!instr->isVALU() && !instr->isSALU())
       return false;
 
