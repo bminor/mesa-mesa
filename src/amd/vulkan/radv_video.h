@@ -61,15 +61,12 @@ struct radv_video_session {
    rvcn_enc_layer_control_t rc_layer_control;
    rvcn_enc_rate_ctl_layer_init_t rc_layer_init[RADV_ENC_MAX_RATE_LAYER];
    rvcn_enc_rate_ctl_per_picture_t rc_per_pic[RADV_ENC_MAX_RATE_LAYER];
-   rvcn_enc_av1_tile_config_t tile_config;
    uint32_t enc_preset_mode;
    uint32_t enc_rate_control_method;
    uint32_t enc_vbv_buffer_level;
    bool enc_rate_control_default;
    bool enc_need_begin;
    bool enc_need_rate_control;
-   bool skip_mode_allowed;
-   bool disallow_skip_mode;
    bool session_initialized;
 };
 

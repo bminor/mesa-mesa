@@ -57,6 +57,12 @@
 
 #define ENC_ALIGNMENT 256
 
+struct radv_enc_av1_state {
+   rvcn_enc_av1_tile_config_t tile_config;
+   bool skip_mode_allowed;
+   bool disallow_skip_mode;
+};
+
 void
 radv_probe_video_encode(struct radv_physical_device *pdev)
 {
@@ -688,7 +694,8 @@ radv_enc_av1_skip_mode_allowed(uint32_t order_hint_bits, uint32_t *ref_order_hin
 }
 
 static void
-radv_enc_spec_misc_av1(struct radv_cmd_buffer *cmd_buffer, const struct VkVideoEncodeInfoKHR *enc_info)
+radv_enc_spec_misc_av1(struct radv_cmd_buffer *cmd_buffer, const struct VkVideoEncodeInfoKHR *enc_info,
+                       struct radv_enc_av1_state *av1_state)
 {
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    const struct radv_physical_device *pdev = radv_device_physical(device);
@@ -698,31 +705,102 @@ radv_enc_spec_misc_av1(struct radv_cmd_buffer *cmd_buffer, const struct VkVideoE
       vk_find_struct_const(enc_info->pNext, VIDEO_ENCODE_AV1_PICTURE_INFO_KHR);
    const StdVideoEncodeAV1PictureInfo *pic = av1_picture_info->pStdPictureInfo;
    const StdVideoAV1SequenceHeader *seq = &params->av1_enc.seq_hdr.base;
+   VkExtent2D aligned_extent =
+      radv_enc_aligned_coded_extent(pdev, vid->vk.op, enc_info->srcPictureResource.codedExtent);
+   uint32_t sb_w = DIV_ROUND_UP(aligned_extent.width, 64);
+   uint32_t sb_h = DIV_ROUND_UP(aligned_extent.height, 64);
+   rvcn_enc_av1_tile_config_t *tile_config = &av1_state->tile_config;
 
-   uint32_t precision = 0;
+   if (pic->pTileInfo) {
+      /* 2 cols only supported for width > 4096. */
+      if (aligned_extent.width <= 4096 && pic->pTileInfo->TileCols > 1) {
+         tile_config->num_tile_cols = 1;
+         tile_config->num_tile_rows = MIN2(pic->pTileInfo->TileRows * pic->pTileInfo->TileCols, sb_h);
+         tile_config->uniform_tile_spacing = util_is_power_of_two_or_zero(tile_config->num_tile_rows);
+      } else {
+         tile_config->uniform_tile_spacing = pic->pTileInfo->flags.uniform_tile_spacing_flag;
+         tile_config->num_tile_cols = pic->pTileInfo->TileCols;
+         tile_config->num_tile_rows = pic->pTileInfo->TileRows;
+         if (pic->pTileInfo->pWidthInSbsMinus1) {
+            for (unsigned i = 0; i < pic->pTileInfo->TileCols; i++)
+               tile_config->tile_widths[i] = pic->pTileInfo->pWidthInSbsMinus1[i] + 1;
+         }
+         if (pic->pTileInfo->pHeightInSbsMinus1) {
+            for (unsigned i = 0; i < pic->pTileInfo->TileRows; i++)
+               tile_config->tile_height[i] = pic->pTileInfo->pHeightInSbsMinus1[i] + 1;
+         }
+      }
+      tile_config->context_update_tile_id = pic->pTileInfo->context_update_tile_id;
+      tile_config->context_update_tile_id_mode = tile_config->context_update_tile_id == 0
+                                                    ? RENCODE_AV1_CONTEXT_UPDATE_TILE_ID_MODE_DEFAULT
+                                                    : RENCODE_AV1_CONTEXT_UPDATE_TILE_ID_MODE_CUSTOMIZED;
+   } else {
+      tile_config->num_tile_cols = aligned_extent.width > 4096 ? 2 : 1;
+      uint32_t max_tile_width = DIV_ROUND_UP(aligned_extent.width, tile_config->num_tile_cols);
+      uint32_t max_tile_height = (4096 * 2304) / max_tile_width;
+      tile_config->num_tile_rows = DIV_ROUND_UP(aligned_extent.height, max_tile_height);
+      tile_config->uniform_tile_spacing = util_is_power_of_two_or_zero(tile_config->num_tile_rows);
+      tile_config->context_update_tile_id = 0;
+      tile_config->context_update_tile_id_mode = RENCODE_AV1_CONTEXT_UPDATE_TILE_ID_MODE_DEFAULT;
+   }
+
+   if (tile_config->tile_widths[0] == 0) {
+      uint32_t tile_w = DIV_ROUND_UP(sb_w, tile_config->num_tile_cols);
+      if (tile_w * (tile_config->num_tile_cols - 1) >= sb_w) {
+         tile_w = sb_w / tile_config->num_tile_cols;
+         tile_config->uniform_tile_spacing = false;
+      }
+      for (unsigned i = 0; i < tile_config->num_tile_cols; i++) {
+         if (i == tile_config->num_tile_cols - 1)
+            tile_w = sb_w - (i * tile_w);
+         tile_config->tile_widths[i] = tile_w;
+      }
+   }
+
+   if (tile_config->tile_height[0] == 0) {
+      uint32_t tile_h = DIV_ROUND_UP(sb_h, tile_config->num_tile_rows);
+      if (tile_h * (tile_config->num_tile_rows - 1) >= sb_h) {
+         tile_h = sb_h / tile_config->num_tile_rows;
+         tile_config->uniform_tile_spacing = false;
+      }
+      for (unsigned i = 0; i < tile_config->num_tile_rows; i++) {
+         if (i == tile_config->num_tile_rows - 1)
+            tile_h = sb_h - (i * tile_h);
+         tile_config->tile_height[i] = tile_h;
+      }
+   }
+
+   tile_config->num_tile_groups = 1;
+   tile_config->tile_groups[0].start = 0;
+   tile_config->tile_groups[0].end = tile_config->num_tile_cols * tile_config->num_tile_rows - 1;
+   tile_config->tile_size_bytes_minus_1 = 3;
+
+   uint32_t precision = RENCODE_AV1_MV_PRECISION_ALLOW_HIGH_PRECISION;
 
    if (!pic->flags.allow_high_precision_mv)
       precision = RENCODE_AV1_MV_PRECISION_DISALLOW_HIGH_PRECISION;
    if (pic->flags.force_integer_mv)
       precision = RENCODE_AV1_MV_PRECISION_FORCE_INTEGER_MV;
 
-   vid->skip_mode_allowed =
+   av1_state->skip_mode_allowed =
       seq->flags.enable_order_hint &&
       av1_picture_info->predictionMode >= VK_VIDEO_ENCODE_AV1_PREDICTION_MODE_UNIDIRECTIONAL_COMPOUND_KHR;
 
-   if (vid->skip_mode_allowed) {
+   if (av1_state->skip_mode_allowed) {
       uint32_t skip_frames[2];
       uint32_t ref_order_hint[STD_VIDEO_AV1_REFS_PER_FRAME];
       for (unsigned i = 0; i < STD_VIDEO_AV1_REFS_PER_FRAME; i++)
          ref_order_hint[i] = pic->ref_order_hint[pic->ref_frame_idx[i]];
-      vid->skip_mode_allowed =
+      av1_state->skip_mode_allowed =
          radv_enc_av1_skip_mode_allowed(seq->order_hint_bits_minus_1, ref_order_hint, pic->order_hint, skip_frames);
-      vid->disallow_skip_mode = !vid->skip_mode_allowed;
+      av1_state->disallow_skip_mode = !av1_state->skip_mode_allowed;
       /* Skip mode frames must match reference frames */
-      if (vid->skip_mode_allowed) {
-         vid->disallow_skip_mode = !pic->flags.skip_mode_present || skip_frames[0] != 0 ||
-                                   av1_picture_info->referenceNameSlotIndices[skip_frames[1]] == -1;
+      if (av1_state->skip_mode_allowed) {
+         av1_state->disallow_skip_mode = !pic->flags.skip_mode_present || skip_frames[0] != 0 ||
+                                         av1_picture_info->referenceNameSlotIndices[skip_frames[1]] == -1;
       }
+   } else {
+      av1_state->disallow_skip_mode = 1;
    }
 
    RADEON_ENC_BEGIN(pdev->vcn_enc_cmds.spec_misc_av1);
@@ -750,14 +828,14 @@ radv_enc_spec_misc_av1(struct radv_cmd_buffer *cmd_buffer, const struct VkVideoE
    RADEON_ENC_CS(pic->flags.disable_cdf_update);
    RADEON_ENC_CS(pic->flags.disable_frame_end_update_cdf);
    if (pdev->enc_hw_ver >= RADV_VIDEO_ENC_HW_5) {
-      RADEON_ENC_CS(vid->disallow_skip_mode);
+      RADEON_ENC_CS(av1_state->disallow_skip_mode);
       RADEON_ENC_CS(pic->pQuantization ? pic->pQuantization->DeltaQYDc : 0);
       RADEON_ENC_CS(pic->pQuantization ? pic->pQuantization->DeltaQUDc : 0);
       RADEON_ENC_CS(pic->pQuantization ? pic->pQuantization->DeltaQUAc : 0);
       RADEON_ENC_CS(pic->pQuantization ? pic->pQuantization->DeltaQVDc : 0);
       RADEON_ENC_CS(pic->pQuantization ? pic->pQuantization->DeltaQVAc : 0);
    } else {
-      RADEON_ENC_CS(vid->tile_config.num_tile_cols * vid->tile_config.num_tile_rows);
+      RADEON_ENC_CS(tile_config->num_tile_cols * tile_config->num_tile_rows);
    }
    RADEON_ENC_CS(0); // enable screen content auto detection
    RADEON_ENC_CS(0); // screen content frame percentage threshold
@@ -766,6 +844,25 @@ radv_enc_spec_misc_av1(struct radv_cmd_buffer *cmd_buffer, const struct VkVideoE
       RADEON_ENC_CS(0xffffffff);
    }
    RADEON_ENC_END();
+
+   if (pdev->enc_hw_ver >= RADV_VIDEO_ENC_HW_5) {
+      RADEON_ENC_BEGIN(pdev->vcn_enc_cmds.tile_config_av1);
+      RADEON_ENC_CS(tile_config->num_tile_cols);
+      RADEON_ENC_CS(tile_config->num_tile_rows);
+      for (int i = 0; i < RENCODE_AV1_TILE_CONFIG_MAX_NUM_COLS; i++)
+         RADEON_ENC_CS(tile_config->tile_widths[i]);
+      for (int i = 0; i < RENCODE_AV1_TILE_CONFIG_MAX_NUM_ROWS; i++)
+         RADEON_ENC_CS(tile_config->tile_height[i]);
+      RADEON_ENC_CS(tile_config->num_tile_groups);
+      for (int i = 0; i < RENCODE_AV1_TILE_CONFIG_MAX_NUM_COLS * RENCODE_AV1_TILE_CONFIG_MAX_NUM_ROWS; i++) {
+         RADEON_ENC_CS(tile_config->tile_groups[i].start);
+         RADEON_ENC_CS(tile_config->tile_groups[i].end);
+      }
+      RADEON_ENC_CS(tile_config->context_update_tile_id_mode);
+      RADEON_ENC_CS(tile_config->context_update_tile_id);
+      RADEON_ENC_CS(tile_config->tile_size_bytes_minus_1);
+      RADEON_ENC_END();
+   }
 }
 
 static void
@@ -2365,109 +2462,6 @@ radv_enc_params_av1(struct radv_cmd_buffer *cmd_buffer, const VkVideoEncodeInfoK
 }
 
 static void
-radv_enc_av1_tile_config(struct radv_cmd_buffer *cmd_buffer, const VkVideoEncodeInfoKHR *enc_info)
-{
-   struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
-   const struct radv_physical_device *pdev = radv_device_physical(device);
-   const struct VkVideoEncodeAV1PictureInfoKHR *av1_picture_info =
-      vk_find_struct_const(enc_info->pNext, VIDEO_ENCODE_AV1_PICTURE_INFO_KHR);
-   const StdVideoEncodeAV1PictureInfo *av1_pic = av1_picture_info->pStdPictureInfo;
-   struct radv_video_session *vid = cmd_buffer->video.vid;
-   VkExtent2D aligned_extent =
-      radv_enc_aligned_coded_extent(pdev, vid->vk.op, enc_info->srcPictureResource.codedExtent);
-
-   uint32_t sb_w = DIV_ROUND_UP(aligned_extent.width, 64);
-   uint32_t sb_h = DIV_ROUND_UP(aligned_extent.height, 64);
-
-   vid->tile_config.tile_widths[0] = 0;
-   vid->tile_config.tile_height[0] = 0;
-   vid->tile_config.tile_size_bytes_minus_1 = 3;
-
-   if (av1_pic->pTileInfo) {
-      /* 2 cols only supported for width > 4096. */
-      if (aligned_extent.width <= 4096 && av1_pic->pTileInfo->TileCols > 1) {
-         vid->tile_config.num_tile_cols = 1;
-         vid->tile_config.num_tile_rows = MIN2(av1_pic->pTileInfo->TileRows * av1_pic->pTileInfo->TileCols, sb_h);
-         vid->tile_config.uniform_tile_spacing = util_is_power_of_two_or_zero(vid->tile_config.num_tile_rows);
-      } else {
-         vid->tile_config.uniform_tile_spacing = av1_pic->pTileInfo->flags.uniform_tile_spacing_flag;
-         vid->tile_config.num_tile_cols = av1_pic->pTileInfo->TileCols;
-         vid->tile_config.num_tile_rows = av1_pic->pTileInfo->TileRows;
-         if (av1_pic->pTileInfo->pWidthInSbsMinus1) {
-            for (unsigned i = 0; i < av1_pic->pTileInfo->TileCols; i++)
-               vid->tile_config.tile_widths[i] = av1_pic->pTileInfo->pWidthInSbsMinus1[i] + 1;
-         }
-         if (av1_pic->pTileInfo->pHeightInSbsMinus1) {
-            for (unsigned i = 0; i < av1_pic->pTileInfo->TileRows; i++)
-               vid->tile_config.tile_height[i] = av1_pic->pTileInfo->pHeightInSbsMinus1[i] + 1;
-         }
-      }
-      vid->tile_config.context_update_tile_id = av1_pic->pTileInfo->context_update_tile_id;
-      vid->tile_config.context_update_tile_id_mode = vid->tile_config.context_update_tile_id == 0
-                                                        ? RENCODE_AV1_CONTEXT_UPDATE_TILE_ID_MODE_DEFAULT
-                                                        : RENCODE_AV1_CONTEXT_UPDATE_TILE_ID_MODE_CUSTOMIZED;
-   } else {
-      vid->tile_config.num_tile_cols = aligned_extent.width > 4096 ? 2 : 1;
-      uint32_t max_tile_width = DIV_ROUND_UP(aligned_extent.width, vid->tile_config.num_tile_cols);
-      uint32_t max_tile_height = (4096 * 2304) / max_tile_width;
-      vid->tile_config.num_tile_rows = DIV_ROUND_UP(aligned_extent.height, max_tile_height);
-      vid->tile_config.uniform_tile_spacing = util_is_power_of_two_or_zero(vid->tile_config.num_tile_rows);
-      vid->tile_config.context_update_tile_id = 0;
-      vid->tile_config.context_update_tile_id_mode = RENCODE_AV1_CONTEXT_UPDATE_TILE_ID_MODE_DEFAULT;
-   }
-
-   if (vid->tile_config.tile_widths[0] == 0) {
-      uint32_t tile_w = DIV_ROUND_UP(sb_w, vid->tile_config.num_tile_cols);
-      if (tile_w * (vid->tile_config.num_tile_cols - 1) >= sb_w) {
-         tile_w = sb_w / vid->tile_config.num_tile_cols;
-         vid->tile_config.uniform_tile_spacing = false;
-      }
-      for (unsigned i = 0; i < vid->tile_config.num_tile_cols; i++) {
-         if (i == vid->tile_config.num_tile_cols - 1)
-            tile_w = sb_w - (i * tile_w);
-         vid->tile_config.tile_widths[i] = tile_w;
-      }
-   }
-
-   if (vid->tile_config.tile_height[0] == 0) {
-      uint32_t tile_h = DIV_ROUND_UP(sb_h, vid->tile_config.num_tile_rows);
-      if (tile_h * (vid->tile_config.num_tile_rows - 1) >= sb_h) {
-         tile_h = sb_h / vid->tile_config.num_tile_rows;
-         vid->tile_config.uniform_tile_spacing = false;
-      }
-      for (unsigned i = 0; i < vid->tile_config.num_tile_rows; i++) {
-         if (i == vid->tile_config.num_tile_rows - 1)
-            tile_h = sb_h - (i * tile_h);
-         vid->tile_config.tile_height[i] = tile_h;
-      }
-   }
-
-   vid->tile_config.num_tile_groups = 1;
-   vid->tile_config.tile_groups[0].start = 0;
-   vid->tile_config.tile_groups[0].end = vid->tile_config.num_tile_cols * vid->tile_config.num_tile_rows - 1;
-
-   if (pdev->enc_hw_ver < RADV_VIDEO_ENC_HW_5)
-      return;
-
-   RADEON_ENC_BEGIN(pdev->vcn_enc_cmds.tile_config_av1);
-   RADEON_ENC_CS(vid->tile_config.num_tile_cols);
-   RADEON_ENC_CS(vid->tile_config.num_tile_rows);
-   for (int i = 0; i < RENCODE_AV1_TILE_CONFIG_MAX_NUM_COLS; i++)
-      RADEON_ENC_CS(vid->tile_config.tile_widths[i]);
-   for (int i = 0; i < RENCODE_AV1_TILE_CONFIG_MAX_NUM_ROWS; i++)
-      RADEON_ENC_CS(vid->tile_config.tile_height[i]);
-   RADEON_ENC_CS(vid->tile_config.num_tile_groups);
-   for (int i = 0; i < RENCODE_AV1_TILE_CONFIG_MAX_NUM_COLS * RENCODE_AV1_TILE_CONFIG_MAX_NUM_ROWS; i++) {
-      RADEON_ENC_CS(vid->tile_config.tile_groups[i].start);
-      RADEON_ENC_CS(vid->tile_config.tile_groups[i].end);
-   }
-   RADEON_ENC_CS(vid->tile_config.context_update_tile_id_mode);
-   RADEON_ENC_CS(vid->tile_config.context_update_tile_id);
-   RADEON_ENC_CS(vid->tile_config.tile_size_bytes_minus_1);
-   RADEON_ENC_END();
-}
-
-static void
 radv_enc_av1_obu_header(struct radv_cmd_buffer *cmd_buffer, uint32_t obu_type,
                         const StdVideoEncodeAV1ExtensionHeader *ext_header)
 {
@@ -2508,7 +2502,8 @@ radv_enc_av1_tile_log2(unsigned blk_size, unsigned target)
 }
 
 static void
-radv_enc_av1_obu_instruction(struct radv_cmd_buffer *cmd_buffer, const VkVideoEncodeInfoKHR *enc_info)
+radv_enc_av1_obu_instruction(struct radv_cmd_buffer *cmd_buffer, const VkVideoEncodeInfoKHR *enc_info,
+                             struct radv_enc_av1_state *av1_state)
 {
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    const struct radv_physical_device *pdev = radv_device_physical(device);
@@ -2674,11 +2669,11 @@ radv_enc_av1_obu_instruction(struct radv_cmd_buffer *cmd_buffer, const VkVideoEn
       uint32_t sb_rows = DIV_ROUND_UP(aligned_extent.height, 64);
       uint32_t min_log2_tile_cols = radv_enc_av1_tile_log2(64, sb_cols);
       uint32_t min_log2_tiles = MAX2(min_log2_tile_cols, radv_enc_av1_tile_log2(64 * 36, sb_rows * sb_cols));
-      uint32_t tile_cols_log2 = radv_enc_av1_tile_log2(1, vid->tile_config.num_tile_cols);
-      uint32_t tile_rows_log2 = radv_enc_av1_tile_log2(1, vid->tile_config.num_tile_rows);
+      uint32_t tile_cols_log2 = radv_enc_av1_tile_log2(1, av1_state->tile_config.num_tile_cols);
+      uint32_t tile_rows_log2 = radv_enc_av1_tile_log2(1, av1_state->tile_config.num_tile_rows);
 
-      radv_enc_code_fixed_bits(cmd_buffer, vid->tile_config.uniform_tile_spacing, 1);
-      if (vid->tile_config.uniform_tile_spacing) {
+      radv_enc_code_fixed_bits(cmd_buffer, av1_state->tile_config.uniform_tile_spacing, 1);
+      if (av1_state->tile_config.uniform_tile_spacing) {
          for (unsigned i = min_log2_tile_cols; i < tile_cols_log2; i++)
             radv_enc_code_fixed_bits(cmd_buffer, 1, 1);
          radv_enc_code_fixed_bits(cmd_buffer, 0, 1);
@@ -2689,11 +2684,11 @@ radv_enc_av1_obu_instruction(struct radv_cmd_buffer *cmd_buffer, const VkVideoEn
       } else {
          uint32_t widest_tile_sb = 0;
          uint32_t start_sb = 0;
-         for (unsigned i = 0; i < vid->tile_config.num_tile_cols; i++) {
+         for (unsigned i = 0; i < av1_state->tile_config.num_tile_cols; i++) {
             uint32_t max_width = MIN2(sb_cols - start_sb, 64);
-            radv_enc_code_ns(cmd_buffer, vid->tile_config.tile_widths[i] - 1, max_width);
-            widest_tile_sb = MAX2(vid->tile_config.tile_widths[i], widest_tile_sb);
-            start_sb += vid->tile_config.tile_widths[i];
+            radv_enc_code_ns(cmd_buffer, av1_state->tile_config.tile_widths[i] - 1, max_width);
+            widest_tile_sb = MAX2(av1_state->tile_config.tile_widths[i], widest_tile_sb);
+            start_sb += av1_state->tile_config.tile_widths[i];
          }
 
          uint32_t max_tile_area_sb;
@@ -2705,17 +2700,17 @@ radv_enc_av1_obu_instruction(struct radv_cmd_buffer *cmd_buffer, const VkVideoEn
          uint32_t max_tile_height_sb = MAX2(max_tile_area_sb / widest_tile_sb, 1);
 
          start_sb = 0;
-         for (unsigned i = 0; i < vid->tile_config.num_tile_rows; i++) {
+         for (unsigned i = 0; i < av1_state->tile_config.num_tile_rows; i++) {
             uint32_t max_height = MIN2(sb_rows - start_sb, max_tile_height_sb);
-            radv_enc_code_ns(cmd_buffer, vid->tile_config.tile_height[i] - 1, max_height);
-            start_sb += vid->tile_config.tile_height[i];
+            radv_enc_code_ns(cmd_buffer, av1_state->tile_config.tile_height[i] - 1, max_height);
+            start_sb += av1_state->tile_config.tile_height[i];
          }
       }
 
       if (tile_cols_log2 || tile_rows_log2) {
          radv_enc_av1_bs_instruction_type(cmd_buffer, RENCODE_V5_AV1_BITSTREAM_INSTRUCTION_CONTEXT_UPDATE_TILE_ID, 0);
          radv_enc_av1_bs_instruction_type(cmd_buffer, RENCODE_AV1_BITSTREAM_INSTRUCTION_COPY, 0);
-         radv_enc_code_fixed_bits(cmd_buffer, vid->tile_config.tile_size_bytes_minus_1, 2);
+         radv_enc_code_fixed_bits(cmd_buffer, av1_state->tile_config.tile_size_bytes_minus_1, 2);
       }
 
       /*  quantization_params  */
@@ -2768,9 +2763,9 @@ radv_enc_av1_obu_instruction(struct radv_cmd_buffer *cmd_buffer, const VkVideoEn
       radv_enc_code_fixed_bits(cmd_buffer, compound, 1);
    }
 
-   if (vid->skip_mode_allowed)
+   if (av1_state->skip_mode_allowed)
       /*  skip_mode_present  */
-      radv_enc_code_fixed_bits(cmd_buffer, !vid->disallow_skip_mode, 1);
+      radv_enc_code_fixed_bits(cmd_buffer, !av1_state->disallow_skip_mode, 1);
 
    /*  reduced_tx_set  */
    radv_enc_code_fixed_bits(cmd_buffer, 0, 1);
@@ -2790,9 +2785,10 @@ radv_enc_av1_obu_instruction(struct radv_cmd_buffer *cmd_buffer, const VkVideoEn
 }
 
 static void
-radv_enc_headers_av1(struct radv_cmd_buffer *cmd_buffer, const VkVideoEncodeInfoKHR *enc_info)
+radv_enc_headers_av1(struct radv_cmd_buffer *cmd_buffer, const VkVideoEncodeInfoKHR *enc_info,
+                     struct radv_enc_av1_state *state)
 {
-   radv_enc_av1_obu_instruction(cmd_buffer, enc_info);
+   radv_enc_av1_obu_instruction(cmd_buffer, enc_info, state);
    radv_enc_params(cmd_buffer, enc_info);
    radv_enc_params_av1(cmd_buffer, enc_info);
    radv_enc_cdf_default_table(cmd_buffer, enc_info);
@@ -2905,9 +2901,9 @@ radv_vcn_encode_video(struct radv_cmd_buffer *cmd_buffer, const VkVideoEncodeInf
       radv_enc_deblocking_filter_hevc(cmd_buffer, enc_info);
       radv_enc_headers_hevc(cmd_buffer, enc_info);
    } else if (vid->vk.op == VK_VIDEO_CODEC_OPERATION_ENCODE_AV1_BIT_KHR) {
-      radv_enc_av1_tile_config(cmd_buffer, enc_info);
-      radv_enc_spec_misc_av1(cmd_buffer, enc_info);
-      radv_enc_headers_av1(cmd_buffer, enc_info);
+      struct radv_enc_av1_state state = {0};
+      radv_enc_spec_misc_av1(cmd_buffer, enc_info, &state);
+      radv_enc_headers_av1(cmd_buffer, enc_info, &state);
    }
    if (pdev->enc_hw_ver >= RADV_VIDEO_ENC_HW_5)
       radv_enc_ctx2(cmd_buffer, enc_info);
