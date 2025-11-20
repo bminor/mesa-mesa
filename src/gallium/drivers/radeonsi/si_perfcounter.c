@@ -720,7 +720,6 @@ si_spm_init_bo(struct si_context *sctx)
    uint64_t size = 32 * 1024 * 1024; /* Default to 32MB. */
 
    sctx->spm.buffer_size = size;
-   sctx->spm.sample_interval = 4096; /* Default to 4096 clk. */
 
    sctx->spm.bo = ws->buffer_create(
       ws, size, 4096,

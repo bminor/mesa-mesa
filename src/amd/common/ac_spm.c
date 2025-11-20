@@ -620,6 +620,9 @@ bool ac_init_spm(const struct radeon_info *info,
       }
    }
 
+   /* Configure the sample interval to default to 4096 clk. */
+   spm->sample_interval = 4096;
+
    /* On GFX11-11.5, the data size written by the hw is in units of segment. */
    spm->ptr_granularity =
       (info->gfx_level == GFX11 || info->gfx_level == GFX11_5) ? 32 : 1;

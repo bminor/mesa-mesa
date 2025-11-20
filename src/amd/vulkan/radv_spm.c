@@ -93,7 +93,6 @@ radv_spm_init(struct radv_device *device)
       return false;
 
    device->spm.buffer_size = 32 * 1024 * 1024; /* Default to 32MB. */
-   device->spm.sample_interval = 4096;         /* Default to 4096 clk. */
 
    if (!radv_spm_init_bo(device))
       return false;
