@@ -2361,8 +2361,7 @@ radv_physical_device_try_create(struct radv_instance *instance, drmDevicePtr drm
 
    const char *name = ac_get_family_name(pdev->info.family);
    snprintf(pdev->name, sizeof(pdev->name), "AMD RADV %s%s", name, radv_get_compiler_string(pdev));
-   snprintf(pdev->marketing_name, sizeof(pdev->name), "%s (RADV %s%s)",
-            pdev->info.marketing_name ? pdev->info.marketing_name : "AMD Unknown", name,
+   snprintf(pdev->marketing_name, sizeof(pdev->name), "%s (RADV %s%s)", pdev->info.marketing_name, name,
             radv_get_compiler_string(pdev));
 
    if (pdev->info.gfx_level >= GFX12)

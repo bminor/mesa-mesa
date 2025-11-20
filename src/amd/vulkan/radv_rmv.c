@@ -423,8 +423,7 @@ radv_rmv_fill_device_info(const struct radv_physical_device *pdev, struct vk_rmv
       fill_memory_info(gpu_info, &info->memory_infos[i], i);
    }
 
-   if (gpu_info->marketing_name)
-      strncpy(info->device_name, gpu_info->marketing_name, sizeof(info->device_name) - 1);
+   strncpy(info->device_name, gpu_info->marketing_name, sizeof(info->device_name) - 1);
    info->pcie_family_id = gpu_info->family_id;
    info->pcie_revision_id = gpu_info->pci_rev_id;
    info->pcie_device_id = gpu_info->pci.dev;

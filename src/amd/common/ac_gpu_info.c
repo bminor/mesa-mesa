@@ -586,7 +586,8 @@ ac_query_gpu_info(int fd, void *dev_p, struct radeon_info *info,
       info->family_id = device_info.family;
       info->chip_external_rev = device_info.external_rev;
       info->chip_rev = device_info.chip_rev;
-      info->marketing_name = ac_drm_get_marketing_name(dev);
+      const char *marketing_name = ac_drm_get_marketing_name(dev);
+      strncpy(info->marketing_name, marketing_name ? marketing_name : "AMD Unknown", sizeof(info->marketing_name));
    }
 
 #define VCN_IP_VERSION(mj, mn, rv) (((mj) << 16) | ((mn) << 8) | (rv))

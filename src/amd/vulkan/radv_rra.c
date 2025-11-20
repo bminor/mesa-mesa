@@ -177,9 +177,7 @@ rra_dump_asic_info(const struct radeon_info *gpu_info, FILE *output)
       .rev_id = gpu_info->pci_rev_id,
    };
 
-   strncpy(asic_info.device_name,
-           gpu_info->marketing_name ? gpu_info->marketing_name : ac_get_family_name(gpu_info->family),
-           RRA_FILE_DEVICE_NAME_MAX_SIZE - 1);
+   strncpy(asic_info.device_name, gpu_info->marketing_name, RRA_FILE_DEVICE_NAME_MAX_SIZE - 1);
 
    fwrite(&asic_info, sizeof(struct rra_asic_info), 1, output);
 }

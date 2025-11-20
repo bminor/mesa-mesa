@@ -690,8 +690,7 @@ static void si_init_renderer_string(struct si_screen *sscreen)
    struct utsname uname_data;
    const char *name = ac_get_family_name(sscreen->info.family);
 
-   snprintf(first_name, sizeof(first_name), "%s",
-            sscreen->info.marketing_name ? sscreen->info.marketing_name : name);
+   snprintf(first_name, sizeof(first_name), "%s", sscreen->info.marketing_name);
    memset(second_name, 0, sizeof(second_name));
    for (unsigned i = 0; name[i] && i < ARRAY_SIZE(second_name) - 1; i++)
       second_name[i] = tolower(name[i]);

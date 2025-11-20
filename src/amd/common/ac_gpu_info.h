@@ -33,7 +33,7 @@ struct amd_ip_info {
 
 struct radeon_info {
    /* Device info. */
-   const char *marketing_name;
+   char marketing_name[64];
    uint32_t num_se;           /* only enabled SEs */
    uint32_t num_rb;           /* only enabled RBs */
    uint32_t num_cu;           /* only enabled CUs */
