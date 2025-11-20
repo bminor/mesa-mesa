@@ -174,6 +174,9 @@ amdgpu_ioctl_info(int fd, unsigned long request, void *arg)
    case AMDGPU_INFO_VIDEO_CAPS:
       amdgpu_info_video_caps(info->video_cap.type, out.ptr);
       break;
+   case AMDGPU_INFO_HW_IP_COUNT:
+      *out.ui32 = 1;
+      break;
    default:
       return -EINVAL;
    }
