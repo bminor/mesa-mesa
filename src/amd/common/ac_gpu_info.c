@@ -587,9 +587,6 @@ ac_query_gpu_info(int fd, void *dev_p, struct radeon_info *info,
       info->chip_external_rev = device_info.external_rev;
       info->chip_rev = device_info.chip_rev;
       info->marketing_name = ac_drm_get_marketing_name(dev);
-      info->is_pro_graphics = info->marketing_name && (strstr(info->marketing_name, "Pro") ||
-                                                       strstr(info->marketing_name, "PRO") ||
-                                                       strstr(info->marketing_name, "Frontier"));
    }
 
 #define VCN_IP_VERSION(mj, mn, rv) (((mj) << 16) | ((mn) << 8) | (rv))
@@ -1713,7 +1710,6 @@ void ac_print_gpu_info(FILE *f, const struct radeon_info *info, int fd)
 
    fprintf(f, "Flags:\n");
    fprintf(f, "    family_overridden = %u\n", info->family_overridden);
-   fprintf(f, "    is_pro_graphics = %u\n", info->is_pro_graphics);
    fprintf(f, "    has_graphics = %i\n", info->has_graphics);
    fprintf(f, "    has_clear_state = %u\n", info->has_clear_state);
    fprintf(f, "    has_distributed_tess = %u\n", info->has_distributed_tess);

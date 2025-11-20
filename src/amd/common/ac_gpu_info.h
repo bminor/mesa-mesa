@@ -77,7 +77,6 @@ struct radeon_info {
 
    /* Flags. */
    bool family_overridden; /* AMD_FORCE_FAMILY was used, skip command submission */
-   bool is_pro_graphics;
    bool has_graphics; /* false if the chip is compute-only */
    bool has_clear_state;
    bool has_distributed_tess;
