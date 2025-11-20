@@ -51,6 +51,8 @@ nir_lower_sysvals_to_varyings(nir_shader *shader,
          SYSVAL_TO_VARYING(frag_coord, FRAG_COORD, POS);
          SYSVAL_TO_VARYING(point_coord, POINT_COORD, PNTC);
          SYSVAL_TO_VARYING(front_face, FRONT_FACE, FACE);
+         SYSVAL_TO_VARYING(layer_id, LAYER_ID, LAYER);
+         SYSVAL_TO_VARYING(view_index, VIEW_INDEX, VIEW_INDEX);
 
 #undef SYSVAL_TO_VARYING
 

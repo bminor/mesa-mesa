@@ -5702,6 +5702,8 @@ typedef struct nir_lower_sysvals_to_varyings_options {
    bool frag_coord : 1;
    bool front_face : 1;
    bool point_coord : 1;
+   bool layer_id : 1;
+   bool view_index : 1;
 } nir_lower_sysvals_to_varyings_options;
 
 bool
