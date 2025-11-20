@@ -408,10 +408,7 @@ iris_ensure_indirect_generation_shader(struct iris_batch *batch)
    NIR_PASS(_, nir, nir_propagate_invariant, false);
 
    NIR_PASS(_, nir, nir_lower_input_attachments,
-              &(nir_input_attachment_options) {
-                 .use_fragcoord_sysval = true,
-                 .use_layer_id_sysval = true,
-              });
+              &(nir_input_attachment_options) { });
 
    /* Reset sizes before gathering information */
    nir->global_mem_size = 0;

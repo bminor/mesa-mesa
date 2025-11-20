@@ -967,8 +967,6 @@ dxil_spirv_nir_passes(nir_shader *nir,
    if (nir->info.stage == MESA_SHADER_FRAGMENT) {
       NIR_PASS(_, nir, nir_lower_input_attachments,
                  &(nir_input_attachment_options){
-                     .use_fragcoord_sysval = true,
-                     .use_layer_id_sysval = true,
                      .use_view_id_for_layer = !conf->lower_view_index,
                  });
 

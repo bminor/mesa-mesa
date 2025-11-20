@@ -477,10 +477,7 @@ anv_pipeline_lower_nir(struct anv_pipeline *pipeline,
    if (nir->info.stage == MESA_SHADER_FRAGMENT) {
       NIR_PASS(_, nir, nir_lower_wpos_center);
       NIR_PASS(_, nir, nir_lower_input_attachments,
-               &(nir_input_attachment_options) {
-                   .use_fragcoord_sysval = true,
-                   .use_layer_id_sysval = true,
-               });
+               &(nir_input_attachment_options) { });
    }
 
    NIR_PASS(_, nir, anv_nir_lower_ycbcr_textures, layout);

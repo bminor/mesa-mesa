@@ -2781,8 +2781,6 @@ tu_shader_create(struct tu_device *dev,
 
    if (nir->info.stage == MESA_SHADER_FRAGMENT) {
       const nir_input_attachment_options att_options = {
-         .use_fragcoord_sysval = true,
-         .use_layer_id_sysval = true,
          /* When using multiview rendering, we must use
           * gl_ViewIndex as the layer id to pass to the texture
           * sampling function. gl_Layer doesn't work when

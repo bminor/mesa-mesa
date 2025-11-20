@@ -1094,10 +1094,7 @@ lower_input_attachment_loads(nir_shader *nir,
             &ia_load_ctx);
 
    /* Lower the remaining input attachment loads. */
-   struct nir_input_attachment_options lower_input_attach_opts = {
-      .use_fragcoord_sysval = true,
-      .use_layer_id_sysval = true,
-   };
+   struct nir_input_attachment_options lower_input_attach_opts = { };
    NIR_PASS(progress, nir, nir_lower_input_attachments,
             &lower_input_attach_opts);
 
