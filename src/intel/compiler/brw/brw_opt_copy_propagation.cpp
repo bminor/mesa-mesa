@@ -737,11 +737,81 @@ try_copy_propagate(brw_shader &s, brw_inst *inst,
                             entry->dst, entry->size_written))
       return false;
 
+   /* Save the offset of inst->src[arg] relative to entry->dst for it to be
+    * applied later.
+    */
+   const unsigned rel_offset = inst->src[arg].offset - entry->dst.offset;
+   const unsigned entry_stride = (entry->src.file == FIXED_GRF ? 1 :
+                                  entry->src.stride);
+   bool has_source_modifiers = entry->src.abs || entry->src.negate;
+
+   brw_reg new_src = inst->src[arg];
+
+   /* Fold the copy into the instruction consuming it. */
+   new_src.file = entry->src.file;
+   new_src.nr = entry->src.nr;
+   new_src.subnr = entry->src.subnr;
+   new_src.offset = entry->src.offset;
+
+   /* Compose the strides of both regions. */
+   if (entry->src.file == FIXED_GRF) {
+      if (new_src.stride) {
+         const unsigned orig_width = 1 << entry->src.width;
+         const unsigned reg_width =
+            REG_SIZE / (brw_type_size_bytes(new_src.type) *
+                        new_src.stride);
+         new_src.width = cvt(MIN2(orig_width, reg_width)) - 1;
+         new_src.hstride = cvt(inst->src[arg].stride);
+         new_src.vstride = new_src.hstride + new_src.width;
+      } else {
+         new_src.vstride = new_src.hstride = new_src.width = 0;
+      }
+
+      new_src.stride = 1;
+
+      /* Hopefully no Align16 around here... */
+      assert(entry->src.swizzle == BRW_SWIZZLE_XYZW);
+      new_src.swizzle = entry->src.swizzle;
+   } else {
+      new_src.stride *= entry->src.stride;
+   }
+
+   /* Compute the first component of the copy that the instruction is
+    * reading, and the base byte offset within that component.
+    */
+   assert(entry->dst.stride == 1);
+   const unsigned component = rel_offset / brw_type_size_bytes(entry->dst.type);
+   const unsigned suboffset = rel_offset % brw_type_size_bytes(entry->dst.type);
+
+   /* Calculate the byte offset at the origin of the copy of the given
+    * component and suboffset.
+    */
+   new_src = byte_offset(
+      new_src,
+      component * entry_stride * brw_type_size_bytes(entry->src.type) + suboffset);
+
+   enum brw_reg_type update_all_types = BRW_TYPE_INVALID;
+   if (has_source_modifiers && !is_logic_op(inst->opcode)) {
+      if (entry->dst.type != inst->src[arg].type) {
+         /* We are propagating source modifiers from a MOV with a different
+          * type.  If we got here, then we can just change the source and
+          * destination types of the instruction and keep going.
+          */
+         new_src.type = entry->dst.type;
+         update_all_types = entry->dst.type;
+      }
+
+      if (!new_src.abs) {
+         new_src.abs = entry->src.abs;
+         new_src.negate ^= entry->src.negate;
+      }
+   }
+
    /* Send messages with EOT set are restricted to use g112-g127 (and we
     * sometimes need g127 for other purposes), so avoid copy propagating
     * anything that would make it impossible to satisfy that restriction.
     */
-   if (inst->eot && eot_send_has_constraint(s, inst, entry->src, arg))
+   if (inst->eot && eot_send_has_constraint(s, inst, new_src, arg))
       return false;
 
    /* we can't generally copy-propagate UD negations because we
@@ -753,13 +823,11 @@ try_copy_propagate(brw_shader &s, brw_inst *inst,
        entry->src.negate)
       return false;
 
-   bool has_source_modifiers = entry->src.abs || entry->src.negate;
-
    if (has_source_modifiers && !inst->can_do_source_mods(devinfo))
       return false;
 
    /* Reject cases that would violate register regioning restrictions. */
-   if ((entry->src.file == UNIFORM || !entry->src.is_contiguous()) &&
+   if ((new_src.file == UNIFORM || !new_src.is_contiguous()) &&
        (inst->is_send() || inst->uses_indirect_addressing())) {
       return false;
    }
@@ -768,8 +836,6 @@ try_copy_propagate(brw_shader &s, brw_inst *inst,
     * derivatives, assume that their operands are packed so we can't
     * generally propagate strided regions to them.
     */
-   const unsigned entry_stride = (entry->src.file == FIXED_GRF ? 1 :
-                                  entry->src.stride);
    if (instruction_requires_packed_data(inst) && entry_stride != 1)
       return false;
 
@@ -818,8 +884,7 @@ try_copy_propagate(brw_shader &s, brw_inst *inst,
     * regioning restrictions that apply to integer types smaller than a dword.
     * See BSpec #56640 for details.
     */
-   const brw_reg tmp = horiz_stride(entry->src, inst->src[arg].stride);
-   if (has_subdword_integer_region_restriction(devinfo, inst, &tmp, 1))
+   if (has_subdword_integer_region_restriction(devinfo, inst, &new_src, 1))
       return false;
 
    /* The <8;8,0> regions used for FS attributes in multipolygon
@@ -898,70 +963,13 @@ try_copy_propagate(brw_shader &s, brw_inst *inst,
       }
    }
 
-   /* Save the offset of inst->src[arg] relative to entry->dst for it to be
-    * applied later.
-    */
-   const unsigned rel_offset = inst->src[arg].offset - entry->dst.offset;
+   /* Commit the copy. */
+   inst->src[arg] = new_src;
 
-   /* Fold the copy into the instruction consuming it. */
-   inst->src[arg].file = entry->src.file;
-   inst->src[arg].nr = entry->src.nr;
-   inst->src[arg].subnr = entry->src.subnr;
-   inst->src[arg].offset = entry->src.offset;
-
-   /* Compose the strides of both regions. */
-   if (entry->src.file == FIXED_GRF) {
-      if (inst->src[arg].stride) {
-         const unsigned orig_width = 1 << entry->src.width;
-         const unsigned reg_width =
-            REG_SIZE / (brw_type_size_bytes(inst->src[arg].type) *
-                        inst->src[arg].stride);
-         inst->src[arg].width = cvt(MIN2(orig_width, reg_width)) - 1;
-         inst->src[arg].hstride = cvt(inst->src[arg].stride);
-         inst->src[arg].vstride = inst->src[arg].hstride + inst->src[arg].width;
-      } else {
-         inst->src[arg].vstride = inst->src[arg].hstride =
-            inst->src[arg].width = 0;
-      }
-
-      inst->src[arg].stride = 1;
-
-      /* Hopefully no Align16 around here... */
-      assert(entry->src.swizzle == BRW_SWIZZLE_XYZW);
-      inst->src[arg].swizzle = entry->src.swizzle;
-   } else {
-      inst->src[arg].stride *= entry->src.stride;
-   }
-
-   /* Compute the first component of the copy that the instruction is
-    * reading, and the base byte offset within that component.
-    */
-   assert(entry->dst.stride == 1);
-   const unsigned component = rel_offset / brw_type_size_bytes(entry->dst.type);
-   const unsigned suboffset = rel_offset % brw_type_size_bytes(entry->dst.type);
-
-   /* Calculate the byte offset at the origin of the copy of the given
-    * component and suboffset.
-    */
-   inst->src[arg] = byte_offset(inst->src[arg],
-      component * entry_stride * brw_type_size_bytes(entry->src.type) + suboffset);
-
-   if (has_source_modifiers && !is_logic_op(inst->opcode)) {
-      if (entry->dst.type != inst->src[arg].type) {
-         /* We are propagating source modifiers from a MOV with a different
-          * type.  If we got here, then we can just change the source and
-          * destination types of the instruction and keep going.
-          */
-         for (int i = 0; i < inst->sources; i++) {
-            inst->src[i].type = entry->dst.type;
-         }
-         inst->dst.type = entry->dst.type;
-      }
-
-      if (!inst->src[arg].abs) {
-         inst->src[arg].abs = entry->src.abs;
-         inst->src[arg].negate ^= entry->src.negate;
-      }
+   if (update_all_types != BRW_TYPE_INVALID) {
+      inst->dst.type = update_all_types;
+      for (unsigned i = 0; i < inst->sources; i++)
+         inst->src[i].type = update_all_types;
    }
 
    return true;
