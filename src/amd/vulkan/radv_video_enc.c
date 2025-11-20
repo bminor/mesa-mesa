@@ -3214,8 +3214,7 @@ radv_GetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR(
    switch (pQualityLevelInfo->pVideoProfile->videoCodecOperation) {
    case VK_VIDEO_CODEC_OPERATION_ENCODE_H264_BIT_KHR: {
       struct VkVideoEncodeH264QualityLevelPropertiesKHR *ext =
-         (struct VkVideoEncodeH264QualityLevelPropertiesKHR *)vk_find_struct(
-            pQualityLevelProperties->pNext, VIDEO_ENCODE_H264_QUALITY_LEVEL_PROPERTIES_KHR);
+         vk_find_struct(pQualityLevelProperties->pNext, VIDEO_ENCODE_H264_QUALITY_LEVEL_PROPERTIES_KHR);
       if (ext) {
          ext->preferredRateControlFlags = VK_VIDEO_ENCODE_H264_RATE_CONTROL_ATTEMPT_HRD_COMPLIANCE_BIT_KHR;
          ext->preferredGopFrameCount = 60;
@@ -3233,8 +3232,7 @@ radv_GetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR(
    }
    case VK_VIDEO_CODEC_OPERATION_ENCODE_H265_BIT_KHR: {
       struct VkVideoEncodeH265QualityLevelPropertiesKHR *ext =
-         (struct VkVideoEncodeH265QualityLevelPropertiesKHR *)vk_find_struct(
-            pQualityLevelProperties->pNext, VIDEO_ENCODE_H265_QUALITY_LEVEL_PROPERTIES_KHR);
+         vk_find_struct(pQualityLevelProperties->pNext, VIDEO_ENCODE_H265_QUALITY_LEVEL_PROPERTIES_KHR);
       if (ext) {
          ext->preferredRateControlFlags = VK_VIDEO_ENCODE_H265_RATE_CONTROL_ATTEMPT_HRD_COMPLIANCE_BIT_KHR;
          ext->preferredGopFrameCount = 60;
@@ -3251,8 +3249,7 @@ radv_GetPhysicalDeviceVideoEncodeQualityLevelPropertiesKHR(
    }
    case VK_VIDEO_CODEC_OPERATION_ENCODE_AV1_BIT_KHR: {
       struct VkVideoEncodeAV1QualityLevelPropertiesKHR *ext =
-         (struct VkVideoEncodeAV1QualityLevelPropertiesKHR *)vk_find_struct(
-            pQualityLevelProperties->pNext, VIDEO_ENCODE_AV1_QUALITY_LEVEL_PROPERTIES_KHR);
+         vk_find_struct(pQualityLevelProperties->pNext, VIDEO_ENCODE_AV1_QUALITY_LEVEL_PROPERTIES_KHR);
       if (ext) {
          ext->preferredRateControlFlags =
             0; // https://gitlab.freedesktop.org/mesa/mesa/-/merge_requests/35767#note_2979437

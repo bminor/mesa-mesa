@@ -877,8 +877,7 @@ radv_GetPhysicalDeviceVideoCapabilitiesKHR(VkPhysicalDevice physicalDevice, cons
       pCapabilities->minBitstreamBufferOffsetAlignment = 128;
       pCapabilities->minBitstreamBufferSizeAlignment = 128;
    } else {
-      enc_caps =
-         (struct VkVideoEncodeCapabilitiesKHR *)vk_find_struct(pCapabilities->pNext, VIDEO_ENCODE_CAPABILITIES_KHR);
+      enc_caps = vk_find_struct(pCapabilities->pNext, VIDEO_ENCODE_CAPABILITIES_KHR);
       struct VkVideoEncodeIntraRefreshCapabilitiesKHR *intra_refresh_caps =
          vk_find_struct(pCapabilities->pNext, VIDEO_ENCODE_INTRA_REFRESH_CAPABILITIES_KHR);
       struct VkVideoEncodeQuantizationMapCapabilitiesKHR *qp_map_caps =
@@ -1044,8 +1043,8 @@ radv_GetPhysicalDeviceVideoCapabilitiesKHR(VkPhysicalDevice physicalDevice, cons
       break;
    }
    case VK_VIDEO_CODEC_OPERATION_ENCODE_H265_BIT_KHR: {
-      struct VkVideoEncodeH265CapabilitiesKHR *ext = (struct VkVideoEncodeH265CapabilitiesKHR *)vk_find_struct(
-         pCapabilities->pNext, VIDEO_ENCODE_H265_CAPABILITIES_KHR);
+      struct VkVideoEncodeH265CapabilitiesKHR *ext =
+         vk_find_struct(pCapabilities->pNext, VIDEO_ENCODE_H265_CAPABILITIES_KHR);
       struct VkVideoEncodeH265QuantizationMapCapabilitiesKHR *qp_map_caps =
          vk_find_struct(pCapabilities->pNext, VIDEO_ENCODE_H265_QUANTIZATION_MAP_CAPABILITIES_KHR);
 
@@ -1103,8 +1102,8 @@ radv_GetPhysicalDeviceVideoCapabilitiesKHR(VkPhysicalDevice physicalDevice, cons
       break;
    }
    case VK_VIDEO_CODEC_OPERATION_ENCODE_AV1_BIT_KHR: {
-      struct VkVideoEncodeAV1CapabilitiesKHR *ext = (struct VkVideoEncodeAV1CapabilitiesKHR *)vk_find_struct(
-         pCapabilities->pNext, VIDEO_ENCODE_AV1_CAPABILITIES_KHR);
+      struct VkVideoEncodeAV1CapabilitiesKHR *ext =
+         vk_find_struct(pCapabilities->pNext, VIDEO_ENCODE_AV1_CAPABILITIES_KHR);
       struct VkVideoEncodeAV1QuantizationMapCapabilitiesKHR *qp_map_caps =
          vk_find_struct(pCapabilities->pNext, VIDEO_ENCODE_AV1_QUANTIZATION_MAP_CAPABILITIES_KHR);
 
@@ -1210,7 +1209,7 @@ radv_GetPhysicalDeviceVideoFormatPropertiesKHR(VkPhysicalDevice physicalDevice,
    VkFormat formats[2] = {VK_FORMAT_UNDEFINED, VK_FORMAT_UNDEFINED};
    uint32_t qp_map_texel_size = 0;
    const struct VkVideoProfileListInfoKHR *prof_list =
-      (struct VkVideoProfileListInfoKHR *)vk_find_struct_const(pVideoFormatInfo->pNext, VIDEO_PROFILE_LIST_INFO_KHR);
+      vk_find_struct_const(pVideoFormatInfo->pNext, VIDEO_PROFILE_LIST_INFO_KHR);
    if (prof_list) {
       for (unsigned i = 0; i < prof_list->profileCount; i++) {
          const VkVideoProfileInfoKHR *profile = &prof_list->pProfiles[i];
