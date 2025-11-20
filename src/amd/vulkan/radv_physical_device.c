@@ -2326,7 +2326,8 @@ radv_physical_device_try_create(struct radv_instance *instance, drmDevicePtr drm
       /* Allow all devices on a virtual winsys, otherwise do a basic support check. */
       if (!radv_is_gpu_supported(&pdev->info)) {
          if (instance->debug_flags & RADV_DEBUG_STARTUP)
-            fprintf(stderr, "radv: info: device '%s' is not supported by RADV.\n", pdev->info.name);
+            fprintf(stderr, "radv: info: device '%s' is not supported by RADV.\n",
+                    ac_get_family_name(pdev->info.family));
          result = VK_ERROR_INCOMPATIBLE_DRIVER;
          goto fail_wsi;
       }
@@ -2358,9 +2359,10 @@ radv_physical_device_try_create(struct radv_instance *instance, drmDevicePtr drm
    pdev->emulate_astc = instance->drirc.features.vk_require_astc;
 #endif
 
-   snprintf(pdev->name, sizeof(pdev->name), "AMD RADV %s%s", pdev->info.name, radv_get_compiler_string(pdev));
+   const char *name = ac_get_family_name(pdev->info.family);
+   snprintf(pdev->name, sizeof(pdev->name), "AMD RADV %s%s", name, radv_get_compiler_string(pdev));
    snprintf(pdev->marketing_name, sizeof(pdev->name), "%s (RADV %s%s)",
-            pdev->info.marketing_name ? pdev->info.marketing_name : "AMD Unknown", pdev->info.name,
+            pdev->info.marketing_name ? pdev->info.marketing_name : "AMD Unknown", name,
             radv_get_compiler_string(pdev));
 
    if (pdev->info.gfx_level >= GFX12)

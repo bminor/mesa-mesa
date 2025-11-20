@@ -19,7 +19,6 @@ ac_null_device_create(struct radeon_info *gpu_info, const char *family)
       if (!strcasecmp(family, ac_get_family_name(i))) {
          /* Override family and gfx_level. */
          gpu_info->family = i;
-         gpu_info->name = ac_get_family_name(i);
 
          if (gpu_info->family >= CHIP_GFX1200)
             gpu_info->gfx_level = GFX12;

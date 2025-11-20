@@ -688,12 +688,13 @@ static void si_init_renderer_string(struct si_screen *sscreen)
 {
    char first_name[256], second_name[32] = {}, kernel_version[128] = {};
    struct utsname uname_data;
+   const char *name = ac_get_family_name(sscreen->info.family);
 
    snprintf(first_name, sizeof(first_name), "%s",
-            sscreen->info.marketing_name ? sscreen->info.marketing_name : sscreen->info.name);
+            sscreen->info.marketing_name ? sscreen->info.marketing_name : name);
    memset(second_name, 0, sizeof(second_name));
-   for (unsigned i = 0; sscreen->info.name[i] && i < ARRAY_SIZE(second_name) - 1; i++)
-      second_name[i] = tolower(sscreen->info.name[i]);
+   for (unsigned i = 0; name[i] && i < ARRAY_SIZE(second_name) - 1; i++)
+      second_name[i] = tolower(name[i]);
 
    if (uname(&uname_data) == 0)
       snprintf(kernel_version, sizeof(kernel_version), ", %s", uname_data.release);

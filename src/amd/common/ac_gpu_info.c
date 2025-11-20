@@ -455,10 +455,11 @@ ac_query_gpu_info(int fd, void *dev_p, struct radeon_info *info,
    info->pci_rev_id = device_info.pci_rev;
    info->vce_harvest_config = device_info.vce_harvest_config;
 
+   info->family = CHIP_UNKNOWN;
+
 #define identify_chip2(asic, chipname)                                                             \
    if (ASICREV_IS(device_info.external_rev, asic)) {                                             \
       info->family = CHIP_##chipname;                                                              \
-      info->name = #chipname;                                                                      \
    }
 #define identify_chip(chipname) identify_chip2(chipname, chipname)
 
@@ -552,6 +553,12 @@ ac_query_gpu_info(int fd, void *dev_p, struct radeon_info *info,
          break;
       }
 
+      if (info->family == CHIP_UNKNOWN) {
+         fprintf(stderr, "amdgpu: unknown (family_id, chip_external_rev): (%u, %u)\n",
+               device_info.family, device_info.external_rev);
+         return AC_QUERY_GPU_INFO_UNIMPLEMENTED_HW;
+      }
+
       if (info->ip[AMD_IP_GFX].ver_major == 12 && info->ip[AMD_IP_GFX].ver_minor == 0)
          info->gfx_level = GFX12;
       else if (info->ip[AMD_IP_GFX].ver_major == 11 && info->ip[AMD_IP_GFX].ver_minor == 5)
@@ -583,12 +590,6 @@ ac_query_gpu_info(int fd, void *dev_p, struct radeon_info *info,
       info->is_pro_graphics = info->marketing_name && (strstr(info->marketing_name, "Pro") ||
                                                        strstr(info->marketing_name, "PRO") ||
                                                        strstr(info->marketing_name, "Frontier"));
-   }
-
-   if (!info->name) {
-      fprintf(stderr, "amdgpu: unknown (family_id, chip_external_rev): (%u, %u)\n",
-              device_info.family, device_info.external_rev);
-      return AC_QUERY_GPU_INFO_UNIMPLEMENTED_HW;
    }
 
 #define VCN_IP_VERSION(mj, mn, rv) (((mj) << 16) | ((mn) << 8) | (rv))
@@ -1641,7 +1642,7 @@ void ac_compute_device_uuid(const struct radeon_info *info, char *uuid, size_t s
 void ac_print_gpu_info(FILE *f, const struct radeon_info *info, int fd)
 {
    fprintf(f, "Device info:\n");
-   fprintf(f, "    name = %s\n", info->name);
+   fprintf(f, "    name = %s\n", ac_get_family_name(info->family));
    fprintf(f, "    marketing_name = %s\n", info->marketing_name);
 
    char proc_fd[32];

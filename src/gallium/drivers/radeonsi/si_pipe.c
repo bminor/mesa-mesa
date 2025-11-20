@@ -1192,8 +1192,8 @@ static void si_disk_cache_create(struct si_screen *sscreen)
    _mesa_sha1_final(&ctx, sha1);
    mesa_bytes_to_hex(cache_id, sha1, 20);
 
-   sscreen->disk_shader_cache = disk_cache_create(sscreen->info.name, cache_id,
-                                                  sscreen->info.address32_hi);
+   sscreen->disk_shader_cache = disk_cache_create(ac_get_family_name(sscreen->info.family),
+                                                  cache_id, sscreen->info.address32_hi);
 }
 
 static void si_set_max_shader_compiler_threads(struct pipe_screen *screen, unsigned max_threads)
