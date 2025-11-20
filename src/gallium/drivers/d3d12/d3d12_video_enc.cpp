@@ -3041,6 +3041,14 @@ d3d12_video_encoder_calculate_max_slices_count_in_output(
    return maxSlices;
 }
 
+static inline bool
+d3d12_buffer_maps_directly(pipe_resource *buffer)
+{
+   return buffer->target == PIPE_BUFFER &&
+          buffer->usage != PIPE_USAGE_DEFAULT &&
+          buffer->usage != PIPE_USAGE_IMMUTABLE;
+}
+
 void
 d3d12_video_encoder_get_slice_bitstream_data(struct pipe_video_codec *codec,
                                              void *feedback,
@@ -3183,7 +3191,8 @@ d3d12_video_encoder_get_slice_bitstream_data(struct pipe_video_codec *codec,
       }
 
       // If we uploaded new slice headers, flush and wait for the context to upload them
-      if (pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].pSliceHeaders[slice_idx].size() > 0)
+      if ((pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].pSliceHeaders[slice_idx].size() > 0) &&
+         !d3d12_buffer_maps_directly(pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].comp_bit_destinations[slice_idx])) // If the buffer maps directly, the buffer_subdata is synchronous on unmap, no need to flush
       {
          struct pipe_fence_handle *pUploadGPUCompletionFence = NULL;
          pD3D12Enc->base.context->flush(pD3D12Enc->base.context,
@@ -3437,12 +3446,19 @@ d3d12_video_encoder_encode_bitstream_impl(struct pipe_video_codec *codec,
             static_cast<unsigned int>(pD3D12Enc->m_BitstreamHeadersBuffer.size()),
             pD3D12Enc->m_BitstreamHeadersBuffer.data());
 
+         if (!d3d12_buffer_maps_directly(&pD3D12Enc->m_pOutputBitstreamBuffers[0/*first slice buffer*/]->base.b)) // If the buffer maps directly, the buffer_subdata is synchronous on unmap, no need to flush
+         {
+            // If the destination buffer doesn't map directly (eg. DEFAULT usage), we need to flush
+            // and set a fence to ensure the upload is finished before EncodeFrame reads from it
+
             debug_printf("[d3d12_video_encoder] d3d12_video_encoder_encode_bitstream_impl - Flushing pD3D12Enc->m_BitstreamHeadersBuffer data upload.\n");
             pD3D12Enc->base.context->flush(
                pD3D12Enc->base.context,
                &pD3D12Enc->m_inflightResourcesPool[d3d12_video_encoder_pool_current_index(pD3D12Enc)].headers_upload_completion_fence,
                PIPE_FLUSH_ASYNC | PIPE_FLUSH_HINT_FINISH);
+
             assert(pD3D12Enc->m_inflightResourcesPool[d3d12_video_encoder_pool_current_index(pD3D12Enc)].headers_upload_completion_fence);
+         }
       }
    }
    else
@@ -4670,18 +4686,21 @@ d3d12_video_encoder_get_feedback(struct pipe_video_codec *codec,
             //
             // Flush copies in batch and wait on this CPU thread for GPU work completion
             //
-            struct pipe_fence_handle *pUploadGPUCompletionFence = NULL;
-            pD3D12Enc->base.context->flush(pD3D12Enc->base.context,
-                                          &pUploadGPUCompletionFence,
-                                          PIPE_FLUSH_ASYNC | PIPE_FLUSH_HINT_FINISH);
-            assert(pUploadGPUCompletionFence);
-            pD3D12Enc->m_pD3D12Screen->base.fence_finish(&pD3D12Enc->m_pD3D12Screen->base,
-                                                         NULL,
-                                                         pUploadGPUCompletionFence,
-                                                         OS_TIMEOUT_INFINITE);
-            pD3D12Enc->m_pD3D12Screen->base.fence_reference(&pD3D12Enc->m_pD3D12Screen->base,
-                                                            &pUploadGPUCompletionFence,
-                                                            NULL);
+
+            if (!d3d12_buffer_maps_directly(pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].comp_bit_destinations[0/*first slice*/])) { // If the buffer maps directly, the buffer_subdata is synchronous on unmap, no need to flush
+               struct pipe_fence_handle *pUploadGPUCompletionFence = NULL;
+               pD3D12Enc->base.context->flush(pD3D12Enc->base.context,
+                                             &pUploadGPUCompletionFence,
+                                             PIPE_FLUSH_ASYNC | PIPE_FLUSH_HINT_FINISH);
+               assert(pUploadGPUCompletionFence);
+               pD3D12Enc->m_pD3D12Screen->base.fence_finish(&pD3D12Enc->m_pD3D12Screen->base,
+                                                            NULL,
+                                                            pUploadGPUCompletionFence,
+                                                            OS_TIMEOUT_INFINITE);
+               pD3D12Enc->m_pD3D12Screen->base.fence_reference(&pD3D12Enc->m_pD3D12Screen->base,
+                                                               &pUploadGPUCompletionFence,
+                                                               NULL);
+            }
          }
       }
 
