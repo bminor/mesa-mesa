@@ -718,6 +718,7 @@ ac_query_gpu_info(int fd, void *dev_p, struct radeon_info *info,
    ac_drm_query_has_vm_always_valid(dev, info);
    info->has_bo_metadata = true;
    info->has_eqaa_surface_allocator = info->gfx_level < GFX11;
+
    /* Disable sparse mappings on GFX6 due to VM faults in CP DMA. Enable them once
     * these faults are mitigated in software.
     * Disable sparse mappings on GFX7-8 due to GPU hangs in the VK CTS,
@@ -725,6 +726,10 @@ ac_query_gpu_info(int fd, void *dev_p, struct radeon_info *info,
     * Enable them when these are investigated and fixed in the driver.
     */
    info->has_sparse = info->family >= CHIP_POLARIS10;
+   info->has_sparse_image_3d = info->gfx_level >= GFX7;
+   info->has_sparse_image_standard_3d = info->gfx_level >= GFX9;
+   info->has_sparse_unaligned_mip_size = info->gfx_level >= GFX7;
+
    info->has_gang_submit = info->drm_minor >= 49;
    info->has_gpuvm_fault_query = info->drm_minor >= 55;
    info->has_tmz_support = device_info.ids_flags & AMDGPU_IDS_FLAGS_TMZ;

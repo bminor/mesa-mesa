@@ -238,7 +238,14 @@ struct radeon_info {
    bool has_vm_always_valid;
    bool has_bo_metadata;
    bool has_eqaa_surface_allocator;
+   /* Sparse bindings and basic sparse features (2D image, etc.) */
    bool has_sparse;
+   /* 3D sparse images */
+   bool has_sparse_image_3d;
+   /* 3D sparse images with standard block shape */
+   bool has_sparse_image_standard_3d;
+   /* Mip levels do not need to be aligned to the sparse block size */
+   bool has_sparse_unaligned_mip_size;
    bool has_gang_submit;
    bool has_gpuvm_fault_query;
    bool has_pcie_bandwidth_info;
