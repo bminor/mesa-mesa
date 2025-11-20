@@ -224,7 +224,7 @@ with_gallium_ethosu = gallium_drivers.contains('ethosu')
 foreach gallium_driver : gallium_drivers
   pre_args += '-DHAVE_@0@'.format(gallium_driver.to_upper())
 endforeach
-draw_with_llvm = get_option('draw-use-llvm')
+draw_with_llvm = with_llvm.allowed() and get_option('draw-use-llvm')
 with_llvm = with_llvm \
   .enable_if(with_gallium_i915, error_message : 'i915 Gallium driver requires LLVM for vertex shaders') \
   .enable_if(with_gallium_llvmpipe, error_message : 'LLVMPipe Gallium driver requires LLVM') \
