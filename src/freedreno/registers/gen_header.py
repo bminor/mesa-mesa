@@ -219,6 +219,8 @@ class Bitset(object):
 
 		prefix = reg.full_name
 
+		constexpr_mark = " CONSTEXPR"
+
 		print("struct %s {" % prefix)
 		for f in self.fields:
 			if f.type in [ "address", "waddress" ]:
@@ -230,6 +232,10 @@ class Bitset(object):
 			type, val = f.ctype("var")
 
 			tab_to("    %s" % type, "%s;" % name)
+
+			if f.type == "float":
+				# Requires using `fui()` or `_mesa_float_to_half()`
+				constexpr_mark = ""
 		if reg.bit_size == 64:
 			tab_to("    uint64_t", "unknown;")
 			tab_to("    uint64_t", "qword;")
@@ -242,11 +248,11 @@ class Bitset(object):
 		if is_deprecated:
 			depcrstr = " FD_DEPRECATED"
 		if reg.array:
-			print("static inline%s struct fd_reg_pair\npack_%s(uint32_t __i, struct %s fields)\n{" %
-				  (depcrstr, prefix, prefix))
+			print("static%s inline%s struct fd_reg_pair\npack_%s(uint32_t __i, struct %s fields)\n{" %
+				  (constexpr_mark, depcrstr, prefix, prefix))
 		else:
-			print("static inline%s struct fd_reg_pair\npack_%s(struct %s fields)\n{" %
-				  (depcrstr, prefix, prefix))
+			print("static%s inline%s struct fd_reg_pair\npack_%s(struct %s fields)\n{" %
+				  (constexpr_mark, depcrstr, prefix, prefix))
 
 		self.dump_regpair_builder(reg)
 
@@ -271,9 +277,9 @@ class Bitset(object):
 		if prefix is None:
 			prefix = self.name
 		if self.reg and self.reg.bit_size == 64:
-			print("static inline uint32_t %s_LO(uint32_t val)\n{" % prefix)
+			print("static CONSTEXPR inline uint32_t %s_LO(uint32_t val)\n{" % prefix)
 			print("\treturn val;\n}")
-			print("static inline uint32_t %s_HI(uint32_t val)\n{" % prefix)
+			print("static CONSTEXPR inline uint32_t %s_HI(uint32_t val)\n{" % prefix)
 			print("\treturn val;\n}")
 		for f in self.fields:
 			if f.name:
@@ -292,7 +298,8 @@ class Bitset(object):
 				ret_type = "uint64_t" if reg.bit_size == 64 else "uint32_t"
 				cast = "(uint64_t)" if reg.bit_size == 64 else ""
 
-				print("static inline %s %s(%s val)\n{" % (ret_type, name, type))
+				constexpr_mark = "" if type == "float" else " CONSTEXPR"
+				print("static%s inline %s %s(%s val)\n{" % (constexpr_mark, ret_type, name, type))
 				if f.shr > 0:
 					print("\tassert(!(val & 0x%x));" % mask(0, f.shr - 1))
 				print("\treturn (%s(%s) << %s__SHIFT) & %s__MASK;\n}" % (cast, val, name, name))
@@ -367,7 +374,7 @@ class Array(object):
 		strides = indices_strides(self.indices())
 		array_offset = self.total_offset()
 		if self.fixed_offsets:
-			print("static inline%s uint32_t __offset_%s(%s idx)" % (depcrstr, self.local_name, self.index_ctype()))
+			print("static CONSTEXPR inline%s uint32_t __offset_%s(%s idx)" % (depcrstr, self.local_name, self.index_ctype()))
 			print("{\n\tswitch (idx) {")
 			if self.index_type:
 				for val, offset in zip(self.index_type.names(), self.offsets):
@@ -439,7 +446,7 @@ class Reg(object):
 		if proto == '':
 			tab_to("#define REG_%s" % self.full_name, "0x%08x" % offset)
 		else:
-			print("static inline%s uint32_t REG_%s(%s) { return 0x%08x + %s; }" % (depcrstr, self.full_name, proto, offset, strides))
+			print("static CONSTEXPR inline%s uint32_t REG_%s(%s) { return 0x%08x + %s; }" % (depcrstr, self.full_name, proto, offset, strides))
 
 		if self.bitset.inline:
 			self.bitset.dump(is_deprecated, self.full_name, self)
@@ -835,6 +842,7 @@ class Parser(object):
 		bit_size = 32
 		array = False
 		address = None
+		constexpr_mark = " CONSTEXPR"
 		for variant in variants.keys():
 			print("    /* %s fields: */" % variant)
 			reg = variants[variant]
@@ -855,6 +863,8 @@ class Parser(object):
 					continue
 				type, val = f.ctype("var")
 				tab_to("    %s" %type, "%s;" %name)
+				if f.type == "float":
+					constexpr_mark = ""
 		print("    /* fallback fields: */")
 		if bit_size == 64:
 			tab_to("    uint64_t", "unknown;")
@@ -866,7 +876,7 @@ class Parser(object):
 		# TODO don't hardcode the varset enum name
 		varenum = "chip"
 		print("template <%s %s>" % (varenum, varenum.upper()))
-		print("static inline struct fd_reg_pair")
+		print("static%s inline struct fd_reg_pair" % (constexpr_mark))
 		xtra = ""
 		xtravar = ""
 		if array:
@@ -930,8 +940,10 @@ def dump_c(args, guard, func):
 
 	print("#ifdef __cplusplus")
 	print("#define __struct_cast(X)")
+	print("#define CONSTEXPR constexpr")
 	print("#else")
 	print("#define __struct_cast(X) (struct X)")
+	print("#define CONSTEXPR")
 	print("#endif")
 	print()
 
