@@ -242,6 +242,8 @@ panvk_per_arch(get_physical_device_features)(
    const struct panvk_instance *instance,
    const struct panvk_physical_device *device, struct vk_features *features)
 {
+   bool has_sparse = PAN_ARCH >= 10;
+
    *features = (struct vk_features){
       /* Vulkan 1.0 */
       .robustBufferAccess = true,
@@ -293,15 +295,15 @@ panvk_per_arch(get_physical_device_features)(
       .shaderInt16 = true,
       .shaderResourceResidency = false,
       .shaderResourceMinLod = false,
-      .sparseBinding = PAN_ARCH >= 10,
-      .sparseResidencyBuffer = PAN_ARCH >= 10,
-      .sparseResidencyImage2D = false,
-      .sparseResidencyImage3D = false,
+      .sparseBinding = has_sparse,
+      .sparseResidencyBuffer = has_sparse,
+      .sparseResidencyImage2D = has_sparse,
+      .sparseResidencyImage3D = false, /* https://gitlab.freedesktop.org/panfrost/mesa/-/issues/242 */
       .sparseResidency2Samples = false,
       .sparseResidency4Samples = false,
       .sparseResidency8Samples = false,
       .sparseResidency16Samples = false,
-      .sparseResidencyAliased = false,
+      .sparseResidencyAliased = false, /* https://gitlab.freedesktop.org/panfrost/mesa/-/issues/237 */
       .variableMultisampleRate = false,
       .inheritedQueries = false,
 
@@ -807,7 +809,7 @@ panvk_per_arch(get_physical_device_properties)(
       /* Vulkan 1.0 sparse properties */
       .sparseResidencyNonResidentStrict = false,
       .sparseResidencyAlignedMipSize = false,
-      .sparseResidencyStandard2DBlockShape = false,
+      .sparseResidencyStandard2DBlockShape = true,
       .sparseResidencyStandard2DMultisampleBlockShape = false,
       .sparseResidencyStandard3DBlockShape = false,
 
