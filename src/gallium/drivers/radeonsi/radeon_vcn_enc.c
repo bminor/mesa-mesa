@@ -1299,7 +1299,7 @@ static int setup_dpb(struct radeon_encoder *enc, uint32_t num_reconstructed_pict
    uint32_t aligned_width = align(enc->base.width, rec_alignment);
    uint32_t aligned_height = align(enc->base.height, rec_alignment);
    uint32_t pitch = align(aligned_width, enc->alignment);
-   uint32_t luma_size, chroma_size, pre_luma_size, pre_chroma_size, offset;
+   uint32_t luma_size, chroma_size, pre_luma_size = 0, pre_chroma_size = 0, offset;
    struct radeon_enc_pic *enc_pic = &enc->enc_pic;
    int i;
    bool has_b = enc_pic->spec_misc.b_picture_enabled; /* for h264 only */
