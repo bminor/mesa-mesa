@@ -941,16 +941,17 @@ vtn_get_builtin_location(struct vtn_builder *b,
       break;
    case SpvBuiltInLayer:
    case SpvBuiltInLayerPerViewNV:
-      *location = VARYING_SLOT_LAYER;
       if (b->shader->info.stage == MESA_SHADER_FRAGMENT) {
-         *mode = nir_var_shader_in;
-         *interp_mode = INTERP_MODE_FLAT;
+         *location = SYSTEM_VALUE_LAYER_ID;
+         set_mode_system_value(b, mode);
       } else if (b->shader->info.stage == MESA_SHADER_GEOMETRY) {
+         *location = VARYING_SLOT_LAYER;
          *mode = nir_var_shader_out;
       } else if (b->supported_capabilities.ShaderViewportIndexLayerEXT &&
                (b->shader->info.stage == MESA_SHADER_VERTEX ||
                 b->shader->info.stage == MESA_SHADER_TESS_EVAL ||
                 b->shader->info.stage == MESA_SHADER_MESH)) {
+         *location = VARYING_SLOT_LAYER;
          *mode = nir_var_shader_out;
       } else {
          vtn_fail("invalid stage for SpvBuiltInLayer");

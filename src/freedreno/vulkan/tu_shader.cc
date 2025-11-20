@@ -232,6 +232,7 @@ tu_spirv_to_nir(struct tu_device *dev,
 
    const struct nir_lower_sysvals_to_varyings_options sysvals_to_varyings = {
       .point_coord = true,
+      .layer_id = true,
    };
    NIR_PASS(_, nir, nir_lower_sysvals_to_varyings, &sysvals_to_varyings);
 

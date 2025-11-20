@@ -333,6 +333,7 @@ lvp_shader_lower(struct lvp_device *pdevice, nir_shader *nir, struct lvp_pipelin
    const struct nir_lower_sysvals_to_varyings_options sysvals_to_varyings = {
       .frag_coord = true,
       .point_coord = true,
+      .layer_id = true,
    };
    NIR_PASS(_, nir, nir_lower_sysvals_to_varyings, &sysvals_to_varyings);
 

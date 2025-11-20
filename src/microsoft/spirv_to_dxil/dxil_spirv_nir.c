@@ -905,6 +905,7 @@ dxil_spirv_nir_passes(nir_shader *nir,
       .frag_coord = true,
       .point_coord = true,
       .front_face = true,
+      .layer_id = true,
    };
    NIR_PASS(_, nir, nir_lower_sysvals_to_varyings, &sysvals_to_varyings);
 
