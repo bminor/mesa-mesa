@@ -40,6 +40,14 @@
 #include "genX_mi_builder.h"
 #include "genX_cmd_draw_generated_flush.h"
 
+static void emit_pipe_control(struct anv_batch *batch,
+                              const struct intel_device_info *devinfo,
+                              uint32_t current_pipeline,
+                              uint32_t post_sync_op,
+                              struct anv_address address,
+                              uint32_t imm_data,
+                              enum anv_pipe_bits bits);
+
 static void genX(flush_pipeline_select)(struct anv_cmd_buffer *cmd_buffer,
                                         uint32_t pipeline);
 
@@ -1793,8 +1801,8 @@ genX(emit_apply_pipe_flushes)(struct anv_batch *batch,
       }
 
       /* Flush PC. */
-      genx_batch_emit_pipe_control_write(batch, device->info, current_pipeline,
-                                         sync_op, addr, 0, flush_bits);
+      emit_pipe_control(batch, device->info, current_pipeline,
+                        sync_op, addr, 0, flush_bits);
 
       /* If the caller wants to know what flushes have been emitted,
        * provide the bits based off the PIPE_CONTROL programmed bits.
@@ -1822,8 +1830,8 @@ genX(emit_apply_pipe_flushes)(struct anv_batch *batch,
       }
 
       /* Invalidate PC. */
-      genx_batch_emit_pipe_control_write(batch, device->info, current_pipeline,
-                                         sync_op, addr, 0, bits);
+      emit_pipe_control(batch, device->info, current_pipeline,
+                        sync_op, addr, 0, bits);
 
       genX(invalidate_aux_map)(batch, device, batch->engine_class, bits);
 
@@ -2425,8 +2433,7 @@ emit_pipe_control(struct anv_batch *batch,
                   uint32_t post_sync_op,
                   struct anv_address address,
                   uint32_t imm_data,
-                  enum anv_pipe_bits bits,
-                  const char *reason)
+                  enum anv_pipe_bits bits)
 {
    if ((batch->engine_class == INTEL_ENGINE_CLASS_COPY) ||
        (batch->engine_class == INTEL_ENGINE_CLASS_VIDEO))
@@ -2437,13 +2444,8 @@ emit_pipe_control(struct anv_batch *batch,
                ANV_PIPE_STALL_BITS |
                ANV_PIPE_INVALIDATE_BITS |
                ANV_PIPE_END_OF_PIPE_SYNC_BIT)) != 0;
-   if (trace_flush && batch->trace != NULL) {
-      // Store pipe control reasons if there is enough space
-      if (batch->pc_reasons_count < ARRAY_SIZE(batch->pc_reasons)) {
-         batch->pc_reasons[batch->pc_reasons_count++] = reason;
-      }
+   if (trace_flush && batch->trace != NULL)
       trace_intel_begin_stall(batch->trace);
-   }
 
    /* XXX - insert all workarounds and GFX specific things below. */
 
@@ -2455,9 +2457,8 @@ emit_pipe_control(struct anv_batch *batch,
     */
    if (intel_needs_workaround(devinfo, 1607156449) &&
        current_pipeline == GPGPU && post_sync_op != NoWrite) {
-      emit_pipe_control(batch, devinfo, current_pipeline,
-                        NoWrite, ANV_NULL_ADDRESS, 0,
-                        bits, "Wa_1607156449");
+      genX(batch_emit_pipe_control)(batch, devinfo, current_pipeline,
+                                    bits, "Wa_1607156449");
       bits = ANV_PIPE_CS_STALL_BIT;
    }
 #endif
@@ -2485,9 +2486,9 @@ emit_pipe_control(struct anv_batch *batch,
        batch->engine_class == INTEL_ENGINE_CLASS_RENDER &&
        current_pipeline == GPGPU &&
        post_sync_op != NoWrite) {
-      emit_pipe_control(batch, devinfo, current_pipeline,
-                        NoWrite, ANV_NULL_ADDRESS, 0,
-                        bits, "Wa_18040903259");
+      genX(batch_emit_pipe_control)(batch, devinfo, current_pipeline,
+                                    bits,
+                                    "Wa_18040903259");
       bits = ANV_PIPE_CS_STALL_BIT;
    }
 #endif
@@ -2608,7 +2609,7 @@ emit_pipe_control(struct anv_batch *batch,
       pipe.DestinationAddressType = DAT_PPGTT;
       pipe.ImmediateData = imm_data;
 
-      anv_debug_dump_pc(pipe, reason);
+      anv_debug_dump_pc(pipe, "emission");
    }
 
    if (trace_flush && batch->trace != NULL) {
@@ -2633,8 +2634,12 @@ genX(batch_emit_pipe_control)(struct anv_batch *batch,
                               enum anv_pipe_bits bits,
                               const char *reason)
 {
+   /* Store pipe control reasons if there is enough space */
+   if (reason != NULL &&
+       batch->pc_reasons_count < ARRAY_SIZE(batch->pc_reasons))
+      batch->pc_reasons[batch->pc_reasons_count++] = reason;
    emit_pipe_control(batch, devinfo, current_pipeline,
-                     NoWrite, ANV_NULL_ADDRESS, 0, bits, reason);
+                     NoWrite, ANV_NULL_ADDRESS, 0, bits);
 }
 
 void
@@ -2647,8 +2652,12 @@ genX(batch_emit_pipe_control_write)(struct anv_batch *batch,
                                     enum anv_pipe_bits bits,
                                     const char *reason)
 {
+   /* Store pipe control reasons if there is enough space */
+   if (reason != NULL &&
+       batch->pc_reasons_count < ARRAY_SIZE(batch->pc_reasons))
+      batch->pc_reasons[batch->pc_reasons_count++] = reason;
    emit_pipe_control(batch, devinfo, current_pipeline,
-                     post_sync_op, address, imm_data, bits, reason);
+                     post_sync_op, address, imm_data, bits);
 }
 
 /* Set preemption on/off. */
