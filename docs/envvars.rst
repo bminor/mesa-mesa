@@ -1502,10 +1502,6 @@ RADV driver environment variables
    ``validatevas``
       Enable tracking of VA ranges for radv_build_is_valid_va.
 
-.. envvar:: RADV_FORCE_FAMILY
-
-   create a null device to compile shaders without a AMD GPU (e.g. VEGA10)
-
 .. envvar:: RADV_FORCE_VRS
 
    allow to force per-pipeline vertex VRS rates on GFX10.3+. This is only

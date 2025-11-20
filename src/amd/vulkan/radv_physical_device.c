@@ -2220,35 +2220,19 @@ radv_is_gpu_supported(const struct radeon_info *info)
    return true;
 }
 
-static const struct vk_sync_type *const dummy_types[2] = {
-   &vk_sync_dummy_type,
-   NULL,
-};
-
-static VkResult
-radv_create_null_device(struct radv_instance *instance, struct radv_physical_device *pdev)
-{
-   const char *family = os_get_option("RADV_FORCE_FAMILY");
-
-   if (!ac_null_device_create(&pdev->info, family))
-      return vk_errorf(instance, VK_ERROR_INITIALIZATION_FAILED, "Unknown family: %s\n", family);
-
-   pdev->vk.supported_sync_types = dummy_types;
-   return VK_SUCCESS;
-}
-
 static VkResult
 radv_physical_device_try_create(struct radv_instance *instance, drmDevicePtr drm_device,
                                 struct radv_physical_device **pdev_out)
 {
+#ifdef _WIN32
+   assert(drm_device == NULL);
+   return VK_ERROR_INCOMPATIBLE_DRIVER;
+#else
    VkResult result;
    int fd = -1;
    int master_fd = -1;
-
-#ifdef _WIN32
-   assert(drm_device == NULL);
-#else
    bool is_virtio = false;
+
    if (drm_device) {
       const char *path = drm_device->nodes[DRM_NODE_RENDER];
       drmVersionPtr version;
@@ -2292,7 +2276,6 @@ radv_physical_device_try_create(struct radv_instance *instance, drmDevicePtr drm
       if (instance->debug_flags & RADV_DEBUG_STARTUP)
          fprintf(stderr, "radv: info: Found device '%s'.\n", path);
    }
-#endif
 
    struct radv_physical_device *pdev =
       vk_zalloc2(&instance->vk.alloc, NULL, sizeof(*pdev), 8, VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
@@ -2310,11 +2293,6 @@ radv_physical_device_try_create(struct radv_instance *instance, drmDevicePtr drm
       goto fail_alloc;
    }
 
-#ifdef _WIN32
-   result = radv_create_null_device(instance, pdev);
-   if (result != VK_SUCCESS)
-      goto fail_base;
-#else
    if (drm_device) {
       bool reserve_vmid = instance->vk.trace_mode & RADV_TRACE_MODE_RGP;
 
@@ -2358,14 +2336,7 @@ radv_physical_device_try_create(struct radv_instance *instance, drmDevicePtr drm
          result = VK_ERROR_INITIALIZATION_FAILED;
          goto fail_wsi;
       }
-
-   } else {
-      /* Create NULL device if no DRM device was provided. */
-      result = radv_create_null_device(instance, pdev);
-      if (result != VK_SUCCESS)
-         goto fail_base;
    }
-#endif
 
    pdev->master_fd = master_fd;
    pdev->local_fd = fd;
@@ -2478,7 +2449,6 @@ radv_physical_device_try_create(struct radv_instance *instance, drmDevicePtr drm
    radv_physical_device_get_supported_extensions(pdev, &pdev->vk.supported_extensions);
    radv_physical_device_get_features(pdev, &pdev->vk.supported_features);
 
-#ifndef _WIN32
    if (drm_device) {
       struct stat primary_stat = {0}, render_stat = {0};
 
@@ -2501,7 +2471,6 @@ radv_physical_device_try_create(struct radv_instance *instance, drmDevicePtr drm
       }
       pdev->render_devid = render_stat.st_rdev;
    }
-#endif
 
    radv_physical_device_init_cache_key(pdev);
 
@@ -2582,6 +2551,7 @@ fail_fd:
    if (master_fd != -1)
       close(master_fd);
    return result;
+#endif
 }
 
 VkResult

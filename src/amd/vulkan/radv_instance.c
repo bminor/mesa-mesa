@@ -369,6 +369,12 @@ radv_CreateInstance(const VkInstanceCreateInfo *pCreateInfo, const VkAllocationC
    struct radv_instance *instance;
    VkResult result;
 
+   /* Report RADV_FORCE_FAMILY as deprecated for one or two release cycles. */
+   if (os_get_option("RADV_FORCE_FAMILY")) {
+      fprintf(stderr, "radv: RADV_FORCE_FAMILY=<family> has been removed. Please use AMDGPU drm-shim now.\n");
+      return VK_ERROR_INITIALIZATION_FAILED;
+   }
+
    if (!pAllocator)
       pAllocator = vk_default_allocator();
 
@@ -423,15 +429,7 @@ radv_CreateInstance(const VkInstanceCreateInfo *pCreateInfo, const VkAllocationC
          fprintf(stderr, "radv: Failed to open log file: %s.\n", filename);
    }
 
-   /* When RADV_FORCE_FAMILY is set, the driver creates a null
-    * device that allows to test the compiler without having an
-    * AMDGPU instance.
-    */
-   if (os_get_option("RADV_FORCE_FAMILY"))
-      instance->vk.physical_devices.enumerate = create_null_physical_device;
-   else
-      instance->vk.physical_devices.try_create_for_drm = create_drm_physical_device;
-
+   instance->vk.physical_devices.try_create_for_drm = create_drm_physical_device;
    instance->vk.physical_devices.destroy = radv_physical_device_destroy;
 
    if (instance->debug_flags & RADV_DEBUG_STARTUP)
