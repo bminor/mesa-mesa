@@ -2782,7 +2782,7 @@ tu_shader_create(struct tu_device *dev,
    if (nir->info.stage == MESA_SHADER_FRAGMENT) {
       const nir_input_attachment_options att_options = {
          .use_fragcoord_sysval = true,
-         .use_layer_id_sysval = false,
+         .use_layer_id_sysval = true,
          /* When using multiview rendering, we must use
           * gl_ViewIndex as the layer id to pass to the texture
           * sampling function. gl_Layer doesn't work when
@@ -2797,6 +2797,12 @@ tu_shader_create(struct tu_device *dev,
             key->unscaled_input_fragcoord,
       };
       NIR_PASS(_, nir, nir_lower_input_attachments, &att_options);
+
+      const nir_lower_sysvals_to_varyings_options sysval_options = {
+         .layer_id = true,
+         .view_index = true,
+      };
+      NIR_PASS(_, nir, nir_lower_sysvals_to_varyings, &sysval_options);
    }
 
    /* This has to happen before lower_input_attachments, because we have to
