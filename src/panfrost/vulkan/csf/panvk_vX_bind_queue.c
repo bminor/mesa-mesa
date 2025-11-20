@@ -15,6 +15,7 @@
 #include "panvk_macros.h"
 #include "panvk_queue.h"
 #include "panvk_utrace.h"
+#include "panvk_sparse.h"
 
 #include "util/bitscan.h"
 #include "vk_drm_syncobj.h"

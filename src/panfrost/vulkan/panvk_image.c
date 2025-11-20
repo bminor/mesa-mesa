@@ -36,6 +36,7 @@
 #include "panvk_image.h"
 #include "panvk_instance.h"
 #include "panvk_physical_device.h"
+#include "panvk_sparse.h"
 
 #include "drm-uapi/drm_fourcc.h"
 #include "util/u_atomic.h"

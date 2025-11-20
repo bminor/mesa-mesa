@@ -177,11 +177,6 @@ panvk_as_free(struct panvk_device *device, uint64_t address, uint64_t size)
    simple_mtx_unlock(&device->as.lock);
 }
 
-VkResult panvk_map_to_blackhole(struct panvk_device *device,
-                                uint64_t address, uint64_t size);
-
-struct pan_kmod_bo *panvk_get_blackhole(struct panvk_device *device);
-
 #if PAN_ARCH
 VkResult
 panvk_per_arch(create_device)(struct panvk_physical_device *physical_device,
