@@ -410,8 +410,9 @@ static VkResult
 panvk_image_init_layouts(struct panvk_image *image,
                          const VkImageCreateInfo *pCreateInfo)
 {
+   struct panvk_device *dev = to_panvk_device(image->vk.base.device);
    struct panvk_physical_device *phys_dev =
-      to_panvk_physical_device(image->vk.base.device->physical);
+      to_panvk_physical_device(dev->vk.physical);
    unsigned arch = pan_arch(phys_dev->kmod.props.gpu_id);
    const VkImageDrmFormatModifierExplicitCreateInfoEXT *explicit_info =
       vk_find_struct_const(
@@ -423,6 +424,10 @@ panvk_image_init_layouts(struct panvk_image *image,
    struct pan_image_layout_constraints plane_layout = {
       .offset_B = 0,
    };
+   if (pCreateInfo->flags & VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT) {
+      plane_layout.array_align_B = panvk_get_sparse_block_desc(pCreateInfo->imageType, pCreateInfo->format).size_B;
+      plane_layout.u_tiled.row_align_B = panvk_get_gpu_page_size(dev);
+   }
    for (uint8_t plane = 0; plane < image->plane_count; plane++) {
       enum pipe_format pfmt =
          select_plane_pfmt(image, image->vk.drm_format_mod, plane);
