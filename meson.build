@@ -1723,7 +1723,7 @@ if with_clc
   # but we don't know what LLVM version we are using yet
   llvm_optional_modules += ['all-targets', 'windowsdriver', 'frontendhlsl', 'frontenddriver']
 endif
-draw_with_llvm = get_option('draw-use-llvm')
+draw_with_llvm = with_llvm.allowed() and get_option('draw-use-llvm')
 if draw_with_llvm
   llvm_modules += 'native'
   # lto is needded with LLVM>=15, but we don't know what LLVM verrsion we are using yet
