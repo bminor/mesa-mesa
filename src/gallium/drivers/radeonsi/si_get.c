@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: MIT
  */
 
+#include <ctype.h>
 #include "compiler/nir/nir.h"
 #include "ac_nir.h"
 #include "ac_shader_util.h"
@@ -690,7 +691,9 @@ static void si_init_renderer_string(struct si_screen *sscreen)
 
    snprintf(first_name, sizeof(first_name), "%s",
             sscreen->info.marketing_name ? sscreen->info.marketing_name : sscreen->info.name);
-   snprintf(second_name, sizeof(second_name), "%s, ", sscreen->info.lowercase_name);
+   memset(second_name, 0, sizeof(second_name));
+   for (unsigned i = 0; sscreen->info.name[i] && i < ARRAY_SIZE(second_name) - 1; i++)
+      second_name[i] = tolower(sscreen->info.name[i]);
 
    if (uname(&uname_data) == 0)
       snprintf(kernel_version, sizeof(kernel_version), ", %s", uname_data.release);
@@ -702,7 +705,7 @@ static void si_init_renderer_string(struct si_screen *sscreen)
       "ACO";
 
    snprintf(sscreen->renderer_string, sizeof(sscreen->renderer_string),
-            "%s (radeonsi, %s%s, DRM %i.%i%s)", first_name, second_name, compiler_name,
+            "%s (radeonsi, %s, %s, DRM %i.%i%s)", first_name, second_name, compiler_name,
             sscreen->info.drm_major, sscreen->info.drm_minor, kernel_version);
 }
 

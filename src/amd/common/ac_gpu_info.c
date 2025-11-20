@@ -591,10 +591,6 @@ ac_query_gpu_info(int fd, void *dev_p, struct radeon_info *info,
       return AC_QUERY_GPU_INFO_UNIMPLEMENTED_HW;
    }
 
-   memset(info->lowercase_name, 0, sizeof(info->lowercase_name));
-   for (unsigned i = 0; info->name[i] && i < ARRAY_SIZE(info->lowercase_name) - 1; i++)
-      info->lowercase_name[i] = tolower(info->name[i]);
-
 #define VCN_IP_VERSION(mj, mn, rv) (((mj) << 16) | ((mn) << 8) | (rv))
 
    for (unsigned i = AMD_IP_VCN_DEC; i <= AMD_IP_VCN_JPEG; ++i) {
