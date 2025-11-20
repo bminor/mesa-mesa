@@ -967,10 +967,13 @@ dxil_spirv_nir_passes(nir_shader *nir,
    if (nir->info.stage == MESA_SHADER_FRAGMENT) {
       NIR_PASS(_, nir, nir_lower_input_attachments,
                  &(nir_input_attachment_options){
-                     .use_fragcoord_sysval = false,
-                     .use_layer_id_sysval = !conf->lower_view_index,
+                     .use_fragcoord_sysval = true,
+                     .use_layer_id_sysval = true,
                      .use_view_id_for_layer = !conf->lower_view_index,
                  });
+
+      /* Lower sysvals again to get rid of load_layer_id */
+      NIR_PASS(_, nir, nir_lower_sysvals_to_varyings, &sysvals_to_varyings);
 
       NIR_PASS(_, nir, dxil_nir_lower_discard_and_terminate);
       NIR_PASS(_, nir, nir_lower_returns);
