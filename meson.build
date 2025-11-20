@@ -42,7 +42,7 @@ if get_option('layout') != 'mirror'
 endif
 
 with_llvm = get_option('llvm')
-amd_with_llvm = get_option('amd-use-llvm')
+amd_with_llvm = with_llvm.allowed() and get_option('amd-use-llvm')
 
 with_mesa_debug = get_option('buildtype') == 'debug'
 
