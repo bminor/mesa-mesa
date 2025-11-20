@@ -6650,6 +6650,8 @@ tu_emit_subpass_custom_resolve(struct tu_cmd_buffer *cmd)
    if (!subpass->custom_resolve)
       return;
 
+   trace_start_custom_resolve(&cmd->rp_trace, cs, cmd);
+
    /* Since a7xx, buffer location can be controlled per-buffer. We also have
     * to update the steering register so that generic clears use sysmem.
     */
@@ -6712,6 +6714,8 @@ tu_emit_custom_resolve_end(struct tu_cmd_buffer *cmd)
       tu_emit_event_write<CHIP>(cmd, cs, FD_CCU_CLEAN_COLOR);
    if (subpass->depth_stencil_attachment.attachment != VK_ATTACHMENT_UNUSED)
       tu_emit_event_write<CHIP>(cmd, cs, FD_CCU_CLEAN_DEPTH);
+
+   trace_end_custom_resolve(&cmd->rp_trace, cs);
 }
 
 /* emit loads, clears, and mrt/zs/msaa/ubwc state for the subpass that is
