@@ -114,8 +114,11 @@ d3d12_video_encoder_flush(struct pipe_video_codec *codec)
 
    // Wait for the Encode on context completion fence for this frame to ensure all context operations prior to encoding are completed
    struct d3d12_fence *casted_context_completion_fence = d3d12_fence(pD3D12Enc->m_inflightResourcesPool[current_pool_idx].context_completion_fence);
-   pD3D12Enc->m_spEncodeCommandQueue->Wait(casted_context_completion_fence->cmdqueue_fence, casted_context_completion_fence->value);
-   pD3D12Enc->m_pD3D12Screen->base.fence_reference(&pD3D12Enc->m_pD3D12Screen->base, &pD3D12Enc->m_inflightResourcesPool[current_pool_idx].context_completion_fence, NULL);
+   if (casted_context_completion_fence)
+   {
+      pD3D12Enc->m_spEncodeCommandQueue->Wait(casted_context_completion_fence->cmdqueue_fence, casted_context_completion_fence->value);
+      pD3D12Enc->m_pD3D12Screen->base.fence_reference(&pD3D12Enc->m_pD3D12Screen->base, &pD3D12Enc->m_inflightResourcesPool[current_pool_idx].context_completion_fence, NULL);
+   }
 
    // Wait for the Encode on context completion fence for this frame to ensure all context operations prior to encoding are completed
    struct d3d12_fence *casted_headers_upload_completion_fence = d3d12_fence(pD3D12Enc->m_inflightResourcesPool[current_pool_idx].headers_upload_completion_fence);
@@ -126,7 +129,10 @@ d3d12_video_encoder_flush(struct pipe_video_codec *codec)
    }
 
    // Wait on residency fence for this frame to ensure all resources used in encoding are resident
-   pD3D12Enc->m_spEncodeCommandQueue->Wait(pD3D12Enc->m_spResidencyFence.Get(), pD3D12Enc->m_ResidencyFenceValue);
+   if (pD3D12Enc->m_spResidencyFence && pD3D12Enc->m_ResidencyFenceValue > 0)
+   {
+      pD3D12Enc->m_spEncodeCommandQueue->Wait(pD3D12Enc->m_spResidencyFence.Get(), pD3D12Enc->m_ResidencyFenceValue);
+   }
 
    struct d3d12_fence *input_surface_fence = pD3D12Enc->m_inflightResourcesPool[current_pool_idx].m_InputSurfaceFence;
    if (input_surface_fence)
@@ -397,12 +403,16 @@ d3d12_video_encoder_update_move_rects(struct d3d12_video_encoder *pD3D12Enc,
       pD3D12Enc->m_currentEncodeConfig.m_MoveRectsDesc.MapInfo.NumHintsPerPixel = rects.num_hints;
       pD3D12Enc->m_currentEncodeConfig.m_MoveRectsDesc.MapInfo.ppMotionVectorMaps.resize(rects.num_hints);
       pD3D12Enc->m_currentEncodeConfig.m_MoveRectsDesc.MapInfo.ppMotionVectorMapsMetadata.resize(rects.num_hints);
+      pD3D12Enc->m_currentEncodeConfig.m_MoveRectsDesc.MapInfo.pMotionVectorMapsGalliumResources.resize(rects.num_hints);
+      pD3D12Enc->m_currentEncodeConfig.m_MoveRectsDesc.MapInfo.pMotionVectorMapsMetadataGalliumResources.resize(rects.num_hints);
       for (unsigned i = 0; i < rects.num_hints; i++)
       {
          assert(i < PIPE_ENC_MOVE_MAP_MAX_HINTS);
-         pD3D12Enc->m_currentEncodeConfig.m_MoveRectsDesc.MapInfo.ppMotionVectorMaps[i] = d3d12_resource_resource(d3d12_resource(rects.gpu_motion_vectors_map[i]));
+         pD3D12Enc->m_currentEncodeConfig.m_MoveRectsDesc.MapInfo.pMotionVectorMapsGalliumResources[i] = d3d12_resource(rects.gpu_motion_vectors_map[i]);
+         pD3D12Enc->m_currentEncodeConfig.m_MoveRectsDesc.MapInfo.ppMotionVectorMaps[i] = d3d12_resource_resource(pD3D12Enc->m_currentEncodeConfig.m_MoveRectsDesc.MapInfo.pMotionVectorMapsGalliumResources[i]);
          pD3D12Enc->m_currentEncodeConfig.m_MoveRectsDesc.MapInfo.pMotionVectorMapsSubresources = NULL;
-         pD3D12Enc->m_currentEncodeConfig.m_MoveRectsDesc.MapInfo.ppMotionVectorMapsMetadata[i] = d3d12_resource_resource(d3d12_resource(rects.gpu_motion_metadata_map[i]));
+         pD3D12Enc->m_currentEncodeConfig.m_MoveRectsDesc.MapInfo.pMotionVectorMapsMetadataGalliumResources[i] = d3d12_resource(rects.gpu_motion_metadata_map[i]);
+         pD3D12Enc->m_currentEncodeConfig.m_MoveRectsDesc.MapInfo.ppMotionVectorMapsMetadata[i] = d3d12_resource_resource(pD3D12Enc->m_currentEncodeConfig.m_MoveRectsDesc.MapInfo.pMotionVectorMapsMetadataGalliumResources[i]);
          pD3D12Enc->m_currentEncodeConfig.m_MoveRectsDesc.MapInfo.pMotionVectorMapsMetadataSubresources = NULL;
       }
 
@@ -3329,14 +3339,47 @@ d3d12_video_encoder_encode_bitstream_impl(struct pipe_video_codec *codec,
    assert(pD3D12Enc->m_spEncodeCommandQueue);
    assert(pD3D12Enc->m_pD3D12Screen);
 
-   // Early flush the context for any operations that may be pending on input/output resources to the encoder
+   struct d3d12_video_buffer *pInputVideoBuffer = (struct d3d12_video_buffer *) source;
+
+   // Detect and flush any pending operations on input/output resources to the encoder and if necessary
+   // early flush the context for any operations that may be pending on input/output resources to the encoder
    // but do not block on completion until encoder flush
-   debug_printf("[d3d12_video_encoder] d3d12_video_encoder_encode_bitstream_impl - Flushing pD3D12Enc->base.context.\n");
-   pD3D12Enc->base.context->flush(
-      pD3D12Enc->base.context,
-      &pD3D12Enc->m_inflightResourcesPool[d3d12_video_encoder_pool_current_index(pD3D12Enc)].context_completion_fence,
-      PIPE_FLUSH_ASYNC | PIPE_FLUSH_HINT_FINISH);
-   assert(pD3D12Enc->m_inflightResourcesPool[d3d12_video_encoder_pool_current_index(pD3D12Enc)].context_completion_fence);
+   {
+      struct d3d12_context *ctx = d3d12_context(pD3D12Enc->base.context);
+      struct d3d12_batch *batch = d3d12_current_batch(ctx);
+      
+      bool needs_flush = d3d12_batch_has_references(batch, pInputVideoBuffer->texture->bo, false);
+      
+      // Check quantization matrix input map
+      if (!needs_flush && pD3D12Enc->m_currentEncodeConfig.m_QuantizationMatrixDesc.GPUInput.InputMap) {
+         needs_flush = d3d12_batch_has_references(batch, pD3D12Enc->m_currentEncodeConfig.m_QuantizationMatrixDesc.GPUInput.InputMap->bo, false);
+      }
+
+      // Check dirty rects input map
+      if (!needs_flush && pD3D12Enc->m_currentEncodeConfig.m_DirtyRectsDesc.MapInfo.InputMap) {
+         needs_flush = d3d12_batch_has_references(batch, pD3D12Enc->m_currentEncodeConfig.m_DirtyRectsDesc.MapInfo.InputMap->bo, false);
+      }
+
+      // Check motion vector input maps
+      auto &mvMaps = pD3D12Enc->m_currentEncodeConfig.m_MoveRectsDesc.MapInfo;
+      for (unsigned i = 0; !needs_flush && i < mvMaps.pMotionVectorMapsGalliumResources.size(); i++) {
+         if (mvMaps.pMotionVectorMapsGalliumResources[i]) {
+            needs_flush = d3d12_batch_has_references(batch, mvMaps.pMotionVectorMapsGalliumResources[i]->bo, false);
+         }
+         if (!needs_flush && i < mvMaps.pMotionVectorMapsMetadataGalliumResources.size() && mvMaps.pMotionVectorMapsMetadataGalliumResources[i]) {
+            needs_flush = d3d12_batch_has_references(batch, mvMaps.pMotionVectorMapsMetadataGalliumResources[i]->bo, false);
+         }
+      }
+      
+      if (needs_flush) {
+         debug_printf("[d3d12_video_encoder] d3d12_video_encoder_encode_bitstream_impl - Flushing pD3D12Enc->base.context.\n");
+         pD3D12Enc->base.context->flush(
+            pD3D12Enc->base.context,
+            &pD3D12Enc->m_inflightResourcesPool[d3d12_video_encoder_pool_current_index(pD3D12Enc)].context_completion_fence,
+            PIPE_FLUSH_ASYNC | PIPE_FLUSH_HINT_FINISH);
+         assert(pD3D12Enc->m_inflightResourcesPool[d3d12_video_encoder_pool_current_index(pD3D12Enc)].context_completion_fence);
+      }
+   }
 
    // Clear reusable barrier vectors
    pD3D12Enc->m_rgCurrentFrameStateTransitions.clear();
@@ -3357,7 +3400,6 @@ d3d12_video_encoder_encode_bitstream_impl(struct pipe_video_codec *codec,
       return;
    }
 
-   struct d3d12_video_buffer *pInputVideoBuffer = (struct d3d12_video_buffer *) source;
    assert(pInputVideoBuffer);
    ID3D12Resource *pInputVideoD3D12Res        = d3d12_resource_resource(pInputVideoBuffer->texture);
    uint32_t        inputVideoD3D12Subresource = 0u;

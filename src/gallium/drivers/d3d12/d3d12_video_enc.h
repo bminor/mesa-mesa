@@ -396,6 +396,8 @@ struct D3D12EncodeConfiguration
          D3D12_VIDEO_ENCODER_FRAME_INPUT_MOTION_UNIT_PRECISION MotionUnitPrecision;
          D3D12_VIDEO_ENCODER_PICTURE_CONTROL_CODEC_DATA1 PictureControlConfiguration;
          D3D12_FEATURE_DATA_VIDEO_ENCODER_RESOLVE_INPUT_PARAM_LAYOUT capInputLayoutMotionVectors;
+         std::vector<struct d3d12_resource *> pMotionVectorMapsGalliumResources;
+         std::vector<struct d3d12_resource *> pMotionVectorMapsMetadataGalliumResources;
       } MapInfo;
    } m_MoveRectsDesc = {};
    std::vector<RECT> m_DirtyRectsArray;
