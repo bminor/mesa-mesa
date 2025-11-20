@@ -546,6 +546,12 @@ pan_mod_u_tiled_init_slice_layout(
          align_mask + 1);
    }
 
+   if (layout_constraints && layout_constraints->u_tiled.row_align_B) {
+      slayout->tiled_or_linear.row_stride_B =
+         ALIGN_POT(slayout->tiled_or_linear.row_stride_B,
+                   layout_constraints->u_tiled.row_align_B);
+   }
+
    uint64_t surf_stride_B =
       (uint64_t)slayout->tiled_or_linear.row_stride_B *
       DIV_ROUND_UP(mip_extent_el.height, tile_extent_el.height);
