@@ -1059,10 +1059,10 @@ ac_query_gpu_info(int fd, void *dev_p, struct radeon_info *info,
     */
    info->has_attr_ring_wait_bug = info->gfx_level == GFX11 || info->gfx_level == GFX11_5;
 
-   /* On GFX8-9, CP DMA is broken with NULL PRT page, it doesn't read 0 and it
-    * doesn't discard writes which causes GPU hangs.
+   /* On GFX8-9, CP DMA doesn't support NULL PRT pages:
+    * it doesn't read 0 and doesn't discard writes, causing GPU hangs.
     */
-   info->has_cp_dma_with_null_prt_bug = info->family >= CHIP_POLARIS10 && info->gfx_level <= GFX9;
+   info->cp_dma_supports_sparse = info->gfx_level >= GFX10;
 
    /* When LLVM is fixed to handle multiparts shaders, this value will depend
     * on the known good versions of LLVM. Until then, enable the equivalent WA

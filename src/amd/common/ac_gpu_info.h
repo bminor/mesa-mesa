@@ -119,7 +119,7 @@ struct radeon_info {
    bool has_ngg_passthru_no_msg;
    bool has_export_conflict_bug;
    bool has_attr_ring_wait_bug;
-   bool has_cp_dma_with_null_prt_bug;
+   bool cp_dma_supports_sparse;
    bool has_vrs_ds_export_bug;
    bool has_taskmesh_indirect0_bug;
    bool sdma_supports_sparse;      /* Whether SDMA can safely access sparse resources. */

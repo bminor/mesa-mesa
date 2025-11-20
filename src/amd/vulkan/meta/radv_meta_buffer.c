@@ -273,8 +273,8 @@ radv_is_compute_required(const struct radv_device *device, enum radv_copy_flags 
 {
    const struct radv_physical_device *pdev = radv_device_physical(device);
 
-   /* On GFX8-9, CP DMA is broken with NULL PRT pages and the workaround is to use compute. */
-   return pdev->info.has_cp_dma_with_null_prt_bug &&
+   /* Use compute when CP DMA doesn't support sparse. */
+   return !pdev->info.cp_dma_supports_sparse &&
           ((src_copy_flags & RADV_COPY_FLAGS_SPARSE) || (dst_copy_flags & RADV_COPY_FLAGS_SPARSE));
 }
 
