@@ -2214,7 +2214,7 @@ endif
 
 with_sysprof = get_option('sysprof')
 if with_sysprof
-  dep_sysprof = dependency('sysprof-capture-4', version: '>= 4.49.0')
+  dep_sysprof = dependency('sysprof-capture-4', version: '>= 49.0')
   pre_args += '-DHAVE_SYSPROF'
 endif
 
