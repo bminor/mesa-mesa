@@ -224,6 +224,7 @@ drm_shim_ioctl_get_cap(int fd, unsigned long request, void *arg)
    case DRM_CAP_PRIME:
    case DRM_CAP_SYNCOBJ:
    case DRM_CAP_SYNCOBJ_TIMELINE:
+   case DRM_CAP_ADDFB2_MODIFIERS:
       gc->value = 1;
       return 0;
 
