@@ -916,6 +916,59 @@ get_image_format_properties(struct panvk_physical_device *physical_device,
    const struct vk_format_ycbcr_info *ycbcr_info =
       vk_format_get_ycbcr_info(info->format);
 
+   if (info->flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT) {
+      if (!physical_device->vk.supported_features.sparseBinding)
+         goto unsupported;
+
+      /*
+       * Sparse only manipulates device mappings and we implement host copies on
+       * host. Purely hypotetically, we could implement host copies for sparse
+       * images in one of, but not limited to, the following ways:
+       *
+       *    * submitting a device copy and immediately waiting on it
+       *
+       *    * mirror sparse binds' modifications to device mappings on host
+       *
+       *    * share a single address space and thus mappings between host and device
+       *
+       * but realistically speaking, the set of people, apps and tests in the
+       * CTS that expect a driver to implement host copies on sparse images is
+       * exactly empty, so let's just not bother.
+       */
+      if (info->usage & VK_IMAGE_USAGE_HOST_TRANSFER_BIT)
+         goto unsupported;
+   }
+
+   if (info->flags & VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT) {
+      if (!((info->type == VK_IMAGE_TYPE_2D &&
+             physical_device->vk.supported_features.sparseResidencyImage2D) ||
+            (info->type == VK_IMAGE_TYPE_3D &&
+             physical_device->vk.supported_features.sparseResidencyImage3D)))
+         goto unsupported;
+
+      /* Only single aspect (thus single plane) stuff is supported for now */
+      if (util_bitcount(vk_format_aspects(info->format)) != 1)
+         goto unsupported;
+
+      if (info->tiling != VK_IMAGE_TILING_OPTIMAL)
+         goto unsupported;
+
+      struct panvk_sparse_block_desc sblock_desc = panvk_get_sparse_block_desc(info->type, info->format);
+      if (!panvk_sparse_block_is_valid(sblock_desc))
+         goto unsupported;
+
+      VkImageUsageFlags allowed_usages =
+         VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
+         VK_IMAGE_USAGE_TRANSFER_DST_BIT |
+         VK_IMAGE_USAGE_SAMPLED_BIT |
+         VK_IMAGE_USAGE_STORAGE_BIT |
+         VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
+         VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT |
+         VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
+      if (all_usage & ~allowed_usages)
+         goto unsupported;
+   }
+
    switch (info->tiling) {
    case VK_IMAGE_TILING_LINEAR:
    case VK_IMAGE_TILING_OPTIMAL:
@@ -1326,23 +1379,42 @@ fail:
 }
 
 VKAPI_ATTR void VKAPI_CALL
-panvk_GetPhysicalDeviceSparseImageFormatProperties(
-   VkPhysicalDevice physicalDevice, VkFormat format, VkImageType type,
-   VkSampleCountFlagBits samples, VkImageUsageFlags usage, VkImageTiling tiling,
-   uint32_t *pNumProperties, VkSparseImageFormatProperties *pProperties)
-{
-   /* Sparse images are not yet supported. */
-   *pNumProperties = 0;
-}
-
-VKAPI_ATTR void VKAPI_CALL
 panvk_GetPhysicalDeviceSparseImageFormatProperties2(
    VkPhysicalDevice physicalDevice,
    const VkPhysicalDeviceSparseImageFormatInfo2 *pFormatInfo,
    uint32_t *pPropertyCount, VkSparseImageFormatProperties2 *pProperties)
 {
-   /* Sparse images are not yet supported. */
-   *pPropertyCount = 0;
+   VK_OUTARRAY_MAKE_TYPED(VkSparseImageFormatProperties2, out, pProperties, pPropertyCount);
+
+   VkPhysicalDeviceImageFormatInfo2 img_info = {
+      .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGE_FORMAT_INFO_2,
+      .format = pFormatInfo->format,
+      .type = pFormatInfo->type,
+      .tiling = pFormatInfo->tiling,
+      .usage = pFormatInfo->usage,
+      .flags = VK_IMAGE_CREATE_SPARSE_BINDING_BIT |
+               VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT,
+   };
+   VkImageFormatProperties2 img_props = {};
+   if (panvk_GetPhysicalDeviceImageFormatProperties2(physicalDevice, &img_info, &img_props) != VK_SUCCESS)
+      return;
+
+   if (!(img_props.imageFormatProperties.sampleCounts & pFormatInfo->samples))
+      return;
+
+   /*
+    * We don't support multisampled sparse partially-resident images for now.
+    * Weirdly enough, banning it the obvious way by making
+    * get_image_format_properties report sampleCounts of 1 when flags includes
+    * SPARSE_RESIDENCY causes "required sample counts not supported" CTS fails,
+    * so we ban them here.
+    */
+   if (pFormatInfo->samples != 1)
+      return;
+
+   vk_outarray_append_typed(VkSparseImageFormatProperties2, &out, prop) {
+      prop->properties = panvk_get_sparse_image_fmt_props(pFormatInfo->type, pFormatInfo->format);
+   }
 }
 
 VKAPI_ATTR void VKAPI_CALL

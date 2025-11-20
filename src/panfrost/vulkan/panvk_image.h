@@ -105,4 +105,20 @@ panvk_image_stencil_only_pfmt(const struct panvk_image *image)
 VkResult panvk_image_init(struct panvk_image *image,
                           const VkImageCreateInfo *pCreateInfo);
 
+struct panvk_sparse_block_desc {
+   struct VkExtent3D extent;
+   uint64_t size_B;
+
+   /* Whether this is a standard (as defined by Vulkan) sparse block size, for
+    * the given arguments */
+   bool standard;
+};
+
+struct panvk_sparse_block_desc panvk_get_sparse_block_desc(VkImageType type, VkFormat format);
+
+static inline bool
+panvk_sparse_block_is_valid(struct panvk_sparse_block_desc desc) { return desc.size_B > 0; }
+
+VkSparseImageFormatProperties panvk_get_sparse_image_fmt_props(VkImageType type, VkFormat format);
+
 #endif
