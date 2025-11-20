@@ -97,6 +97,7 @@ enum {
    RADV_PERFTEST_VIDEO_ENCODE = 1u << 15,
    RADV_PERFTEST_NO_GTT_SPILL = 1u << 16,
    RADV_PERFTEST_HIC = 1u << 17,
+   RADV_PERFTEST_SPARSE = 1u << 18,
 };
 
 enum {

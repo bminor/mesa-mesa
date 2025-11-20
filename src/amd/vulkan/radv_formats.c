@@ -1072,8 +1072,7 @@ radv_get_image_format_properties(struct radv_physical_device *pdev, const VkPhys
    }
 
    if (info->flags & VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT) {
-      /* Sparse textures are only supported on GFX8+. */
-      if (pdev->info.gfx_level < GFX8)
+      if (info->type == VK_IMAGE_TYPE_3D && !pdev->info.has_sparse_image_3d)
          goto unsupported;
 
       if (vk_format_get_plane_count(format) > 1 || info->type == VK_IMAGE_TYPE_1D ||

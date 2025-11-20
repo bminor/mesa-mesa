@@ -1548,6 +1548,8 @@ RADV driver environment variables
       enable wave64 for ray tracing shaders (GFX10-10.3)
    ``sam``
       enable optimizations to move more driver internal objects to VRAM.
+   ``sparse``
+      enable experimental sparse binding and sparse residency on GPUs where we don't support it by default (pre Polaris)
    ``transfer_queue``
       enable experimental transfer queue support (GFX9+, not yet spec compliant)
    ``video_decode``
