@@ -232,8 +232,10 @@ vk_video_deep_copy_h265_sps(struct vk_video_h265_sps *dst,
       dst->base.pScalingLists = &dst->scaling_lists;
    }
 
-   copy_or_zero_init(&dst->short_term_ref_pic_set, src->pShortTermRefPicSet, sizeof(StdVideoH265ShortTermRefPicSet));
-   dst->base.pShortTermRefPicSet = &dst->short_term_ref_pic_set;
+   copy_or_zero_init(&dst->short_term_ref_pic_set, src->pShortTermRefPicSet,
+                     sizeof(StdVideoH265ShortTermRefPicSet) * src->num_short_term_ref_pic_sets);
+   dst->base.pShortTermRefPicSet = dst->short_term_ref_pic_set;
+
 
    copy_or_zero_init(&dst->long_term_ref_pics_sps, src->pLongTermRefPicsSps, sizeof(StdVideoH265LongTermRefPicsSps));
    dst->base.pLongTermRefPicsSps = &dst->long_term_ref_pics_sps;

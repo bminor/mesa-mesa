@@ -56,7 +56,7 @@ struct vk_video_h265_sps {
    StdVideoH265ProfileTierLevel tier_level;
    StdVideoH265DecPicBufMgr dec_pic_buf_mgr;
    StdVideoH265ScalingLists scaling_lists;
-   StdVideoH265ShortTermRefPicSet short_term_ref_pic_set;
+   StdVideoH265ShortTermRefPicSet short_term_ref_pic_set[STD_VIDEO_H265_MAX_SHORT_TERM_REF_PIC_SETS];
    StdVideoH265LongTermRefPicsSps long_term_ref_pics_sps;
    StdVideoH265SubLayerHrdParameters hrd_parameters_nal;
    StdVideoH265SubLayerHrdParameters hrd_parameters_vcl;
