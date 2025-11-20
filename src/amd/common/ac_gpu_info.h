@@ -238,7 +238,7 @@ struct radeon_info {
    bool has_vm_always_valid;
    bool has_bo_metadata;
    bool has_eqaa_surface_allocator;
-   bool has_sparse_vm_mappings;
+   bool has_sparse;
    bool has_gang_submit;
    bool has_gpuvm_fault_query;
    bool has_pcie_bandwidth_info;

@@ -724,7 +724,7 @@ ac_query_gpu_info(int fd, void *dev_p, struct radeon_info *info,
     * except Polaris where it happens to work "well enough".
     * Enable them when these are investigated and fixed in the driver.
     */
-   info->has_sparse_vm_mappings = info->family >= CHIP_POLARIS10;
+   info->has_sparse = info->family >= CHIP_POLARIS10;
    info->has_gang_submit = info->drm_minor >= 49;
    info->has_gpuvm_fault_query = info->drm_minor >= 55;
    info->has_tmz_support = device_info.ids_flags & AMDGPU_IDS_FLAGS_TMZ;
@@ -1843,7 +1843,7 @@ void ac_print_gpu_info(FILE *f, const struct radeon_info *info, int fd)
    fprintf(f, "    has_vm_always_valid = %u\n", info->has_vm_always_valid);
    fprintf(f, "    has_bo_metadata = %u\n", info->has_bo_metadata);
    fprintf(f, "    has_eqaa_surface_allocator = %u\n", info->has_eqaa_surface_allocator);
-   fprintf(f, "    has_sparse_vm_mappings = %u\n", info->has_sparse_vm_mappings);
+   fprintf(f, "    has_sparse = %u\n", info->has_sparse);
    fprintf(f, "    has_stable_pstate = %u\n", info->has_stable_pstate);
    fprintf(f, "    has_gang_submit = %u\n", info->has_gang_submit);
    fprintf(f, "    has_gpuvm_fault_query = %u\n", info->has_gpuvm_fault_query);

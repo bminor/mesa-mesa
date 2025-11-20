@@ -1059,7 +1059,7 @@ radv_get_image_format_properties(struct radv_physical_device *pdev, const VkPhys
    }
 
    if (info->flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT) {
-      if (!pdev->info.has_sparse_vm_mappings)
+      if (!pdev->info.has_sparse)
          goto unsupported;
 
       /* Sparse resources with multi-planar formats are unsupported. */
