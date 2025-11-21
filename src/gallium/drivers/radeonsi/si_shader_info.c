@@ -293,19 +293,6 @@ static void gather_instruction(const struct nir_shader *nir, struct si_shader_in
       }
 
       switch (intr->intrinsic) {
-      case nir_intrinsic_load_local_invocation_id:
-      case nir_intrinsic_load_workgroup_id: {
-         unsigned mask = nir_def_components_read(&intr->def);
-         while (mask) {
-            unsigned i = u_bit_scan(&mask);
-
-            if (intr->intrinsic == nir_intrinsic_load_workgroup_id)
-               info->uses_sysval_workgroup_id[i] = true;
-            else
-               info->uses_sysval_local_invocation_id[i] = true;
-         }
-         break;
-      }
       case nir_intrinsic_load_color0:
       case nir_intrinsic_load_color1: {
          unsigned index = intr->intrinsic == nir_intrinsic_load_color1;
@@ -558,14 +545,6 @@ void si_nir_gather_info(struct si_screen *sscreen, struct nir_shader *nir,
    info->uses_sysval_front_face = BITSET_TEST(nir->info.system_values_read, SYSTEM_VALUE_FRONT_FACE) |
                                   BITSET_TEST(nir->info.system_values_read, SYSTEM_VALUE_FRONT_FACE_FSIGN);
    info->uses_sysval_invocation_id = BITSET_TEST(nir->info.system_values_read, SYSTEM_VALUE_INVOCATION_ID);
-   info->uses_sysval_num_workgroups = BITSET_TEST(nir->info.system_values_read, SYSTEM_VALUE_NUM_WORKGROUPS);
-   info->uses_sgpr_tg_size = BITSET_TEST(nir->info.system_values_read, SYSTEM_VALUE_NUM_SUBGROUPS);
-   if (sscreen->info.gfx_level < GFX12) {
-      info->uses_sgpr_tg_size |= BITSET_TEST(nir->info.system_values_read, SYSTEM_VALUE_LOCAL_INVOCATION_INDEX) ||
-                                 BITSET_TEST(nir->info.system_values_read, SYSTEM_VALUE_SUBGROUP_ID) ||
-                                 si_should_clear_lds(sscreen, nir);
-   }
-   info->uses_sysval_workgroup_size = BITSET_TEST(nir->info.system_values_read, SYSTEM_VALUE_WORKGROUP_SIZE);
    info->uses_sysval_primitive_id = BITSET_TEST(nir->info.system_values_read, SYSTEM_VALUE_PRIMITIVE_ID) ||
                                     nir->info.inputs_read & VARYING_BIT_PRIMITIVE_ID;
    info->uses_sysval_sample_mask_in = BITSET_TEST(nir->info.system_values_read, SYSTEM_VALUE_SAMPLE_MASK_IN);

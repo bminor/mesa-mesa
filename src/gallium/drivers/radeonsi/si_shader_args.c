@@ -522,9 +522,9 @@ void si_init_shader_args(struct si_shader *shader, struct si_shader_args *args,
       }
       if (shader->info.uses_sysval_draw_id)
          ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_VALUE, &args->ac.draw_id);
-      if (shader->selector->info.uses_sysval_num_workgroups)
+      if (shader->info.uses_sysval_num_workgroups)
          ac_add_arg(&args->ac, AC_ARG_SGPR, 3, AC_ARG_VALUE, &args->ac.num_work_groups);
-      if (shader->selector->info.uses_sysval_workgroup_size)
+      if (shader->info.uses_sysval_workgroup_size)
          ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_VALUE, &args->block_size);
 
       unsigned cs_user_data_dwords =
@@ -557,18 +557,25 @@ void si_init_shader_args(struct si_shader *shader, struct si_shader_args *args,
       }
 
       /* Hardware SGPRs. */
-      for (i = 0; i < 3; i++) {
-         if (shader->selector->info.uses_sysval_workgroup_id[i]) {
-            /* GFX12 loads workgroup IDs into ttmp registers, so they are not input SGPRs, but we
-             * still need to set this to indicate that they are enabled (for ac_nir_to_llvm).
-             */
-            if (sel->screen->info.gfx_level >= GFX12)
-               args->ac.workgroup_ids[i].used = true;
-            else
-               ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_VALUE, &args->ac.workgroup_ids[i]);
-         }
+      if (sel->screen->info.gfx_level >= GFX12) {
+         /* GFX12 loads workgroup IDs into ttmp registers, so they are not input SGPRs, but we
+          * still need to set this to indicate that they are enabled (for ac_nir_to_llvm).
+          */
+         if (shader->info.uses_sysval_workgroup_id_x)
+            args->ac.workgroup_ids[0].used = true;
+         if (shader->info.uses_sysval_workgroup_id_y)
+            args->ac.workgroup_ids[1].used = true;
+         if (shader->info.uses_sysval_workgroup_id_z)
+            args->ac.workgroup_ids[2].used = true;
+      } else {
+         if (shader->info.uses_sysval_workgroup_id_x)
+            ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_VALUE, &args->ac.workgroup_ids[0]);
+         if (shader->info.uses_sysval_workgroup_id_y)
+            ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_VALUE, &args->ac.workgroup_ids[1]);
+         if (shader->info.uses_sysval_workgroup_id_z)
+            ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_VALUE, &args->ac.workgroup_ids[2]);
       }
-      if (shader->selector->info.uses_sgpr_tg_size)
+      if (shader->info.uses_sgpr_tg_size)
          ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_VALUE, &args->ac.tg_size);
 
       /* GFX11 set FLAT_SCRATCH directly instead of using this arg. */
@@ -617,7 +624,7 @@ void si_init_shader_args(struct si_shader *shader, struct si_shader_args *args,
       if (shader->info.uses_sysval_draw_id)
          ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_VALUE, &args->ac.draw_id);
 
-      if (sel->info.uses_sysval_num_workgroups)
+      if (shader->info.uses_sysval_num_workgroups)
          ac_add_arg(&args->ac, AC_ARG_SGPR, 3, AC_ARG_VALUE, &args->ac.num_work_groups);
       else if (sel->screen->info.gfx_level < GFX11)
          /* GFX10 always write grid size to SGPR, reserve space for it */

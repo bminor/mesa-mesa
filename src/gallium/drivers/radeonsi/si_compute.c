@@ -81,13 +81,13 @@ static void si_create_compute_state_async(void *job, void *gdata, int thread_ind
 
       shader->config.rsrc2 = S_00B84C_USER_SGPR(shader->info.cs_num_user_sgprs) |
                              S_00B84C_SCRATCH_EN(shader->config.scratch_bytes_per_wave > 0) |
-                             S_00B84C_TGID_X_EN(sel->info.uses_sysval_workgroup_id[0]) |
-                             S_00B84C_TGID_Y_EN(sel->info.uses_sysval_workgroup_id[1]) |
-                             S_00B84C_TGID_Z_EN(sel->info.uses_sysval_workgroup_id[2]) |
-                             S_00B84C_TG_SIZE_EN(sel->info.uses_sgpr_tg_size) |
-                             S_00B84C_TIDIG_COMP_CNT(sel->info.uses_sysval_local_invocation_id[2]
+                             S_00B84C_TGID_X_EN(shader->info.uses_sysval_workgroup_id_x) |
+                             S_00B84C_TGID_Y_EN(shader->info.uses_sysval_workgroup_id_y) |
+                             S_00B84C_TGID_Z_EN(shader->info.uses_sysval_workgroup_id_z) |
+                             S_00B84C_TG_SIZE_EN(shader->info.uses_sgpr_tg_size) |
+                             S_00B84C_TIDIG_COMP_CNT(shader->info.uses_sysval_local_invocation_id_z
                                                         ? 2
-                                                        : sel->info.uses_sysval_local_invocation_id[1] ? 1 : 0) |
+                                                        : shader->info.uses_sysval_local_invocation_id_y ? 1 : 0) |
                              S_00B84C_LDS_SIZE(ac_shader_encode_lds_size(shader->config.lds_size, sscreen->info.gfx_level, sel->stage));
 
       /* COMPUTE_PGM_RSRC3 is only present on GFX10+ and GFX940+. */
@@ -436,10 +436,10 @@ static void si_setup_nir_user_data(struct si_context *sctx, const struct pipe_gr
    unsigned grid_size_reg = R_00B900_COMPUTE_USER_DATA_0 + 4 * SI_NUM_RESOURCE_SGPRS;
    unsigned block_size_reg = grid_size_reg +
                              /* 12 bytes = 3 dwords. */
-                             12 * sel->info.uses_sysval_num_workgroups;
-   unsigned cs_user_data_reg = block_size_reg + 4 * program->sel.info.uses_sysval_workgroup_size;
+                             12 * program->shader.info.uses_sysval_num_workgroups;
+   unsigned cs_user_data_reg = block_size_reg + 4 * program->shader.info.uses_sysval_workgroup_size;
 
-   if (sel->info.uses_sysval_num_workgroups && info->indirect) {
+   if (program->shader.info.uses_sysval_num_workgroups && info->indirect) {
       for (unsigned i = 0; i < 3; ++i) {
          si_cp_copy_data(sctx, &sctx->gfx_cs, COPY_DATA_REG, NULL, (grid_size_reg >> 2) + i,
                          COPY_DATA_SRC_MEM, si_resource(info->indirect),
@@ -448,13 +448,13 @@ static void si_setup_nir_user_data(struct si_context *sctx, const struct pipe_gr
    }
 
    if (sctx->gfx_level >= GFX12) {
-      if (sel->info.uses_sysval_num_workgroups && !info->indirect) {
+      if (program->shader.info.uses_sysval_num_workgroups && !info->indirect) {
          gfx12_push_compute_sh_reg(grid_size_reg, info->grid[0]);
          gfx12_push_compute_sh_reg(grid_size_reg + 4, info->grid[1]);
          gfx12_push_compute_sh_reg(grid_size_reg + 8, info->grid[2]);
       }
 
-      if (sel->info.uses_sysval_workgroup_size) {
+      if (program->shader.info.uses_sysval_workgroup_size) {
          uint32_t value = info->block[0] | (info->block[1] << 10) | (info->block[2] << 20);
          gfx12_push_compute_sh_reg(block_size_reg, value);
       }
@@ -465,13 +465,13 @@ static void si_setup_nir_user_data(struct si_context *sctx, const struct pipe_gr
             gfx12_push_compute_sh_reg(cs_user_data_reg + i * 4, sctx->cs_user_data[i]);
       }
    } else if (sctx->screen->info.has_set_sh_pairs_packed) {
-      if (sel->info.uses_sysval_num_workgroups && !info->indirect) {
+      if (program->shader.info.uses_sysval_num_workgroups && !info->indirect) {
          gfx11_push_compute_sh_reg(grid_size_reg, info->grid[0]);
          gfx11_push_compute_sh_reg(grid_size_reg + 4, info->grid[1]);
          gfx11_push_compute_sh_reg(grid_size_reg + 8, info->grid[2]);
       }
 
-      if (sel->info.uses_sysval_workgroup_size) {
+      if (program->shader.info.uses_sysval_workgroup_size) {
          uint32_t value = info->block[0] | (info->block[1] << 10) | (info->block[2] << 20);
          gfx11_push_compute_sh_reg(block_size_reg, value);
       }
@@ -484,14 +484,14 @@ static void si_setup_nir_user_data(struct si_context *sctx, const struct pipe_gr
    } else {
       radeon_begin(cs);
 
-      if (sel->info.uses_sysval_num_workgroups && !info->indirect) {
+      if (program->shader.info.uses_sysval_num_workgroups && !info->indirect) {
          radeon_set_sh_reg_seq(grid_size_reg, 3);
          radeon_emit(info->grid[0]);
          radeon_emit(info->grid[1]);
          radeon_emit(info->grid[2]);
       }
 
-      if (sel->info.uses_sysval_workgroup_size) {
+      if (program->shader.info.uses_sysval_workgroup_size) {
          uint32_t value = info->block[0] | (info->block[1] << 10) | (info->block[2] << 20);
          radeon_set_sh_reg(block_size_reg, value);
       }

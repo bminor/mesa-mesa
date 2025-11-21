@@ -151,11 +151,6 @@ struct si_shader_info {
    bool uses_sysval_primitive_id;
    bool uses_sysval_front_face;
    bool uses_sysval_invocation_id;
-   bool uses_sysval_local_invocation_id[3];
-   bool uses_sysval_workgroup_id[3];
-   bool uses_sysval_workgroup_size;
-   bool uses_sysval_num_workgroups;
-   bool uses_sgpr_tg_size;
    bool uses_atomic_ordered_add;
    bool writes_psize;
    bool writes_primid;
@@ -222,6 +217,15 @@ struct si_shader_variant_info {
    bool writes_sample_mask : 1;
    bool uses_discard : 1;
    bool uses_mesh_scratch_ring : 1;
+   bool uses_sysval_local_invocation_id_x : 1;
+   bool uses_sysval_local_invocation_id_y : 1;
+   bool uses_sysval_local_invocation_id_z : 1;
+   bool uses_sysval_workgroup_id_x : 1;
+   bool uses_sysval_workgroup_id_y : 1;
+   bool uses_sysval_workgroup_id_z : 1;
+   bool uses_sysval_workgroup_size : 1;
+   bool uses_sysval_num_workgroups : 1;
+   bool uses_sgpr_tg_size : 1;
    uint8_t nr_pos_exports;
    uint8_t nr_param_exports;
    uint8_t nr_prim_param_exports;

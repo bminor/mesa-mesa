@@ -141,7 +141,7 @@ static void si_emit_draw_mesh_tasks_ace_packets(struct si_context *sctx,
    struct radeon_cmdbuf *cs = sctx->gfx_cs.gang_cs;
    struct si_shader *shader = &sctx->ts_shader_state.program->shader;
    bool uses_draw_id = shader->info.uses_sysval_draw_id;
-   bool uses_grid_size = shader->selector->info.uses_sysval_num_workgroups;
+   bool uses_grid_size = shader->info.uses_sysval_num_workgroups;
    unsigned sh_base_reg = R_00B900_COMPUTE_USER_DATA_0;
 
    unsigned reg = sh_base_reg + 4 * GFX10_SGPR_TS_TASK_RING_ENTRY;
@@ -279,7 +279,7 @@ static void si_emit_draw_mesh_tasks_gfx_packets(struct si_context *sctx,
    unsigned sh_base_reg = sctx->shader_pointers.sh_base[MESA_SHADER_MESH];
    struct si_shader *shader = sctx->ms_shader_state.current;
    struct si_shader_selector *sel = shader->selector;
-   bool uses_grid_size = sel->info.uses_sysval_num_workgroups;
+   bool uses_grid_size = shader->info.uses_sysval_num_workgroups;
 
    int offset = GFX11_SGPR_MS_ATTRIBUTE_RING_ADDR;
    if (sctx->gfx_level >= GFX11)
@@ -354,7 +354,7 @@ static void si_emit_draw_mesh_shader_only_packets(struct si_context *sctx,
    struct si_shader *shader = sctx->ms_shader_state.current;
    struct si_shader_selector *sel = shader->selector;
    bool uses_draw_id = shader->info.uses_sysval_draw_id;
-   bool uses_grid_size = sel->info.uses_sysval_num_workgroups;
+   bool uses_grid_size = shader->info.uses_sysval_num_workgroups;
    unsigned sh_base_reg = sctx->shader_pointers.sh_base[MESA_SHADER_MESH];
 
    int offset = GFX11_SGPR_MS_ATTRIBUTE_RING_ADDR;

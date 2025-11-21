@@ -1485,7 +1485,7 @@ static void gfx10_shader_ngg(struct si_screen *sscreen, struct si_shader *shader
          num_user_sgprs++;
       if (shader->info.uses_sysval_draw_id)
          num_user_sgprs++;
-      if (gs_sel->info.uses_sysval_num_workgroups || sscreen->info.gfx_level < GFX11)
+      if (shader->info.uses_sysval_num_workgroups || sscreen->info.gfx_level < GFX11)
          num_user_sgprs += 3;
       if (shader->info.uses_mesh_scratch_ring)
          num_user_sgprs++;

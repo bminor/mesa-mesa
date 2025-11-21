@@ -40,11 +40,46 @@ void si_get_shader_variant_info(struct si_shader *shader,
 
    nir_foreach_block(block, nir_shader_get_entrypoint(nir)) {
       nir_foreach_instr(instr, block) {
+         unsigned mask;
+
          switch (instr->type) {
          case nir_instr_type_intrinsic: {
             nir_intrinsic_instr *intr = nir_instr_as_intrinsic(instr);
 
             switch (intr->intrinsic) {
+            case nir_intrinsic_load_local_invocation_id:
+               mask = nir_def_components_read(&intr->def);
+               if (mask & BITFIELD_BIT(0))
+                  shader->info.uses_sysval_local_invocation_id_x = true;
+               if (mask & BITFIELD_BIT(1))
+                  shader->info.uses_sysval_local_invocation_id_y = true;
+               if (mask & BITFIELD_BIT(2))
+                  shader->info.uses_sysval_local_invocation_id_z = true;
+               break;
+            case nir_intrinsic_load_workgroup_id:
+               mask = nir_def_components_read(&intr->def);
+               if (mask & BITFIELD_BIT(0))
+                  shader->info.uses_sysval_workgroup_id_x = true;
+               if (mask & BITFIELD_BIT(1))
+                  shader->info.uses_sysval_workgroup_id_y = true;
+               if (mask & BITFIELD_BIT(2))
+                  shader->info.uses_sysval_workgroup_id_z = true;
+               break;
+            case nir_intrinsic_load_workgroup_size:
+               shader->info.uses_sysval_workgroup_size = true;
+               break;
+            case nir_intrinsic_load_num_workgroups:
+               shader->info.uses_sysval_num_workgroups = true;
+               break;
+            case nir_intrinsic_load_num_subgroups:
+               shader->info.uses_sgpr_tg_size = true;
+               break;
+            case nir_intrinsic_load_local_invocation_index:
+            case nir_intrinsic_load_subgroup_id:
+               /* GFX12 computes these using subgroup_id from ttmp8. */
+               if (shader->selector->screen->info.gfx_level < GFX12)
+                  shader->info.uses_sgpr_tg_size = true;
+               break;
             case nir_intrinsic_load_instance_id:
                shader->info.uses_sysval_instance_id = true;
                break;
@@ -308,13 +343,18 @@ void si_get_shader_variant_info(struct si_shader *shader,
    if (nir->info.stage == MESA_SHADER_COMPUTE ||
        nir->info.stage == MESA_SHADER_KERNEL ||
        nir->info.stage == MESA_SHADER_TASK) {
+      /* nir_clear_shared_memory uses local_invocation_index. */
+      if (shader->selector->screen->info.gfx_level < GFX12 &&
+          si_should_clear_lds(shader->selector->screen, nir))
+         shader->info.uses_sgpr_tg_size = true;
+
       /* Determine user SGPRs for compute shader. This includes descriptors in user SGPRs.
        *
        * Variable block sizes need 10 bits (1 + log2(SI_MAX_VARIABLE_THREADS_PER_BLOCK)) per dim.
        * We pack them into a single user SGPR.
        */
-      unsigned num_user_sgprs = SI_NUM_RESOURCE_SGPRS + (shader->selector->info.uses_sysval_num_workgroups ? 3 : 0) +
-                            (shader->selector->info.uses_sysval_workgroup_size ? 1 : 0) +
+      unsigned num_user_sgprs = SI_NUM_RESOURCE_SGPRS + (shader->info.uses_sysval_num_workgroups ? 3 : 0) +
+                            (shader->info.uses_sysval_workgroup_size ? 1 : 0) +
                             shader->selector->nir->info.cs.user_data_components_amd;
 
       if (nir->info.stage == MESA_SHADER_TASK) {
