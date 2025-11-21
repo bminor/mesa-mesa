@@ -211,5 +211,3 @@ kosmickrisp_icd = custom_target(
 )
 
 devenv.append('VK_DRIVER_FILES', kosmickrisp_icd.full_path())
-# Deprecated: replaced by VK_DRIVER_FILES above
-devenv.append('VK_ICD_FILENAMES', kosmickrisp_icd.full_path())
