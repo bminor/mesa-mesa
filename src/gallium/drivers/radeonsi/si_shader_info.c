@@ -397,7 +397,6 @@ void si_nir_gather_info(struct si_screen *sscreen, struct nir_shader *nir,
                         struct si_shader_info *info, bool colors_lowered)
 {
    nir_shader_gather_info(nir, nir_shader_get_entrypoint(nir));
-   nir_divergence_analysis(nir);
 
 #if AMD_LLVM_AVAILABLE
    bool force_use_aco = sscreen->use_aco_shader_type == nir->info.stage;

@@ -437,7 +437,4 @@ void si_finalize_nir(struct pipe_screen *screen, struct nir_shader *nir,
       si_nir_opts(sscreen, nir, false);
 
    NIR_PASS(_, nir, si_nir_mark_divergent_texture_non_uniform);
-
-   /* Require divergence analysis to identify divergent loops. */
-   nir_metadata_require(nir_shader_get_entrypoint(nir), nir_metadata_divergence);
 }
