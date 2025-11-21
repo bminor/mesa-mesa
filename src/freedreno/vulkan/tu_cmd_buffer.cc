@@ -2103,8 +2103,6 @@ tu7_emit_tile_render_begin_regs(struct tu_cs *cs)
    tu_cs_emit_regs(cs,
                   A7XX_RB_BUFFER_CNTL(0x0));
 
-   tu_cs_emit_regs(cs, GRAS_LRZ_CB_CNTL(A7XX, 0x0));
-
    tu_cs_emit_regs(cs, GRAS_MODE_CNTL(A7XX, 0x2));
    tu_cs_emit_regs(cs, A7XX_RB_UNKNOWN_8E09(0x4));
 
