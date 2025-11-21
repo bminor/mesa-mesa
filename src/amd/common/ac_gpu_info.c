@@ -254,12 +254,16 @@ ac_query_gpu_info(int fd, void *dev_p, struct radeon_info *info,
    STATIC_ASSERT(AMDGPU_HW_IP_VCN_JPEG == AMD_IP_VCN_JPEG);
    STATIC_ASSERT(AMDGPU_HW_IP_VPE == AMD_IP_VPE);
 
-   if (!handle_env_var_force_family(info))
+   if (!handle_env_var_force_family(info)) {
+      fprintf(stderr, "amdgpu: handle_env_var_force_family failed.\n");
       return AC_QUERY_GPU_INFO_UNIMPLEMENTED_HW;
+   }
 
    info->pci.valid = ac_drm_query_pci_bus_info(dev, info) == 0;
-   if (require_pci_bus_info && !info->pci.valid)
+   if (require_pci_bus_info && !info->pci.valid) {
+      fprintf(stderr, "amdgpu: ac_drm_query_pci_bus_info failed.\n");
       return AC_QUERY_GPU_INFO_FAIL;
+   }
 
    assert(info->drm_major == 3);
    info->is_amdgpu = true;
