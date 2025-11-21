@@ -1174,7 +1174,8 @@ nir_is_input_load(nir_intrinsic_instr *intr)
           intr->intrinsic == nir_intrinsic_load_per_vertex_input ||
           intr->intrinsic == nir_intrinsic_load_per_primitive_input ||
           intr->intrinsic == nir_intrinsic_load_interpolated_input ||
-          intr->intrinsic == nir_intrinsic_load_input_vertex;
+          intr->intrinsic == nir_intrinsic_load_input_vertex ||
+          intr->intrinsic == nir_intrinsic_load_fs_input_interp_deltas;
 }
 
 /**
