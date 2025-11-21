@@ -1918,6 +1918,7 @@ dep_lua = dependency('lua54', 'lua5.4', 'lua-5.4',
                      'lua53', 'lua5.3', 'lua-5.3',
                      'lua', required: false,
                      allow_fallback: with_tools.contains('freedreno'),
+                     disabler : true,
                      version: '>=5.3')
 
 # Be explicit about only using this lib on Windows, to avoid picking

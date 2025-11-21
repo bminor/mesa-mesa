@@ -162,7 +162,7 @@ else
   warning('libarchive not found, not building replay or rddecompiler')
 endif
 
-if dep_lua.found() and dep_libarchive.found()
+if dep_libarchive.found()
   cffdump = executable(
     'cffdump',
     [
