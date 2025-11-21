@@ -1,5 +1,25 @@
 [
     {
+        "sha": "bcedc88f2142d9a2b277c7b848b744e13d426f76",
+        "description": "meson: make libarchive a disabler",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "1737638c98d534b2aa7eda69298efadb81aec8c7",
+        "description": "meson: make dep_lua a disabler",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
         "sha": "7c193ffef1a8316b4b666c9c2ec5afdd2035dd89",
         "description": "anv: put more readable PIPE_CONTROL reasons",
         "nominated": false,
