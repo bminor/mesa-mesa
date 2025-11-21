@@ -36,7 +36,7 @@ static void si_create_compute_state_async(void *job, void *gdata, int thread_ind
    assert(thread_index < ARRAY_SIZE(sscreen->compiler));
    compiler = &sscreen->compiler[thread_index];
 
-   si_nir_scan_shader(sscreen, sel->nir, &sel->info, false);
+   si_nir_gather_info(sscreen, sel->nir, &sel->info, false);
 
    if (!sel->nir->info.use_aco_amd && !*compiler)
       *compiler = si_create_llvm_compiler(sscreen);

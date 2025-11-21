@@ -915,7 +915,7 @@ unsigned si_shader_encode_vgprs(struct si_shader *shader);
 unsigned si_shader_encode_sgprs(struct si_shader *shader);
 
 /* si_shader_info.c */
-void si_nir_scan_shader(struct si_screen *sscreen, struct nir_shader *nir,
+void si_nir_gather_info(struct si_screen *sscreen, struct nir_shader *nir,
                         struct si_shader_info *info, bool colors_lowered);
 
 /* si_shader_nir.c */

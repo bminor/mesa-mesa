@@ -60,8 +60,8 @@ static const nir_src *get_texture_src(nir_tex_instr *instr, nir_tex_src_type typ
    return NULL;
 }
 
-static void scan_io_usage(const nir_shader *nir, struct si_shader_info *info,
-                          nir_intrinsic_instr *intr, bool is_input, bool colors_lowered)
+static void gather_io_instrinsic(const nir_shader *nir, struct si_shader_info *info,
+                                 nir_intrinsic_instr *intr, bool is_input, bool colors_lowered)
 {
    unsigned mask, bit_size;
    bool is_output_load;
@@ -274,8 +274,8 @@ static void scan_io_usage(const nir_shader *nir, struct si_shader_info *info,
 }
 
 /* TODO: convert to nir_shader_instructions_pass */
-static void scan_instruction(const struct nir_shader *nir, struct si_shader_info *info,
-                             nir_instr *instr, bool colors_lowered)
+static void gather_instruction(const struct nir_shader *nir, struct si_shader_info *info,
+                               nir_instr *instr, bool colors_lowered)
 {
    if (instr->type == nir_instr_type_tex) {
       nir_tex_instr *tex = nir_instr_as_tex(instr);
@@ -366,14 +366,14 @@ static void scan_instruction(const struct nir_shader *nir, struct si_shader_info
       case nir_intrinsic_load_per_vertex_input:
       case nir_intrinsic_load_input_vertex:
       case nir_intrinsic_load_interpolated_input:
-         scan_io_usage(nir, info, intr, true, colors_lowered);
+         gather_io_instrinsic(nir, info, intr, true, colors_lowered);
          break;
       case nir_intrinsic_load_output:
       case nir_intrinsic_load_per_vertex_output:
       case nir_intrinsic_store_output:
       case nir_intrinsic_store_per_vertex_output:
       case nir_intrinsic_store_per_primitive_output:
-         scan_io_usage(nir, info, intr, false, colors_lowered);
+         gather_io_instrinsic(nir, info, intr, false, colors_lowered);
          break;
       case nir_intrinsic_load_deref:
       case nir_intrinsic_store_deref:
@@ -393,7 +393,7 @@ static void scan_instruction(const struct nir_shader *nir, struct si_shader_info
    }
 }
 
-void si_nir_scan_shader(struct si_screen *sscreen, struct nir_shader *nir,
+void si_nir_gather_info(struct si_screen *sscreen, struct nir_shader *nir,
                         struct si_shader_info *info, bool colors_lowered)
 {
    nir_shader_gather_info(nir, nir_shader_get_entrypoint(nir));
@@ -609,7 +609,7 @@ void si_nir_scan_shader(struct si_screen *sscreen, struct nir_shader *nir,
    nir_function_impl *impl = nir_shader_get_entrypoint(nir);
    nir_foreach_block (block, impl) {
       nir_foreach_instr (instr, block)
-         scan_instruction(nir, info, instr, colors_lowered);
+         gather_instruction(nir, info, instr, colors_lowered);
    }
 
    if (nir->info.stage == MESA_SHADER_VERTEX || nir->info.stage == MESA_SHADER_TESS_EVAL) {
@@ -687,7 +687,7 @@ void si_nir_scan_shader(struct si_screen *sscreen, struct nir_shader *nir,
    }
 
    /* clipdist_mask cannot be determined here from nir->info.clip_distance_array_size because
-    * nir_opt_clip_cull_const can reduce their number. It has to be determined by scanning
+    * nir_opt_clip_cull_const can reduce their number. It has to be determined by looking at
     * the shader instructions.
     */
    if (nir->info.outputs_written & VARYING_BIT_CLIP_VERTEX)
