@@ -329,8 +329,6 @@ static void si_lower_nir(struct si_screen *sscreen, struct nir_shader *nir)
    }
 
    if (mesa_shader_stage_is_compute(nir->info.stage)) {
-      nir_lower_compute_system_values_options options = {0};
-
       /* gl_LocalInvocationIndex must be derived from gl_LocalInvocationID.xyz to make it correct
        * with quad derivatives. Using gl_SubgroupID for that (which is what we do by default) is
        * incorrect with a non-linear thread order.
@@ -338,38 +336,41 @@ static void si_lower_nir(struct si_screen *sscreen, struct nir_shader *nir)
        * On Gfx12, we always use a non-linear thread order if the workgroup X and Y size is
        * divisible by 2.
        */
-      options.lower_local_invocation_index =
-         nir->info.derivative_group == DERIVATIVE_GROUP_QUADS ||
-         (sscreen->info.gfx_level >= GFX12 &&
-          nir->info.derivative_group == DERIVATIVE_GROUP_NONE &&
-          (nir->info.workgroup_size_variable ||
-           (nir->info.workgroup_size[0] % 2 == 0 && nir->info.workgroup_size[1] % 2 == 0)));
-      NIR_PASS(_, nir, nir_lower_compute_system_values, &options);
+      NIR_PASS(_, nir, nir_lower_compute_system_values,
+               &(nir_lower_compute_system_values_options){
+                  .lower_local_invocation_index =
+                     nir->info.derivative_group == DERIVATIVE_GROUP_QUADS ||
+                     (sscreen->info.gfx_level >= GFX12 &&
+                      nir->info.derivative_group == DERIVATIVE_GROUP_NONE &&
+                      (nir->info.workgroup_size_variable ||
+                       (nir->info.workgroup_size[0] % 2 == 0 && nir->info.workgroup_size[1] % 2 == 0)))
+               });
 
       /* Gfx12 supports this in hw. */
       if (sscreen->info.gfx_level < GFX12 &&
           nir->info.derivative_group == DERIVATIVE_GROUP_QUADS) {
-         nir_opt_cse(nir); /* CSE load_local_invocation_id */
-         memset(&options, 0, sizeof(options));
-         options.shuffle_local_ids_for_quad_derivatives = true;
-         NIR_PASS(_, nir, nir_lower_compute_system_values, &options);
+         NIR_PASS(_, nir, nir_opt_cse); /* CSE load_local_invocation_id */
+         NIR_PASS(_, nir, nir_lower_compute_system_values,
+                  &(nir_lower_compute_system_values_options){
+                     .shuffle_local_ids_for_quad_derivatives = true,
+                  });
       }
    }
 
    if (nir->info.stage == MESA_SHADER_MESH && !sscreen->info.mesh_fast_launch_2) {
-      nir_lower_compute_system_values_options options = {
-         /* Mesh shaders run as NGG which can implement local_invocation_index from
-          * the wave ID in merged_wave_info, but they don't have local_invocation_ids
-          * in FAST_LAUNCH=1 mode (the default on GFX10.3, deprecated on GFX11).
-          */
-         .lower_cs_local_id_to_index = true,
-         /* Mesh shaders only have a 1D "vertex index" which we use
-          * as "workgroup index" to emulate the 3D workgroup ID.
-          */
-         .lower_workgroup_id_to_index = true,
-         .shortcut_1d_workgroup_id = true,
-      };
-      NIR_PASS(_, nir, nir_lower_compute_system_values, &options);
+      NIR_PASS(_, nir, nir_lower_compute_system_values,
+               &(nir_lower_compute_system_values_options){
+                  /* Mesh shaders run as NGG which can implement local_invocation_index from
+                   * the wave ID in merged_wave_info, but they don't have local_invocation_ids
+                   * in FAST_LAUNCH=1 mode (the default on GFX10.3, deprecated on GFX11).
+                   */
+                  .lower_cs_local_id_to_index = true,
+                  /* Mesh shaders only have a 1D "vertex index" which we use
+                   * as "workgroup index" to emulate the 3D workgroup ID.
+                   */
+                  .lower_workgroup_id_to_index = true,
+                  .shortcut_1d_workgroup_id = true,
+               });
    }
 
    si_nir_opts(sscreen, nir, true);
