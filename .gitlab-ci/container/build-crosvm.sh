@@ -16,13 +16,13 @@ section_start crosvm "Building crosvm"
 git config --global user.email "mesa@example.com"
 git config --global user.name "Mesa CI"
 
-CROSVM_VERSION=4a6b4316155742fbfa1be7087c2ee578cfee884d
+CROSVM_VERSION=f58c8e685f3f21d733861a080a0857acafd0da56
 git clone --single-branch -b main --no-checkout https://chromium.googlesource.com/crosvm/crosvm /platform/crosvm
 pushd /platform/crosvm
 git checkout "$CROSVM_VERSION"
 git submodule update --init
 
-VIRGLRENDERER_VERSION=06d43ce974b664f9dc521b706a0ad7f91dbf2866
+VIRGLRENDERER_VERSION=d780ef776bdd6435ef3ed657e6209a4662f6d05e
 rm -rf third_party/virglrenderer
 git clone --single-branch -b main --no-checkout https://gitlab.freedesktop.org/virgl/virglrenderer.git third_party/virglrenderer
 pushd third_party/virglrenderer
