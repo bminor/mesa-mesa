@@ -249,8 +249,14 @@ static void lower_mediump_io(nir_shader *nir, bool config_option)
       modes |= nir_var_shader_in;
 
    if (modes) {
-      NIR_PASS(_, nir, nir_lower_mediump_io, modes,
+      bool progress = false;
+
+      NIR_PASS(progress, nir, nir_lower_mediump_io, modes,
                VARYING_BIT_PNTC | BITFIELD64_RANGE(VARYING_SLOT_VAR0, 32), true);
+
+      /* Update xfb info after mediump IO lowering. */
+      if (progress && nir->xfb_info)
+         nir_gather_xfb_info_from_intrinsics(nir);
    }
    NIR_PASS(_, nir, nir_clear_mediump_io_flag);
 }
@@ -413,10 +419,6 @@ void si_finalize_nir(struct pipe_screen *screen, struct nir_shader *nir,
 
    si_lower_nir(sscreen, nir);
    nir_shader_gather_info(nir, nir_shader_get_entrypoint(nir));
-
-   /* Update xfb info after we did medium io lowering. */
-   if (nir->xfb_info && nir->info.outputs_written_16bit)
-      nir_gather_xfb_info_from_intrinsics(nir);
 
    if (sscreen->options.inline_uniforms)
       nir_find_inlinable_uniforms(nir);
