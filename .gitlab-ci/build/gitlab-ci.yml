@@ -392,7 +392,7 @@ debian-android:
     - git clean -dxf .
     # aarch64 build:
     - export CROSS=aarch64-linux-android
-    - export GALLIUM_DRIVERS=etnaviv,freedreno,lima,panfrost,vc4,v3d
+    - export GALLIUM_DRIVERS=etnaviv,freedreno,lima,panfrost,vc4,v3d,zink
     - export VULKAN_DRIVERS=freedreno,broadcom,panfrost,virtio
     - export S3_ARTIFACT_NAME=mesa-arm64-android-${BUILDTYPE}
     - !reference [.meson-build-for-tests, script]
