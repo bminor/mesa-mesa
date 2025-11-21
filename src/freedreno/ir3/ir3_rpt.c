@@ -49,16 +49,6 @@ ir3_nir_vectorize_filter(const nir_instr *instr, const void *data)
    return 4;
 }
 
-static void
-rpt_list_split(struct list_head *list, struct list_head *at)
-{
-   struct list_head *new_last = at->prev;
-   new_last->next = list;
-   at->prev = list->prev;
-   list->prev->next = at;
-   list->prev = new_last;
-}
-
 static enum ir3_register_flags
 rpt_compatible_src_flags(struct ir3_register *src)
 {
@@ -150,7 +140,8 @@ cleanup_rpt_instr(struct ir3_instruction *instr)
    unsigned rpt_n = 1;
    foreach_instr_rpt_excl (rpt, instr) {
       if (!can_rpt(instr, rpt, rpt_n++)) {
-         rpt_list_split(&instr->rpt_node, &rpt->rpt_node);
+         rpt->rpt_prev->rpt_next = NULL;
+         rpt->rpt_prev = NULL;
 
          /* We have to do this recursively since later repetitions might come
           * before the first in the instruction list.
@@ -282,8 +273,16 @@ merge_instr(struct ir3_instruction *instr)
        * with the following instructions (if any) once we encounter it in
        * ir3_combine_rpt.
        */
-      if (!try_merge(instr, rpt, rpt_n))
+      if (!try_merge(instr, rpt, rpt_n)) {
+         /* Unlink rpt from this rpt group so that it becomes the first of a new
+          * one. Note that we don't need to unlink rpt when the merge succeeds
+          * since it will be removed in that case.
+          */
+         assert(rpt->rpt_prev);
+         rpt->rpt_prev->rpt_next = NULL;
+         rpt->rpt_prev = NULL;
          break;
+      }
 
       instr->repeat++;
 
@@ -299,12 +298,15 @@ merge_instr(struct ir3_instruction *instr)
        * remove it in ir3_combine_rpt when we encounter it.
        */
       rpt->flags |= IR3_INSTR_MARK;
-      list_delinit(&rpt->rpt_node);
       ++rpt_n;
       progress = true;
    }
 
-   list_delinit(&instr->rpt_node);
+   if (instr->rpt_prev)
+      instr->rpt_prev->rpt_next = NULL;
+
+   instr->rpt_prev = NULL;
+   instr->rpt_next = NULL;
    return progress;
 }
 
@@ -321,7 +323,7 @@ ir3_merge_rpt(struct ir3 *ir, struct ir3_shader_variant *v)
    foreach_block (block, &ir->block_list) {
       foreach_instr_safe (instr, &block->instr_list) {
          if (instr->flags & IR3_INSTR_MARK) {
-            list_delinit(&instr->node);
+            ir3_instr_remove(instr);
             continue;
          }
 
