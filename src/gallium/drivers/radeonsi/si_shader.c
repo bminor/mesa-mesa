@@ -812,6 +812,8 @@ static void run_pre_link_optimization_passes(struct si_nir_shader_ctx *ctx)
    /* Lower all other indirect indexing to if-else ladders or scratch. */
    progress |= ac_nir_lower_indirect_derefs(nir, sel->screen->info.gfx_level);
 
+   NIR_PASS(_, nir, si_nir_mark_divergent_texture_non_uniform);
+
    if (progress)
       si_nir_opts(shader->selector->screen, nir, false);
 }

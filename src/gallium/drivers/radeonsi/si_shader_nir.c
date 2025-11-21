@@ -435,6 +435,4 @@ void si_finalize_nir(struct pipe_screen *screen, struct nir_shader *nir,
    NIR_PASS(progress, nir, nir_opt_large_constants, glsl_get_natural_size_align_bytes, 16);
    if (progress)
       si_nir_opts(sscreen, nir, false);
-
-   NIR_PASS(_, nir, si_nir_mark_divergent_texture_non_uniform);
 }
