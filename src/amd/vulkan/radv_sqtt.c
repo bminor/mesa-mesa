@@ -499,7 +499,7 @@ radv_begin_sqtt(struct radv_queue *queue)
    ac_emit_cp_spi_config_cntl(cs.b, pdev->info.gfx_level, true);
 
    if (device->spm.bo) {
-      radv_perfcounter_emit_reset(&cs, true);
+      ac_emit_spm_reset(cs.b);
 
       /* Enable all shader stages by default. */
       radv_perfcounter_emit_shaders(device, &cs, ac_sqtt_get_shader_mask(&pdev->info));
@@ -512,7 +512,7 @@ radv_begin_sqtt(struct radv_queue *queue)
 
    if (device->spm.bo) {
       radeon_check_space(ws, cs.b, 8);
-      radv_perfcounter_emit_spm_start(device, &cs);
+      ac_emit_spm_start(cs.b, cs.hw_ip);
    }
 
    result = ws->cs_finalize(cs.b);
@@ -574,14 +574,14 @@ radv_end_sqtt(struct radv_queue *queue)
 
    if (device->spm.bo) {
       radeon_check_space(ws, cs.b, 8);
-      radv_perfcounter_emit_spm_stop(device, &cs);
+      ac_emit_spm_stop(cs.b, cs.hw_ip, &pdev->info);
    }
 
    /* Stop SQTT. */
    radv_emit_sqtt_stop(device, &cs);
 
    if (device->spm.bo)
-      radv_perfcounter_emit_reset(&cs, true);
+      ac_emit_spm_reset(cs.b);
 
    /* Restore previous state by disabling SQG events. */
    ac_emit_cp_spi_config_cntl(cs.b, pdev->info.gfx_level, false);

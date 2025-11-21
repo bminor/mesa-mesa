@@ -32,12 +32,6 @@ struct radv_pc_query_pool {
 
 void radv_perfcounter_emit_shaders(struct radv_device *device, struct radv_cmd_stream *cs, unsigned shaders);
 
-void radv_perfcounter_emit_reset(struct radv_cmd_stream *cs, bool is_spm);
-
-void radv_perfcounter_emit_spm_start(struct radv_device *device, struct radv_cmd_stream *cs);
-
-void radv_perfcounter_emit_spm_stop(struct radv_device *device, struct radv_cmd_stream *cs);
-
 void radv_pc_deinit_query_pool(struct radv_pc_query_pool *pool);
 
 VkResult radv_pc_init_query_pool(struct radv_physical_device *pdev, const VkQueryPoolCreateInfo *pCreateInfo,

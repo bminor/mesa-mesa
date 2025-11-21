@@ -174,52 +174,6 @@ static void si_pc_emit_stop(struct si_context *sctx, struct si_resource *buffer,
    radeon_end();
 }
 
-void si_pc_emit_spm_start(struct radeon_cmdbuf *cs)
-{
-   radeon_begin(cs);
-
-   /* Start SPM counters. */
-   radeon_set_uconfig_reg(R_036020_CP_PERFMON_CNTL,
-                          S_036020_PERFMON_STATE(V_036020_CP_PERFMON_STATE_DISABLE_AND_RESET) |
-                             S_036020_SPM_PERFMON_STATE(V_036020_STRM_PERFMON_STATE_START_COUNTING));
-   /* Start windowed performance counters. */
-   radeon_event_write(V_028A90_PERFCOUNTER_START);
-   radeon_set_sh_reg(R_00B82C_COMPUTE_PERFCOUNT_ENABLE, S_00B82C_PERFCOUNT_ENABLE(1));
-
-   radeon_end();
-}
-
-void si_pc_emit_spm_stop(struct radeon_cmdbuf *cs, bool never_stop_sq_perf_counters,
-                         bool never_send_perfcounter_stop)
-{
-   radeon_begin(cs);
-
-   /* Stop windowed performance counters. */
-   if (!never_send_perfcounter_stop)
-      radeon_event_write(V_028A90_PERFCOUNTER_STOP);
-
-   radeon_set_sh_reg(R_00B82C_COMPUTE_PERFCOUNT_ENABLE, S_00B82C_PERFCOUNT_ENABLE(0));
-
-   /* Stop SPM counters. */
-   radeon_set_uconfig_reg(R_036020_CP_PERFMON_CNTL,
-                          S_036020_PERFMON_STATE(V_036020_CP_PERFMON_STATE_DISABLE_AND_RESET) |
-                          S_036020_SPM_PERFMON_STATE(never_stop_sq_perf_counters ?
-                             V_036020_STRM_PERFMON_STATE_START_COUNTING :
-                             V_036020_STRM_PERFMON_STATE_STOP_COUNTING));
-
-   radeon_end();
-}
-
-void si_pc_emit_spm_reset(struct radeon_cmdbuf *cs)
-{
-   radeon_begin(cs);
-   radeon_set_uconfig_reg(R_036020_CP_PERFMON_CNTL,
-                          S_036020_PERFMON_STATE(V_036020_CP_PERFMON_STATE_DISABLE_AND_RESET) |
-                          S_036020_SPM_PERFMON_STATE(V_036020_STRM_PERFMON_STATE_DISABLE_AND_RESET));
-   radeon_end();
-}
-
-
 static void si_pc_emit_read(struct si_context *sctx, struct ac_pc_block *block, unsigned count,
                             uint64_t va)
 {

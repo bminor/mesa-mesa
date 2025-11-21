@@ -48,80 +48,30 @@ radv_emit_windowed_counters(struct radv_device *device, struct radv_cmd_stream *
    radeon_end();
 }
 
-void
-radv_perfcounter_emit_reset(struct radv_cmd_stream *cs, bool is_spm)
+static void
+radv_perfcounter_emit_reset(struct radv_cmd_stream *cs)
 {
-   uint32_t cp_perfmon_cntl;
-
-   if (is_spm) {
-      cp_perfmon_cntl = S_036020_PERFMON_STATE(V_036020_CP_PERFMON_STATE_DISABLE_AND_RESET) |
-                        S_036020_SPM_PERFMON_STATE(V_036020_STRM_PERFMON_STATE_DISABLE_AND_RESET);
-   } else {
-      cp_perfmon_cntl = S_036020_PERFMON_STATE(V_036020_CP_PERFMON_STATE_DISABLE_AND_RESET);
-   }
-
    radeon_begin(cs);
-   radeon_set_uconfig_reg(R_036020_CP_PERFMON_CNTL, cp_perfmon_cntl);
+   radeon_set_uconfig_reg(R_036020_CP_PERFMON_CNTL,
+                          S_036020_PERFMON_STATE(V_036020_CP_PERFMON_STATE_DISABLE_AND_RESET));
    radeon_end();
 }
 
 static void
-radv_perfcounter_emit_start(struct radv_cmd_stream *cs, bool is_spm)
+radv_perfcounter_emit_start(struct radv_cmd_stream *cs)
 {
-   uint32_t cp_perfmon_cntl;
-
-   if (is_spm) {
-      cp_perfmon_cntl = S_036020_PERFMON_STATE(V_036020_CP_PERFMON_STATE_DISABLE_AND_RESET) |
-                        S_036020_SPM_PERFMON_STATE(V_036020_STRM_PERFMON_STATE_START_COUNTING);
-   } else {
-      cp_perfmon_cntl = S_036020_PERFMON_STATE(V_036020_CP_PERFMON_STATE_START_COUNTING);
-   }
-
    radeon_begin(cs);
-   radeon_set_uconfig_reg(R_036020_CP_PERFMON_CNTL, cp_perfmon_cntl);
+   radeon_set_uconfig_reg(R_036020_CP_PERFMON_CNTL, S_036020_PERFMON_STATE(V_036020_CP_PERFMON_STATE_START_COUNTING));
    radeon_end();
 }
 
 static void
-radv_perfcounter_emit_stop(struct radv_cmd_stream *cs, bool is_spm)
+radv_perfcounter_emit_stop(struct radv_cmd_stream *cs)
 {
-   uint32_t cp_perfmon_cntl;
-
-   if (is_spm) {
-      cp_perfmon_cntl = S_036020_PERFMON_STATE(V_036020_CP_PERFMON_STATE_DISABLE_AND_RESET) |
-                        S_036020_SPM_PERFMON_STATE(V_036020_STRM_PERFMON_STATE_STOP_COUNTING);
-   } else {
-      cp_perfmon_cntl =
-         S_036020_PERFMON_STATE(V_036020_CP_PERFMON_STATE_STOP_COUNTING) | S_036020_PERFMON_SAMPLE_ENABLE(1);
-   }
-
    radeon_begin(cs);
-   radeon_set_uconfig_reg(R_036020_CP_PERFMON_CNTL, cp_perfmon_cntl);
+   radeon_set_uconfig_reg(R_036020_CP_PERFMON_CNTL, S_036020_PERFMON_STATE(V_036020_CP_PERFMON_STATE_STOP_COUNTING) |
+                                                       S_036020_PERFMON_SAMPLE_ENABLE(1));
    radeon_end();
-}
-
-void
-radv_perfcounter_emit_spm_start(struct radv_device *device, struct radv_cmd_stream *cs)
-{
-   /* Start SPM counters. */
-   radv_perfcounter_emit_start(cs, true);
-
-   radv_emit_windowed_counters(device, cs, true);
-}
-
-void
-radv_perfcounter_emit_spm_stop(struct radv_device *device, struct radv_cmd_stream *cs)
-{
-   const struct radv_physical_device *pdev = radv_device_physical(device);
-
-   radv_emit_windowed_counters(device, cs, false);
-
-   /* Stop SPM counters. */
-   if (pdev->info.never_stop_sq_perf_counters) {
-      radv_perfcounter_emit_start(cs, true);
-   } else {
-      radv_perfcounter_emit_stop(cs, true);
-   }
 }
 
 static void
@@ -619,7 +569,7 @@ radv_pc_stop_and_sample(struct radv_cmd_buffer *cmd_buffer, struct radv_pc_query
    radv_pc_wait_idle(cmd_buffer);
    radv_emit_instance(cmd_buffer, -1, -1);
    radv_emit_windowed_counters(device, cs, false);
-   radv_perfcounter_emit_stop(cs, false);
+   radv_perfcounter_emit_stop(cs);
 
    for (unsigned pass = 0; pass < pool->num_passes; ++pass) {
       uint64_t pred_va = radv_buffer_get_va(device->perf_counter_bo) + PERF_CTR_BO_PASS_OFFSET + 8 * pass;
@@ -683,7 +633,7 @@ radv_pc_begin_query(struct radv_cmd_buffer *cmd_buffer, struct radv_pc_query_poo
    ac_emit_cp_write_data_imm(cs->b, V_370_ME, perf_ctr_va, 0);
 
    radv_pc_wait_idle(cmd_buffer);
-   radv_perfcounter_emit_reset(cs, false);
+   radv_perfcounter_emit_reset(cs);
    ac_emit_cp_inhibit_clockgating(cs->b, pdev->info.gfx_level, true);
    ac_emit_cp_spi_config_cntl(cs->b, pdev->info.gfx_level, true);
    radv_perfcounter_emit_shaders(device, cs, 0x7f);
@@ -720,7 +670,7 @@ radv_pc_begin_query(struct radv_cmd_buffer *cmd_buffer, struct radv_pc_query_poo
    /* The following sequence actually starts the perfcounters. */
 
    radv_pc_stop_and_sample(cmd_buffer, pool, va, false);
-   radv_perfcounter_emit_start(cs, false);
+   radv_perfcounter_emit_start(cs);
    radv_emit_windowed_counters(device, cs, true);
 
    assert(cs->b->cdw <= cdw_max);
@@ -750,7 +700,7 @@ radv_pc_end_query(struct radv_cmd_buffer *cmd_buffer, struct radv_pc_query_pool 
 
    radv_pc_wait_idle(cmd_buffer);
    radv_pc_stop_and_sample(cmd_buffer, pool, va, true);
-   radv_perfcounter_emit_reset(cs, false);
+   radv_perfcounter_emit_reset(cs);
    ac_emit_cp_spi_config_cntl(cs->b, pdev->info.gfx_level, false);
    ac_emit_cp_inhibit_clockgating(cs->b, pdev->info.gfx_level, false);
 
