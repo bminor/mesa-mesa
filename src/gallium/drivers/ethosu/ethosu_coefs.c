@@ -82,7 +82,7 @@ fill_weights(struct ethosu_subgraph *subgraph, struct ethosu_operation *operatio
    }
    pipe_buffer_unmap(subgraph->base.context, transfer_in);
 
-   long padded_size = 0;
+   int64_t padded_size = 0;
    *weights_size = mlw_reorder_encode(
       IFM_UBLOCK.depth,
       OFM_UBLOCK.depth,
