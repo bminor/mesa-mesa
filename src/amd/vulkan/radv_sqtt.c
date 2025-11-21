@@ -103,12 +103,13 @@ radv_emit_sqtt_userdata(const struct radv_cmd_buffer *cmd_buffer, const void *da
 {
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    const struct radv_physical_device *pdev = radv_device_physical(device);
+   const bool is_gfx_or_ace = cmd_buffer->qf == RADV_QUEUE_GENERAL || cmd_buffer->qf == RADV_QUEUE_COMPUTE;
    const enum amd_gfx_level gfx_level = pdev->info.gfx_level;
    struct radv_cmd_stream *cs = cmd_buffer->cs;
    const uint32_t *dwords = (uint32_t *)data;
 
-   /* SQTT user data packets aren't supported on SDMA queues. */
-   if (cmd_buffer->qf == RADV_QUEUE_TRANSFER)
+   /* SQTT user data packets are only supported on GFX or ACE queues. */
+   if (!is_gfx_or_ace)
       return;
 
    while (num_dwords > 0) {
