@@ -207,6 +207,7 @@ struct iris_screen {
       bool enable_vf_distribution;
       bool enable_te_distribution;
       unsigned generated_indirect_threshold;
+      bool disable_threaded_context;
    } driconf;
 
    /** Does the kernel support various features (KERNEL_HAS_* bitfield)? */

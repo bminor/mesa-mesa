@@ -405,6 +405,10 @@ iris_create_context(struct pipe_screen *pscreen, void *priv, unsigned flags)
    if (flags & PIPE_CONTEXT_COMPUTE_ONLY)
       return ctx;
 
+   /* Threaded context disabled via drirc. */
+   if (screen->driconf.disable_threaded_context)
+      return ctx;
+
    return threaded_context_create(ctx, &screen->transfer_pool,
                                   iris_replace_buffer_storage,
                                   &(struct threaded_context_options){
