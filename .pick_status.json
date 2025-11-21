@@ -3334,7 +3334,7 @@
         "description": "meson: Let -Ddraw-use-llvm=false work for R300 on non-x86",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "b8b38d38b1c14b60de0324ac2f98ff7f1f4cc3c5",
         "notes": null
