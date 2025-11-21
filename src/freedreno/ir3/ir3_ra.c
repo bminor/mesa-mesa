@@ -1477,6 +1477,16 @@ ir3_ra_handle_unavailable_merge_set(struct ir3_register *reg)
 static physreg_t
 get_reg(struct ra_ctx *ctx, struct ra_file *file, struct ir3_register *reg)
 {
+   /* For subreg moves (see ir3_is_subreg_move), try to allocate half of their
+    * full src for their dst. If this succeeds, the instruction can be removed.
+    */
+   enum ir3_subreg_move subreg_move = ir3_is_subreg_move(reg->instr);
+   if (subreg_move != IR3_SUBREG_MOVE_NONE) {
+      physreg_t src_reg = try_allocate_src_subreg(ctx, file, reg, subreg_move);
+      if (src_reg != (physreg_t)~0)
+         return src_reg;
+   }
+
    unsigned file_size = reg_file_size(file, reg);
    if (reg->merge_set && reg->merge_set->preferred_reg != (physreg_t)~0) {
       physreg_t preferred_reg =
@@ -1515,16 +1525,6 @@ get_reg(struct ra_ctx *ctx, struct ra_file *file, struct ir3_register *reg)
          best_reg += reg->merge_set_offset;
          return best_reg;
       }
-   }
-
-   /* For subreg moves (see ir3_is_subreg_move), try to allocate half of their
-    * full src for their dst. If this succeeds, the instruction can be removed.
-    */
-   enum ir3_subreg_move subreg_move = ir3_is_subreg_move(reg->instr);
-   if (subreg_move != IR3_SUBREG_MOVE_NONE) {
-      physreg_t src_reg = try_allocate_src_subreg(ctx, file, reg, subreg_move);
-      if (src_reg != (physreg_t)~0)
-         return src_reg;
    }
 
    /* For ALU and SFU instructions, if the src reg is avail to pick, use it.
