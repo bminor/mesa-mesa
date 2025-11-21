@@ -2047,8 +2047,10 @@ tu6_init_static_regs(struct tu_device *dev, struct tu_cs *cs)
                         phys_dev->info->magic.RB_DBG_ECO_CNTL);
    tu_cs_emit_write_reg(cs, REG_A6XX_RB_RBP_CNTL,
                         phys_dev->info->magic.RB_RBP_CNTL);
-   if (CHIP >= A7XX)
+   if (CHIP >= A7XX) {
+      tu_cs_emit_regs(cs, A7XX_RB_UNKNOWN_8E09(0x4));
       tu_cond_exec_end(cs);
+   }
 
    if (CHIP == A7XX) {
       tu_cs_emit_regs(cs, TPL1_BICUBIC_WEIGHTS_TABLE_REG(CHIP, 0, 0),
@@ -2102,8 +2104,6 @@ tu7_emit_tile_render_begin_regs(struct tu_cs *cs)
 {
    tu_cs_emit_regs(cs,
                   A7XX_RB_BUFFER_CNTL(0x0));
-
-   tu_cs_emit_regs(cs, A7XX_RB_UNKNOWN_8E09(0x4));
 
    tu_cs_emit_regs(cs, A7XX_RB_CLEAR_TARGET(.clear_mode = CLEAR_MODE_GMEM));
 }
@@ -2983,8 +2983,6 @@ tu6_sysmem_render_begin(struct tu_cmd_buffer *cmd, struct tu_cs *cs,
          .rt6_sysmem = true,
          .rt7_sysmem = true,
       ));
-
-      tu_cs_emit_regs(cs, A7XX_RB_UNKNOWN_8E09(0x4));
 
       tu_cs_emit_regs(cs, A7XX_RB_CLEAR_TARGET(.clear_mode = CLEAR_MODE_SYSMEM));
    }
