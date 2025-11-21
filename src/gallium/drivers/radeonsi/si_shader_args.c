@@ -540,14 +540,14 @@ void si_init_shader_args(struct si_shader *shader, struct si_shader_args *args,
 
       /* Some descriptors can be in user SGPRs. */
       /* Shader buffers in user SGPRs. */
-      for (unsigned i = 0; i < shader->selector->cs_num_shaderbufs_in_user_sgprs; i++) {
+      for (unsigned i = 0; i < shader->info.cs_num_shaderbufs_in_user_sgprs; i++) {
          while (args->ac.num_sgprs_used % 4 != 0)
             ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_VALUE, NULL);
 
          ac_add_arg(&args->ac, AC_ARG_SGPR, 4, AC_ARG_VALUE, &args->cs_shaderbuf[i]);
       }
       /* Images in user SGPRs. */
-      for (unsigned i = 0; i < shader->selector->cs_num_images_in_user_sgprs; i++) {
+      for (unsigned i = 0; i < shader->info.cs_num_images_in_user_sgprs; i++) {
          unsigned num_sgprs = BITSET_TEST(info->image_buffers, i) ? 4 : 8;
 
          while (args->ac.num_sgprs_used % num_sgprs != 0)

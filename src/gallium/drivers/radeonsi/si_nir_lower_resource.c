@@ -83,12 +83,10 @@ static nir_def *load_ubo_desc(nir_builder *b, nir_def *index,
 static nir_def *load_ssbo_desc(nir_builder *b, nir_src *index,
                                    struct lower_resource_state *s)
 {
-   struct si_shader_selector *sel = s->shader->selector;
-
    /* Fast path if the shader buffer is in user SGPRs. */
    if (nir_src_is_const(*index)) {
       unsigned slot = nir_src_as_uint(*index);
-      if (slot < sel->cs_num_shaderbufs_in_user_sgprs)
+      if (slot < s->shader->info.cs_num_shaderbufs_in_user_sgprs)
          return ac_nir_load_arg(b, &s->args->ac, s->args->cs_shaderbuf[slot]);
    }
 
@@ -228,7 +226,7 @@ static nir_def *load_deref_image_desc(nir_builder *b, nir_deref_instr *deref,
 
    nir_def *desc;
    if (!dynamic_index && desc_type != AC_DESC_FMASK &&
-       const_index < s->shader->selector->cs_num_images_in_user_sgprs) {
+       const_index < s->shader->info.cs_num_images_in_user_sgprs) {
       /* Fast path if the image is in user SGPRs. */
       desc = ac_nir_load_arg(b, &s->args->ac, s->args->cs_image[const_index]);
 

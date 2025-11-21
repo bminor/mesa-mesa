@@ -836,7 +836,7 @@ static void si_set_shader_images(struct pipe_context *pipe, mesa_shader_stage sh
 
    if (shader == MESA_SHADER_COMPUTE &&
        ctx->cs_shader_state.program &&
-       start_slot < ctx->cs_shader_state.program->sel.cs_num_images_in_user_sgprs)
+       start_slot < ctx->cs_shader_state.program->shader.info.cs_num_images_in_user_sgprs)
       ctx->compute_image_sgprs_dirty = true;
 
    si_update_shader_needs_decompress_mask(ctx, shader);
@@ -1343,7 +1343,7 @@ void si_set_shader_buffers(struct pipe_context *ctx, mesa_shader_stage shader,
 
    if (shader == MESA_SHADER_COMPUTE &&
        sctx->cs_shader_state.program &&
-       start_slot < sctx->cs_shader_state.program->sel.cs_num_shaderbufs_in_user_sgprs)
+       start_slot < sctx->cs_shader_state.program->shader.info.cs_num_shaderbufs_in_user_sgprs)
       sctx->compute_shaderbuf_sgprs_dirty = true;
 
    for (i = 0; i < count; ++i) {
@@ -2442,14 +2442,14 @@ void si_emit_compute_shader_pointers(struct si_context *sctx)
    radeon_begin(&sctx->gfx_cs);
 
    /* Set shader buffer descriptors in user SGPRs. */
-   struct si_shader_selector *shader = &sctx->cs_shader_state.program->sel;
-   unsigned num_shaderbufs = shader->cs_num_shaderbufs_in_user_sgprs;
+   struct si_shader *shader = &sctx->cs_shader_state.program->shader;
+   unsigned num_shaderbufs = shader->info.cs_num_shaderbufs_in_user_sgprs;
 
    if (num_shaderbufs && sctx->compute_shaderbuf_sgprs_dirty) {
       struct si_descriptors *desc = si_const_and_shader_buffer_descriptors(sctx, MESA_SHADER_COMPUTE);
 
       radeon_set_sh_reg_seq(R_00B900_COMPUTE_USER_DATA_0 +
-                            shader->cs_shaderbufs_sgpr_index * 4,
+                            shader->info.cs_shaderbufs_sgpr_index * 4,
                             num_shaderbufs * 4);
 
       for (unsigned i = 0; i < num_shaderbufs; i++)
@@ -2459,20 +2459,20 @@ void si_emit_compute_shader_pointers(struct si_context *sctx)
    }
 
    /* Set image descriptors in user SGPRs. */
-   unsigned num_images = shader->cs_num_images_in_user_sgprs;
+   unsigned num_images = shader->info.cs_num_images_in_user_sgprs;
    if (num_images && sctx->compute_image_sgprs_dirty) {
       struct si_descriptors *desc = si_sampler_and_image_descriptors(sctx, MESA_SHADER_COMPUTE);
 
       radeon_set_sh_reg_seq(R_00B900_COMPUTE_USER_DATA_0 +
-                            shader->cs_images_sgpr_index * 4,
-                            shader->cs_images_num_sgprs);
+                            shader->info.cs_images_sgpr_index * 4,
+                            shader->info.cs_images_num_sgprs);
 
       for (unsigned i = 0; i < num_images; i++) {
          unsigned desc_offset = si_get_image_slot(i) * 8;
          unsigned num_sgprs = 8;
 
          /* Image buffers are in desc[4..7]. */
-         if (shader->info.base.image_buffers & BITFIELD_BIT(i))
+         if (shader->info.cs_image_buffer_mask & BITFIELD_BIT(i))
             num_sgprs = 4;
 
          radeon_emit_array(&desc->list[desc_offset], num_sgprs);

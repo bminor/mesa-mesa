@@ -441,7 +441,6 @@ void si_nir_gather_info(struct si_screen *sscreen, struct nir_shader *nir,
    info->base.num_ssbos = nir->info.num_ssbos;
    info->base.num_images = nir->info.num_images;
    info->base.textures_used = nir->info.textures_used[0];
-   info->base.image_buffers = nir->info.image_buffers[0];
    info->base.msaa_images = nir->info.msaa_images[0];
 
    info->base.task_payload_size = nir->info.task_payload_size;

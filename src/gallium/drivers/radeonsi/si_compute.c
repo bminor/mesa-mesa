@@ -47,49 +47,6 @@ static void si_create_compute_state_async(void *job, void *gdata, int thread_ind
    program->shader.is_monolithic = true;
    program->shader.wave_size = si_determine_wave_size(sscreen, &program->shader);
 
-   /* Variable block sizes need 10 bits (1 + log2(SI_MAX_VARIABLE_THREADS_PER_BLOCK)) per dim.
-    * We pack them into a single user SGPR.
-    */
-   unsigned user_sgprs = SI_NUM_RESOURCE_SGPRS + (sel->info.uses_sysval_num_workgroups ? 3 : 0) +
-                         (sel->info.uses_sysval_workgroup_size ? 1 : 0) +
-                         sel->nir->info.cs.user_data_components_amd;
-
-   if (sel->stage != MESA_SHADER_TASK) {
-      /* Fast path for compute shaders - some descriptors passed via user SGPRs. */
-      /* Shader buffers in user SGPRs. */
-      for (unsigned i = 0; i < MIN2(3, sel->nir->info.num_ssbos) && user_sgprs <= 12; i++) {
-         user_sgprs = align(user_sgprs, 4);
-         if (i == 0)
-            sel->cs_shaderbufs_sgpr_index = user_sgprs;
-         user_sgprs += 4;
-         sel->cs_num_shaderbufs_in_user_sgprs++;
-      }
-
-      /* Images in user SGPRs. */
-      unsigned non_fmask_images = BITFIELD_MASK(sel->nir->info.num_images);
-
-      /* Remove images with FMASK from the bitmask.  We only care about the first
-       * 3 anyway, so we can take msaa_images[0] and ignore the rest.
-       */
-      if (sscreen->info.gfx_level < GFX11)
-         non_fmask_images &= ~sel->nir->info.msaa_images[0];
-
-      for (unsigned i = 0; i < 3 && non_fmask_images & (1 << i); i++) {
-         unsigned num_sgprs = BITSET_TEST(sel->nir->info.image_buffers, i) ? 4 : 8;
-
-         if (align(user_sgprs, num_sgprs) + num_sgprs > 16)
-            break;
-
-         user_sgprs = align(user_sgprs, num_sgprs);
-         if (i == 0)
-            sel->cs_images_sgpr_index = user_sgprs;
-         user_sgprs += num_sgprs;
-         sel->cs_num_images_in_user_sgprs++;
-      }
-      sel->cs_images_num_sgprs = user_sgprs - sel->cs_images_sgpr_index;
-   }
-   assert(user_sgprs <= 16);
-
    unsigned char ir_sha1_cache_key[20];
    si_get_ir_cache_key(sel, false, false, shader->wave_size, ir_sha1_cache_key);
 
@@ -114,12 +71,6 @@ static void si_create_compute_state_async(void *job, void *gdata, int thread_ind
          return;
       }
 
-      /* task ring entry and draw id
-       * note uses_draw_id is only available after shader variant creation
-       */
-      if (sel->stage == MESA_SHADER_TASK)
-         user_sgprs += shader->info.uses_sysval_draw_id ? 3 : 2;
-
       shader->config.rsrc1 = S_00B848_VGPRS(si_shader_encode_vgprs(shader)) |
                              S_00B848_SGPRS(si_shader_encode_sgprs(shader)) |
                              S_00B848_DX10_CLAMP(sscreen->info.gfx_level < GFX12) |
@@ -128,7 +79,7 @@ static void si_create_compute_state_async(void *job, void *gdata, int thread_ind
                              /* This is needed for CWSR, but it causes halts to work differently. */
                              S_00B848_PRIV(sscreen->info.gfx_level == GFX11);
 
-      shader->config.rsrc2 = S_00B84C_USER_SGPR(user_sgprs) |
+      shader->config.rsrc2 = S_00B84C_USER_SGPR(shader->info.cs_num_user_sgprs) |
                              S_00B84C_SCRATCH_EN(shader->config.scratch_bytes_per_wave > 0) |
                              S_00B84C_TGID_X_EN(sel->info.uses_sysval_workgroup_id[0]) |
                              S_00B84C_TGID_Y_EN(sel->info.uses_sysval_workgroup_id[1]) |

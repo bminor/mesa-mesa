@@ -6,6 +6,7 @@
 #include "nir.h"
 #include "nir_range_analysis.h"
 #include "sid.h"
+#include "si_pipe.h"
 
 void si_get_shader_variant_info(struct si_shader *shader,
                                 struct si_temp_shader_variant_info *temp_info, nir_shader *nir)
@@ -302,6 +303,66 @@ void si_get_shader_variant_info(struct si_shader *shader,
          shader->info.clipdist_mask = SI_USER_CLIP_PLANE_MASK;
 
       shader->info.clipdist_mask &= ~shader->key.ge.opt.kill_clip_distances;
+   }
+
+   if (nir->info.stage == MESA_SHADER_COMPUTE ||
+       nir->info.stage == MESA_SHADER_KERNEL ||
+       nir->info.stage == MESA_SHADER_TASK) {
+      /* Determine user SGPRs for compute shader. This includes descriptors in user SGPRs.
+       *
+       * Variable block sizes need 10 bits (1 + log2(SI_MAX_VARIABLE_THREADS_PER_BLOCK)) per dim.
+       * We pack them into a single user SGPR.
+       */
+      unsigned num_user_sgprs = SI_NUM_RESOURCE_SGPRS + (shader->selector->info.uses_sysval_num_workgroups ? 3 : 0) +
+                            (shader->selector->info.uses_sysval_workgroup_size ? 1 : 0) +
+                            shader->selector->nir->info.cs.user_data_components_amd;
+
+      if (nir->info.stage == MESA_SHADER_TASK) {
+         /* task ring entry and draw id
+          * note uses_draw_id is only available after shader variant creation
+          */
+         num_user_sgprs += shader->info.uses_sysval_draw_id ? 3 : 2;
+      } else {
+         /* Compute shaders */
+         /* Fast path for compute shaders - some descriptors passed via user SGPRs. */
+         /* Shader buffers in user SGPRs. */
+         for (unsigned i = 0; i < MIN2(3, nir->info.num_ssbos) && num_user_sgprs <= 12; i++) {
+            num_user_sgprs = align(num_user_sgprs, 4);
+            if (i == 0)
+               shader->info.cs_shaderbufs_sgpr_index = num_user_sgprs;
+            num_user_sgprs += 4;
+            shader->info.cs_num_shaderbufs_in_user_sgprs++;
+         }
+
+         /* Images in user SGPRs. */
+         unsigned non_fmask_images = BITFIELD_MASK(nir->info.num_images);
+
+         /* Remove images with FMASK from the bitmask.  We only care about the first
+          * 3 anyway, so we can take msaa_images[0] and ignore the rest.
+          */
+         if (shader->selector->screen->info.gfx_level < GFX11)
+            non_fmask_images &= ~nir->info.msaa_images[0];
+
+         for (unsigned i = 0; i < 3 && non_fmask_images & (1 << i); i++) {
+            unsigned num_sgprs = BITSET_TEST(nir->info.image_buffers, i) ? 4 : 8;
+
+            if (align(num_user_sgprs, num_sgprs) + num_sgprs > 16)
+               break;
+
+            num_user_sgprs = align(num_user_sgprs, num_sgprs);
+            if (i == 0)
+               shader->info.cs_images_sgpr_index = num_user_sgprs;
+            num_user_sgprs += num_sgprs;
+            shader->info.cs_num_images_in_user_sgprs++;
+         }
+
+         shader->info.cs_images_num_sgprs = num_user_sgprs - shader->info.cs_images_sgpr_index;
+         /* Only the first few bits matter. */
+         shader->info.cs_image_buffer_mask = nir->info.image_buffers[0];
+      }
+
+      assert(num_user_sgprs <= 16);
+      shader->info.cs_num_user_sgprs = num_user_sgprs;
    }
 }
 

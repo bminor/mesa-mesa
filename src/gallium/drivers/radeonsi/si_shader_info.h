@@ -29,7 +29,6 @@ struct si_shader_info {
       uint8_t num_ssbos;
       uint8_t num_images;
       uint32_t textures_used;
-      uint32_t image_buffers;
       uint32_t msaa_images;
 
       unsigned task_payload_size;
@@ -231,6 +230,13 @@ struct si_shader_variant_info {
    uint8_t num_streamout_vec4s;
    uint8_t max_simd_waves;
    uint8_t ngg_lds_scratch_size;
+   uint8_t cs_num_user_sgprs;
+   uint8_t cs_shaderbufs_sgpr_index;
+   uint8_t cs_num_shaderbufs_in_user_sgprs;
+   uint8_t cs_images_sgpr_index;
+   uint8_t cs_images_num_sgprs;
+   uint8_t cs_num_images_in_user_sgprs;
+   uint8_t cs_image_buffer_mask; /* which image bindings are buffers, only the first few bits matter */
    uint16_t private_mem_vgprs;
    uint32_t ngg_lds_vertex_size; /* VS,TES: Cull+XFB, GS: GSVS size */
    uint32_t shared_size;
