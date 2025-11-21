@@ -889,8 +889,6 @@ r3d_common(struct tu_cmd_buffer *cmd, struct tu_cs *cs, enum r3d_type type,
    tu6_emit_vpc<CHIP>(cs, vs, NULL, NULL, NULL, fs);
 
    if (CHIP >= A7XX) {
-      tu_cs_emit_regs(cs, GRAS_MODE_CNTL(CHIP, 0x2));
-
       tu_cs_emit_regs(cs, A7XX_SP_RENDER_CNTL(.fs_disable = false));
    }
 
