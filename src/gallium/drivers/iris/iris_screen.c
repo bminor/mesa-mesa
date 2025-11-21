@@ -752,6 +752,8 @@ iris_screen_create(int fd, const struct pipe_screen_config *config)
       driQueryOptionb(config->options, "intel_te_distribution");
    screen->driconf.generated_indirect_threshold =
       driQueryOptioni(config->options, "generated_indirect_threshold");
+   screen->driconf.disable_threaded_context =
+      driQueryOptionb(config->options, "intel_disable_threaded_context");
 
    screen->precompile = debug_get_bool_option("shader_precompile", true);
 

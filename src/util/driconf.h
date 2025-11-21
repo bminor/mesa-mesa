@@ -367,6 +367,9 @@
    DRI_CONF_OPT_B(intel_sampler_route_to_lsc, def, \
                   "Intel specific toggle to enable sampler route to LSC")
 
+#define DRI_CONF_INTEL_DISABLE_THREADED_CONTEXT(def) \
+   DRI_CONF_OPT_B(intel_disable_threaded_context, def, "Disable threaded context")
+
 #define DRI_CONF_VK_REQUIRE_ETC2(def) \
   DRI_CONF_OPT_B(vk_require_etc2, def, \
                  "Implement emulated ETC2 on HW that does not support it")
