@@ -297,6 +297,7 @@ static const struct vk_device_extension_table lvp_device_extensions_supported = 
 #endif
    .GOOGLE_decorate_string                = true,
    .GOOGLE_hlsl_functionality1            = true,
+   .GOOGLE_user_type                      = true,
 };
 
 static bool
