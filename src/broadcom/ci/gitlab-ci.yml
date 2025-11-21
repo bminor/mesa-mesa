@@ -157,7 +157,7 @@ v3d-rpi4-gl-full:arm64:
   variables:
     DEQP_FRACTION: 1
 
-.ci-tron-v3d-rpi4-gl-full:arm64:
+ci-tron-v3d-rpi4-gl-full:arm64:
   extends:
     - .ci-tron-v3d-rpi4-gl:arm64
     - .v3d-manual-rules
@@ -321,7 +321,7 @@ v3dv-rpi4-vk-full:arm64:
     TEST_SETUP_AND_UPLOAD_MARGIN_MINUTES: 10
     DEQP_FRACTION: 1
 
-.ci-tron-v3dv-rpi4-vk-full:arm64:
+ci-tron-v3dv-rpi4-vk-full:arm64:
   extends:
     - .ci-tron-v3dv-rpi4-vk:arm64
     - .v3dv-manual-rules
@@ -422,7 +422,7 @@ v3d-rpi5-gl-full:arm64:
     TEST_SETUP_AND_UPLOAD_MARGIN_MINUTES: 10
     DEQP_FRACTION: 1
 
-.ci-tron-v3d-rpi5-gl-full:arm64:
+ci-tron-v3d-rpi5-gl-full:arm64:
   extends:
     - .ci-tron-v3d-rpi5-gl:arm64
     - .v3d-manual-rules
@@ -465,7 +465,7 @@ v3d-rpi5-traces:arm64:
   variables:
     PIGLIT_TRACES_FILE: traces-broadcom.yml
 
-v3d-rpi5-gl-asan:arm64:
+.v3d-rpi5-gl-asan:arm64:
   extends:
     - .igalia-bcm2712-rpi-5
     - .broadcom-asan-test:arm64-gl
@@ -522,7 +522,7 @@ v3dv-rpi5-vk:arm64:
     DEQP_SUITE: broadcom-rpi5-vk
     DEQP_FRACTION: 6
 
-v3dv-rpi5-vk-full:arm64:
+.v3dv-rpi5-vk-full:arm64:
   extends:
     - v3dv-rpi5-vk:arm64
     - .broadcom-test-full:arm64-vk
@@ -537,7 +537,7 @@ v3dv-rpi5-vk-full:arm64:
     TEST_SETUP_AND_UPLOAD_MARGIN_MINUTES: 10
     DEQP_FRACTION: 1
 
-.ci-tron-v3dv-rpi5-vk-full:arm64:
+ci-tron-v3dv-rpi5-vk-full:arm64:
   extends:
     - .ci-tron-v3dv-rpi5-vk:arm64
     - .v3dv-manual-rules
@@ -546,7 +546,7 @@ v3dv-rpi5-vk-full:arm64:
     CI_TRON_TIMEOUT__OVERALL__MINUTES: 145
     DEQP_FRACTION: 1
 
-v3dv-rpi5-vk-asan:arm64:
+.v3dv-rpi5-vk-asan:arm64:
   extends:
     - .igalia-bcm2712-rpi-5
     - .broadcom-asan-test:arm64-vk

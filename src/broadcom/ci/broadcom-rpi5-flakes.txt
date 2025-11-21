@@ -202,3 +202,6 @@ x11-dEQP-EGL.functional.sharing.gles2.multithread.simple_egl_sync.images.texture
 
 spec@egl_chromium_sync_control@conformance
 spec@egl_chromium_sync_control@conformance@eglGetSyncValuesCHROMIUM_msc_and_sbc_test
+
+# It works with ci-tron, but fails with baremetal. Maybe a kernel issue?
+dEQP-VK.image.mutable.2d_array.r8g8b8a8_sint_r32_sfloat_draw_copy_resolve
