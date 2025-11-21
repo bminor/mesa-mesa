@@ -1,5 +1,165 @@
 [
     {
+        "sha": "fcd2acba411c87d4eb1f8875e3ce73c5e120aec1",
+        "description": "ci/venus: skip Android incremental and shared present tests",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "17b9bc277000de3661ebb9b8e83d582d41e4a25a",
+        "description": "spirv: Only set workgroup_size_variable on compute-like stages",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "6d9f56396088e5b37c05f40cd0a58c7efc48521d",
+        "notes": null
+    },
+    {
+        "sha": "0f2dcf656a851b2ac13e34ee22c97d60ec72b625",
+        "description": "freedreno/fdl: Optimize linear_to_tiled with avx2",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3160c516ca4555a416a4dcf99fafb25f5c1d3aa4",
+        "description": "brw: Delete input_slots_valid from brw_wm_prog_key",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "868377e4c7bc16bbd6271ac1184fa188af0b31ad",
+        "description": "brw: Delete program_string_id from brw program keys",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "fbd9bf6aeb40bf4da3d5d1d4f02b861487d4633d",
+        "description": "iris: Use iris_any_prog_key, not brw_any_prog_key",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ad149423002363b2ebd6fb225851febeb4039b1b",
+        "description": "meson: Fix sysprof-capture-4 dependency",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "e9341568fa9e4af1084db6702174ed4b4881bc73",
+        "notes": null
+    },
+    {
+        "sha": "8cc06191a85b15ba69ac6bddf9f94b6dafc93e0c",
+        "description": "apple_cgl.c: Fix error: call to undeclared function 'os_get_option'",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "222b85328e25e70838f11fb93ab121bfe62dbb47",
+        "notes": null
+    },
+    {
+        "sha": "4913177b1477306809224a097f3a1ed26ab996e9",
+        "description": "loader: Wrap nouveau_zink_predicate with HAVE_LIBDRM",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "265afd9bfde79fc461899f91ca13e78407f9b072",
+        "notes": null
+    },
+    {
+        "sha": "d7f03c649ee71587c3f1fd7dca1c1050d3194574",
+        "description": "nir/lower_io_passes: only sort variables for nir_lower_io_vars_to_temporaries",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "02148dc6bc5a608998407378f0f50b22ec60e258",
+        "description": "nir/lower_io_passes: fold bool lower_indirect_inputs",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "9b4fc64324cade85b566a5032cd771f856fec082",
+        "description": "nir/lower_io_passes: simplify conditions for when to lower IO to temps",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "edfa3fdfbc3de578505ce93c1dea34e3a5da6f63",
+        "description": "nir/lower_io_passes: lower indirect TCS outputs sooner and clarify the behavior",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3e01031f107345a00b76c4e1de4fac7db78bc137",
+        "description": "radv: consistently use the value in bytes for esgs_itemsize",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5e8885a339d6d04a0da004fac1ae190d7e46f937",
+        "description": "radv: recalculate legacy_gs_info on bind",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "36f6cf8a358d6310b1a9babc29ee7e38f216891a",
+        "description": "freedreno/registers: Clarify bit 64B of CP_REG_TO_MEM",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
         "sha": "9c34567a4a19455e61470df37f60e28ff197a062",
         "description": "vulkan: stop excluding Shader64BitIndexingEXT SPIR-V cap",
         "nominated": false,
