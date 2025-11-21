@@ -45,13 +45,13 @@ void si_get_shader_variant_info(struct si_shader *shader,
 
             switch (intr->intrinsic) {
             case nir_intrinsic_load_instance_id:
-               shader->info.uses_instance_id = true;
+               shader->info.uses_sysval_instance_id = true;
                break;
             case nir_intrinsic_load_base_instance:
-               shader->info.uses_base_instance = true;
+               shader->info.uses_sysval_base_instance = true;
                break;
             case nir_intrinsic_load_draw_id:
-               shader->info.uses_draw_id = true;
+               shader->info.uses_sysval_draw_id = true;
                break;
             case nir_intrinsic_load_frag_coord:
             case nir_intrinsic_load_sample_pos:
@@ -70,8 +70,8 @@ void si_get_shader_variant_info(struct si_shader *shader,
                        shader->key.ge.mono.instance_divisor_is_fetched) &
                       BITFIELD_BIT(nir_intrinsic_base(intr))) {
                      /* Instanced attribs. */
-                     shader->info.uses_instance_id = true;
-                     shader->info.uses_base_instance = true;
+                     shader->info.uses_sysval_instance_id = true;
+                     shader->info.uses_sysval_base_instance = true;
                   }
                } else if (nir->info.stage == MESA_SHADER_TESS_EVAL) {
                   shader->info.uses_vmem_load_other = true;

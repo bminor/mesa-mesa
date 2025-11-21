@@ -1906,9 +1906,9 @@ bool si_create_shader_variant(struct si_screen *sscreen, struct ac_llvm_compiler
 
          shader->info.uses_vmem_load_other |= shader->previous_stage->info.uses_vmem_load_other;
          shader->info.uses_vmem_sampler_or_bvh |= shader->previous_stage->info.uses_vmem_sampler_or_bvh;
-         shader->info.uses_instance_id |= shader->previous_stage->info.uses_instance_id;
-         shader->info.uses_base_instance |= shader->previous_stage->info.uses_base_instance;
-         shader->info.uses_draw_id |= shader->previous_stage->info.uses_draw_id;
+         shader->info.uses_sysval_instance_id |= shader->previous_stage->info.uses_sysval_instance_id;
+         shader->info.uses_sysval_base_instance |= shader->previous_stage->info.uses_sysval_base_instance;
+         shader->info.uses_sysval_draw_id |= shader->previous_stage->info.uses_sysval_draw_id;
          shader->info.uses_vs_state_indexed |= shader->previous_stage->info.uses_vs_state_indexed;
          shader->info.uses_gs_state_provoking_vtx_first |= shader->previous_stage->info.uses_gs_state_provoking_vtx_first;
          shader->info.uses_gs_state_outprim |= shader->previous_stage->info.uses_gs_state_outprim;

@@ -520,11 +520,11 @@ void si_init_shader_args(struct si_shader *shader, struct si_shader_args *args,
          ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_VALUE, &args->task_ring_addr);
          ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_VALUE, &args->ac.task_ring_entry);
       }
-      if (shader->info.uses_draw_id)
+      if (shader->info.uses_sysval_draw_id)
          ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_VALUE, &args->ac.draw_id);
-      if (shader->selector->info.uses_grid_size)
+      if (shader->selector->info.uses_sysval_num_workgroups)
          ac_add_arg(&args->ac, AC_ARG_SGPR, 3, AC_ARG_VALUE, &args->ac.num_work_groups);
-      if (shader->selector->info.uses_variable_block_size)
+      if (shader->selector->info.uses_sysval_workgroup_size)
          ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_VALUE, &args->block_size);
 
       unsigned cs_user_data_dwords =
@@ -558,7 +558,7 @@ void si_init_shader_args(struct si_shader *shader, struct si_shader_args *args,
 
       /* Hardware SGPRs. */
       for (i = 0; i < 3; i++) {
-         if (shader->selector->info.uses_block_id[i]) {
+         if (shader->selector->info.uses_sysval_workgroup_id[i]) {
             /* GFX12 loads workgroup IDs into ttmp registers, so they are not input SGPRs, but we
              * still need to set this to indicate that they are enabled (for ac_nir_to_llvm).
              */
@@ -568,7 +568,7 @@ void si_init_shader_args(struct si_shader *shader, struct si_shader_args *args,
                ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_VALUE, &args->ac.workgroup_ids[i]);
          }
       }
-      if (shader->selector->info.uses_tg_size)
+      if (shader->selector->info.uses_sgpr_tg_size)
          ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_VALUE, &args->ac.tg_size);
 
       /* GFX11 set FLAT_SCRATCH directly instead of using this arg. */
@@ -614,10 +614,10 @@ void si_init_shader_args(struct si_shader *shader, struct si_shader_args *args,
       if (info->task_payload_size)
          ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_VALUE, &args->task_ring_addr);
 
-      if (shader->info.uses_draw_id)
+      if (shader->info.uses_sysval_draw_id)
          ac_add_arg(&args->ac, AC_ARG_SGPR, 1, AC_ARG_VALUE, &args->ac.draw_id);
 
-      if (sel->info.uses_grid_size)
+      if (sel->info.uses_sysval_num_workgroups)
          ac_add_arg(&args->ac, AC_ARG_SGPR, 3, AC_ARG_VALUE, &args->ac.num_work_groups);
       else if (sel->screen->info.gfx_level < GFX11)
          /* GFX10 always write grid size to SGPR, reserve space for it */

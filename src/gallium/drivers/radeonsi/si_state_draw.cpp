@@ -424,8 +424,8 @@ static bool si_update_shaders(struct si_context *sctx)
    }
 
    struct si_shader *api_vs = si_get_api_vs_inline(sctx, GFX_VERSION, HAS_TESS, HAS_GS);
-   sctx->vs_uses_base_instance = api_vs->info.uses_base_instance;
-   sctx->vs_uses_draw_id = api_vs->info.uses_draw_id;
+   sctx->vs_uses_base_instance = api_vs->info.uses_sysval_base_instance;
+   sctx->vs_uses_draw_id = api_vs->info.uses_sysval_draw_id;
    sctx->vs_uses_vs_state_indexed = api_vs->info.uses_vs_state_indexed;
 
    struct si_shader *hw_vs = si_get_vs_inline(sctx, HAS_TESS, HAS_GS)->current;

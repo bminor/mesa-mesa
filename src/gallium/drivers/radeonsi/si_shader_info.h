@@ -128,7 +128,7 @@ struct si_shader_info {
    uint8_t colors_written;
    uint16_t output_color_types; /**< Each bit pair is enum si_color_output_type */
    bool color0_writes_all_cbufs; /**< gl_FragColor */
-   bool reads_samplemask;   /**< does fragment shader read sample mask? */
+   bool uses_sysval_sample_mask_in;   /**< does fragment shader read sample mask? */
    bool reads_tess_factors; /**< If TES reads TESSINNER or TESSOUTER */
    bool writes_z;           /**< does fragment shader write Z value? */
    /* We need both because both can be present in different conditional blocks. */
@@ -141,22 +141,22 @@ struct si_shader_info {
    bool uses_persp_center_color;
    bool uses_persp_centroid_color;
    bool uses_persp_sample_color;
-   bool uses_persp_center;
-   bool uses_persp_centroid;
-   bool uses_persp_sample;
-   bool uses_linear_center;
-   bool uses_linear_centroid;
-   bool uses_linear_sample;
+   bool uses_sysval_persp_center;
+   bool uses_sysval_persp_centroid;
+   bool uses_sysval_persp_sample;
+   bool uses_sysval_linear_center;
+   bool uses_sysval_linear_centroid;
+   bool uses_sysval_linear_sample;
    bool uses_interp_at_offset;
    bool uses_interp_at_sample;
-   bool uses_primid;
-   bool uses_frontface;
-   bool uses_invocationid;
-   bool uses_thread_id[3];
-   bool uses_block_id[3];
-   bool uses_variable_block_size;
-   bool uses_grid_size;
-   bool uses_tg_size;
+   bool uses_sysval_primitive_id;
+   bool uses_sysval_front_face;
+   bool uses_sysval_invocation_id;
+   bool uses_sysval_local_invocation_id[3];
+   bool uses_sysval_workgroup_id[3];
+   bool uses_sysval_workgroup_size;
+   bool uses_sysval_num_workgroups;
+   bool uses_sgpr_tg_size;
    bool uses_atomic_ordered_add;
    bool writes_psize;
    bool writes_primid;
@@ -212,9 +212,9 @@ struct si_shader_variant_info {
    uint8_t num_input_vgprs;
    bool uses_vmem_load_other : 1; /* all other VMEM loads and atomics with return */
    bool uses_vmem_sampler_or_bvh : 1;
-   bool uses_instance_id : 1;
-   bool uses_base_instance : 1;
-   bool uses_draw_id : 1;
+   bool uses_sysval_instance_id : 1;
+   bool uses_sysval_base_instance : 1;
+   bool uses_sysval_draw_id : 1;
    bool uses_vs_state_indexed : 1; /* VS_STATE_INDEXED */
    bool uses_gs_state_provoking_vtx_first : 1;
    bool uses_gs_state_outprim : 1;
