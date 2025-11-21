@@ -2514,6 +2514,7 @@ vc4_shader_state_create(struct pipe_context *pctx,
         NIR_PASS(_, s, nir_lower_io,
                  nir_var_shader_in | nir_var_shader_out | nir_var_uniform,
                  type_size, (nir_lower_io_options)0);
+        s->info.disable_output_offset_src_constant_folding = true;
 
         NIR_PASS(_, s, nir_normalize_cubemap_coords);
 

@@ -244,6 +244,12 @@ typedef struct shader_info {
    /* Whether flrp has been lowered. */
    bool flrp_lowered:1;
 
+   /* Whether nir_opt_constant_folding should not fold offset srcs of
+    * IO intrinsics.
+    */
+   bool disable_input_offset_src_constant_folding:1;
+   bool disable_output_offset_src_constant_folding:1;
+
    /* Whether nir_lower_io has been called to lower derefs.
     * nir_variables for inputs and outputs might not be present in the IR.
     */

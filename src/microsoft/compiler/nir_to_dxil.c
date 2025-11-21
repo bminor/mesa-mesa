@@ -6636,6 +6636,8 @@ nir_to_dxil(struct nir_shader *s, const struct nir_to_dxil_options *opts,
    NIR_PASS(_, s, nir_lower_frexp);
    NIR_PASS(_, s, nir_lower_flrp, 16 | 32 | 64, true);
    NIR_PASS(_, s, nir_lower_io, nir_var_shader_in | nir_var_shader_out, type_size_vec4, nir_lower_io_lower_64bit_to_32);
+   s->info.disable_input_offset_src_constant_folding = true;
+   s->info.disable_output_offset_src_constant_folding = true;
    NIR_PASS(_, s, dxil_nir_ensure_position_writes);
    NIR_PASS(_, s, dxil_nir_lower_system_values);
    NIR_PASS(_, s, nir_lower_io_to_scalar, nir_var_shader_in | nir_var_system_value | nir_var_shader_out, NULL, NULL);

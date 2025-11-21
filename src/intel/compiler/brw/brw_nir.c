@@ -1165,6 +1165,7 @@ brw_nir_lower_fs_outputs(nir_shader *nir)
    }
 
    NIR_PASS(_, nir, nir_lower_io, nir_var_shader_out, type_size_vec4, 0);
+   nir->info.disable_output_offset_src_constant_folding = true;
 }
 
 static bool
