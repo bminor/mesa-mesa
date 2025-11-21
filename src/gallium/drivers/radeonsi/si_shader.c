@@ -625,12 +625,15 @@ bool si_should_clear_lds(struct si_screen *sscreen, const struct nir_shader *sha
       shader->info.shared_size > 0 && sscreen->options.clear_lds;
 }
 
-/* Run passes that eliminate code and affect shader_info. These should be run before linking
- * and shader_info gathering. Lowering passes can be run here too, but only if they lead to
- * better code or lower undesirable representations (like derefs). Lowering passes that prevent
- * linking optimizations or destroy shader_info shouldn't be run here.
+/* Run passes that eliminate code and affect si_shader_variant_info. These should be run before
+ * linking and shader variant info gathering. Lowering passes can be run here too, but only if
+ * they lead to better code or lower undesirable representations (like derefs). Lowering passes
+ * that prevent linking optimizations or destroy shader info shouldn't be run here.
+ *
+ * Changes done here aren't reflected in si_shader_info because that's only gathered when we
+ * first receive the shader.
  */
-static void run_pre_link_optimization_passes(struct si_nir_shader_ctx *ctx)
+static void si_preprocess_nir(struct si_nir_shader_ctx *ctx)
 {
    struct si_shader *shader = ctx->shader;
    struct si_shader_selector *sel = shader->selector;
@@ -865,11 +868,11 @@ static void run_pre_link_optimization_passes(struct si_nir_shader_ctx *ctx)
 }
 
 /* Late optimization passes and lowering passes. The majority of lowering passes are here.
- * These passes should have no impact on linking optimizations and shouldn't affect shader_info
- * (those should be run before this) because any changes in shader_info won't be reflected
- * in hw registers from now on.
+ * These passes should have no impact on linking optimizations and shouldn't affect
+ * si_shader_variant_info except info gathered by si_get_late_shader_variant_info
+ * because any other changes in shader info aren't be reflected in hw registers.
  */
-static void run_late_optimization_and_lowering_passes(struct si_nir_shader_ctx *ctx)
+static void si_postprocess_nir(struct si_nir_shader_ctx *ctx)
 {
    struct si_shader *shader = ctx->shader;
    struct si_shader_selector *sel = shader->selector;
@@ -1193,7 +1196,7 @@ static void get_nir_shaders(struct si_shader *shader, struct si_linked_shaders *
 
    for (unsigned i = 0; i < SI_NUM_LINKED_SHADERS; i++) {
       if (linked->shader[i].nir)
-         run_pre_link_optimization_passes(&linked->shader[i]);
+         si_preprocess_nir(&linked->shader[i]);
    }
 
    /* TODO: run linking optimizations here if we have LS+HS or ES+GS */
@@ -1207,7 +1210,7 @@ static void get_nir_shaders(struct si_shader *shader, struct si_linked_shaders *
    for (unsigned i = 0; i < SI_NUM_LINKED_SHADERS; i++) {
       if (linked->shader[i].nir) {
          si_get_shader_variant_info(shader, &linked->shader[i].temp_info, linked->shader[i].nir);
-         run_late_optimization_and_lowering_passes(&linked->shader[i]);
+         si_postprocess_nir(&linked->shader[i]);
          si_get_late_shader_variant_info(shader, &linked->shader[i].args, linked->shader[i].nir);
       }
    }
