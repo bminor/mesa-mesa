@@ -404,8 +404,6 @@ void si_finalize_nir(struct pipe_screen *screen, struct nir_shader *nir,
       NIR_PASS(_, nir, nir_recompute_io_bases, nir_var_shader_in | nir_var_shader_out);
    }
 
-   NIR_PASS(_, nir, nir_lower_explicit_io, nir_var_mem_shared, nir_address_format_32bit_offset);
-
    /* Remove dead derefs, so that we can remove uniforms. */
    NIR_PASS(_, nir, nir_opt_dce);
 

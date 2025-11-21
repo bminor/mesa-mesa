@@ -813,6 +813,7 @@ static void run_pre_link_optimization_passes(struct si_nir_shader_ctx *ctx)
    progress |= ac_nir_lower_indirect_derefs(nir, sel->screen->info.gfx_level);
 
    NIR_PASS(_, nir, si_nir_mark_divergent_texture_non_uniform);
+   NIR_PASS(progress, nir, nir_lower_explicit_io, nir_var_mem_shared, nir_address_format_32bit_offset);
 
    if (progress)
       si_nir_opts(shader->selector->screen, nir, false);
