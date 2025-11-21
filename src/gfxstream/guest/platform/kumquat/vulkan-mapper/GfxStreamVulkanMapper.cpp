@@ -31,7 +31,7 @@
 #endif
 #endif
 
-const char* VK_ICD_FILENAMES = "VK_ICD_FILENAMES";
+constexpr char VK_DRIVER_FILES[] = "VK_DRIVER_FILES";
 constexpr uint32_t kNvidiaVendorId = 0x10de;
 
 #define GET_PROC_ADDR_INSTANCE_LOCAL(x) \
@@ -205,14 +205,14 @@ GfxStreamVulkanMapper* GfxStreamVulkanMapper::getInstance(std::optional<DeviceId
         // up. The Nvidia ICD should be loaded.
         //
         // This is mostly useful for developers.  For AOSP hermetic gfxstream end2end
-        // testing, VK_ICD_FILENAMES shouldn't be defined.  For deqp-vk, this is
+        // testing, VK_DRIVER_FILES shouldn't be defined.  For deqp-vk, this is
         // useful, but not safe for multi-threaded tests.  For now, since this is only
         // used for end2end tests, we should be good.
-        const char* driver = os_get_option(VK_ICD_FILENAMES);
+        const char* driver = os_get_option(VK_DRIVER_FILES);
 
 	// HACK: Need equivalents on Windows
 #if DETECT_OS_LINUX
-        unsetenv(VK_ICD_FILENAMES);
+        unsetenv(VK_DRIVER_FILES);
 #endif
         sVkMapper = std::make_unique<GfxStreamVulkanMapper>();
         if (!sVkMapper->initialize(*deviceIdOpt)) {
@@ -222,7 +222,7 @@ GfxStreamVulkanMapper* GfxStreamVulkanMapper::getInstance(std::optional<DeviceId
 
 #if DETECT_OS_LINUX
         if (driver) {
-            setenv(VK_ICD_FILENAMES, driver, 1);
+            setenv(VK_DRIVER_FILES, driver, 1);
         }
 #endif
     }
