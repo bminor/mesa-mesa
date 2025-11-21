@@ -857,7 +857,7 @@ validate_intrinsic_instr(nir_intrinsic_instr *instr, validate_state *state)
                             (state->shader->info.stage == MESA_SHADER_FRAGMENT &&
                              instr->intrinsic == nir_intrinsic_load_input_vertex));
 
-         /* Non-zero src offset with num_slots == 1 is disallowed. */
+         /* Non-constant src offset with num_slots == 1 is disallowed. */
          if (sem.num_slots == 1) {
             nir_src *offset_src = nir_get_io_offset_src(instr);
 
@@ -889,8 +889,7 @@ validate_intrinsic_instr(nir_intrinsic_instr *instr, validate_state *state)
              * So allow phis in offset_src with num_slots == 1 for now.
              */
             validate_assert(state,
-                            (nir_src_is_const(*offset_src) &&
-                             nir_src_as_uint(*offset_src) == 0) ||
+                            nir_src_is_const(*offset_src) ||
                             nir_def_is_phi(offset_src->ssa));
          }
       }
