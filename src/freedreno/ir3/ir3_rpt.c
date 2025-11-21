@@ -110,8 +110,6 @@ can_rpt(struct ir3_instruction *instr, struct ir3_instruction *rpt,
 {
    if (rpt_n >= 4)
       return false;
-   if (rpt->ip != instr->ip + rpt_n)
-      return false;
    if (rpt->opc != instr->opc)
       return false;
    if (!ir3_supports_rpt(instr->block->shader->compiler, instr->opc))
@@ -261,14 +259,19 @@ try_merge(struct ir3_instruction *instr, struct ir3_instruction *rpt,
 static bool
 merge_instr(struct ir3_instruction *instr)
 {
-   if (!ir3_instr_is_first_rpt(instr))
+   if (!ir3_instr_is_rpt(instr))
       return false;
 
    bool progress = false;
 
    unsigned rpt_n = 1;
 
-   foreach_instr_rpt_excl_safe (rpt, instr) {
+   /* Try to merge instr with the instructions after it in its rpt group. If
+    * there are still instructions before it, they cannot be merged (because
+    * they come after instr in the block) and will be handled later.
+    */
+   for (struct ir3_instruction *rpt = instr->rpt_next; rpt;
+        rpt = rpt->rpt_next) {
       /* When rpt cannot be merged, stop immediately. We will try to merge rpt
        * with the following instructions (if any) once we encounter it in
        * ir3_combine_rpt.

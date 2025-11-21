@@ -5945,8 +5945,8 @@ ir3_compile_shader_nir(struct ir3_compiler *compiler,
    }
 
    IR3_PASS(ir, ir3_remove_noop_subreg_moves);
-   IR3_PASS(ir, ir3_merge_rpt, so);
    IR3_PASS(ir, ir3_postsched, so);
+   IR3_PASS(ir, ir3_merge_rpt, so);
 
    IR3_PASS(ir, ir3_legalize_relative);
    IR3_PASS(ir, ir3_lower_subgroups);
