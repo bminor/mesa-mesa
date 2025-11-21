@@ -287,15 +287,16 @@ genX(cmd_buffer_emit_state_base_address)(struct anv_cmd_buffer *cmd_buffer)
     *
     * Render target cache flush before SBA is required by Wa_18039438632.
     */
-   genx_batch_emit_pipe_control(&cmd_buffer->batch, device->info,
-                                cmd_buffer->state.current_pipeline,
+   genX(batch_emit_pipe_control)(&cmd_buffer->batch, device->info,
+                                 cmd_buffer->state.current_pipeline,
 #if GFX_VER >= 12
-                                ANV_PIPE_HDC_PIPELINE_FLUSH_BIT |
+                                 ANV_PIPE_HDC_PIPELINE_FLUSH_BIT |
 #else
-                                ANV_PIPE_DATA_CACHE_FLUSH_BIT |
+                                 ANV_PIPE_DATA_CACHE_FLUSH_BIT |
 #endif
-                                ANV_PIPE_RENDER_TARGET_CACHE_FLUSH_BIT |
-                                ANV_PIPE_CS_STALL_BIT);
+                                 ANV_PIPE_RENDER_TARGET_CACHE_FLUSH_BIT |
+                                 ANV_PIPE_CS_STALL_BIT,
+                                 "pre STATE_BASE_ADDRESS flush");
 
 #if INTEL_NEEDS_WA_1607854226
    /* Wa_1607854226:
@@ -373,9 +374,10 @@ genX(cmd_buffer_emit_state_base_address)(struct anv_cmd_buffer *cmd_buffer)
       (intel_needs_workaround(device->info, 16013000631) ?
        ANV_PIPE_INSTRUCTION_CACHE_INVALIDATE_BIT : 0);
 
-   genx_batch_emit_pipe_control(&cmd_buffer->batch, device->info,
-                                cmd_buffer->state.current_pipeline,
-                                bits);
+   genX(batch_emit_pipe_control)(&cmd_buffer->batch, device->info,
+                                 cmd_buffer->state.current_pipeline,
+                                 bits,
+                                 "Post STATE_BASE_ADDRESS invalidate");
 
    assert(cmd_buffer->state.current_db_mode !=
           ANV_CMD_DESCRIPTOR_BUFFER_MODE_UNKNOWN);
@@ -429,10 +431,11 @@ genX(cmd_buffer_emit_bt_pool_base_address)(struct anv_cmd_buffer *cmd_buffer)
     * Prior to do the invalidation, we need a CS_STALL to ensure that all work
     * using surface states has completed.
     */
-   genx_batch_emit_pipe_control(&cmd_buffer->batch,
-                                cmd_buffer->device->info,
-                                cmd_buffer->state.current_pipeline,
-                                ANV_PIPE_CS_STALL_BIT);
+   genX(batch_emit_pipe_control)(&cmd_buffer->batch,
+                                 cmd_buffer->device->info,
+                                 cmd_buffer->state.current_pipeline,
+                                 ANV_PIPE_CS_STALL_BIT,
+                                 "pre BINDING_TABLE_POOL_ALLOC stall");
    anv_batch_emit(
       &cmd_buffer->batch, GENX(3DSTATE_BINDING_TABLE_POOL_ALLOC), btpa) {
       btpa.BindingTablePoolBaseAddress =
@@ -440,11 +443,12 @@ genX(cmd_buffer_emit_bt_pool_base_address)(struct anv_cmd_buffer *cmd_buffer)
       btpa.BindingTablePoolBufferSize = device->physical->va.binding_table_pool.size / 4096;
       btpa.MOCS = mocs;
    }
-   genx_batch_emit_pipe_control(&cmd_buffer->batch,
-                                cmd_buffer->device->info,
-                                cmd_buffer->state.current_pipeline,
-                                ANV_PIPE_TEXTURE_CACHE_INVALIDATE_BIT |
-                                ANV_PIPE_STATE_CACHE_INVALIDATE_BIT);
+   genX(batch_emit_pipe_control)(&cmd_buffer->batch,
+                                 cmd_buffer->device->info,
+                                 cmd_buffer->state.current_pipeline,
+                                 ANV_PIPE_TEXTURE_CACHE_INVALIDATE_BIT |
+                                 ANV_PIPE_STATE_CACHE_INVALIDATE_BIT,
+                                 "post BINDING_TABLE_POOL_ALLOC invalidate");
 
 #else /* GFX_VERx10 < 125 */
    genX(cmd_buffer_emit_state_base_address)(cmd_buffer);
@@ -1527,10 +1531,11 @@ genX(cmd_buffer_config_l3)(struct anv_cmd_buffer *cmd_buffer,
     * while the pipeline is completely drained and the caches are flushed,
     * which involves a first PIPE_CONTROL flush which stalls the pipeline...
     */
-   genx_batch_emit_pipe_control(&cmd_buffer->batch, cmd_buffer->device->info,
-                                cmd_buffer->state.current_pipeline,
-                                ANV_PIPE_DATA_CACHE_FLUSH_BIT |
-                                ANV_PIPE_CS_STALL_BIT);
+   genX(batch_emit_pipe_control)(&cmd_buffer->batch, cmd_buffer->device->info,
+                                 cmd_buffer->state.current_pipeline,
+                                 ANV_PIPE_DATA_CACHE_FLUSH_BIT |
+                                 ANV_PIPE_CS_STALL_BIT,
+                                 "L3 config pc0");
 
    /* ...followed by a second pipelined PIPE_CONTROL that initiates
     * invalidation of the relevant caches.  Note that because RO invalidation
@@ -1546,20 +1551,22 @@ genX(cmd_buffer_config_l3)(struct anv_cmd_buffer *cmd_buffer,
     * already guarantee that there is no concurrent GPGPU kernel execution
     * (see SKL HSD 2132585).
     */
-   genx_batch_emit_pipe_control(&cmd_buffer->batch, cmd_buffer->device->info,
-                                cmd_buffer->state.current_pipeline,
-                                ANV_PIPE_TEXTURE_CACHE_INVALIDATE_BIT |
-                                ANV_PIPE_CONSTANT_CACHE_INVALIDATE_BIT |
-                                ANV_PIPE_INSTRUCTION_CACHE_INVALIDATE_BIT |
-                                ANV_PIPE_STATE_CACHE_INVALIDATE_BIT);
+   genX(batch_emit_pipe_control)(&cmd_buffer->batch, cmd_buffer->device->info,
+                                 cmd_buffer->state.current_pipeline,
+                                 ANV_PIPE_TEXTURE_CACHE_INVALIDATE_BIT |
+                                 ANV_PIPE_CONSTANT_CACHE_INVALIDATE_BIT |
+                                 ANV_PIPE_INSTRUCTION_CACHE_INVALIDATE_BIT |
+                                 ANV_PIPE_STATE_CACHE_INVALIDATE_BIT,
+                                 "L3 config pc1");
 
    /* Now send a third stalling flush to make sure that invalidation is
     * complete when the L3 configuration registers are modified.
     */
-   genx_batch_emit_pipe_control(&cmd_buffer->batch, cmd_buffer->device->info,
-                                cmd_buffer->state.current_pipeline,
-                                ANV_PIPE_DATA_CACHE_FLUSH_BIT |
-                                ANV_PIPE_CS_STALL_BIT);
+   genX(batch_emit_pipe_control)(&cmd_buffer->batch, cmd_buffer->device->info,
+                                 cmd_buffer->state.current_pipeline,
+                                 ANV_PIPE_DATA_CACHE_FLUSH_BIT |
+                                 ANV_PIPE_CS_STALL_BIT,
+                                 "L3 config pc2");
 
    genX(emit_l3_config)(&cmd_buffer->batch, cmd_buffer->device, cfg);
 #endif /* GFX_VER >= 11 */
@@ -2677,8 +2684,9 @@ genX(batch_set_preemption)(struct anv_batch *batch,
    }
 
    /* Wa_16013994831 - we need to insert CS_STALL and 250 noops. */
-   genx_batch_emit_pipe_control(batch, device->info, current_pipeline,
-                                ANV_PIPE_CS_STALL_BIT);
+   genX(batch_emit_pipe_control)(batch, device->info, current_pipeline,
+                                 ANV_PIPE_CS_STALL_BIT,
+                                 "Wa_16013994831");
 
    for (unsigned i = 0; i < 250; i++)
       anv_batch_emit(batch, GENX(MI_NOOP), noop);
@@ -5343,10 +5351,11 @@ cmd_buffer_emit_depth_stencil(struct anv_cmd_buffer *cmd_buffer)
        * This also seems sufficient to handle Wa_14014097488 and
        * Wa_14016712196.
        */
-      genx_batch_emit_pipe_control_write(&cmd_buffer->batch, device->info,
-                                         cmd_buffer->state.current_pipeline,
-                                         WriteImmediateData,
-                                         device->workaround_address, 0, 0);
+      genX(batch_emit_pipe_control_write)(&cmd_buffer->batch, device->info,
+                                          cmd_buffer->state.current_pipeline,
+                                          WriteImmediateData,
+                                          device->workaround_address, 0, 0,
+                                          "Wa_1408224581/14014097488/14016712196");
    }
 
    if (info.depth_surf)
@@ -5395,10 +5404,11 @@ cmd_buffer_emit_cps_control_buffer(struct anv_cmd_buffer *cmd_buffer,
     * Emit dummy pipe control after state that sends implicit depth flush.
     */
    if (intel_needs_workaround(device->info, 14016712196)) {
-      genx_batch_emit_pipe_control_write(&cmd_buffer->batch, device->info,
-                                         cmd_buffer->state.current_pipeline,
-                                         WriteImmediateData,
-                                         device->workaround_address, 0, 0);
+      genX(batch_emit_pipe_control_write)(&cmd_buffer->batch, device->info,
+                                          cmd_buffer->state.current_pipeline,
+                                          WriteImmediateData,
+                                          device->workaround_address, 0, 0,
+                                          "Wa_14016712196");
    }
 
 #endif /* GFX_VERx10 >= 125 */
@@ -6240,12 +6250,13 @@ void genX(CmdSetEvent2)(
          pc_bits |= ANV_PIPE_CS_STALL_BIT;
       }
 
-      genx_batch_emit_pipe_control_write
+      genX(batch_emit_pipe_control_write)
          (&cmd_buffer->batch, cmd_buffer->device->info,
           cmd_buffer->state.current_pipeline, WriteImmediateData,
           anv_state_pool_state_address(&cmd_buffer->device->dynamic_state_pool,
                                        event->state),
-          VK_EVENT_SET, pc_bits);
+          VK_EVENT_SET, pc_bits,
+          "vkCmdSetEvent2");
       break;
    }
 
@@ -6285,13 +6296,14 @@ void genX(CmdResetEvent2)(
          pc_bits |= ANV_PIPE_CS_STALL_BIT;
       }
 
-      genx_batch_emit_pipe_control_write
+      genX(batch_emit_pipe_control_write)
          (&cmd_buffer->batch, cmd_buffer->device->info,
           cmd_buffer->state.current_pipeline, WriteImmediateData,
           anv_state_pool_state_address(&cmd_buffer->device->dynamic_state_pool,
                                        event->state),
           VK_EVENT_RESET,
-          pc_bits);
+          pc_bits,
+          "vkCmdResetEvent2");
       break;
    }
 
