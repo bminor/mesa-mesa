@@ -191,6 +191,9 @@ ac_emit_cp_release_mem_pws(struct ac_cmdbuf *cs, ASSERTED enum amd_gfx_level gfx
                            uint32_t gcr_cntl)
 {
    assert(gfx_level >= GFX11 && ip_type == AMD_IP_GFX);
+   /* Only GFX12+ supports GCR ops with PS_DONE & CS_DONE in RELEASE_MEM. */
+   assert(gfx_level >= GFX12 || !gcr_cntl || (event_type != V_028A90_PS_DONE &&
+                                              event_type != V_028A90_CS_DONE));
 
    /* Extract GCR_CNTL fields because the encoding is different in RELEASE_MEM. */
    assert(G_586_GLI_INV(gcr_cntl) == 0);
@@ -445,6 +448,10 @@ ac_emit_cp_release_mem(struct ac_cmdbuf *cs, enum amd_gfx_level gfx_level,
                        uint32_t int_sel, uint32_t data_sel, uint64_t va,
                        uint32_t new_fence, uint64_t eop_bug_va)
 {
+   /* Only GFX12+ supports GCR ops with PS_DONE & CS_DONE in RELEASE_MEM. */
+   assert(gfx_level >= GFX12 || !event_flags || (event != V_028A90_PS_DONE &&
+                                                 event != V_028A90_CS_DONE));
+
    const bool is_mec = gfx_level >= GFX7 && ip_type == AMD_IP_COMPUTE;
 
    /* GFX7 CP DMA: any use of CP_DMA.DST_SEL=TC must be avoided when EOS packets are used.
