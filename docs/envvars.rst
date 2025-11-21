@@ -606,6 +606,9 @@ Intel driver environment variables
       disable fast clears
    ``noccs``
       disable lossless color compression
+   ``no-resource-barrier``
+      disable RENDER_BARRIER instruction usage by falling back to
+      PIPE_CONTROL
    ``optimizer``
       dump shader assembly to files at each optimization pass and
       iteration that make progress (Gfx < 9)

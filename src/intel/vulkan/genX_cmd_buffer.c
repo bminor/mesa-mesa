@@ -1925,6 +1925,9 @@ can_use_resource_barrier(const struct intel_device_info *devinfo,
                          struct anv_address signal_addr,
                          struct anv_address wait_addr)
 {
+   if (INTEL_DEBUG(DEBUG_NO_RESOURCE_BARRIER))
+      return false;
+
    if (engine_class != INTEL_ENGINE_CLASS_RENDER &&
        engine_class != INTEL_ENGINE_CLASS_COMPUTE)
       return false;

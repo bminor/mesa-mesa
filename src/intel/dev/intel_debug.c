@@ -111,6 +111,7 @@ static const struct debug_control_bitset debug_control[] = {
    OPT1("task",              DEBUG_TASK),
    OPT1("mesh",              DEBUG_MESH),
    OPT1("stall",             DEBUG_STALL),
+   OPT1("no-resource-barrier", DEBUG_NO_RESOURCE_BARRIER),
    OPT1("capture-all",       DEBUG_CAPTURE_ALL),
    OPT1("perf-symbol-names", DEBUG_PERF_SYMBOL_NAMES),
    OPT1("swsb-stall",        DEBUG_SWSB_STALL),
