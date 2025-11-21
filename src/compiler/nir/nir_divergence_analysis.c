@@ -1587,12 +1587,14 @@ nir_vertex_divergence_analysis(nir_shader *shader)
 bool
 nir_has_divergent_loop(nir_shader *shader)
 {
-   nir_function_impl *func = nir_shader_get_entrypoint(shader);
+   nir_foreach_function_impl(impl, shader) {
+      nir_metadata_require(impl, nir_metadata_divergence);
 
-   foreach_list_typed(nir_cf_node, node, node, &func->body) {
-      if (node->type == nir_cf_node_loop) {
-         if (nir_cf_node_as_loop(node)->divergent_break)
-            return true;
+      foreach_list_typed(nir_cf_node, node, node, &impl->body) {
+         if (node->type == nir_cf_node_loop) {
+            if (nir_cf_node_as_loop(node)->divergent_break)
+               return true;
+         }
       }
    }
 
