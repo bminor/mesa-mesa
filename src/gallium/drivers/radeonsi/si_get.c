@@ -19,6 +19,7 @@
 #include <sys/utsname.h>
 #include "drm-uapi/drm.h"
 #include "aco_interface.h"
+#include "nir/nir_xfb_info.h"
 
 /* The capabilities reported by the kernel has priority
    over the existing logic in si_get_video_param */
@@ -754,6 +755,73 @@ static bool enable_mesh_shader(struct si_screen *sscreen)
       /* don't support LLVM */
       aco_is_gpu_supported(&sscreen->info) &&
       !(sscreen->debug_flags & DBG(USE_LLVM));
+}
+
+static bool can_lower_mediump_io(mesa_shader_stage prev_stage, bool prev_stage_has_xfb,
+                                 mesa_shader_stage next_stage, bool config_option)
+{
+   /* This is the filter that determines when mediump IO is lowered.
+    *
+    * NOTE: LLVM fails to compile this test if VS inputs are 16-bit:
+    * dEQP-GLES31.functional.shaders.builtin_functions.integer.bitfieldinsert.uvec3_lowp_geometry
+    */
+   return (prev_stage == MESA_SHADER_VERTEX && next_stage == MESA_SHADER_FRAGMENT &&
+           !prev_stage_has_xfb && config_option) ||
+          prev_stage == MESA_SHADER_FRAGMENT;
+}
+
+static bool si_alu_to_scalar_packed_math_filter(const nir_instr *instr, const void *data)
+{
+   if (instr->type == nir_instr_type_alu) {
+      nir_alu_instr *alu = nir_instr_as_alu(instr);
+
+      if (alu->def.bit_size == 16 && alu->def.num_components == 2 &&
+          ac_nir_op_supports_packed_math_16bit(alu)) {
+         /* ACO requires that all but the first bit of swizzle must be equal. */
+         for (unsigned i = 0; i < nir_op_infos[alu->op].num_inputs; i++) {
+            if ((alu->src[i].swizzle[0] >> 1) != (alu->src[i].swizzle[1] >> 1))
+               return true;
+         }
+         return false;
+      }
+   }
+
+   return true;
+}
+
+static void lower_mediump_io(nir_shader *nir, bool config_option)
+{
+   nir_variable_mode modes = 0;
+
+   if (can_lower_mediump_io(nir->info.stage, nir->xfb_info != NULL, nir->info.next_stage,
+                            config_option))
+      modes |= nir_var_shader_out;
+
+   if (can_lower_mediump_io(nir->info.prev_stage, nir->info.prev_stage_has_xfb, nir->info.stage,
+                            config_option))
+      modes |= nir_var_shader_in;
+
+   if (modes) {
+      bool progress = false;
+
+      NIR_PASS(progress, nir, nir_lower_mediump_io, modes,
+               VARYING_BIT_PNTC | BITFIELD64_RANGE(VARYING_SLOT_VAR0, 32), true);
+
+      /* Update xfb info after mediump IO lowering. */
+      if (progress && nir->xfb_info)
+         nir_gather_xfb_info_from_intrinsics(nir);
+   }
+   NIR_PASS(_, nir, nir_clear_mediump_io_flag);
+}
+
+static void si_lower_mediump_io_default(nir_shader *nir)
+{
+   lower_mediump_io(nir, false);
+}
+
+static void si_lower_mediump_io_option(nir_shader *nir)
+{
+   lower_mediump_io(nir, true);
 }
 
 void si_init_screen_get_functions(struct si_screen *sscreen)
