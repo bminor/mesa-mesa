@@ -8,20 +8,7 @@
 #include "nir_xfb_info.h"
 #include "si_pipe.h"
 #include "ac_nir.h"
-#include "aco_interface.h"
 #include "si_shader_internal.h"
-
-static uint8_t si_vectorize_callback(const nir_instr *instr, const void *data)
-{
-   if (instr->type != nir_instr_type_alu)
-      return 0;
-
-   nir_alu_instr *alu = nir_instr_as_alu(instr);
-   if (alu->def.bit_size != 16)
-      return 1;
-
-   return ac_nir_op_supports_packed_math_16bit(alu) ? 2 : 1;
-}
 
 void si_nir_opts(struct si_screen *sscreen, struct nir_shader *nir, bool has_array_temps)
 {
@@ -102,9 +89,6 @@ void si_nir_opts(struct si_screen *sscreen, struct nir_shader *nir, bool has_arr
 
       if (nir->info.stage == MESA_SHADER_FRAGMENT)
          NIR_PASS(_, nir, nir_opt_move_discards_to_top);
-
-      if (sscreen->info.cu_info.has_packed_math_16bit)
-         NIR_PASS(progress, nir, nir_opt_vectorize, si_vectorize_callback, NULL);
    } while (progress);
 
    NIR_PASS(_, nir, nir_lower_var_copies);
@@ -120,57 +104,6 @@ void si_nir_late_opts(nir_shader *nir)
       NIR_PASS(_, nir, nir_opt_copy_prop);
       NIR_PASS(_, nir, nir_opt_dce);
       NIR_PASS(_, nir, nir_opt_cse);
-   }
-}
-
-static void si_late_optimize_16bit_samplers(struct si_screen *sscreen, nir_shader *nir)
-{
-   /* Optimize types of image_sample sources and destinations.
-    *
-    * The image_sample sources bit sizes are:
-    *   nir_tex_src_coord:       a16 ? 16 : 32
-    *   nir_tex_src_comparator:  32
-    *   nir_tex_src_offset:      32
-    *   nir_tex_src_bias:        a16 ? 16 : 32
-    *   nir_tex_src_lod:         a16 ? 16 : 32
-    *   nir_tex_src_min_lod:     a16 ? 16 : 32
-    *   nir_tex_src_ms_index:    a16 ? 16 : 32
-    *   nir_tex_src_ddx:         has_g16 ? (g16 ? 16 : 32) : (a16 ? 16 : 32)
-    *   nir_tex_src_ddy:         has_g16 ? (g16 ? 16 : 32) : (a16 ? 16 : 32)
-    *
-    * We only use a16/g16 if all of the affected sources are 16bit.
-    */
-   bool has_g16 = sscreen->info.gfx_level >= GFX10;
-   struct nir_opt_tex_srcs_options opt_srcs_options[] = {
-      {
-         .sampler_dims =
-            ~(BITFIELD_BIT(GLSL_SAMPLER_DIM_CUBE) | BITFIELD_BIT(GLSL_SAMPLER_DIM_BUF)),
-         .src_types = (1 << nir_tex_src_coord) | (1 << nir_tex_src_lod) |
-                      (1 << nir_tex_src_bias) | (1 << nir_tex_src_min_lod) |
-                      (1 << nir_tex_src_ms_index) |
-                      (has_g16 ? 0 : (1 << nir_tex_src_ddx) | (1 << nir_tex_src_ddy)),
-      },
-      {
-         .sampler_dims = ~BITFIELD_BIT(GLSL_SAMPLER_DIM_CUBE),
-         .src_types = (1 << nir_tex_src_ddx) | (1 << nir_tex_src_ddy),
-      },
-   };
-   struct nir_opt_16bit_tex_image_options opt_16bit_options = {
-      .rounding_mode = nir_rounding_mode_undef,
-      .opt_tex_dest_types = nir_type_float | nir_type_int | nir_type_uint,
-      .opt_image_dest_types = nir_type_float | nir_type_int | nir_type_uint,
-      .integer_dest_saturates = true,
-      .opt_image_store_data = true,
-      .opt_image_srcs = true,
-      .opt_srcs_options_count = has_g16 ? 2 : 1,
-      .opt_srcs_options = opt_srcs_options,
-   };
-   bool changed = false;
-   NIR_PASS(changed, nir, nir_opt_16bit_tex_image, &opt_16bit_options);
-
-   if (changed) {
-      si_nir_opts(sscreen, nir, false);
-      si_nir_late_opts(nir);
    }
 }
 
@@ -264,9 +197,6 @@ static void si_lower_nir(struct si_screen *sscreen, struct nir_shader *nir)
    si_nir_opts(sscreen, nir, true);
    /* Run late optimizations to fuse ffma and eliminate 16-bit conversions. */
    si_nir_late_opts(nir);
-
-   if (sscreen->info.gfx_level >= GFX9)
-      si_late_optimize_16bit_samplers(sscreen, nir);
 
    NIR_PASS(_, nir, nir_remove_dead_variables, nir_var_function_temp, NULL);
 }
