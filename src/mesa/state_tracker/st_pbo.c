@@ -76,7 +76,7 @@ st_pbo_addresses_setup(struct st_context *st,
    addr->buffer = buf;
    addr->first_element = buf_offset;
    addr->last_element = buf_offset + skip_pixels + addr->width - 1
-         + (addr->height - 1 + (addr->depth - 1) * addr->image_height) * addr->pixels_per_row;
+         + (addr->height - 1 + (size_t)(addr->depth - 1) * addr->image_height) * addr->pixels_per_row;
 
    if (addr->last_element - addr->first_element > st->ctx->Const.MaxTextureBufferSize - 1)
       return false;

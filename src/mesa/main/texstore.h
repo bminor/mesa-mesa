@@ -124,11 +124,11 @@ _mesa_store_compressed_texsubimage(struct gl_context *ctx, GLuint dims,
                                    GLint xoffset, GLint yoffset, GLint zoffset,
                                    GLsizei width, GLsizei height, GLsizei depth,
                                    GLenum format,
-                                   GLsizei imageSize, const GLvoid *data);
+                                   size_t imageSize, const GLvoid *data);
 
 
 struct compressed_pixelstore {
-   int SkipBytes;
+   size_t SkipBytes;
    int CopyBytesPerRow;
    int CopyRowsPerSlice;
    int TotalBytesPerRow;

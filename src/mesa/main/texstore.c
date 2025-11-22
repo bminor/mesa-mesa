@@ -121,7 +121,7 @@ _mesa_memcpy_texture(struct gl_context *ctx,
       GLint img;
       for (img = 0; img < srcDepth; img++) {
          GLubyte *dstImage = dstSlices[img];
-         memcpy(dstImage, srcImage, bytesPerRow * srcHeight);
+         memcpy(dstImage, srcImage, (size_t)bytesPerRow * srcHeight);
          srcImage += srcImageStride;
       }
    }
@@ -768,7 +768,7 @@ texstore_rgba(TEXSTORE_PARAMS)
    if (!transferOpsDone &&
        _mesa_texstore_needs_transfer_ops(ctx, baseInternalFormat, dstFormat)) {
       /* Allocate RGBA float image */
-      int elementCount = srcWidth * srcHeight * srcDepth;
+      size_t elementCount = (size_t)srcWidth * srcHeight * srcDepth;
       tempRGBA = malloc(4 * elementCount * sizeof(float));
       if (!tempRGBA) {
          free(tempImage);
@@ -784,8 +784,8 @@ texstore_rgba(TEXSTORE_PARAMS)
          _mesa_format_convert(dst, RGBA32_FLOAT, 4 * srcWidth * sizeof(float),
                               src, srcMesaFormat, srcRowStride,
                               srcWidth, srcHeight, NULL);
-         src += srcHeight * srcRowStride;
-         dst += srcHeight * 4 * srcWidth * sizeof(float);
+         src += (size_t)srcHeight * srcRowStride;
+         dst += (size_t)srcHeight * 4 * srcWidth * sizeof(float);
       }
 
       /* Apply transferOps */
@@ -821,7 +821,7 @@ texstore_rgba(TEXSTORE_PARAMS)
                            src, srcMesaFormat, srcRowStride,
                            srcWidth, srcHeight,
                            needRebase ? rebaseSwizzle : NULL);
-      src += srcHeight * srcRowStride;
+      src += (size_t)srcHeight * srcRowStride;
    }
 
    free(tempImage);
@@ -1199,7 +1199,8 @@ _mesa_compute_compressed_pixelstore(GLuint dims, mesa_format texFormat,
 
       bh = packing->CompressedBlockHeight;
 
-      store->SkipBytes += packing->SkipRows * store->TotalBytesPerRow / bh;
+      store->SkipBytes += (size_t)packing->SkipRows *
+                          store->TotalBytesPerRow / bh;
       store->CopyRowsPerSlice = (height + bh - 1) / bh;  /* rows in blocks */
 
       if (packing->ImageHeight) {
@@ -1212,8 +1213,9 @@ _mesa_compute_compressed_pixelstore(GLuint dims, mesa_format texFormat,
 
       int bd = packing->CompressedBlockDepth;
 
-      store->SkipBytes += packing->SkipImages * store->TotalBytesPerRow *
-            store->TotalRowsPerSlice / bd;
+      store->SkipBytes += (size_t)packing->SkipImages *
+                          store->TotalBytesPerRow *
+                          store->TotalRowsPerSlice / bd;
    }
 }
 
@@ -1227,7 +1229,7 @@ _mesa_store_compressed_texsubimage(struct gl_context *ctx, GLuint dims,
                                    GLint xoffset, GLint yoffset, GLint zoffset,
                                    GLsizei width, GLsizei height, GLsizei depth,
                                    GLenum format,
-                                   GLsizei imageSize, const GLvoid *data)
+                                   size_t imageSize, const GLvoid *data)
 {
    struct compressed_pixelstore store;
    GLint dstRowStride;
@@ -1265,8 +1267,8 @@ _mesa_store_compressed_texsubimage(struct gl_context *ctx, GLuint dims,
          /* copy rows of blocks */
          if (dstRowStride == store.TotalBytesPerRow &&
              dstRowStride == store.CopyBytesPerRow) {
-            memcpy(dstMap, src, store.CopyBytesPerRow * store.CopyRowsPerSlice);
-            src += store.CopyBytesPerRow * store.CopyRowsPerSlice;
+            memcpy(dstMap, src, (size_t)store.CopyBytesPerRow * store.CopyRowsPerSlice);
+            src += (size_t)store.CopyBytesPerRow * store.CopyRowsPerSlice;
          }
          else {
             for (i = 0; i < store.CopyRowsPerSlice; i++) {
@@ -1279,8 +1281,8 @@ _mesa_store_compressed_texsubimage(struct gl_context *ctx, GLuint dims,
          st_UnmapTextureImage(ctx, texImage, slice + zoffset);
 
          /* advance to next slice */
-         src += store.TotalBytesPerRow * (store.TotalRowsPerSlice
-                                          - store.CopyRowsPerSlice);
+         src += (size_t)store.TotalBytesPerRow *
+                (store.TotalRowsPerSlice - store.CopyRowsPerSlice);
       }
       else {
          _mesa_error(ctx, GL_OUT_OF_MEMORY, "glCompressedTexSubImage%uD",

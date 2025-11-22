@@ -300,7 +300,7 @@ copy_to_staging_dest(struct gl_context * ctx, struct pipe_resource *dst,
 
       assert(util_format_is_compressed(src->format));
 
-      rgba = malloc(width * height * 4 * sizeof(GLfloat));
+      rgba = malloc((size_t)width * height * 4 * sizeof(GLfloat));
       if (!rgba) {
          goto end;
       }
@@ -545,7 +545,7 @@ compressed_tex_fallback_allocate(struct st_context *st,
       FREE(texImage->compressed_data);
    }
 
-   unsigned data_size = _mesa_format_image_size(texImage->TexFormat,
+   size_t data_size = _mesa_format_image_size(texImage->TexFormat,
                                                 texImage->Width2,
                                                 texImage->Height2,
                                                 texImage->Depth2);
@@ -768,7 +768,7 @@ st_UnmapTextureImage(struct gl_context *ctx,
                                                         texImage->pt->format);
          } else if (util_format_is_compressed(texImage->pt->format)) {
             /* Transcode into a different compressed format. */
-            unsigned size =
+            size_t size =
                _mesa_format_image_size(PIPE_FORMAT_R8G8B8A8_UNORM,
                                        transfer->box.width,
                                        transfer->box.height, 1);
@@ -2456,7 +2456,7 @@ st_CompressedTexSubImage(struct gl_context *ctx, GLuint dims,
                          struct gl_texture_image *texImage,
                          GLint x, GLint y, GLint z,
                          GLsizei w, GLsizei h, GLsizei d,
-                         GLenum format, GLsizei imageSize, const void *data)
+                         GLenum format, size_t imageSize, const void *data)
 {
    struct st_context *st = st_context(ctx);
    struct gl_texture_image *stImage = texImage;
@@ -2578,7 +2578,7 @@ st_CompressedTexSubImage(struct gl_context *ctx, GLuint dims,
          /* By incrementing layer here, we ensure the fallback only uploads
          * layers we failed to upload.
          */
-         buf_offset += addr.pixels_per_row * addr.image_height;
+         buf_offset += (size_t)addr.pixels_per_row * addr.image_height;
          layer++;
          addr.depth--;
       }
@@ -2600,7 +2600,7 @@ fallback:
 void
 st_CompressedTexImage(struct gl_context *ctx, GLuint dims,
                       struct gl_texture_image *texImage,
-                      GLsizei imageSize, const void *data)
+                      size_t imageSize, const void *data)
 {
    prep_teximage(ctx, texImage, GL_NONE, GL_NONE);
 
@@ -2900,7 +2900,7 @@ fallback_copy_texsubimage(struct gl_context *ctx,
    else {
       /* RGBA format */
       GLfloat *tempSrc =
-         malloc(width * height * 4 * sizeof(GLfloat));
+         malloc((size_t)width * height * 4 * sizeof(GLfloat));
 
       if (tempSrc) {
          const GLint dims = 2;
