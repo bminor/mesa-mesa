@@ -1112,16 +1112,16 @@ static void si_postprocess_nir(struct si_nir_shader_ctx *ctx)
 
    si_nir_late_opts(nir);
 
-   NIR_PASS(progress, nir, nir_opt_sink,
+   NIR_PASS(_, nir, nir_opt_sink,
             nir_move_const_undef | nir_move_copies | nir_move_alu | nir_move_comparisons |
             nir_move_load_ubo | nir_move_load_ssbo);
-   NIR_PASS(progress, nir, nir_opt_move,
+   NIR_PASS(_, nir, nir_opt_move,
             nir_move_const_undef | nir_move_copies | nir_move_alu | nir_move_comparisons |
             nir_move_load_ubo);
    /* Run nir_opt_move again to make sure that comparisons are as close as possible to the first
     * use to prevent SCC spilling.
     */
-   NIR_PASS(progress, nir, nir_opt_move, nir_move_comparisons);
+   NIR_PASS(_, nir, nir_opt_move, nir_move_comparisons);
 
    /* This must be done after si_nir_late_opts() because it may generate vec const. */
    NIR_PASS(_, nir, nir_lower_load_const_to_scalar);
