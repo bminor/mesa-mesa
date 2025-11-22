@@ -118,10 +118,6 @@ emit_local_vars(struct nir_to_msl_ctx *ctx, nir_shader *shader)
          P_IND(ctx, "uchar scratch[%d] = {0};\n", shader->scratch_size);
       }
    }
-   if (BITSET_TEST(shader->info.system_values_read,
-                   SYSTEM_VALUE_HELPER_INVOCATION)) {
-      P_IND(ctx, "bool gl_HelperInvocation = simd_is_helper_thread();\n");
-   }
 }
 
 static bool
@@ -969,9 +965,6 @@ intrinsic_to_msl(struct nir_to_msl_ctx *ctx, nir_intrinsic_instr *instr)
       P(ctx, "gl_BaseInstance;\n");
       break;
    case nir_intrinsic_load_helper_invocation:
-      P(ctx, "gl_HelperInvocation;\n");
-      break;
-   case nir_intrinsic_is_helper_invocation:
       P(ctx, "simd_is_helper_thread();\n");
       break;
    case nir_intrinsic_ddx:
@@ -1860,12 +1853,19 @@ msl_preprocess_nir(struct nir_shader *nir)
 
    NIR_PASS(_, nir, nir_lower_vars_to_ssa);
    NIR_PASS(_, nir, nir_remove_dead_variables, nir_var_function_temp, NULL);
+
+   /* lower_system_values needs to go before is_helper_invocation since it will
+    * generate discards. */
+   NIR_PASS(_, nir, nir_lower_system_values);
+
    if (nir->info.stage == MESA_SHADER_FRAGMENT) {
       nir_input_attachment_options input_attachment_options = {
          .use_fragcoord_sysval = true,
          .use_layer_id_sysval = true,
       };
       NIR_PASS(_, nir, nir_lower_input_attachments, &input_attachment_options);
+      /* KK_WORKAROUND_4 */
+      NIR_PASS(_, nir, nir_lower_is_helper_invocation);
    }
    NIR_PASS(_, nir, nir_opt_combine_barriers, NULL, NULL);
    NIR_PASS(_, nir, nir_lower_var_copies);
@@ -1880,8 +1880,6 @@ msl_preprocess_nir(struct nir_shader *nir)
    NIR_PASS(_, nir, nir_lower_vars_to_scratch, nir_var_function_temp, 0,
             glsl_get_natural_size_align_bytes,
             glsl_get_natural_size_align_bytes);
-
-   NIR_PASS(_, nir, nir_lower_system_values);
 
    nir_lower_compute_system_values_options csv_options = {
       .has_base_global_invocation_id = 0,

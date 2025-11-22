@@ -49,6 +49,22 @@ info on what was updated.
 Workarounds
 ===========
 
+KK_WORKAROUND_4
+---------------
+| macOS version: 26.0.1
+| Metal ticket: FB21124215 (@aitor)
+| Metal ticket status: Waiting resolution
+| CTS test failure: ``dEQP-VK.draw.renderpass.shader_invocation.helper_invocation*`` and few others
+| Comments:
+
+``simd_is_helper_thread()`` will always return true if the shader was started
+as a non-helper thread, even after ``discard_fragment()`` is called. The
+workaround is to have a variable tracking this state and update it when the
+fragment is discarded. This issue is present in M1 and M2 chips.
+
+| Log:
+| 2025-11-22: Workaround implemented and reported to Apple
+
 KK_WORKAROUND_3
 ---------------
 | macOS version: 15.4.x
