@@ -1080,6 +1080,7 @@ static void si_postprocess_nir(struct si_nir_shader_ctx *ctx)
    /* Global access lowering must be called after lowering ABI which emits regular load_global intrinsics. */
    NIR_PASS(progress, nir, ac_nir_lower_global_access);
    NIR_PASS(progress, nir, nir_lower_int64);
+   NIR_PASS(progress, nir, nir_lower_fp16_casts, nir_lower_fp16_split_fp64);
 
    NIR_PASS(progress, nir, ac_nir_lower_intrinsics_to_args, sel->screen->info.gfx_level,
             sel->screen->info.has_ls_vgpr_init_bug,
