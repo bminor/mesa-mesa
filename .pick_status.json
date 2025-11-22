@@ -3344,7 +3344,7 @@
         "description": "freedreno/a6xx: Fix UB in convert_color()",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "76e350671f3ba2d8ccbe6851de868d8897a8bb98",
         "notes": null
