@@ -107,24 +107,6 @@ void si_nir_late_opts(nir_shader *nir)
    }
 }
 
-/**
- * Perform "lowering" operations on the NIR that are run once when the shader
- * selector is created.
- */
-static void si_lower_nir(struct si_screen *sscreen, struct nir_shader *nir)
-{
-   NIR_PASS(_, nir, nir_lower_load_const_to_scalar);
-   NIR_PASS(_, nir, nir_lower_var_copies);
-   NIR_PASS(_, nir, nir_opt_intrinsics);
-   NIR_PASS(_, nir, nir_lower_system_values);
-
-   si_nir_opts(sscreen, nir, true);
-   /* Run late optimizations to fuse ffma and eliminate 16-bit conversions. */
-   si_nir_late_opts(nir);
-
-   NIR_PASS(_, nir, nir_remove_dead_variables, nir_var_function_temp, NULL);
-}
-
 void si_finalize_nir(struct pipe_screen *screen, struct nir_shader *nir,
                      bool optimize)
 {
@@ -145,8 +127,25 @@ void si_finalize_nir(struct pipe_screen *screen, struct nir_shader *nir,
       NIR_PASS(_, nir, nir_recompute_io_bases, nir_var_shader_in | nir_var_shader_out);
    }
 
-   /* Remove dead derefs, so that we can remove uniforms. */
-   NIR_PASS(_, nir, nir_opt_dce);
+   if (optimize) {
+      si_nir_opts(sscreen, nir, true);
+      /* This reduces code size for some shaders. */
+      si_nir_late_opts(nir);
+   } else {
+      /* These are needed to prevent regressing Max Waves 16 -> 8 for alien_isolation/832.shader_test. */
+      NIR_PASS(_, nir, nir_lower_alu_to_scalar, nir->options->lower_to_scalar_filter, NULL);
+      NIR_PASS(_, nir, nir_opt_copy_prop);
+      /* nir_find_inlinable_uniforms can't find anything without these. */
+      NIR_PASS(_, nir, nir_opt_algebraic);
+      NIR_PASS(_, nir, nir_opt_constant_folding);
+      /* This reduces code size for some shaders. */
+      NIR_PASS(_, nir, nir_opt_algebraic_late);
+      /* Not sure why we need this, but it returns progress. */
+      NIR_PASS(_, nir, nir_opt_dce);
+   }
+
+   NIR_PASS_ASSERT_NO_PROGRESS(nir, nir_opt_intrinsics);
+   NIR_PASS_ASSERT_NO_PROGRESS(nir, nir_lower_system_values);
 
    /* Remove uniforms because those should have been lowered to UBOs already. */
    nir_foreach_variable_with_modes_safe(var, nir, nir_var_uniform) {
@@ -156,7 +155,6 @@ void si_finalize_nir(struct pipe_screen *screen, struct nir_shader *nir,
          exec_node_remove(&var->node);
    }
 
-   si_lower_nir(sscreen, nir);
    nir_shader_gather_info(nir, nir_shader_get_entrypoint(nir));
 
    if (sscreen->options.inline_uniforms)
