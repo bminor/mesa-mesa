@@ -57,6 +57,10 @@ st_pbo_addresses_setup(struct st_context *st,
 {
    unsigned skip_pixels;
 
+   /* image_size is int32_t */
+   if ((size_t)addr->pixels_per_row * addr->image_height > INT32_MAX)
+      return false;
+
    /* Check alignment against texture buffer requirements. */
    {
       unsigned ofs = (buf_offset * addr->bytes_per_pixel) % st->ctx->Const.TextureBufferOffsetAlignment;
