@@ -867,6 +867,9 @@ convert_color(enum pipe_format format, union pipe_color_union *pcolor)
    for (unsigned i = 0; i < 4; i++) {
       unsigned channel = desc->swizzle[i];
 
+      if (channel >= 4) /* PIPE_SWIZZLE_0/_1 */
+         continue;
+
       if (desc->channel[channel].normalized)
          continue;
 
