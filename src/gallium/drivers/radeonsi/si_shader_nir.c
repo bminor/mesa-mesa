@@ -179,12 +179,6 @@ static void si_lower_nir(struct si_screen *sscreen, struct nir_shader *nir)
    NIR_PASS(_, nir, nir_opt_intrinsics);
    NIR_PASS(_, nir, nir_lower_system_values);
 
-   if (nir->info.stage == MESA_SHADER_TASK) {
-      NIR_PASS(_, nir, ac_nir_lower_task_outputs_to_mem, false);
-   } else if (nir->info.stage == MESA_SHADER_MESH) {
-      NIR_PASS(_, nir, ac_nir_lower_mesh_inputs_to_mem);
-   }
-
    si_nir_opts(sscreen, nir, true);
    /* Run late optimizations to fuse ffma and eliminate 16-bit conversions. */
    si_nir_late_opts(nir);
