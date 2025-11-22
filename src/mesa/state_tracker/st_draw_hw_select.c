@@ -647,7 +647,8 @@ hw_select_create_gs(struct st_context *st, union state_key state)
       UNREACHABLE("unexpected primitive");
    }
 
-   nir_lower_returns(nir);
+   NIR_PASS(_, nir, nir_lower_returns);
+   NIR_PASS(_, nir, nir_opt_intrinsics);
 
    return st_nir_finish_builtin_shader(st, nir);
 }
