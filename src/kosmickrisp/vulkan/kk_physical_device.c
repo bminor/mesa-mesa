@@ -70,7 +70,7 @@ kk_get_device_extensions(const struct kk_instance *instance,
       .KHR_driver_properties = true,
       .KHR_image_format_list = true,
       .KHR_imageless_framebuffer = true,
-      .KHR_sampler_mirror_clamp_to_edge = false,
+      .KHR_sampler_mirror_clamp_to_edge = true,
       .KHR_separate_depth_stencil_layouts = true,
       .KHR_shader_atomic_int64 = false,
       .KHR_shader_float_controls = true,
@@ -148,6 +148,7 @@ kk_get_device_features(
 {
    *features = (struct vk_features){
       /* Vulkan 1.0 */
+      .alphaToOne = true,
       .depthClamp = true,
       .drawIndirectFirstInstance = true,
       .dualSrcBlend = true,
@@ -188,6 +189,10 @@ kk_get_device_features(
       .samplerYcbcrConversion = true,
       .shaderDrawParameters = true,
       .storageBuffer16BitAccess = true,
+      /* TODO KOSMICKRISP
+       * Disabled due to failing tests (vertex fragment interface mismatch):
+       * dEQP-VK.spirv_assembly.instruction.graphics.16bit_storage.*
+       */
       .storageInputOutput16 = false,
       .storagePushConstant16 = true,
       .uniformAndStorageBuffer16BitAccess = true,
@@ -210,6 +215,7 @@ kk_get_device_features(
       .imagelessFramebuffer = true,
       .multiDrawIndirect = true,
       .runtimeDescriptorArray = true,
+      .samplerMirrorClampToEdge = true,
       .scalarBlockLayout = true,
       .separateDepthStencilLayouts = true,
       /* TODO_KOSMICKRISP shaderFloat16
@@ -235,8 +241,11 @@ kk_get_device_features(
       .shaderOutputViewportIndex = true,
       .shaderSampledImageArrayNonUniformIndexing = true,
       .shaderStorageBufferArrayNonUniformIndexing = true,
+      .shaderStorageImageArrayNonUniformIndexing = true,
       .shaderStorageTexelBufferArrayDynamicIndexing = true,
+      .shaderStorageTexelBufferArrayNonUniformIndexing = true,
       .shaderSubgroupExtendedTypes = true,
+      .shaderUniformBufferArrayNonUniformIndexing = true,
       .shaderUniformTexelBufferArrayDynamicIndexing = true,
       .shaderUniformTexelBufferArrayNonUniformIndexing = true,
       .storageBuffer8BitAccess = true,
