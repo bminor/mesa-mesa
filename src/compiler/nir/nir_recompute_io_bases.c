@@ -68,13 +68,19 @@ bool
 nir_recompute_io_bases(nir_shader *nir, nir_variable_mode modes)
 {
    nir_function_impl *impl = nir_shader_get_entrypoint(nir);
+   bool make_colors_last = nir->options->io_options &
+                           nir_io_assign_color_input_bases_after_all_other_inputs;
 
    BITSET_DECLARE(inputs, NUM_TOTAL_VARYING_SLOTS);
    BITSET_DECLARE(per_prim_inputs, NUM_TOTAL_VARYING_SLOTS);  /* FS only */
+   /* radeonsi prefers color inputs to be last. */
+   BITSET_DECLARE(color_inputs, 2); /* VARYING_SLOT_COL{0,1}, FS only */
    BITSET_DECLARE(dual_slot_inputs, NUM_TOTAL_VARYING_SLOTS); /* VS only */
    BITSET_DECLARE(outputs, NUM_TOTAL_VARYING_SLOTS);
+
    BITSET_ZERO(inputs);
    BITSET_ZERO(per_prim_inputs);
+   BITSET_ZERO(color_inputs);
    BITSET_ZERO(dual_slot_inputs);
    BITSET_ZERO(outputs);
 
@@ -109,6 +115,11 @@ nir_recompute_io_bases(nir_shader *nir, nir_variable_mode modes)
                      location == VARYING_SLOT_VIEWPORT ||
                      location == VARYING_SLOT_LAYER)))
                   BITSET_SET(per_prim_inputs, location);
+               else if (make_colors_last &&
+                        nir->info.stage == MESA_SHADER_FRAGMENT &&
+                        (location == VARYING_SLOT_COL0 ||
+                         location == VARYING_SLOT_COL1))
+                  BITSET_SET(color_inputs, location - VARYING_SLOT_COL0);
                else
                   BITSET_SET(inputs, location);
 
@@ -122,7 +133,11 @@ nir_recompute_io_bases(nir_shader *nir, nir_variable_mode modes)
       }
    }
 
-   const unsigned num_normal_inputs = BITSET_COUNT(inputs) + BITSET_COUNT(dual_slot_inputs);
+   const unsigned num_normal_inputs = BITSET_COUNT(inputs) +
+                                      BITSET_COUNT(dual_slot_inputs) +
+                                      BITSET_COUNT(color_inputs);
+   assert(nir->info.stage == MESA_SHADER_FRAGMENT ||
+          BITSET_COUNT(color_inputs) == 0);
 
    /* Renumber bases. */
    bool changed = false;
@@ -144,6 +159,14 @@ nir_recompute_io_bases(nir_shader *nir, nir_variable_mode modes)
                nir_intrinsic_set_base(intr,
                                       num_normal_inputs +
                                          BITSET_PREFIX_SUM(per_prim_inputs, sem.location));
+            } else if (make_colors_last &&
+                       nir->info.stage == MESA_SHADER_FRAGMENT &&
+                       (sem.location == VARYING_SLOT_COL0 ||
+                        sem.location == VARYING_SLOT_COL1)) {
+               nir_intrinsic_set_base(intr,
+                                      BITSET_COUNT(inputs) +
+                                      BITSET_PREFIX_SUM(color_inputs,
+                                                        sem.location - VARYING_SLOT_COL0));
             } else {
                nir_intrinsic_set_base(intr,
                                       BITSET_PREFIX_SUM(inputs, sem.location) +
@@ -164,7 +187,8 @@ nir_recompute_io_bases(nir_shader *nir, nir_variable_mode modes)
    nir_progress(changed, impl, nir_metadata_control_flow);
 
    if (modes & nir_var_shader_in)
-      nir->num_inputs = BITSET_COUNT(inputs) + BITSET_COUNT(per_prim_inputs);
+      nir->num_inputs = BITSET_COUNT(inputs) + BITSET_COUNT(color_inputs) +
+                        BITSET_COUNT(per_prim_inputs);
    if (modes & nir_var_shader_out)
       nir->num_outputs = BITSET_COUNT(outputs);
 

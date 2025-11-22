@@ -200,6 +200,12 @@ typedef enum {
     */
    nir_io_radv_intrinsic_component_workaround = BITFIELD_BIT(10),
 
+   /**
+    * nir_recompute_io_bases will assign VARYING_SLOT_COL0-1 such that
+    * their bases are after all other inputs.
+    */
+   nir_io_assign_color_input_bases_after_all_other_inputs = BITFIELD_BIT(11),
+
    /* Options affecting the GLSL compiler or Gallium are below. */
 
    /**
