@@ -12,11 +12,9 @@ bool si_nir_lower_color_inputs_to_sysvals(nir_shader *nir)
 
    /* Both flat and non-flat can occur with nir_io_mix_convergent_flat_with_interpolated,
     * but we want to save only the non-flat interp mode in that case.
-    *
-    * Start with flat and set to non-flat only if it's present.
     */
-   nir->info.fs.color0_interp = INTERP_MODE_FLAT;
-   nir->info.fs.color1_interp = INTERP_MODE_FLAT;
+   bool color0_interp_mode_set = false;
+   bool color1_interp_mode_set = false;
 
    nir_builder b = nir_builder_create(impl);
 
@@ -61,17 +59,21 @@ bool si_nir_lower_color_inputs_to_sysvals(nir_shader *nir)
 
          if (sem.location == VARYING_SLOT_COL0) {
             load = nir_load_color0(&b);
-            if (interp != INTERP_MODE_FLAT)
+            /* If both flat and non-flat are used, set non-flat. */
+            if (!color0_interp_mode_set || interp != INTERP_MODE_FLAT)
                nir->info.fs.color0_interp = interp;
             nir->info.fs.color0_sample = sample;
             nir->info.fs.color0_centroid = centroid;
+            color0_interp_mode_set = true;
          } else {
             assert(sem.location == VARYING_SLOT_COL1);
             load = nir_load_color1(&b);
-            if (interp != INTERP_MODE_FLAT)
+            /* If both flat and non-flat are used, set non-flat. */
+            if (!color1_interp_mode_set || interp != INTERP_MODE_FLAT)
                nir->info.fs.color1_interp = interp;
             nir->info.fs.color1_sample = sample;
             nir->info.fs.color1_centroid = centroid;
+            color1_interp_mode_set = true;
          }
 
          if (intrin->num_components != 4) {
