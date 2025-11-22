@@ -102,6 +102,10 @@ static void scan_io_usage(const nir_shader *nir, struct si_shader_info *info,
       semantic = nir_intrinsic_io_semantics(intr).location;
 
    if (nir->info.stage == MESA_SHADER_FRAGMENT && is_input) {
+      assert(semantic != VARYING_SLOT_POS);
+      assert(semantic != VARYING_SLOT_FACE);
+      assert(semantic != VARYING_SLOT_LAYER);
+
       /* Gather color PS inputs. We can only get here after lowering colors in monolithic
        * shaders. This must match what we do for nir_intrinsic_load_color0/1.
        */
