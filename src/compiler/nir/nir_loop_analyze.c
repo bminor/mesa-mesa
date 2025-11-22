@@ -418,46 +418,69 @@ find_array_access_via_induction(loop_info_state *state,
    return 0;
 }
 
+static void
+guess_loop_limit_by_intrinsic(loop_info_state *state, nir_intrinsic_instr *intrin, unsigned *min_loop_count)
+{
+   /* Check for arrays variably-indexed by a loop induction variable. */
+   if (intrin->intrinsic == nir_intrinsic_load_deref ||
+       intrin->intrinsic == nir_intrinsic_store_deref ||
+       intrin->intrinsic == nir_intrinsic_copy_deref) {
+
+      nir_loop_induction_variable *array_idx = NULL;
+      unsigned array_size =
+         find_array_access_via_induction(state,
+                                         nir_src_as_deref(intrin->src[0]),
+                                         &array_idx);
+      if (array_idx)
+         *min_loop_count = MIN2(*min_loop_count, array_size);
+
+      if (intrin->intrinsic == nir_intrinsic_copy_deref) {
+         array_size =
+            find_array_access_via_induction(state,
+                                            nir_src_as_deref(intrin->src[1]),
+                                            &array_idx);
+         if (array_idx)
+            *min_loop_count = MIN2(*min_loop_count, array_size);
+      }
+   }
+}
+
+static void
+guess_loop_limit_by_tex(loop_info_state *state, nir_tex_instr *tex, unsigned *min_loop_count)
+{
+   nir_def *sample = nir_get_tex_src(tex, nir_tex_src_ms_index);
+   if (sample) {
+      nir_loop_induction_variable *var = get_loop_var(sample, state);
+      if (var) {
+         const nir_function_impl *impl = nir_cf_node_get_function(&state->loop->cf_node);
+         const nir_shader_compiler_options *options = impl->function->shader->options;
+         *min_loop_count = MIN2(*min_loop_count, options->max_samples);
+      }
+   }
+}
+
 static unsigned
 guess_loop_limit(loop_info_state *state)
 {
-   unsigned min_array_size = UINT_MAX;
+   unsigned min_loop_count = UINT_MAX;
 
    nir_foreach_block_in_cf_node(block, &state->loop->cf_node) {
       nir_foreach_instr(instr, block) {
-         if (instr->type != nir_instr_type_intrinsic)
-            continue;
-
-         nir_intrinsic_instr *intrin = nir_instr_as_intrinsic(instr);
-
-         /* Check for arrays variably-indexed by a loop induction variable. */
-         if (intrin->intrinsic == nir_intrinsic_load_deref ||
-             intrin->intrinsic == nir_intrinsic_store_deref ||
-             intrin->intrinsic == nir_intrinsic_copy_deref) {
-
-            nir_loop_induction_variable *array_idx = NULL;
-            unsigned array_size =
-               find_array_access_via_induction(state,
-                                               nir_src_as_deref(intrin->src[0]),
-                                               &array_idx);
-            if (array_idx)
-               min_array_size = MIN2(min_array_size, array_size);
-
-            if (intrin->intrinsic != nir_intrinsic_copy_deref)
-               continue;
-
-            array_size =
-               find_array_access_via_induction(state,
-                                               nir_src_as_deref(intrin->src[1]),
-                                               &array_idx);
-            if (array_idx)
-               min_array_size = MIN2(min_array_size, array_size);
+         switch (instr->type) {
+         case nir_instr_type_intrinsic:
+            guess_loop_limit_by_intrinsic(state, nir_instr_as_intrinsic(instr), &min_loop_count);
+            break;
+         case nir_instr_type_tex:
+            guess_loop_limit_by_tex(state, nir_instr_as_tex(instr), &min_loop_count);
+            break;
+         default:
+            break;
          }
       }
    }
 
-   if (min_array_size != UINT_MAX)
-      return min_array_size;
+   if (min_loop_count != UINT_MAX)
+      return min_loop_count;
    else
       return 0;
 }
