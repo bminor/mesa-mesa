@@ -720,6 +720,9 @@ void si_nir_scan_shader(struct si_screen *sscreen, struct nir_shader *nir,
             info->colors_written_4bit |= 0xf << (4 * i);
 
       for (unsigned i = 0; i < info->num_inputs; i++) {
+         /* If any FS input is POS (0), the input slot is unused, which should never happen. */
+         assert(info->input_semantic[i] != VARYING_SLOT_POS);
+
          if (info->input_semantic[i] == VARYING_SLOT_COL0)
             info->color_attr_index[0] = i;
          else if (info->input_semantic[i] == VARYING_SLOT_COL1)
