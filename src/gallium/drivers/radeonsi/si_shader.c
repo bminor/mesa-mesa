@@ -791,6 +791,12 @@ static void si_preprocess_nir(struct si_nir_shader_ctx *ctx)
    NIR_PASS(progress, nir, nir_opt_shrink_stores, false);
 
    if (nir->info.stage == MESA_SHADER_FRAGMENT) {
+      /* TODO: This doesn't have to be done for monolithic shaders because
+       * si_nir_lower_ps_color_inputs mostly reverts it.
+       */
+      if (sel->info.colors_read)
+         NIR_PASS(progress, nir, si_nir_lower_color_inputs_to_sysvals);
+
       /* This uses the prolog/epilog keys, so only monolithic shaders can call this. */
       if (shader->is_monolithic) {
          /* This lowers load_color intrinsics to COLn/BFCn input loads and two-side color

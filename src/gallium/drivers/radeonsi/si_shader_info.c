@@ -60,8 +60,48 @@ static const nir_src *get_texture_src(nir_tex_instr *instr, nir_tex_src_type typ
    return NULL;
 }
 
+static void
+get_interp_info_from_input_load(nir_intrinsic_instr *intr, enum glsl_interp_mode *interp_mode,
+                                unsigned *interp_location)
+{
+   assert(nir_is_input_load(intr));
+
+   *interp_mode = INTERP_MODE_FLAT;
+   *interp_location = TGSI_INTERPOLATE_LOC_CENTER;
+
+   if (intr->intrinsic != nir_intrinsic_load_interpolated_input)
+      return;
+
+   unsigned io_location = nir_intrinsic_io_semantics(intr).location;
+   nir_intrinsic_instr *baryc = nir_def_as_intrinsic(intr->src[0].ssa);
+   *interp_mode = nir_intrinsic_interp_mode(baryc);
+   bool is_color = io_location == VARYING_SLOT_COL0 || io_location == VARYING_SLOT_COL1;
+
+   if (*interp_mode == INTERP_MODE_NONE && is_color)
+      *interp_mode = INTERP_MODE_COLOR;
+
+   switch (baryc->intrinsic) {
+   case nir_intrinsic_load_barycentric_pixel:
+      *interp_location = TGSI_INTERPOLATE_LOC_CENTER;
+      break;
+   case nir_intrinsic_load_barycentric_centroid:
+      *interp_location = TGSI_INTERPOLATE_LOC_CENTROID;
+      break;
+   case nir_intrinsic_load_barycentric_sample:
+      *interp_location = TGSI_INTERPOLATE_LOC_SAMPLE;
+      break;
+   case nir_intrinsic_load_barycentric_at_offset:
+   case nir_intrinsic_load_barycentric_at_sample:
+      assert(!is_color);
+      *interp_location = TGSI_INTERPOLATE_LOC_CENTER;
+      break;
+   default:
+      UNREACHABLE("unexpected baryc intrinsic");
+   }
+}
+
 static void gather_io_instrinsic(const nir_shader *nir, struct si_shader_info *info,
-                                 nir_intrinsic_instr *intr, bool is_input, bool colors_lowered)
+                                 nir_intrinsic_instr *intr, bool is_input)
 {
    unsigned mask, bit_size;
    bool is_output_load;
@@ -106,15 +146,59 @@ static void gather_io_instrinsic(const nir_shader *nir, struct si_shader_info *i
       assert(semantic != VARYING_SLOT_FACE);
       assert(semantic != VARYING_SLOT_LAYER);
 
-      /* Gather color PS inputs. We can only get here after lowering colors in monolithic
-       * shaders. This must match what we do for nir_intrinsic_load_color0/1.
-       */
-      if (!colors_lowered &&
-          (semantic == VARYING_SLOT_COL0 || semantic == VARYING_SLOT_COL1 ||
-           semantic == VARYING_SLOT_BFC0 || semantic == VARYING_SLOT_BFC1)) {
-         unsigned index = semantic == VARYING_SLOT_COL1 || semantic == VARYING_SLOT_BFC1;
+      if (semantic == VARYING_SLOT_COL0 || semantic == VARYING_SLOT_COL1) {
+         unsigned index = semantic == VARYING_SLOT_COL1;
          info->colors_read |= mask << (index * 4);
-         return;
+
+         enum glsl_interp_mode interp_mode;
+         unsigned interp_location;
+         get_interp_info_from_input_load(intr, &interp_mode, &interp_location);
+
+         /* Both flat and non-flat can occur with nir_io_mix_convergent_flat_with_interpolated,
+          * but we want to save only the non-flat interp mode in that case.
+          *
+          * We start with flat and set to non-flat only if it's present.
+          */
+         if (interp_mode != INTERP_MODE_FLAT) {
+            info->color_interpolate[index] = interp_mode;
+            info->color_interpolate_loc[index] = interp_location;
+         }
+
+         switch (interp_mode) {
+         case INTERP_MODE_SMOOTH:
+            if (interp_location == TGSI_INTERPOLATE_LOC_SAMPLE)
+               info->uses_sysval_persp_sample = true;
+            else if (interp_location == TGSI_INTERPOLATE_LOC_CENTROID)
+               info->uses_sysval_persp_centroid = true;
+            else if (interp_location == TGSI_INTERPOLATE_LOC_CENTER)
+               info->uses_sysval_persp_center = true;
+            break;
+         case INTERP_MODE_NOPERSPECTIVE:
+            if (interp_location == TGSI_INTERPOLATE_LOC_SAMPLE)
+               info->uses_sysval_linear_sample = true;
+            else if (interp_location == TGSI_INTERPOLATE_LOC_CENTROID)
+               info->uses_sysval_linear_centroid = true;
+            else if (interp_location == TGSI_INTERPOLATE_LOC_CENTER)
+               info->uses_sysval_linear_center = true;
+            break;
+         case INTERP_MODE_COLOR:
+            /* We don't know the final value. This will be FLAT if flatshading is enabled
+             * in the rasterizer state, otherwise it will be SMOOTH.
+             */
+            info->uses_interp_color = true;
+            if (interp_location == TGSI_INTERPOLATE_LOC_SAMPLE)
+               info->uses_persp_sample_color = true;
+            else if (interp_location == TGSI_INTERPOLATE_LOC_CENTROID)
+               info->uses_persp_centroid_color = true;
+            else if (interp_location == TGSI_INTERPOLATE_LOC_CENTER)
+               info->uses_persp_center_color = true;
+            break;
+         case INTERP_MODE_FLAT:
+            break;
+         case INTERP_MODE_NONE:
+         case INTERP_MODE_EXPLICIT:
+            UNREACHABLE("these interp modes are illegal with color varyings");
+         }
       }
    }
 
@@ -275,7 +359,7 @@ static void gather_io_instrinsic(const nir_shader *nir, struct si_shader_info *i
 
 /* TODO: convert to nir_shader_instructions_pass */
 static void gather_instruction(const struct nir_shader *nir, struct si_shader_info *info,
-                               nir_instr *instr, bool colors_lowered)
+                               nir_instr *instr)
 {
    if (instr->type == nir_instr_type_tex) {
       nir_tex_instr *tex = nir_instr_as_tex(instr);
@@ -293,44 +377,6 @@ static void gather_instruction(const struct nir_shader *nir, struct si_shader_in
       }
 
       switch (intr->intrinsic) {
-      case nir_intrinsic_load_color0:
-      case nir_intrinsic_load_color1: {
-         unsigned index = intr->intrinsic == nir_intrinsic_load_color1;
-         uint8_t mask = nir_def_components_read(&intr->def);
-         info->colors_read |= mask << (index * 4);
-
-         switch (info->color_interpolate[index]) {
-         case INTERP_MODE_SMOOTH:
-            if (info->color_interpolate_loc[index] == TGSI_INTERPOLATE_LOC_SAMPLE)
-               info->uses_sysval_persp_sample = true;
-            else if (info->color_interpolate_loc[index] == TGSI_INTERPOLATE_LOC_CENTROID)
-               info->uses_sysval_persp_centroid = true;
-            else if (info->color_interpolate_loc[index] == TGSI_INTERPOLATE_LOC_CENTER)
-               info->uses_sysval_persp_center = true;
-            break;
-         case INTERP_MODE_NOPERSPECTIVE:
-            if (info->color_interpolate_loc[index] == TGSI_INTERPOLATE_LOC_SAMPLE)
-               info->uses_sysval_linear_sample = true;
-            else if (info->color_interpolate_loc[index] == TGSI_INTERPOLATE_LOC_CENTROID)
-               info->uses_sysval_linear_centroid = true;
-            else if (info->color_interpolate_loc[index] == TGSI_INTERPOLATE_LOC_CENTER)
-               info->uses_sysval_linear_center = true;
-            break;
-         case INTERP_MODE_COLOR:
-            /* We don't know the final value. This will be FLAT if flatshading is enabled
-             * in the rasterizer state, otherwise it will be SMOOTH.
-             */
-            info->uses_interp_color = true;
-            if (info->color_interpolate_loc[index] == TGSI_INTERPOLATE_LOC_SAMPLE)
-               info->uses_persp_sample_color = true;
-            else if (info->color_interpolate_loc[index] == TGSI_INTERPOLATE_LOC_CENTROID)
-               info->uses_persp_centroid_color = true;
-            else if (info->color_interpolate_loc[index] == TGSI_INTERPOLATE_LOC_CENTER)
-               info->uses_persp_center_color = true;
-            break;
-         }
-         break;
-      }
       case nir_intrinsic_load_barycentric_at_offset:   /* uses center */
       case nir_intrinsic_load_barycentric_at_sample:   /* uses center */
          if (nir_intrinsic_interp_mode(intr) == INTERP_MODE_FLAT)
@@ -353,14 +399,14 @@ static void gather_instruction(const struct nir_shader *nir, struct si_shader_in
       case nir_intrinsic_load_per_vertex_input:
       case nir_intrinsic_load_input_vertex:
       case nir_intrinsic_load_interpolated_input:
-         gather_io_instrinsic(nir, info, intr, true, colors_lowered);
+         gather_io_instrinsic(nir, info, intr, true);
          break;
       case nir_intrinsic_load_output:
       case nir_intrinsic_load_per_vertex_output:
       case nir_intrinsic_store_output:
       case nir_intrinsic_store_per_vertex_output:
       case nir_intrinsic_store_per_primitive_output:
-         gather_io_instrinsic(nir, info, intr, false, colors_lowered);
+         gather_io_instrinsic(nir, info, intr, false);
          break;
       case nir_intrinsic_load_deref:
       case nir_intrinsic_store_deref:
@@ -508,19 +554,14 @@ void si_nir_gather_info(struct si_screen *sscreen, struct nir_shader *nir,
       info->output_semantic[i] = NUM_TOTAL_VARYING_SLOTS;
 
    if (nir->info.stage == MESA_SHADER_FRAGMENT) {
-      info->color_interpolate[0] = nir->info.fs.color0_interp;
-      info->color_interpolate[1] = nir->info.fs.color1_interp;
-      for (unsigned i = 0; i < 2; i++) {
-         if (info->color_interpolate[i] == INTERP_MODE_NONE)
-            info->color_interpolate[i] = INTERP_MODE_COLOR;
-      }
+      /* Both flat and non-flat can occur with nir_io_mix_convergent_flat_with_interpolated,
+       * but we want to save only the non-flat interp mode in that case.
+       *
+       * We start with flat and set to non-flat only if it's present.
+       */
+      info->color_interpolate[0] = INTERP_MODE_FLAT;
+      info->color_interpolate[1] = INTERP_MODE_FLAT;
 
-      info->color_interpolate_loc[0] = nir->info.fs.color0_sample ? TGSI_INTERPOLATE_LOC_SAMPLE :
-                                       nir->info.fs.color0_centroid ? TGSI_INTERPOLATE_LOC_CENTROID :
-                                                                      TGSI_INTERPOLATE_LOC_CENTER;
-      info->color_interpolate_loc[1] = nir->info.fs.color1_sample ? TGSI_INTERPOLATE_LOC_SAMPLE :
-                                       nir->info.fs.color1_centroid ? TGSI_INTERPOLATE_LOC_CENTROID :
-                                                                      TGSI_INTERPOLATE_LOC_CENTER;
       /* Set an invalid value. Will be determined at draw time if needed when the expected
        * conditions are met.
        */
@@ -586,7 +627,7 @@ void si_nir_gather_info(struct si_screen *sscreen, struct nir_shader *nir,
    nir_function_impl *impl = nir_shader_get_entrypoint(nir);
    nir_foreach_block (block, impl) {
       nir_foreach_instr (instr, block)
-         gather_instruction(nir, info, instr, colors_lowered);
+         gather_instruction(nir, info, instr);
    }
 
    if (nir->info.stage == MESA_SHADER_VERTEX || nir->info.stage == MESA_SHADER_TESS_EVAL) {
@@ -612,22 +653,18 @@ void si_nir_gather_info(struct si_screen *sscreen, struct nir_shader *nir,
                                    BITSET_TEST(nir->info.system_values_read, SYSTEM_VALUE_SAMPLE_MASK_IN) ||
                                    BITSET_TEST(nir->info.system_values_read, SYSTEM_VALUE_HELPER_INVOCATION));
 
-      /* Add both front and back color inputs. */
+      /* Add back color inputs. */
       unsigned num_inputs_with_colors = info->num_inputs;
-      for (unsigned back = 0; back < 2; back++) {
-         for (unsigned i = 0; i < 2; i++) {
-            if ((info->colors_read >> (i * 4)) & 0xf) {
-               unsigned index = num_inputs_with_colors;
+      for (unsigned i = 0; i < 2; i++) {
+         if ((info->colors_read >> (i * 4)) & 0xf) {
+            unsigned index = num_inputs_with_colors;
 
-               info->input_semantic[index] = (back ? VARYING_SLOT_BFC0 : VARYING_SLOT_COL0) + i;
-               num_inputs_with_colors++;
+            info->input_semantic[index] = VARYING_SLOT_BFC0 + i;
+            num_inputs_with_colors++;
 
-               /* Back-face color don't increment num_inputs. si_emit_spi_map will use
-                * back-face colors conditionally only when they are needed.
-                */
-               if (!back)
-                  info->num_inputs = num_inputs_with_colors;
-            }
+            /* Back-face colors don't increment num_inputs. si_emit_spi_map will use
+             * back-face colors conditionally only when they are needed.
+             */
          }
       }
    }

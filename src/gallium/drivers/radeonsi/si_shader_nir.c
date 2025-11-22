@@ -116,15 +116,14 @@ void si_finalize_nir(struct pipe_screen *screen, struct nir_shader *nir,
       nir_foreach_variable_with_modes(var, nir, nir_var_shader_in | nir_var_shader_out) {
          UNREACHABLE("no IO variables should be present with lowered IO");
       }
+
+      /* Not all places recompute FS input bases, but we need them to be up to date. */
+      if (nir->info.stage == MESA_SHADER_FRAGMENT)
+         NIR_PASS(_, nir, nir_recompute_io_bases, nir_var_shader_in | nir_var_shader_out);
    } else {
+      /* This always recomputes FS output bases. */
       nir_lower_io_passes(nir, false);
       NIR_PASS(_, nir, nir_remove_dead_variables, nir_var_shader_in | nir_var_shader_out, NULL);
-   }
-
-   if (nir->info.stage == MESA_SHADER_FRAGMENT) {
-      NIR_PASS(_, nir, si_nir_lower_color_inputs_to_sysvals);
-      /* We must renumber FS input bases after lowering color inputs to sysvals. */
-      NIR_PASS(_, nir, nir_recompute_io_bases, nir_var_shader_in | nir_var_shader_out);
    }
 
    if (optimize) {
