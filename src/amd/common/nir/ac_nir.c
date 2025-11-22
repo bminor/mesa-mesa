@@ -970,3 +970,81 @@ ac_nir_op_supports_packed_math_16bit(const nir_alu_instr* alu)
    default: return false;
    }
 }
+
+static uint8_t
+max_alu_src_identity_swizzle(const nir_alu_instr *alu, const nir_alu_src *src)
+{
+   uint8_t max_vector = 32 / alu->def.bit_size;
+   if (nir_src_is_const(src->src))
+      return max_vector;
+
+   /* Return the number of correctly swizzled components. */
+   for (unsigned i = 1; i < alu->def.num_components; i++) {
+      if (src->swizzle[i] != src->swizzle[0] + i)
+         /* Ensure that the result is a power of 2. */
+         return MAX2(i & 0x6, 1);
+   }
+
+   return max_vector;
+}
+
+uint8_t
+ac_nir_opt_vectorize_cb(const nir_instr *instr, const void *data)
+{
+   if (instr->type != nir_instr_type_alu)
+      return 0;
+
+   enum amd_gfx_level gfx_level = *(enum amd_gfx_level*)data;
+   if (gfx_level < GFX9)
+      return 1;
+
+   const nir_alu_instr *alu = nir_instr_as_alu(instr);
+
+   switch (alu->op) {
+   case nir_op_f2e4m3fn:
+   case nir_op_f2e4m3fn_sat:
+   case nir_op_f2e4m3fn_satfn:
+   case nir_op_f2e5m2:
+   case nir_op_f2e5m2_sat:
+   case nir_op_e4m3fn2f:
+   case nir_op_e5m22f:
+      return 2;
+   default:
+      break;
+   }
+
+   const unsigned bit_size = alu->def.bit_size;
+   if (bit_size == 16 && ac_nir_op_supports_packed_math_16bit(alu))
+      return 2;
+
+   if (bit_size != 8 && bit_size != 16)
+      return 1;
+
+   /* Keep some opcodes vectorized if the operation can be performed as
+    * 32-bit instruction with packed sources. The condition is that the
+    * sources must have identity swizzles. */
+   uint8_t target_width = 32 / bit_size;
+   switch (alu->op) {
+   case nir_op_bcsel:
+      /* Must have scalar condition. */
+      for (unsigned i = 1; i < alu->def.num_components; i++) {
+         if (alu->src[0].swizzle[i] != alu->src[0].swizzle[0])
+            return 1;
+      }
+      for (unsigned idx = 1; idx < 3; idx++)
+         target_width = MIN2(target_width, max_alu_src_identity_swizzle(alu, &alu->src[idx]));
+      break;
+   case nir_op_iand:
+   case nir_op_ior:
+   case nir_op_ixor:
+   case nir_op_inot:
+   case nir_op_bitfield_select:
+      for (unsigned idx = 0; idx < nir_op_infos[alu->op].num_inputs; idx++)
+         target_width = MIN2(target_width, max_alu_src_identity_swizzle(alu, &alu->src[idx]));
+      break;
+   default:
+      return 1;
+   }
+
+   return target_width;
+}

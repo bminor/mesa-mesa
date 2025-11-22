@@ -235,86 +235,6 @@ radv_shader_layout_init(const struct radv_pipeline_layout *pipeline_layout, mesa
                                      (pipeline_layout->dynamic_shader_stages & mesa_to_vk_shader_stage(stage));
 }
 
-static uint8_t
-max_alu_src_identity_swizzle(const nir_alu_instr *alu, const nir_alu_src *src)
-{
-   uint8_t max_vector = 32 / alu->def.bit_size;
-   if (nir_src_is_const(src->src))
-      return max_vector;
-
-   /* Return the number of correctly swizzled components. */
-   for (unsigned i = 1; i < alu->def.num_components; i++) {
-      if (src->swizzle[i] != src->swizzle[0] + i)
-         /* Ensure that the result is a power of 2. */
-         return MAX2(i & 0x6, 1);
-   }
-
-   return max_vector;
-}
-
-static uint8_t
-opt_vectorize_callback(const nir_instr *instr, const void *_)
-{
-   if (instr->type != nir_instr_type_alu)
-      return 0;
-
-   const struct radv_device *device = _;
-   const struct radv_physical_device *pdev = radv_device_physical(device);
-   enum amd_gfx_level chip = pdev->info.gfx_level;
-   if (chip < GFX9)
-      return 1;
-
-   const nir_alu_instr *alu = nir_instr_as_alu(instr);
-
-   switch (alu->op) {
-   case nir_op_f2e4m3fn:
-   case nir_op_f2e4m3fn_sat:
-   case nir_op_f2e4m3fn_satfn:
-   case nir_op_f2e5m2:
-   case nir_op_f2e5m2_sat:
-   case nir_op_e4m3fn2f:
-   case nir_op_e5m22f:
-      return 2;
-   default:
-      break;
-   }
-
-   const unsigned bit_size = alu->def.bit_size;
-   if (bit_size == 16 && ac_nir_op_supports_packed_math_16bit(alu))
-      return 2;
-
-   if (bit_size != 8 && bit_size != 16)
-      return 1;
-
-   /* Keep some opcodes vectorized if the operation can be performed as
-    * 32-bit instruction with packed sources. The condition is that the
-    * sources must have identity swizzles. */
-   uint8_t target_width = 32 / bit_size;
-   switch (alu->op) {
-   case nir_op_bcsel:
-      /* Must have scalar condition. */
-      for (unsigned i = 1; i < alu->def.num_components; i++) {
-         if (alu->src[0].swizzle[i] != alu->src[0].swizzle[0])
-            return 1;
-      }
-      for (unsigned idx = 1; idx < 3; idx++)
-         target_width = MIN2(target_width, max_alu_src_identity_swizzle(alu, &alu->src[idx]));
-      break;
-   case nir_op_iand:
-   case nir_op_ior:
-   case nir_op_ixor:
-   case nir_op_inot:
-   case nir_op_bitfield_select:
-      for (unsigned idx = 0; idx < nir_op_infos[alu->op].num_inputs; idx++)
-         target_width = MIN2(target_width, max_alu_src_identity_swizzle(alu, &alu->src[idx]));
-      break;
-   default:
-      return 1;
-   }
-
-   return target_width;
-}
-
 static nir_component_mask_t
 non_uniform_access_callback(const nir_src *src, void *_)
 {
@@ -443,7 +363,7 @@ radv_postprocess_nir(struct radv_device *device, const struct radv_graphics_stat
     */
    NIR_PASS(_, stage->nir, radv_nir_apply_pipeline_layout, device, stage);
 
-   NIR_PASS(_, stage->nir, nir_lower_alu_width, opt_vectorize_callback, device);
+   NIR_PASS(_, stage->nir, nir_lower_alu_width, ac_nir_opt_vectorize_cb, &gfx_level);
 
    nir_move_options sink_opts = nir_move_const_undef | nir_move_copies | nir_dont_move_byte_word_vecs;
 
@@ -645,12 +565,12 @@ radv_postprocess_nir(struct radv_device *device, const struct radv_graphics_stat
       }
 
       if (!stage->key.optimisations_disabled) {
-         NIR_PASS(_, stage->nir, nir_opt_vectorize, opt_vectorize_callback, device);
+         NIR_PASS(_, stage->nir, nir_opt_vectorize, ac_nir_opt_vectorize_cb, &gfx_level);
       }
    }
 
    /* cleanup passes */
-   NIR_PASS(_, stage->nir, nir_lower_alu_width, opt_vectorize_callback, device);
+   NIR_PASS(_, stage->nir, nir_lower_alu_width, ac_nir_opt_vectorize_cb, &gfx_level);
 
    /* This pass changes the global float control mode to RTZ, so can't be used
     * with LLVM, which only supports RTNE, or RT, where the mode needs to match
