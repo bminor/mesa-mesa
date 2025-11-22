@@ -578,11 +578,12 @@ static struct disk_cache *noop_get_disk_shader_cache(struct pipe_screen *pscreen
    return screen->get_disk_shader_cache(screen);
 }
 
-static void noop_finalize_nir(struct pipe_screen *pscreen, struct nir_shader *nir)
+static void noop_finalize_nir(struct pipe_screen *pscreen, struct nir_shader *nir,
+                              bool optimize)
 {
    struct pipe_screen *screen = ((struct noop_pipe_screen*)pscreen)->oscreen;
 
-   screen->finalize_nir(screen, nir);
+   screen->finalize_nir(screen, nir,  optimize);
 }
 
 static bool noop_check_resource_capability(struct pipe_screen *screen,

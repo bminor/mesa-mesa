@@ -225,7 +225,8 @@ i915_optimize_nir(struct nir_shader *s)
 }
 
 static void
-i915_finalize_nir(struct pipe_screen *pscreen, struct nir_shader *s)
+i915_finalize_nir(struct pipe_screen *pscreen, struct nir_shader *s,
+                  bool optimize)
 {
    if (s->info.stage == MESA_SHADER_FRAGMENT)
       i915_optimize_nir(s);

@@ -126,7 +126,8 @@ create_deint_shader(struct vl_deint_filter *filter, unsigned field)
    }
    nir_pop_if(&b, if_curr_field);
 
-   filter->pipe->screen->finalize_nir(filter->pipe->screen, b.shader);
+   filter->pipe->screen->finalize_nir(filter->pipe->screen, b.shader,
+                                      true);
 
    struct pipe_compute_state state = {
       .ir_type = PIPE_SHADER_IR_NIR,

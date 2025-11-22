@@ -69,7 +69,7 @@ st_nir_finish_builtin_nir(struct st_context *st, nir_shader *nir)
    }
 
    if (screen->finalize_nir) {
-      screen->finalize_nir(screen, nir);
+      screen->finalize_nir(screen, nir, true);
    } else {
       gl_nir_opts(nir);
    }

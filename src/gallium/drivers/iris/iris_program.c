@@ -3835,7 +3835,8 @@ iris_bind_cs_state(struct pipe_context *ctx, void *state)
 }
 
 static void
-iris_finalize_nir(struct pipe_screen *_screen, struct nir_shader *nir)
+iris_finalize_nir(struct pipe_screen *_screen, struct nir_shader *nir,
+                  bool optimize)
 {
    struct iris_screen *screen = (struct iris_screen *)_screen;
 

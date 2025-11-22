@@ -389,7 +389,8 @@ static void si_lower_nir(struct si_screen *sscreen, struct nir_shader *nir)
    NIR_PASS(_, nir, nir_lower_fp16_casts, nir_lower_fp16_split_fp64);
 }
 
-void si_finalize_nir(struct pipe_screen *screen, struct nir_shader *nir)
+void si_finalize_nir(struct pipe_screen *screen, struct nir_shader *nir,
+                     bool optimize)
 {
    struct si_screen *sscreen = (struct si_screen *)screen;
 

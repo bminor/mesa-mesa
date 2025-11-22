@@ -613,8 +613,11 @@ struct pipe_screen {
     *
     * gallium frontends should call this before passing shaders to drivers,
     * and ideally also before shader caching.
+    *
+    * \param optimize  If false, the driver doesn't have to optimize NIR.
     */
-   void (*finalize_nir)(struct pipe_screen *screen, struct nir_shader *nir);
+   void (*finalize_nir)(struct pipe_screen *screen, struct nir_shader *nir,
+                        bool optimize);
 
    /*Separated memory/resource allocations interfaces for Vulkan */
 

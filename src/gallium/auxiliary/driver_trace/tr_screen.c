@@ -1070,11 +1070,12 @@ trace_screen_get_timestamp(struct pipe_screen *_screen)
 }
 
 static void
-trace_screen_finalize_nir(struct pipe_screen *_screen, struct nir_shader *nir)
+trace_screen_finalize_nir(struct pipe_screen *_screen, struct nir_shader *nir,
+                          bool optimize)
 {
    struct pipe_screen *screen = trace_screen(_screen)->screen;
 
-   screen->finalize_nir(screen, nir);
+   screen->finalize_nir(screen, nir, optimize);
 }
 
 static void

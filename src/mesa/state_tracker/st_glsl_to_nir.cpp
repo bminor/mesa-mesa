@@ -370,7 +370,7 @@ st_glsl_to_nir_post_opts(struct st_context *st, struct gl_program *prog,
       st_finalize_nir(st, prog, shader_program, nir, true, false);
 
       if (screen->finalize_nir)
-         screen->finalize_nir(screen, nir);
+         screen->finalize_nir(screen, nir, false);
    }
 
    if (st->ctx->_Shader->Flags & GLSL_DUMP) {

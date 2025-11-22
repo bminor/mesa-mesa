@@ -511,7 +511,7 @@ impl PipeScreen {
     pub fn finalize_nir(&self, nir: &NirShader) -> bool {
         if let Some(func) = self.screen().finalize_nir {
             unsafe {
-                func(self.pipe(), nir.get_nir().cast());
+                func(self.pipe(), nir.get_nir().cast(), true);
             }
             true
         } else {

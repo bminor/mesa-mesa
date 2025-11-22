@@ -455,11 +455,12 @@ dd_screen_semaphore_create(struct pipe_screen *_screen)
  */
 
 static void
-dd_screen_finalize_nir(struct pipe_screen *_screen, struct nir_shader *nir)
+dd_screen_finalize_nir(struct pipe_screen *_screen, struct nir_shader *nir,
+                       bool optimize)
 {
    struct pipe_screen *screen = dd_screen(_screen)->screen;
 
-   screen->finalize_nir(screen, nir);
+   screen->finalize_nir(screen, nir, optimize);
 }
 
 static void

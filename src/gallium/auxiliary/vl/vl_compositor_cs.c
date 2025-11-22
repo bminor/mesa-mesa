@@ -143,7 +143,7 @@ static nir_def *cs_create_shader(struct vl_compositor *c, struct cs_shader *s)
 
 static void *cs_create_shader_state(struct vl_compositor *c, struct cs_shader *s)
 {
-   c->pipe->screen->finalize_nir(c->pipe->screen, s->b.shader);
+   c->pipe->screen->finalize_nir(c->pipe->screen, s->b.shader, true);
 
    struct pipe_compute_state state = {0};
    state.ir_type = PIPE_SHADER_IR_NIR;

@@ -617,7 +617,7 @@ void *
 lvp_shader_compile(struct lvp_device *device, struct lvp_shader *shader, nir_shader *nir, bool locked)
 {
    const struct lvp_physical_device *pdev = lvp_device_physical(device);
-   pdev->pscreen->finalize_nir(pdev->pscreen, nir);
+   pdev->pscreen->finalize_nir(pdev->pscreen, nir, true);
 
    if (!locked)
       simple_mtx_lock(&device->queue.lock);

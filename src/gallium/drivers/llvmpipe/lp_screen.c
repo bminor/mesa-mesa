@@ -498,7 +498,7 @@ static const struct nir_shader_compiler_options gallivm_nir_options = {
 
 static void
 llvmpipe_finalize_nir(struct pipe_screen *screen,
-                      struct nir_shader *nir)
+                      struct nir_shader *nir, bool optimize)
 {
    lp_build_opt_nir(nir);
 }
