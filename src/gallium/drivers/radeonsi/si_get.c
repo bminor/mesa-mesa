@@ -54,7 +54,7 @@ si_is_compute_copy_faster(struct pipe_screen *pscreen,
 {
    if (cpu)
       /* very basic for now */
-      return width * height * depth > 64 * 64;
+      return (uint64_t)width * height * depth > 64 * 64;
    return false;
 }
 

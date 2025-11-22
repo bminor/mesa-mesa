@@ -901,7 +901,7 @@ static void si_fast_clear(struct si_context *sctx, unsigned *buffers,
       unsigned level = fb->zsbuf.level;
       bool update_db_depth_clear = false;
       bool update_db_stencil_clear = false;
-      bool fb_too_small = num_pixels * zs_num_layers <= 512 * 512;
+      bool fb_too_small = (uint64_t)num_pixels * zs_num_layers <= 512 * 512;
 
       /* Transition from TC-incompatible to TC-compatible HTILE if requested.
        * (the transition applies to the whole buffer, so make sure we're clearing
