@@ -1274,6 +1274,12 @@ nir_lower_io_passes(nir_shader *nir, bool renumber_vs_inputs)
    NIR_PASS(_, nir, nir_opt_dce);
    NIR_PASS(_, nir, nir_remove_dead_variables, nir_var_function_temp, NULL);
 
+   /* Output stores can have undef values. Eliminate those before
+    * nir_recompute_io_bases. This happens with separate shaders, which are
+    * usually not optimized further after this.
+    */
+   NIR_PASS(_, nir, nir_opt_undef);
+
    /* If IO is lowered before var->data.driver_location is assigned, driver
     * locations are all 0, which means IO bases are all 0. It's not necessary
     * to set driver_location before lowering IO because the only thing that
