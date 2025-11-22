@@ -647,6 +647,8 @@ static void si_preprocess_nir(struct si_nir_shader_ctx *ctx)
       NIR_PASS(progress, nir, ac_nir_lower_mesh_inputs_to_mem);
    }
 
+   NIR_PASS(progress, nir, si_nir_lower_intrinsics_early);
+
    if (mesa_shader_stage_is_compute(nir->info.stage)) {
       /* gl_LocalInvocationIndex must be derived from gl_LocalInvocationID.xyz to make it correct
        * with quad derivatives. Using gl_SubgroupID for that (which is what we do by default) is

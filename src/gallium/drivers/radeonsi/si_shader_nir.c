@@ -107,36 +107,6 @@ void si_nir_late_opts(nir_shader *nir)
    }
 }
 
-static bool
-lower_intrinsic_filter(const nir_instr *instr, const void *dummy)
-{
-   return instr->type == nir_instr_type_intrinsic;
-}
-
-static nir_def *
-lower_intrinsic_instr(nir_builder *b, nir_instr *instr, void *dummy)
-{
-   nir_intrinsic_instr *intrin = nir_instr_as_intrinsic(instr);
-
-   switch (intrin->intrinsic) {
-   case nir_intrinsic_is_sparse_texels_resident:
-      /* code==0 means sparse texels are resident */
-      return nir_ieq_imm(b, intrin->src[0].ssa, 0);
-   case nir_intrinsic_sparse_residency_code_and:
-      return nir_ior(b, intrin->src[0].ssa, intrin->src[1].ssa);
-   default:
-      return NULL;
-   }
-}
-
-static bool si_lower_intrinsics(nir_shader *nir)
-{
-   return nir_shader_lower_instructions(nir,
-                                        lower_intrinsic_filter,
-                                        lower_intrinsic_instr,
-                                        NULL);
-}
-
 /**
  * Perform "lowering" operations on the NIR that are run once when the shader
  * selector is created.
@@ -168,8 +138,6 @@ static void si_lower_nir(struct si_screen *sscreen, struct nir_shader *nir)
                                          !(sscreen->debug_flags & DBG(NO_FMASK)),
    };
    NIR_PASS(_, nir, nir_lower_image, &lower_image_options);
-
-   NIR_PASS(_, nir, si_lower_intrinsics);
 
    NIR_PASS(_, nir, ac_nir_lower_sin_cos);
 

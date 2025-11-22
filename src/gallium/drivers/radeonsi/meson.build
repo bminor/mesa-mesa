@@ -51,6 +51,7 @@ files_libradeonsi = files(
   'si_nir_kill_outputs.c',
   'si_nir_lower_abi.c',
   'si_nir_lower_color_inputs_to_sysvals.c',
+  'si_nir_lower_intrinsics_early.c',
   'si_nir_lower_polygon_stipple.c',
   'si_nir_lower_ps_color_inputs.c',
   'si_nir_lower_resource.c',
