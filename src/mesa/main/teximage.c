@@ -1342,7 +1342,7 @@ _mesa_test_proxy_teximage(struct gl_context *ctx, GLenum target,
       for (l = 0; l < numLevels; l++) {
          GLint nextWidth, nextHeight, nextDepth;
 
-         bytes += _mesa_format_image_size64(format, width, height, depth);
+         bytes += _mesa_format_image_size(format, width, height, depth);
 
          if (_mesa_next_mipmap_level_size(target, 0, width, height, depth,
                                           &nextWidth, &nextHeight,
@@ -1358,7 +1358,7 @@ _mesa_test_proxy_teximage(struct gl_context *ctx, GLenum target,
       /* We just compute the size of one mipmap level.  This is the path
        * taken for glTexImage(GL_PROXY_TEXTURE_x).
        */
-      bytes = _mesa_format_image_size64(format, width, height, depth);
+      bytes = _mesa_format_image_size(format, width, height, depth);
    }
 
    bytes *= _mesa_num_tex_faces(target);
