@@ -140,7 +140,7 @@ nir_recompute_io_bases(nir_shader *nir, nir_variable_mode modes)
           BITSET_COUNT(color_inputs) == 0);
 
    /* Renumber bases. */
-   bool changed = false;
+   bool progress = false;
 
    nir_foreach_block(block, impl) {
       nir_foreach_instr(instr, block) {
@@ -154,43 +154,57 @@ nir_recompute_io_bases(nir_shader *nir, nir_variable_mode modes)
          if (sem.medium_precision)
             num_slots = (num_slots + sem.high_16bits + 1) / 2;
 
+         unsigned new_base;
+
          if (mode == nir_var_shader_in) {
             if (BITSET_TEST(per_prim_inputs, sem.location)){
-               nir_intrinsic_set_base(intr,
-                                      num_normal_inputs +
-                                         BITSET_PREFIX_SUM(per_prim_inputs, sem.location));
+               new_base = num_normal_inputs +
+                          BITSET_PREFIX_SUM(per_prim_inputs, sem.location);
             } else if (make_colors_last &&
                        nir->info.stage == MESA_SHADER_FRAGMENT &&
                        (sem.location == VARYING_SLOT_COL0 ||
                         sem.location == VARYING_SLOT_COL1)) {
-               nir_intrinsic_set_base(intr,
-                                      BITSET_COUNT(inputs) +
-                                      BITSET_PREFIX_SUM(color_inputs,
-                                                        sem.location - VARYING_SLOT_COL0));
+               new_base = BITSET_COUNT(inputs) +
+                          BITSET_PREFIX_SUM(color_inputs,
+                                            sem.location - VARYING_SLOT_COL0);
             } else {
-               nir_intrinsic_set_base(intr,
-                                      BITSET_PREFIX_SUM(inputs, sem.location) +
-                                         BITSET_PREFIX_SUM(dual_slot_inputs, sem.location) +
-                                         (sem.high_dvec2 ? 1 : 0));
+               new_base = BITSET_PREFIX_SUM(inputs, sem.location) +
+                          BITSET_PREFIX_SUM(dual_slot_inputs, sem.location) +
+                          (sem.high_dvec2 ? 1 : 0);
             }
          } else if (sem.dual_source_blend_index) {
-            nir_intrinsic_set_base(intr,
-                                   BITSET_PREFIX_SUM(outputs, NUM_TOTAL_VARYING_SLOTS));
+            new_base = BITSET_PREFIX_SUM(outputs, NUM_TOTAL_VARYING_SLOTS);
          } else {
-            nir_intrinsic_set_base(intr,
-                                   BITSET_PREFIX_SUM(outputs, sem.location));
+            new_base = BITSET_PREFIX_SUM(outputs, sem.location);
          }
-         changed = true;
+
+         if (nir_intrinsic_base(intr) != new_base) {
+            nir_intrinsic_set_base(intr, new_base);
+            progress = true;
+         }
       }
    }
 
-   nir_progress(changed, impl, nir_metadata_control_flow);
 
-   if (modes & nir_var_shader_in)
-      nir->num_inputs = BITSET_COUNT(inputs) + BITSET_COUNT(color_inputs) +
-                        BITSET_COUNT(per_prim_inputs);
-   if (modes & nir_var_shader_out)
-      nir->num_outputs = BITSET_COUNT(outputs);
 
-   return changed;
+   if (modes & nir_var_shader_in) {
+      unsigned num_inputs = BITSET_COUNT(inputs) + BITSET_COUNT(color_inputs) +
+                            BITSET_COUNT(per_prim_inputs);
+
+      if (nir->num_inputs != num_inputs) {
+         nir->num_inputs = num_inputs;
+         progress = true;
+      }
+   }
+
+   if (modes & nir_var_shader_out) {
+      unsigned num_outputs = BITSET_COUNT(outputs);
+
+      if (nir->num_outputs != num_outputs) {
+         nir->num_outputs = num_outputs;
+         progress = true;
+      }
+   }
+
+   return nir_progress(progress, impl, nir_metadata_all);
 }
