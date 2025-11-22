@@ -179,16 +179,7 @@ static void si_lower_nir(struct si_screen *sscreen, struct nir_shader *nir)
    NIR_PASS(_, nir, nir_opt_intrinsics);
    NIR_PASS(_, nir, nir_lower_system_values);
 
-   if (nir->info.stage == MESA_SHADER_GEOMETRY) {
-      unsigned flags = nir_lower_gs_intrinsics_per_stream;
-      if (sscreen->use_ngg) {
-         flags |= nir_lower_gs_intrinsics_count_primitives |
-            nir_lower_gs_intrinsics_count_vertices_per_primitive |
-            nir_lower_gs_intrinsics_overwrite_incomplete;
-      }
-
-      NIR_PASS(_, nir, nir_lower_gs_intrinsics, flags);
-   } else if (nir->info.stage == MESA_SHADER_TASK) {
+   if (nir->info.stage == MESA_SHADER_TASK) {
       NIR_PASS(_, nir, ac_nir_lower_task_outputs_to_mem, false);
    } else if (nir->info.stage == MESA_SHADER_MESH) {
       NIR_PASS(_, nir, ac_nir_lower_mesh_inputs_to_mem);

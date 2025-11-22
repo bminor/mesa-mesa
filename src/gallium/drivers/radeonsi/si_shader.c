@@ -686,6 +686,16 @@ static void si_preprocess_nir(struct si_nir_shader_ctx *ctx)
                });
    }
 
+   if (nir->info.stage == MESA_SHADER_GEOMETRY) {
+      NIR_PASS(progress, nir, nir_lower_gs_intrinsics,
+               nir_lower_gs_intrinsics_per_stream |
+               (shader->key.ge.as_ngg ?
+                   nir_lower_gs_intrinsics_count_primitives |
+                   nir_lower_gs_intrinsics_count_vertices_per_primitive |
+                   nir_lower_gs_intrinsics_overwrite_incomplete : 0));
+      NIR_PASS(progress, nir, nir_lower_vars_to_ssa);
+   }
+
    /* nir_opt_clip_cull_const, si_nir_kill_outputs, and ac_nir_optimize_outputs require outputs
     * to be scalar.
     */
