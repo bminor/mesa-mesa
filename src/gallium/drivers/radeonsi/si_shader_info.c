@@ -133,6 +133,11 @@ static void scan_io_usage(const nir_shader *nir, struct si_shader_info *info,
       for (unsigned i = 0; i < num_slots; i++) {
          unsigned loc = driver_location + i;
 
+         /* No 2 inputs can use the same driver location. */
+         assert((info->input_semantic[loc] == semantic + i ||
+                 info->input_semantic[loc] == NUM_TOTAL_VARYING_SLOTS) &&
+                "nir_recompute_io_bases wasn't called");
+
          info->input_semantic[loc] = semantic + i;
 
          if (mask)
@@ -163,6 +168,11 @@ static void scan_io_usage(const nir_shader *nir, struct si_shader_info *info,
                si_shader_io_get_unique_index(slot_semantic);
             }
          }
+
+         /* No 2 outputs can use the same driver location. */
+         assert((info->output_semantic[loc] == slot_semantic ||
+                 info->output_semantic[loc] == NUM_TOTAL_VARYING_SLOTS) &&
+                "nir_recompute_io_bases wasn't called");
 
          info->output_semantic[loc] = slot_semantic;
 
@@ -501,6 +511,14 @@ void si_nir_scan_shader(struct si_screen *sscreen, struct nir_shader *nir,
       }
    }
 
+   /* Initialize all IO slots to an invalid value. We use this to prevent 2 different
+    * inputs/outputs from using the same IO slot.
+    */
+   for (unsigned i = 0; i < ARRAY_SIZE(info->input_semantic); i++)
+      info->input_semantic[i] = NUM_TOTAL_VARYING_SLOTS;
+   for (unsigned i = 0; i < ARRAY_SIZE(info->output_semantic); i++)
+      info->output_semantic[i] = NUM_TOTAL_VARYING_SLOTS;
+
    if (nir->info.stage == MESA_SHADER_FRAGMENT) {
       info->color_interpolate[0] = nir->info.fs.color0_interp;
       info->color_interpolate[1] = nir->info.fs.color1_interp;
@@ -675,6 +693,17 @@ void si_nir_scan_shader(struct si_screen *sscreen, struct nir_shader *nir,
    info->has_clip_outputs = nir->info.outputs_written & VARYING_BIT_CLIP_VERTEX ||
                             nir->info.clip_distance_array_size ||
                             nir->info.cull_distance_array_size;
+
+   /* There should be no holes in slots except VS inputs. */
+   if (nir->info.stage != MESA_SHADER_VERTEX) {
+      for (unsigned i = 0; i < info->num_inputs; i++)
+         assert(info->input_semantic[i] != NUM_TOTAL_VARYING_SLOTS &&
+                "nir_recompute_io_bases wasn't called");
+   }
+   for (unsigned i = 0; i < info->num_outputs; i++) {
+      assert(info->output_semantic[i] != NUM_TOTAL_VARYING_SLOTS &&
+             "nir_recompute_io_bases wasn't called");
+   }
 
    if (nir->info.stage == MESA_SHADER_FRAGMENT) {
       for (unsigned i = 0; i < info->num_inputs; i++) {
