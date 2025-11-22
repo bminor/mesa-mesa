@@ -14,7 +14,6 @@
 #include "si_pipe.h"
 #include "si_shader_internal.h"
 #include "pipe/p_shader_tokens.h"
-#include "aco_interface.h"
 
 static void si_fix_resource_usage(struct si_screen *sscreen, struct si_shader *shader);
 
@@ -868,18 +867,6 @@ static void si_preprocess_nir(struct si_nir_shader_ctx *ctx)
       si_nir_opts(shader->selector->screen, nir, false);
 }
 
-static uint8_t si_nir_opt_vectorize_callback(const nir_instr *instr, const void *data)
-{
-   if (instr->type != nir_instr_type_alu)
-      return 0;
-
-   nir_alu_instr *alu = nir_instr_as_alu(instr);
-   if (alu->def.bit_size != 16)
-      return 1;
-
-   return ac_nir_op_supports_packed_math_16bit(alu) ? 2 : 1;
-}
-
 /* Late optimization passes and lowering passes. The majority of lowering passes are here.
  * These passes should have no impact on linking optimizations and shouldn't affect
  * si_shader_variant_info except info gathered by si_get_late_shader_variant_info
@@ -1178,7 +1165,7 @@ static void si_postprocess_nir(struct si_nir_shader_ctx *ctx)
          NIR_PASS(_, nir, nir_opt_dce);
       }
 
-      NIR_PASS(_, nir, nir_opt_vectorize, si_nir_opt_vectorize_callback, NULL);
+      NIR_PASS(_, nir, nir_opt_vectorize, ac_nir_opt_vectorize_cb, &sel->screen->info.gfx_level);
    }
 
    NIR_PASS(_, nir, nir_lower_alu_width, ac_nir_opt_vectorize_cb, &sel->screen->info.gfx_level);
