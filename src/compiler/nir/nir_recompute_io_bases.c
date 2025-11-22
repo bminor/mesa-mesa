@@ -79,8 +79,8 @@ nir_recompute_io_bases(nir_shader *nir, nir_variable_mode modes)
    BITSET_ZERO(outputs);
 
    /* Gather the bitmasks of used locations. */
-   nir_foreach_block_safe(block, impl) {
-      nir_foreach_instr_safe(instr, block) {
+   nir_foreach_block(block, impl) {
+      nir_foreach_instr(instr, block) {
          nir_variable_mode mode;
          nir_intrinsic_instr *intr = nir_get_io_intrinsic(instr, modes, &mode);
          if (!intr)
@@ -127,8 +127,8 @@ nir_recompute_io_bases(nir_shader *nir, nir_variable_mode modes)
    /* Renumber bases. */
    bool changed = false;
 
-   nir_foreach_block_safe(block, impl) {
-      nir_foreach_instr_safe(instr, block) {
+   nir_foreach_block(block, impl) {
+      nir_foreach_instr(instr, block) {
          nir_variable_mode mode;
          nir_intrinsic_instr *intr = nir_get_io_intrinsic(instr, modes, &mode);
          if (!intr)
