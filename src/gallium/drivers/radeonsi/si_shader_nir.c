@@ -113,35 +113,6 @@ void si_nir_late_opts(nir_shader *nir)
  */
 static void si_lower_nir(struct si_screen *sscreen, struct nir_shader *nir)
 {
-   /* Perform lowerings (and optimizations) of code.
-    *
-    * Performance considerations aside, we must:
-    * - lower certain ALU operations
-    * - ensure constant offsets for texture instructions are folded
-    *   and copy-propagated
-    */
-   const struct nir_lower_tex_options lower_tex_options = {
-      .lower_txp = ~0u,
-      .lower_txf_offset = true,
-      .lower_txs_cube_array = true,
-      .lower_invalid_implicit_lod = true,
-      .lower_tg4_offsets = true,
-      .lower_to_fragment_fetch_amd = sscreen->info.gfx_level < GFX11,
-      .lower_1d = sscreen->info.gfx_level == GFX9,
-      .optimize_txd = true,
-   };
-   NIR_PASS(_, nir, nir_lower_tex, &lower_tex_options);
-
-   const struct nir_lower_image_options lower_image_options = {
-      .lower_cube_size = true,
-      .lower_to_fragment_mask_load_amd = sscreen->info.gfx_level < GFX11 &&
-                                         !(sscreen->debug_flags & DBG(NO_FMASK)),
-   };
-   NIR_PASS(_, nir, nir_lower_image, &lower_image_options);
-
-   NIR_PASS(_, nir, ac_nir_lower_sin_cos);
-
-   /* Lower load constants to scalar and then clean up the mess */
    NIR_PASS(_, nir, nir_lower_load_const_to_scalar);
    NIR_PASS(_, nir, nir_lower_var_copies);
    NIR_PASS(_, nir, nir_opt_intrinsics);

@@ -641,13 +641,33 @@ static void si_preprocess_nir(struct si_nir_shader_ctx *ctx)
    nir_shader *nir = ctx->nir;
    bool progress = false;
 
+   const struct nir_lower_tex_options lower_tex_options = {
+      .lower_txp = ~0u,
+      .lower_txf_offset = true,
+      .lower_txs_cube_array = true,
+      .lower_invalid_implicit_lod = true,
+      .lower_tg4_offsets = true,
+      .lower_to_fragment_fetch_amd = sel->screen->info.gfx_level < GFX11,
+      .lower_1d = sel->screen->info.gfx_level == GFX9,
+      .optimize_txd = true,
+   };
+   NIR_PASS(progress, nir, nir_lower_tex, &lower_tex_options);
+
+   const struct nir_lower_image_options lower_image_options = {
+      .lower_cube_size = true,
+      .lower_to_fragment_mask_load_amd = sel->screen->info.gfx_level < GFX11 &&
+                                         !(sel->screen->debug_flags & DBG(NO_FMASK)),
+   };
+   NIR_PASS(progress, nir, nir_lower_image, &lower_image_options);
+
+   NIR_PASS(progress, nir, ac_nir_lower_sin_cos);
+   NIR_PASS(progress, nir, si_nir_lower_intrinsics_early);
+
    if (nir->info.stage == MESA_SHADER_TASK) {
       NIR_PASS(progress, nir, ac_nir_lower_task_outputs_to_mem, false);
    } else if (nir->info.stage == MESA_SHADER_MESH) {
       NIR_PASS(progress, nir, ac_nir_lower_mesh_inputs_to_mem);
    }
-
-   NIR_PASS(progress, nir, si_nir_lower_intrinsics_early);
 
    if (mesa_shader_stage_is_compute(nir->info.stage)) {
       /* gl_LocalInvocationIndex must be derived from gl_LocalInvocationID.xyz to make it correct
