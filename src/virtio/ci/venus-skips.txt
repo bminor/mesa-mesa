@@ -54,3 +54,10 @@ dEQP-VK.ray_tracing_pipeline.misc.cullmask_tri
 dEQP-VK.ray_tracing_pipeline.misc.recursiveTraces_tri_15
 dEQP-VK.ray_tracing_pipeline.trace_rays_cmds_maintenance_1.indirect2_cpu.11_13_5
 dEQP-VK.ray_tracing_pipeline.watertightness.closedFan2.1024
+
+# These are causing oom killer to kill guest deqp
+dEQP-VK.glsl.builtin.precision_fp16_storage*
+dEQP-VK.spirv_assembly.instruction.compute.float_controls2.fp16.input_args.*
+dEQP-VK.spirv_assembly.instruction.compute.float16.arithmetic_*
+dEQP-VK.spirv_assembly.instruction.graphics.float_controls2.fp16.input_args.*
+dEQP-VK.spirv_assembly.instruction.graphics.float16.arithmetic_*
