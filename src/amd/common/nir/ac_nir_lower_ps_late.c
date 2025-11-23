@@ -116,12 +116,10 @@ static bool
 gather_ps_store_output(nir_builder *b, nir_intrinsic_instr *intrin, lower_ps_state *s)
 {
    unsigned slot = nir_intrinsic_io_semantics(intrin).location;
-   unsigned dual_src_blend_index = nir_intrinsic_io_semantics(intrin).dual_source_blend_index;
    unsigned write_mask = nir_intrinsic_write_mask(intrin);
    unsigned component = nir_intrinsic_component(intrin);
-   unsigned color_index = (slot >= FRAG_RESULT_DATA0 ? slot - FRAG_RESULT_DATA0 : 0) +
-                          dual_src_blend_index;
    nir_def *store_val = intrin->src[0].ssa;
+   int color_index = mesa_frag_result_get_color_index(slot);
 
    b->cursor = nir_before_instr(&intrin->instr);
 
@@ -146,17 +144,16 @@ gather_ps_store_output(nir_builder *b, nir_intrinsic_instr *intrin, lower_ps_sta
          s->color[color_index][comp] = chan;
          break;
       default:
-         assert(slot >= FRAG_RESULT_DATA0 && slot <= FRAG_RESULT_DATA7);
+         assert(color_index != -1);
          s->color[color_index][comp] = chan;
          break;
       }
    }
 
-   if ((slot == FRAG_RESULT_COLOR || (slot >= FRAG_RESULT_DATA0 && slot <= FRAG_RESULT_DATA7)) &&
-       write_mask) {
+   if (color_index >= 0 && write_mask) {
       s->colors_written |= BITFIELD_BIT(color_index);
       s->color_type[color_index] = nir_intrinsic_src_type(intrin);
-      s->has_dual_src_blending |= dual_src_blend_index == 1;
+      s->has_dual_src_blending |= slot == FRAG_RESULT_DUAL_SRC_BLEND;
       s->writes_all_cbufs |= slot == FRAG_RESULT_COLOR;
    }
 

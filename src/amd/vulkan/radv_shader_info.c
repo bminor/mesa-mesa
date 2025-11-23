@@ -142,10 +142,11 @@ gather_intrinsic_store_output_info(const nir_shader *nir, const nir_intrinsic_in
    switch (nir->info.stage) {
    case MESA_SHADER_FRAGMENT:
       if (location >= FRAG_RESULT_DATA0) {
-         const unsigned fs_semantic = location + io_sem.dual_source_blend_index;
-         info->ps.colors_written |= 0xfu << (4 * (fs_semantic - FRAG_RESULT_DATA0));
+         int index = mesa_frag_result_get_color_index(location);
 
-         if (fs_semantic == FRAG_RESULT_DATA0)
+         info->ps.colors_written |= 0xfu << (4 * index);
+
+         if (location == FRAG_RESULT_DATA0)
             info->ps.color0_written = write_mask;
       }
       break;

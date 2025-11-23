@@ -38,10 +38,7 @@ remap_color_attachment(nir_builder *b, nir_intrinsic_instr *intrin, void *state)
 
    nir_io_semantics io_sem = nir_intrinsic_io_semantics(intrin);
 
-   if (io_sem.location < FRAG_RESULT_DATA0)
-      return false;
-
-   if (io_sem.dual_source_blend_index)
+   if (io_sem.location < FRAG_RESULT_DATA0 || io_sem.location == FRAG_RESULT_DUAL_SRC_BLEND)
       return false;
 
    const unsigned location = io_sem.location - FRAG_RESULT_DATA0;

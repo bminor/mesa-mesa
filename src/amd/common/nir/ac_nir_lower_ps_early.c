@@ -151,10 +151,9 @@ optimize_lower_ps_outputs(nir_builder *b, nir_intrinsic_instr *intrin, lower_ps_
 
    unsigned writemask = nir_intrinsic_write_mask(intrin);
    unsigned component = nir_intrinsic_component(intrin);
-   unsigned color_index = (slot >= FRAG_RESULT_DATA0 ? slot - FRAG_RESULT_DATA0 : 0) +
-                          nir_intrinsic_io_semantics(intrin).dual_source_blend_index;
    nir_def *value = intrin->src[0].ssa;
    bool progress = false;
+   int color_index = mesa_frag_result_get_color_index(slot);
 
    /* Clamp color. */
    if (s->options->clamp_color) {
@@ -514,8 +513,7 @@ gather_info(nir_builder *b, nir_intrinsic_instr *intr, void *state)
        * FRAG_RESULT_COLOR output exists with dual_src_blend_index=1. This happens
        * with gl_SecondaryFragColorEXT in GLES.
        */
-      if (nir_intrinsic_io_semantics(intr).location == FRAG_RESULT_COLOR &&
-          nir_intrinsic_io_semantics(intr).dual_source_blend_index)
+      if (nir_intrinsic_io_semantics(intr).location == FRAG_RESULT_DUAL_SRC_BLEND)
          s->frag_color_is_frag_data0 = true;
       break;
    case nir_intrinsic_load_frag_coord:

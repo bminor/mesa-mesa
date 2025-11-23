@@ -118,7 +118,6 @@ static void scan_io_usage(const nir_shader *nir, struct si_shader_info *info,
       /* Never use FRAG_RESULT_COLOR directly. */
       if (semantic == FRAG_RESULT_COLOR)
          semantic = FRAG_RESULT_DATA0;
-      semantic += nir_intrinsic_io_semantics(intr).dual_source_blend_index;
    }
 
    unsigned driver_location = nir_intrinsic_base(intr);
@@ -233,16 +232,17 @@ static void scan_io_usage(const nir_shader *nir, struct si_shader_info *info,
                }
             }
 
-            if (nir->info.stage == MESA_SHADER_FRAGMENT &&
-                semantic >= FRAG_RESULT_DATA0 && semantic <= FRAG_RESULT_DATA7) {
-               unsigned index = semantic - FRAG_RESULT_DATA0;
+            if (nir->info.stage == MESA_SHADER_FRAGMENT) {
+               int color_index = mesa_frag_result_get_color_index(semantic);
 
-               if (nir_intrinsic_src_type(intr) == nir_type_float16)
-                  info->output_color_types |= SI_TYPE_FLOAT16 << (index * 2);
-               else if (nir_intrinsic_src_type(intr) == nir_type_int16)
-                  info->output_color_types |= SI_TYPE_INT16 << (index * 2);
-               else if (nir_intrinsic_src_type(intr) == nir_type_uint16)
-                  info->output_color_types |= SI_TYPE_UINT16 << (index * 2);
+               if (color_index != -1) {
+                  if (nir_intrinsic_src_type(intr) == nir_type_float16)
+                     info->output_color_types |= SI_TYPE_FLOAT16 << (color_index * 2);
+                  else if (nir_intrinsic_src_type(intr) == nir_type_int16)
+                     info->output_color_types |= SI_TYPE_INT16 << (color_index * 2);
+                  else if (nir_intrinsic_src_type(intr) == nir_type_uint16)
+                     info->output_color_types |= SI_TYPE_UINT16 << (color_index * 2);
+               }
             }
          }
       }
@@ -558,8 +558,8 @@ void si_nir_scan_shader(struct si_screen *sscreen, struct nir_shader *nir,
       info->writes_stencil = nir->info.outputs_written & BITFIELD64_BIT(FRAG_RESULT_STENCIL);
       info->writes_samplemask = nir->info.outputs_written & BITFIELD64_BIT(FRAG_RESULT_SAMPLE_MASK);
 
-      info->colors_written = nir->info.outputs_written >> FRAG_RESULT_DATA0;
-      if (nir->info.fs.color_is_dual_source)
+      info->colors_written = (nir->info.outputs_written >> FRAG_RESULT_DATA0) & BITFIELD_MASK(8);
+      if (nir->info.outputs_written & BITFIELD_BIT(FRAG_RESULT_DUAL_SRC_BLEND))
          info->colors_written |= 0x2;
       if (nir->info.outputs_written & BITFIELD64_BIT(FRAG_RESULT_COLOR)) {
          info->colors_written |= 0x1;

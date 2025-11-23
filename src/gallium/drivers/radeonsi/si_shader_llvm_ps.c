@@ -374,8 +374,8 @@ void si_llvm_ps_build_end(struct si_shader_context *ctx)
          samplemask = LLVMBuildLoad2(builder, ctx->ac.f32, ctx->abi.outputs[4 * i + 0], "");
          break;
       default:
-         if (semantic >= FRAG_RESULT_DATA0 && semantic <= FRAG_RESULT_DATA7) {
-            unsigned index = semantic - FRAG_RESULT_DATA0;
+         if (semantic >= FRAG_RESULT_DATA0) {
+            int index = mesa_frag_result_get_color_index(semantic);
 
             for (j = 0; j < 4; j++) {
                if (!ctx->abi.outputs[4 * i + j])

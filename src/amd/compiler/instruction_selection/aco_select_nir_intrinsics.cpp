@@ -1246,10 +1246,11 @@ store_output_to_temps(isel_context* ctx, nir_intrinsic_instr* instr)
       if (base == FRAG_RESULT_COLOR)
          base = FRAG_RESULT_DATA0;
 
-      /* Sencond output of dual source blend just use data1 slot for simplicity,
+      /* Second output of dual source blend just use data1 slot for simplicity,
        * because dual source blend does not support multi render target.
        */
-      base += sem.dual_source_blend_index;
+      if (base == FRAG_RESULT_DUAL_SRC_BLEND)
+         base = FRAG_RESULT_DATA1;
    }
    unsigned idx = base * 4u + component;
 

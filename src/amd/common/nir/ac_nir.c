@@ -113,7 +113,8 @@ void ac_nir_set_options(struct radeon_info *info, bool use_llvm,
                          nir_io_mix_convergent_flat_with_interpolated |
                          nir_io_vectorizer_ignores_types |
                          nir_io_compaction_rotates_color_channels |
-                         nir_io_assign_color_input_bases_after_all_other_inputs;
+                         nir_io_assign_color_input_bases_after_all_other_inputs |
+                         nir_io_use_frag_result_dual_src_blend;
    options->lower_layer_fs_input_to_sysval = true;
    options->scalarize_ddx = true;
    options->coarse_ddx = true;
