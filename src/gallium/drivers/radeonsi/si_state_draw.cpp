@@ -138,7 +138,7 @@ static bool si_update_shaders_shared_by_vertex_and_mesh_pipe(struct si_context *
 
    bool fixed_func_face_culling_needed = !NGG || !si_shader_culling_enabled(new_vs);
    bool fixed_func_face_culling_has_effect = (!HAS_TESS && !HAS_GS && !HAS_MS) ||
-                                             new_vs->selector->rast_prim == MESA_PRIM_TRIANGLES;
+                                             new_vs->selector->info.rast_prim == MESA_PRIM_TRIANGLES;
 
    if (sctx->fixed_func_face_culling_needed != fixed_func_face_culling_needed ||
        sctx->fixed_func_face_culling_has_effect != fixed_func_face_culling_has_effect) {
@@ -2396,12 +2396,12 @@ static void si_draw(struct pipe_context *ctx,
           (old_ngg_culling ||
            /* If tess or GS is enabled, the shader just has to allow culling. */
            /* If tess and GS are disabled, the draw has to pass the total_direct_count check. */
-           (HAS_TESS || HAS_GS ? hw_vs->ngg_cull_vert_threshold == 0
-                               : total_direct_count > hw_vs->ngg_cull_vert_threshold))) {
+           (HAS_TESS || HAS_GS ? hw_vs->info.ngg_cull_vert_threshold == 0
+                               : total_direct_count > hw_vs->info.ngg_cull_vert_threshold))) {
          struct si_state_rasterizer *rs = sctx->queued.named.rasterizer;
 
          /* Check that the current shader allows culling. */
-         assert(hw_vs->ngg_cull_vert_threshold != UINT_MAX);
+         assert(hw_vs->info.ngg_cull_vert_threshold != UINT_MAX);
 
          uint16_t ngg_culling;
 

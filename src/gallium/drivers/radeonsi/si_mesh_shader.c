@@ -847,7 +847,7 @@ static void si_draw_mesh_tasks(struct pipe_context *ctx,
       si_emit_task_shader_pointers(sctx);
    }
 
-   enum mesa_prim prim = sctx->ms_shader_state.cso->rast_prim;
+   enum mesa_prim prim = sctx->ms_shader_state.cso->info.rast_prim;
    si_set_rasterized_prim(sctx, prim, sctx->ms_shader_state.current, true);
 
    if (sctx->dirty_shaders_mask & SI_MESH_PIPELINE_STATE_DIRTY_MASK)

@@ -495,16 +495,6 @@ struct si_shader_selector {
    unsigned nir_size;
 
    struct si_shader_info info;
-
-   unsigned ngg_cull_vert_threshold; /* UINT32_MAX = disabled */
-   enum mesa_prim rast_prim;
-
-   /* GS parameters. */
-   bool tess_turns_off_ngg;
-
-   /* bitmasks of used descriptor slots */
-   uint64_t active_const_and_shader_buffers;
-   uint64_t active_samplers_and_images;
 };
 
 /* Valid shader configurations:
@@ -991,7 +981,7 @@ static inline bool si_shader_culling_enabled(struct si_shader *shader)
    unsigned output_prim = si_get_output_prim_simplified(shader->selector, &shader->key);
 
    /* This enables NGG culling for non-monolithic TES and GS. */
-   return shader->selector->ngg_cull_vert_threshold == 0 &&
+   return shader->selector->info.ngg_cull_vert_threshold == 0 &&
           (output_prim == MESA_PRIM_TRIANGLES || output_prim == MESA_PRIM_LINES);
 }
 

@@ -488,8 +488,6 @@ void si_schedule_initial_compile(struct si_context *sctx, mesa_shader_stage stag
                                  struct util_queue_fence *ready_fence,
                                  struct si_compiler_ctx_state *compiler_ctx_state, void *job,
                                  util_queue_execute_func execute);
-void si_get_active_slot_masks(struct si_screen *sscreen, const struct si_shader_info *info,
-                              uint64_t *const_and_shader_buffers, uint64_t *samplers_and_images);
 int si_shader_select(struct pipe_context *ctx, struct si_shader_ctx_state *state);
 void si_vs_key_update_inputs(struct si_context *sctx);
 void si_update_ps_inputs_read_or_disabled(struct si_context *sctx);

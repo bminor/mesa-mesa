@@ -2080,7 +2080,7 @@ bool si_create_shader_variant(struct si_screen *sscreen, struct ac_llvm_compiler
                                         input_prim, gs_vertices_out, gs_invocations,
                                         max_workgroup_size, max_workgroup_size, shader->wave_size,
                                         es_sel->info.esgs_vertex_stride, shader->info.ngg_lds_vertex_size,
-                                        shader->info.ngg_lds_scratch_size, gs_sel->tess_turns_off_ngg,
+                                        shader->info.ngg_lds_scratch_size, gs_sel->info.tess_turns_off_ngg,
                                         gs_sel->stage == MESA_SHADER_GEOMETRY ? 255 : 0, &shader->ngg.info)) {
          mesa_loge("Failed to compute subgroup info");
          return false;

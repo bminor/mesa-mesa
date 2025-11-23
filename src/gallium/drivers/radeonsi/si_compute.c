@@ -41,9 +41,6 @@ static void si_create_compute_state_async(void *job, void *gdata, int thread_ind
    if (!sel->nir->info.use_aco_amd && !*compiler)
       *compiler = si_create_llvm_compiler(sscreen);
 
-   si_get_active_slot_masks(sscreen, &sel->info, &sel->active_const_and_shader_buffers,
-                            &sel->active_samplers_and_images);
-
    program->shader.is_monolithic = true;
    program->shader.wave_size = si_determine_wave_size(sscreen, &program->shader);
 

@@ -29,7 +29,6 @@ struct si_shader_info {
       uint8_t num_ssbos;
       uint8_t num_images;
       uint32_t textures_used;
-      uint32_t msaa_images;
 
       unsigned task_payload_size;
       uint16_t workgroup_size[3];
@@ -159,6 +158,7 @@ struct si_shader_info {
    bool uses_bindless_samplers;
    bool uses_bindless_images;
    bool has_divergent_loop;
+   bool tess_turns_off_ngg;
 
    /* A flag to check if vrs2x2 can be enabled to reduce number of
     * fragment shader invocations if flat shading.
@@ -174,6 +174,13 @@ struct si_shader_info {
 
    /* frag coord and sample pos per component read mask. */
    uint8_t reads_frag_coord_mask;
+
+   unsigned ngg_cull_vert_threshold; /* UINT32_MAX = disabled */
+   enum mesa_prim rast_prim;
+
+   /* bitmasks of used descriptor slots */
+   uint64_t active_const_and_shader_buffers;
+   uint64_t active_samplers_and_images;
 };
 
 /* Temporary info used during shader variant compilation that's forgotten after compilation is

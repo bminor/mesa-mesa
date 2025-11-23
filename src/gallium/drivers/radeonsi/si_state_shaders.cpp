@@ -1345,7 +1345,7 @@ unsigned si_get_output_prim_simplified(const struct si_shader_selector *sel,
       return SI_PRIM_RECTANGLE_LIST;
 
    if (sel->stage == MESA_SHADER_MESH)
-      return sel->rast_prim;
+      return sel->info.rast_prim;
 
    /* It's the same as the input primitive type for VS and TES. */
    return si_get_input_prim(sel, key, true);
@@ -3538,39 +3538,6 @@ void si_schedule_initial_compile(struct si_context *sctx, mesa_shader_stage stag
       util_queue_fence_wait(ready_fence);
 }
 
-/* Return descriptor slot usage masks from the given shader info. */
-void si_get_active_slot_masks(struct si_screen *sscreen, const struct si_shader_info *info,
-                              uint64_t *const_and_shader_buffers, uint64_t *samplers_and_images)
-{
-   unsigned start, num_shaderbufs, num_constbufs, num_images, num_msaa_images, num_samplers;
-
-   num_shaderbufs = info->base.num_ssbos;
-   num_constbufs = info->base.num_ubos;
-   /* two 8-byte images share one 16-byte slot */
-   num_images = align(info->base.num_images, 2);
-   num_msaa_images = align(util_last_bit(info->base.msaa_images), 2);
-   num_samplers = util_last_bit(info->base.textures_used);
-
-   /* The layout is: sb[last] ... sb[0], cb[0] ... cb[last] */
-   start = si_get_shaderbuf_slot(num_shaderbufs - 1);
-   *const_and_shader_buffers = BITFIELD64_RANGE(start, num_shaderbufs + num_constbufs);
-
-   /* The layout is:
-    *   - fmask[last] ... fmask[0]     go to [15-last .. 15]
-    *   - image[last] ... image[0]     go to [31-last .. 31]
-    *   - sampler[0] ... sampler[last] go to [32 .. 32+last*2]
-    *
-    * FMASKs for images are placed separately, because MSAA images are rare,
-    * and so we can benefit from a better cache hit rate if we keep image
-    * descriptors together.
-    */
-   if (sscreen->info.gfx_level < GFX11 && num_msaa_images)
-      num_images = SI_NUM_IMAGES + num_msaa_images; /* add FMASK descriptors */
-
-   start = si_get_image_slot(num_images - 1) / 2;
-   *samplers_and_images = BITFIELD64_RANGE(start, num_images / 2 + num_samplers);
-}
-
 static void *si_create_shader_selector(struct pipe_context *ctx,
                                        const struct pipe_shader_state *state)
 {
@@ -3605,75 +3572,6 @@ static void *si_create_shader_selector(struct pipe_context *ctx,
       nir_print_shader(sel->nir, stderr);
 
    p_atomic_inc(&sscreen->num_shaders_created);
-   si_get_active_slot_masks(sscreen, &sel->info, &sel->active_const_and_shader_buffers,
-                            &sel->active_samplers_and_images);
-
-   switch (sel->stage) {
-   case MESA_SHADER_GEOMETRY:
-      /* Only possibilities: POINTS, LINE_STRIP, TRIANGLES */
-      sel->rast_prim = (enum mesa_prim)sel->nir->info.gs.output_primitive;
-      if (util_rast_prim_is_triangles(sel->rast_prim))
-         sel->rast_prim = MESA_PRIM_TRIANGLES;
-
-      /* EN_MAX_VERT_OUT_PER_GS_INSTANCE does not work with tessellation so
-       * we can't split workgroups. Disable ngg if any of the following conditions is true:
-       * - num_invocations * gs.vertices_out > 256
-       * - LDS usage is too high
-       */
-      sel->tess_turns_off_ngg = sscreen->info.gfx_level >= GFX10 &&
-                                sscreen->info.gfx_level <= GFX10_3 &&
-                                (sel->nir->info.gs.invocations * sel->nir->info.gs.vertices_out > 256 ||
-                                 sel->nir->info.gs.invocations * sel->nir->info.gs.vertices_out *
-                                 (sel->info.num_outputs * 4 + 1) > 6500 /* max dw per GS primitive */);
-      break;
-
-   case MESA_SHADER_VERTEX:
-   case MESA_SHADER_TESS_EVAL:
-      if (sel->stage == MESA_SHADER_TESS_EVAL) {
-         if (sel->nir->info.tess.point_mode)
-            sel->rast_prim = MESA_PRIM_POINTS;
-         else if (sel->nir->info.tess._primitive_mode == TESS_PRIMITIVE_ISOLINES)
-            sel->rast_prim = MESA_PRIM_LINE_STRIP;
-         else
-            sel->rast_prim = MESA_PRIM_TRIANGLES;
-      } else {
-         sel->rast_prim = MESA_PRIM_TRIANGLES;
-      }
-      break;
-   case MESA_SHADER_MESH:
-      sel->rast_prim = sel->nir->info.mesh.primitive_type;
-      break;
-   default:;
-   }
-
-   bool ngg_culling_allowed =
-      sscreen->info.gfx_level >= GFX10 &&
-      sscreen->use_ngg_culling &&
-      sel->nir->info.outputs_written & VARYING_BIT_POS &&
-      sel->stage != MESA_SHADER_MESH &&
-      !sel->nir->info.writes_memory &&
-      /* NGG GS supports culling with streamout because it culls after streamout. */
-      (sel->stage == MESA_SHADER_GEOMETRY || !sel->info.enabled_streamout_buffer_mask) &&
-      (sel->stage != MESA_SHADER_GEOMETRY || sel->info.gs_writes_stream0) &&
-      (sel->stage != MESA_SHADER_VERTEX ||
-       (!sel->nir->info.vs.blit_sgprs_amd &&
-        !sel->nir->info.vs.window_space_position));
-
-   sel->ngg_cull_vert_threshold = UINT_MAX; /* disabled (changed below) */
-
-   if (ngg_culling_allowed) {
-      if (sel->stage == MESA_SHADER_VERTEX) {
-         if (sscreen->debug_flags & DBG(ALWAYS_NGG_CULLING_ALL))
-            sel->ngg_cull_vert_threshold = 0; /* always enabled */
-         else
-            sel->ngg_cull_vert_threshold = 128;
-      } else if (sel->stage == MESA_SHADER_TESS_EVAL ||
-                 sel->stage == MESA_SHADER_GEOMETRY) {
-         if (sel->rast_prim != MESA_PRIM_POINTS)
-            sel->ngg_cull_vert_threshold = 0; /* always enabled */
-      }
-   }
-
    (void)simple_mtx_init(&sel->mutex, mtx_plain);
 
    si_schedule_initial_compile(sctx, sel->stage, &sel->ready, &sel->compiler_ctx_state,
@@ -3749,7 +3647,7 @@ static void si_update_rasterized_prim(struct si_context *sctx)
 
    /* Vertex shader rasterized prim is determined by draw calls. */
    if (hw_vs->cso && hw_vs->cso->stage != MESA_SHADER_VERTEX)
-      si_set_rasterized_prim(sctx, hw_vs->cso->rast_prim, hw_vs->current, sctx->ngg);
+      si_set_rasterized_prim(sctx, hw_vs->cso->info.rast_prim, hw_vs->current, sctx->ngg);
 
    /* This must be done unconditionally because it also depends on si_shader fields. */
    si_update_ngg_sgpr_state_out_prim(sctx, hw_vs->current, sctx->ngg);
@@ -3867,7 +3765,7 @@ bool si_update_ngg(struct si_context *sctx)
 
    bool new_ngg = true;
 
-   if (sctx->shader.gs.cso && sctx->shader.tes.cso && sctx->shader.gs.cso->tess_turns_off_ngg) {
+   if (sctx->shader.gs.cso && sctx->shader.tes.cso && sctx->shader.gs.cso->info.tess_turns_off_ngg) {
       new_ngg = false;
    } else {
       struct si_shader_selector *last = si_get_vs(sctx)->cso;

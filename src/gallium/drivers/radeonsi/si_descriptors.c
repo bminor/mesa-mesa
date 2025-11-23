@@ -3218,7 +3218,7 @@ void si_set_active_descriptors_for_shader(struct si_context *sctx, struct si_sha
       return;
 
    si_set_active_descriptors(sctx, si_const_and_shader_buffer_descriptors_idx(sel->stage),
-                             sel->active_const_and_shader_buffers);
+                             sel->info.active_const_and_shader_buffers);
    si_set_active_descriptors(sctx, si_sampler_and_image_descriptors_idx(sel->stage),
-                             sel->active_samplers_and_images);
+                             sel->info.active_samplers_and_images);
 }

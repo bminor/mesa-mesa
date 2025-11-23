@@ -426,6 +426,39 @@ static void gather_instruction(const struct nir_shader *nir, struct si_shader_in
    }
 }
 
+/* Return descriptor slot usage masks from the given shader info. */
+static void si_get_active_slot_masks(struct si_screen *sscreen, nir_shader *nir,
+                                     struct si_shader_info *info)
+{
+   unsigned start, num_shaderbufs, num_constbufs, num_images, num_msaa_images, num_samplers;
+
+   num_shaderbufs = nir->info.num_ssbos;
+   num_constbufs = nir->info.num_ubos;
+   /* two 8-byte images share one 16-byte slot */
+   num_images = align(nir->info.num_images, 2);
+   num_msaa_images = align(util_last_bit(nir->info.msaa_images[0]), 2);
+   num_samplers = util_last_bit(nir->info.textures_used[0]);
+
+   /* The layout is: sb[last] ... sb[0], cb[0] ... cb[last] */
+   start = si_get_shaderbuf_slot(num_shaderbufs - 1);
+   info->active_const_and_shader_buffers = BITFIELD64_RANGE(start, num_shaderbufs + num_constbufs);
+
+   /* The layout is:
+    *   - fmask[last] ... fmask[0]     go to [15-last .. 15]
+    *   - image[last] ... image[0]     go to [31-last .. 31]
+    *   - sampler[0] ... sampler[last] go to [32 .. 32+last*2]
+    *
+    * FMASKs for images are placed separately, because MSAA images are rare,
+    * and so we can benefit from a better cache hit rate if we keep image
+    * descriptors together.
+    */
+   if (sscreen->info.gfx_level < GFX11 && num_msaa_images)
+      num_images = SI_NUM_IMAGES + num_msaa_images; /* add FMASK descriptors */
+
+   start = si_get_image_slot(num_images - 1) / 2;
+   info->active_samplers_and_images = BITFIELD64_RANGE(start, num_images / 2 + num_samplers);
+}
+
 void si_nir_gather_info(struct si_screen *sscreen, struct nir_shader *nir,
                         struct si_shader_info *info, bool colors_lowered)
 {
@@ -474,7 +507,6 @@ void si_nir_gather_info(struct si_screen *sscreen, struct nir_shader *nir,
    info->base.num_ssbos = nir->info.num_ssbos;
    info->base.num_images = nir->info.num_images;
    info->base.textures_used = nir->info.textures_used[0];
-   info->base.msaa_images = nir->info.msaa_images[0];
 
    info->base.task_payload_size = nir->info.task_payload_size;
    memcpy(info->base.workgroup_size, nir->info.workgroup_size, sizeof(nir->info.workgroup_size));
@@ -746,6 +778,74 @@ void si_nir_gather_info(struct si_screen *sscreen, struct nir_shader *nir,
             info->color_attr_index[1] = i;
       }
    }
+
+   switch (nir->info.stage) {
+   case MESA_SHADER_GEOMETRY:
+      /* Only possibilities: POINTS, LINE_STRIP, TRIANGLES */
+      info->rast_prim = (enum mesa_prim)nir->info.gs.output_primitive;
+      if (util_rast_prim_is_triangles(info->rast_prim))
+         info->rast_prim = MESA_PRIM_TRIANGLES;
+
+      /* EN_MAX_VERT_OUT_PER_GS_INSTANCE does not work with tessellation so
+       * we can't split workgroups. Disable ngg if any of the following conditions is true:
+       * - num_invocations * gs.vertices_out > 256
+       * - LDS usage is too high
+       */
+      info->tess_turns_off_ngg = sscreen->info.gfx_level >= GFX10 &&
+                                sscreen->info.gfx_level <= GFX10_3 &&
+                                (nir->info.gs.invocations * nir->info.gs.vertices_out > 256 ||
+                                 nir->info.gs.invocations * nir->info.gs.vertices_out *
+                                 (info->num_outputs * 4 + 1) > 6500 /* max dw per GS primitive */);
+      break;
+
+   case MESA_SHADER_VERTEX:
+   case MESA_SHADER_TESS_EVAL:
+      if (nir->info.stage == MESA_SHADER_TESS_EVAL) {
+         if (nir->info.tess.point_mode)
+            info->rast_prim = MESA_PRIM_POINTS;
+         else if (nir->info.tess._primitive_mode == TESS_PRIMITIVE_ISOLINES)
+            info->rast_prim = MESA_PRIM_LINE_STRIP;
+         else
+            info->rast_prim = MESA_PRIM_TRIANGLES;
+      } else {
+         info->rast_prim = MESA_PRIM_TRIANGLES;
+      }
+      break;
+   case MESA_SHADER_MESH:
+      info->rast_prim = nir->info.mesh.primitive_type;
+      break;
+   default:;
+   }
+
+   bool ngg_culling_allowed =
+      sscreen->info.gfx_level >= GFX10 &&
+      sscreen->use_ngg_culling &&
+      nir->info.outputs_written & VARYING_BIT_POS &&
+      nir->info.stage != MESA_SHADER_MESH &&
+      !nir->info.writes_memory &&
+      /* NGG GS supports culling with streamout because it culls after streamout. */
+      (nir->info.stage == MESA_SHADER_GEOMETRY || !info->enabled_streamout_buffer_mask) &&
+      (nir->info.stage != MESA_SHADER_GEOMETRY || info->gs_writes_stream0) &&
+      (nir->info.stage != MESA_SHADER_VERTEX ||
+       (!nir->info.vs.blit_sgprs_amd &&
+        !nir->info.vs.window_space_position));
+
+   info->ngg_cull_vert_threshold = UINT_MAX; /* disabled (changed below) */
+
+   if (ngg_culling_allowed) {
+      if (nir->info.stage == MESA_SHADER_VERTEX) {
+         if (sscreen->debug_flags & DBG(ALWAYS_NGG_CULLING_ALL))
+            info->ngg_cull_vert_threshold = 0; /* always enabled */
+         else
+            info->ngg_cull_vert_threshold = 128;
+      } else if (nir->info.stage == MESA_SHADER_TESS_EVAL ||
+                 nir->info.stage == MESA_SHADER_GEOMETRY) {
+         if (info->rast_prim != MESA_PRIM_POINTS)
+            info->ngg_cull_vert_threshold = 0; /* always enabled */
+      }
+   }
+
+   si_get_active_slot_masks(sscreen, nir, info);
 }
 
 enum ac_hw_stage
