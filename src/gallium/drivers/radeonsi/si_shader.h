@@ -496,8 +496,6 @@ struct si_shader_selector {
 
    struct si_shader_info info;
 
-   uint8_t const_and_shader_buf_descriptors_index;
-   uint8_t sampler_and_images_descriptors_index;
    unsigned ngg_cull_vert_threshold; /* UINT32_MAX = disabled */
    enum mesa_prim rast_prim;
 

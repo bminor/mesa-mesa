@@ -3600,10 +3600,6 @@ static void *si_create_shader_selector(struct pipe_context *ctx,
    si_nir_gather_info(sscreen, sel->nir, &sel->info, false);
 
    sel->stage = sel->nir->info.stage;
-   sel->const_and_shader_buf_descriptors_index =
-      si_const_and_shader_buffer_descriptors_idx(sel->stage);
-   sel->sampler_and_images_descriptors_index =
-      si_sampler_and_image_descriptors_idx(sel->stage);
 
    if (si_can_dump_shader(sscreen, sel->stage, SI_DUMP_INIT_NIR))
       nir_print_shader(sel->nir, stderr);

@@ -119,10 +119,6 @@ void *si_create_compute_state_for_nir(struct pipe_context *ctx, nir_shader *nir,
    sel->stage = stage;
    sel->screen = sscreen;
    simple_mtx_init(&sel->mutex, mtx_plain);
-   sel->const_and_shader_buf_descriptors_index =
-      si_const_and_shader_buffer_descriptors_idx(stage);
-   sel->sampler_and_images_descriptors_index =
-      si_sampler_and_image_descriptors_idx(stage);
    program->shader.selector = &program->sel;
 
    sel->nir = nir;
