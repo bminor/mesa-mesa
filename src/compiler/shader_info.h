@@ -492,17 +492,6 @@ typedef struct shader_info {
          /** gl_FragDepth layout for ARB_conservative_depth. */
          enum gl_frag_depth_layout depth_layout:3;
 
-         /**
-          * Interpolation qualifiers for drivers that lowers color inputs
-          * to system values.
-          */
-         unsigned color0_interp:3; /* glsl_interp_mode */
-         bool color0_sample:1;
-         bool color0_centroid:1;
-         unsigned color1_interp:3; /* glsl_interp_mode */
-         bool color1_sample:1;
-         bool color1_centroid:1;
-
          /* Bitmask of gl_advanced_blend_mode values that may be used with this
           * shader.
           */

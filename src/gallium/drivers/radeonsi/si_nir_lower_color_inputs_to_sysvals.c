@@ -10,12 +10,6 @@ bool si_nir_lower_color_inputs_to_sysvals(nir_shader *nir)
    nir_function_impl *impl = nir_shader_get_entrypoint(nir);
    bool progress = false;
 
-   /* Both flat and non-flat can occur with nir_io_mix_convergent_flat_with_interpolated,
-    * but we want to save only the non-flat interp mode in that case.
-    */
-   bool color0_interp_mode_set = false;
-   bool color1_interp_mode_set = false;
-
    nir_builder b = nir_builder_create(impl);
 
    nir_foreach_block(block, impl) {
@@ -35,45 +29,14 @@ bool si_nir_lower_color_inputs_to_sysvals(nir_shader *nir)
              sem.location != VARYING_SLOT_COL1)
             continue;
 
-         /* Default to FLAT (for load_input) */
-         enum glsl_interp_mode interp = INTERP_MODE_FLAT;
-         bool sample = false;
-         bool centroid = false;
-
-         if (intrin->intrinsic == nir_intrinsic_load_interpolated_input) {
-            nir_intrinsic_instr *baryc =
-               nir_def_as_intrinsic(intrin->src[0].ssa);
-
-            centroid =
-               baryc->intrinsic == nir_intrinsic_load_barycentric_centroid;
-            sample =
-               baryc->intrinsic == nir_intrinsic_load_barycentric_sample;
-            assert(centroid || sample ||
-                   baryc->intrinsic == nir_intrinsic_load_barycentric_pixel);
-
-            interp = nir_intrinsic_interp_mode(baryc);
-         }
-
          b.cursor = nir_before_instr(instr);
          nir_def *load = NULL;
 
          if (sem.location == VARYING_SLOT_COL0) {
-            load = nir_load_color0(&b);
-            /* If both flat and non-flat are used, set non-flat. */
-            if (!color0_interp_mode_set || interp != INTERP_MODE_FLAT)
-               nir->info.fs.color0_interp = interp;
-            nir->info.fs.color0_sample = sample;
-            nir->info.fs.color0_centroid = centroid;
-            color0_interp_mode_set = true;
+            load = nir_load_color0_amd(&b, 32);
          } else {
             assert(sem.location == VARYING_SLOT_COL1);
-            load = nir_load_color1(&b);
-            /* If both flat and non-flat are used, set non-flat. */
-            if (!color1_interp_mode_set || interp != INTERP_MODE_FLAT)
-               nir->info.fs.color1_interp = interp;
-            nir->info.fs.color1_sample = sample;
-            nir->info.fs.color1_centroid = centroid;
-            color1_interp_mode_set = true;
+            load = nir_load_color1_amd(&b, 32);
          }
 
          if (intrin->num_components != 4) {

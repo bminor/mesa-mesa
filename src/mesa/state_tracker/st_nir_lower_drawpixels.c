@@ -199,9 +199,6 @@ lower_drawpixels_instr(nir_builder *b, nir_instr *instr, void *cb_data)
    nir_intrinsic_instr *intr = nir_instr_as_intrinsic(instr);
 
    switch (intr->intrinsic) {
-   case nir_intrinsic_load_color0:
-      return lower_color(b, state, intr);
-
    case nir_intrinsic_load_interpolated_input:
    case nir_intrinsic_load_input: {
       if (nir_intrinsic_io_semantics(intr).location == VARYING_SLOT_TEX0)

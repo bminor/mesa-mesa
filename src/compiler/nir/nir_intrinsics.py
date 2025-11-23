@@ -1098,14 +1098,16 @@ system_value("blend_const_color_rgba", 4)
 system_value("blend_const_color_rgba8888_unorm", 1)
 system_value("blend_const_color_aaaa8888_unorm", 1)
 
-# System values for gl_Color, for radeonsi which interpolates these in the
-# shader prolog to handle two-sided color without recompiles and therefore
-# doesn't handle these in the main shader part like normal varyings.
-system_value("color0", 4)
-system_value("color1", 4)
-
 # System value for internal compute shaders in radeonsi.
 system_value("user_data_amd", 8)
+
+# Loads for gl_Color, for radeonsi which interpolates these in the shader
+# prolog to handle flatshading and front/back color selection without
+# recompiles and therefore doesn't handle them like normal varyings.
+intrinsic("load_color0_amd", src_comp=[], dest_comp=4, indices=[],
+          flags=[CAN_ELIMINATE, CAN_REORDER])
+intrinsic("load_color1_amd", src_comp=[], dest_comp=4, indices=[],
+          flags=[CAN_ELIMINATE, CAN_REORDER])
 
 # In a fragment shader, the current sample mask. At the beginning of the shader,
 # this is the same as load_sample_mask_in, but as the shader is executed, it may

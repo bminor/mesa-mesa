@@ -564,12 +564,12 @@ static bool lower_intrinsic(nir_builder *b, nir_instr *instr, struct lower_abi_s
    case nir_intrinsic_load_alpha_reference_amd:
       replacement = ac_nir_load_arg(b, &args->ac, args->alpha_reference);
       break;
-   case nir_intrinsic_load_color0:
-   case nir_intrinsic_load_color1: {
+   case nir_intrinsic_load_color0_amd:
+   case nir_intrinsic_load_color1_amd: {
       uint32_t colors_read = sel->info.colors_read;
 
       int start, offset;
-      if (intrin->intrinsic == nir_intrinsic_load_color0) {
+      if (intrin->intrinsic == nir_intrinsic_load_color0_amd) {
          start = 0;
          offset = 0;
       } else {

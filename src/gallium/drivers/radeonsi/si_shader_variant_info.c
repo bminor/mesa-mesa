@@ -132,11 +132,11 @@ void si_get_shader_variant_info(struct si_shader *shader,
                }
                break;
             }
-            case nir_intrinsic_load_color0:
+            case nir_intrinsic_load_color0_amd:
                assert(!shader->is_monolithic);
                shader->info.ps_colors_read |= nir_def_components_read(&intr->def);
                break;
-            case nir_intrinsic_load_color1:
+            case nir_intrinsic_load_color1_amd:
                assert(!shader->is_monolithic);
                shader->info.ps_colors_read |= nir_def_components_read(&intr->def) << 4;
                break;
@@ -273,8 +273,7 @@ void si_get_shader_variant_info(struct si_shader *shader,
                   shader->info.ps_inputs[index].semantic =
                      (back ? VARYING_SLOT_BFC0 : VARYING_SLOT_COL0) + i;
 
-                  enum glsl_interp_mode mode = i ? nir->info.fs.color1_interp
-                                                 : nir->info.fs.color0_interp;
+                  enum glsl_interp_mode mode = shader->selector->info.color_interpolate[i];
                   shader->info.ps_inputs[index].interpolate =
                      mode == INTERP_MODE_NONE ? INTERP_MODE_COLOR : mode;
                   index++;

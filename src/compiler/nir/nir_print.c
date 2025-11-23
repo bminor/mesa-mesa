@@ -2890,21 +2890,6 @@ print_shader_info(const struct shader_info *info, FILE *fp)
       print_nz_bool(fp, "untyped_color_outputs", info->fs.untyped_color_outputs);
 
       print_nz_unsigned(fp, "depth_layout", info->fs.depth_layout);
-
-      if (info->fs.color0_interp != INTERP_MODE_NONE) {
-         fprintf(fp, "color0_interp: %s\n",
-                 glsl_interp_mode_name(info->fs.color0_interp));
-      }
-      print_nz_bool(fp, "color0_sample", info->fs.color0_sample);
-      print_nz_bool(fp, "color0_centroid", info->fs.color0_centroid);
-
-      if (info->fs.color1_interp != INTERP_MODE_NONE) {
-         fprintf(fp, "color1_interp: %s\n",
-                 glsl_interp_mode_name(info->fs.color1_interp));
-      }
-      print_nz_bool(fp, "color1_sample", info->fs.color1_sample);
-      print_nz_bool(fp, "color1_centroid", info->fs.color1_centroid);
-
       print_nz_x32(fp, "advanced_blend_modes", info->fs.advanced_blend_modes);
       break;
 
