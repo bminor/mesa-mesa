@@ -1999,7 +1999,7 @@ typedef enum {
 typedef struct nir_io_semantics {
    unsigned location : 7;  /* gl_vert_attrib, gl_varying_slot, or gl_frag_result */
    unsigned num_slots : 6; /* max 32, may be pessimistic with const indexing */
-   unsigned dual_source_blend_index : 1;
+   unsigned dual_source_blend_index : 1; /* used without nir_io_use_frag_result_dual_src_blend */
    unsigned fb_fetch_output : 1;  /* for GL_KHR_blend_equation_advanced */
    unsigned fb_fetch_output_coherent : 1;
    unsigned gs_streams : 8;       /* xxyyzzww: 2-bit stream index for each component */

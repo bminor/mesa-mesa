@@ -600,6 +600,17 @@ emit_store(struct lower_io_state *state, nir_def *data,
    }
 
    int location = var->data.location;
+   bool dual_src_blend = var->data.index > 0;
+
+   /* Set FRAG_RESULT_DUAL_SRC_BLEND if the driver prefers that. */
+   if (dual_src_blend &&
+       b->shader->options->io_options & nir_io_use_frag_result_dual_src_blend) {
+      assert(b->shader->info.stage == MESA_SHADER_FRAGMENT);
+      assert(location == FRAG_RESULT_COLOR || location == FRAG_RESULT_DATA0);
+
+      location = FRAG_RESULT_DUAL_SRC_BLEND;
+      dual_src_blend = false;
+   }
 
    /* Maximum values in nir_io_semantics. */
    assert(num_slots <= 63);
@@ -608,7 +619,7 @@ emit_store(struct lower_io_state *state, nir_def *data,
    nir_io_semantics semantics = { 0 };
    semantics.location = location;
    semantics.num_slots = num_slots;
-   semantics.dual_source_blend_index = var->data.index;
+   semantics.dual_source_blend_index = dual_src_blend;
    semantics.gs_streams = gs_streams;
    semantics.medium_precision = is_medium_precision(b->shader, var);
    semantics.per_view = var->data.per_view;

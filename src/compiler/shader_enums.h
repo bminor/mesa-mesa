@@ -1026,11 +1026,18 @@ typedef enum
    FRAG_RESULT_DATA5,
    FRAG_RESULT_DATA6,
    FRAG_RESULT_DATA7,
+
+   /* The color output that sets the values for the SRC1 blend factors, also
+    * known as dual source blending. This is typically the second color output,
+    * and DATA1-DATA7 can't be written when this one is written. Enabled by
+    * nir_io_use_frag_result_dual_src_blend.
+    */
+   FRAG_RESULT_DUAL_SRC_BLEND,
+   FRAG_RESULT_MAX,
 } gl_frag_result;
 
 const char *gl_frag_result_name(gl_frag_result result);
-
-#define FRAG_RESULT_MAX		(FRAG_RESULT_DATA0 + MAX_DRAW_BUFFERS)
+int mesa_frag_result_get_color_index(gl_frag_result result);
 
 /**
  * \brief Layout qualifiers for gl_FragDepth.

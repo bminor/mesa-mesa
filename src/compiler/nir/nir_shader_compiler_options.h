@@ -206,6 +206,16 @@ typedef enum {
     */
    nir_io_assign_color_input_bases_after_all_other_inputs = BITFIELD_BIT(11),
 
+   /**
+    * Whether nir_lower_io should use FRAG_RESULT_DUAL_SRC_BLEND instead of
+    * nir_io_semantics::dual_source_blend_index.
+    *
+    * This has the advantage that it behaves like a normal output and its
+    * presence is reflected in shader_info::outputs_written instead of
+    * shader_info::fs::color_is_dual_source.
+    */
+   nir_io_use_frag_result_dual_src_blend = BITFIELD_BIT(11),
+
    /* Options affecting the GLSL compiler or Gallium are below. */
 
    /**

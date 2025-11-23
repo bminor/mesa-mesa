@@ -586,10 +586,12 @@ consume_dual_stores(nir_builder *b, nir_intrinsic_instr *store, void *data)
    store->instr.pass_flags = 0;
 
    nir_io_semantics sem = nir_intrinsic_io_semantics(store);
-   if (sem.dual_source_blend_index == 0)
+   int rt = 0;
+   if (sem.dual_source_blend_index)
+      rt = color_index_for_location(sem.location);
+   else if (sem.location != FRAG_RESULT_DUAL_SRC_BLEND)
       return false;
 
-   int rt = color_index_for_location(sem.location);
    assert(rt >= 0 && rt < 8 && "bounds for dual-source blending");
 
    outputs[rt] = store->src[0].ssa;
