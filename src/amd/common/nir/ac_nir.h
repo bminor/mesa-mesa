@@ -328,6 +328,9 @@ typedef struct {
    bool fbfetch_msaa;
    bool fbfetch_apply_fmask;
 
+   /* Inputs. */
+   bool lower_color_inputs_to_load_color01;
+
    /* Outputs. */
    bool clamp_color;                /* GL only */
    bool alpha_test_alpha_to_one;    /* GL only, this only affects alpha test */

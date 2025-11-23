@@ -848,12 +848,10 @@ static void si_preprocess_nir(struct si_nir_shader_ctx *ctx)
          if (key->ps.part.prolog.poly_stipple)
             NIR_PASS(progress, nir, si_nir_lower_polygon_stipple);
       } else {
-         if (sel->info.colors_read)
-            NIR_PASS(progress, nir, si_nir_lower_color_inputs_to_sysvals);
-
          ac_nir_lower_ps_early_options early_options = {
             .optimize_frag_coord = true,
             .frag_coord_is_center = true,
+            .lower_color_inputs_to_load_color01 = true,
             .alpha_func = COMPARE_FUNC_ALWAYS,
             .spi_shader_col_format_hint = ~0,
          };

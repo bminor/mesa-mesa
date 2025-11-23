@@ -363,6 +363,34 @@ fbfetch_color_buffer0(nir_builder *b, lower_ps_early_state *s)
 }
 
 static bool
+lower_color_inputs_to_load_color01(nir_builder *b, nir_intrinsic_instr *intr)
+{
+   nir_io_semantics sem = nir_intrinsic_io_semantics(intr);
+
+   if (sem.location != VARYING_SLOT_COL0 &&
+       sem.location != VARYING_SLOT_COL1)
+      return false;
+
+   nir_def *load = NULL;
+
+   if (sem.location == VARYING_SLOT_COL0) {
+      load = nir_load_color0_amd(b, 32);
+   } else {
+      assert(sem.location == VARYING_SLOT_COL1);
+      load = nir_load_color1_amd(b, 32);
+   }
+
+   if (intr->num_components != 4) {
+      unsigned start = nir_intrinsic_component(intr);
+      unsigned count = intr->num_components;
+      load = nir_channels(b, load, BITFIELD_RANGE(start, count));
+   }
+
+   nir_def_replace(&intr->def, load);
+   return true;
+}
+
+static bool
 lower_ps_intrinsic(nir_builder *b, nir_intrinsic_instr *intrin, void *state)
 {
    lower_ps_early_state *s = (lower_ps_early_state *)state;
@@ -370,6 +398,11 @@ lower_ps_intrinsic(nir_builder *b, nir_intrinsic_instr *intrin, void *state)
    b->cursor = nir_before_instr(&intrin->instr);
 
    switch (intrin->intrinsic) {
+   case nir_intrinsic_load_input:
+   case nir_intrinsic_load_interpolated_input:
+      if (s->options->lower_color_inputs_to_load_color01)
+         return lower_color_inputs_to_load_color01(b, intrin);
+      break;
    case nir_intrinsic_store_output:
       return optimize_lower_ps_outputs(b, intrin, s);
    case nir_intrinsic_load_barycentric_pixel:
