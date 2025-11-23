@@ -5226,11 +5226,18 @@ emit_cf_list(bi_context *ctx, struct exec_list *list)
 struct bi_stats {
    unsigned nr_clauses, nr_tuples, nr_ins;
    unsigned nr_arith, nr_texture, nr_varying, nr_ldst;
+   unsigned nr_fau_uniforms;
+   uint64_t reg_mask;
 };
 
 static void
 bi_count_tuple_stats(bi_clause *clause, bi_tuple *tuple, struct bi_stats *stats)
 {
+   /* check for FAU access */
+   if (tuple->fau_idx & 0x80) {
+      unsigned ureg = 1 + (tuple->fau_idx & 0x7f);
+      stats->nr_fau_uniforms = MAX2(stats->nr_fau_uniforms, 2*ureg);
+   }
    /* Count instructions */
    stats->nr_ins += (tuple->fma ? 1 : 0) + (tuple->add ? 1 : 0);
 
@@ -5366,6 +5373,8 @@ bi_gather_stats(bi_context *ctx, unsigned size, struct bifrost_stats *out)
       .spills = ctx->spills,
       .fills = ctx->fills,
       .spill_cost = ctx->spill_cost,
+      .registers_used = util_bitcount64(counts.reg_mask),
+      .uniforms_used = counts.nr_fau_uniforms,
    };
 
    out->cycles = MAX2(out->arith, MAX3(out->t, out->v, out->ldst));
@@ -5406,6 +5415,8 @@ va_gather_stats(bi_context *ctx, unsigned size, struct valhall_stats *out)
       .spills = ctx->spills,
       .fills = ctx->fills,
       .spill_cost = ctx->spill_cost,
+      .registers_used = util_bitcount64(counts.reg_mask),
+      .uniforms_used = counts.nr_fau_uniforms,
    };
    struct valhall_stats stats = stats_abs;
    stats.fma /= model->rates.fma;

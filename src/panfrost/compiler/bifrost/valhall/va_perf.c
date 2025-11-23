@@ -32,6 +32,27 @@ va_count_instr_stats(bi_instr *I, struct va_stats *stats)
    /* Adjusted for 64-bit arithmetic */
    unsigned words = bi_count_write_registers(I, 0);
 
+   bi_foreach_dest(I, d) {
+      if (I->dest[d].type == BI_INDEX_REGISTER)
+         stats->reg_mask |= (uint64_t)bi_writemask(I, d) << I->dest[d].value;
+   }
+   bi_foreach_src(I, s) {
+      if (I->src[s].type == BI_INDEX_REGISTER) {
+         unsigned pos = I->src[s].offset + I->src[s].value;
+         unsigned count = bi_count_read_registers(I, s);
+         stats->reg_mask |= ((uint64_t)BITFIELD_MASK(count)) << pos;
+      }
+      if (I->src[s].type == BI_INDEX_FAU) {
+         bi_index index = I->src[s];
+         unsigned val = index.value;
+         if (val >= BIR_FAU_UNIFORM) {
+            val = val & ~BIR_FAU_UNIFORM;
+            if (val < BIR_FAU_UNIFORM) {
+               stats->nr_fau_uniforms = MAX2(stats->nr_fau_uniforms, val+1);
+            }
+         }
+      }
+   }
    switch (valhall_opcodes[I->op].unit) {
    /* Arithmetic is 2x slower for 64-bit than 32-bit */
    case VA_UNIT_FMA:

@@ -67,6 +67,8 @@
         <stat name="Spills">Number of spill instructions</stat>
         <stat name="Fills">Number of fill instructions</stat>
         <stat name="Spill cost">Cost of spill and fill instructions</stat>
+	<stat name="Registers used">Number of registers used</stat>
+	<stat name="Uniforms used">Uniform registers used</stat>
      </isa>
 
      <isa name="Valhall">
@@ -84,6 +86,8 @@
         <stat name="Spills">Number of spill instructions</stat>
         <stat name="Fills">Number of fill instructions</stat>
         <stat name="Spill cost">Cost of spill and fill instructions</stat>
+	<stat name="Registers used">Number of registers used</stat>
+	<stat name="Uniforms used">Uniform registers used</stat>
      </isa>
    </family>
 

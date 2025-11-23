@@ -108,8 +108,8 @@ bi_choose_scoreboard_slot(bi_instr *message)
    return 0;
 }
 
-static uint64_t
-bi_read_mask(bi_instr *I, bool staging_only)
+uint64_t
+bi_instr_read_mask(bi_instr *I, bool staging_only)
 {
    uint64_t mask = 0;
 
@@ -131,8 +131,8 @@ bi_read_mask(bi_instr *I, bool staging_only)
    return mask;
 }
 
-static uint64_t
-bi_write_mask(bi_instr *I)
+uint64_t
+bi_instr_write_mask(bi_instr *I)
 {
    uint64_t mask = 0;
 
@@ -177,10 +177,10 @@ bi_push_clause(struct bi_scoreboard_state *st, bi_clause *clause)
    if (!I)
       return;
 
-   st->read[slot] |= bi_read_mask(I, true);
+   st->read[slot] |= bi_instr_read_mask(I, true);
 
    if (bi_get_opcode_props(I)->sr_write)
-      st->write[slot] |= bi_write_mask(I);
+      st->write[slot] |= bi_instr_write_mask(I);
 }
 
 /* Adds a dependency on each slot writing any specified register */
@@ -220,8 +220,8 @@ bi_set_dependencies(bi_block *block, bi_clause *clause,
                     struct bi_scoreboard_state *st)
 {
    bi_foreach_instr_in_clause(block, clause, I) {
-      uint64_t read = bi_read_mask(I, false);
-      uint64_t written = bi_write_mask(I);
+      uint64_t read = bi_instr_read_mask(I, false);
+      uint64_t written = bi_instr_write_mask(I);
 
       /* Read-after-write; write-after-write */
       bi_depend_on_writers(clause, st, read | written);
