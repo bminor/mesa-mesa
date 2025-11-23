@@ -379,6 +379,7 @@ lower_image_intrin(nir_builder *b, nir_intrinsic_instr *intr,
       b, 1, 64, resource_addr, .dest_type = type,
       .image_dim = nir_intrinsic_image_dim(intr),
       .image_array = nir_intrinsic_image_array(intr),
+      .access = nir_intrinsic_access(intr) | var->data.access,
       .flags = msl_convert_access_flag(var->data.access));
 
    nir_rewrite_image_intrinsic(intr, handle, true);

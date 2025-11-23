@@ -2881,7 +2881,7 @@ intrinsic("is_null_descriptor", src_comp=[-1], dest_comp=1, flags=[CAN_ELIMINATE
 # given binding
 load("buffer_ptr_kk", [], [BINDING], [CAN_ELIMINATE, CAN_REORDER])
 # Opaque texture<T> handle, with DEST_TYPE representing T
-load("texture_handle_kk", [1], [DEST_TYPE, IMAGE_DIM, IMAGE_ARRAY, FLAGS], [CAN_ELIMINATE])
+load("texture_handle_kk", [1], [DEST_TYPE, IMAGE_DIM, IMAGE_ARRAY, ACCESS, FLAGS], [CAN_ELIMINATE])
 # Same as above but for depth<T> textures, T is always float
 load("depth_texture_kk", [1], [IMAGE_DIM, IMAGE_ARRAY], [CAN_ELIMINATE])
 # Load a bindless sampler handle mapping a binding table sampler.

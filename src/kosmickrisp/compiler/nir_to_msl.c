@@ -1069,10 +1069,21 @@ intrinsic_to_msl(struct nir_to_msl_ctx *ctx, nir_intrinsic_instr *instr)
       P(ctx, "(ulong)&buf%d.contents[0];\n", nir_intrinsic_binding(instr));
       break;
    case nir_intrinsic_load_global: {
-      src_to_packed_load(ctx, &instr->src[0], "device",
-                         msl_type_for_def(ctx->types, &instr->def),
-                         instr->def.num_components);
-      P(ctx, ";\n");
+      enum gl_access_qualifier access = nir_intrinsic_access(instr);
+      const char *type = msl_type_for_def(ctx->types, &instr->def);
+      const char *addressing =
+         access & ACCESS_COHERENT ? "coherent device" : "device";
+      if (access & ACCESS_ATOMIC) {
+         assert(instr->num_components == 1u &&
+                "We can only do single component with atomics");
+         P(ctx, "atomic_load_explicit((%s atomic_%s*)", addressing, type);
+         src_to_msl(ctx, &instr->src[0]);
+         P(ctx, ", memory_order_relaxed);\n");
+      } else {
+         src_to_packed_load(ctx, &instr->src[0], addressing, type,
+                            instr->def.num_components);
+         P(ctx, ";\n");
+      }
       break;
    }
    case nir_intrinsic_load_global_constant: {
@@ -1094,9 +1105,24 @@ intrinsic_to_msl(struct nir_to_msl_ctx *ctx, nir_intrinsic_instr *instr)
       break;
    }
    case nir_intrinsic_load_global_constant_offset: {
-      src_to_packed_load_offset(ctx, &instr->src[0], &instr->src[1], "device",
-                                msl_type_for_def(ctx->types, &instr->def),
-                                instr->def.num_components);
+      enum gl_access_qualifier access = nir_intrinsic_access(instr);
+      const char *type = msl_type_for_def(ctx->types, &instr->def);
+      const char *addressing =
+         access & ACCESS_COHERENT ? "coherent device" : "device";
+      if (access & ACCESS_ATOMIC) {
+         assert(instr->num_components == 1u &&
+                "We can only do single component with atomics");
+         P(ctx, "atomic_load_explicit((%s atomic_%s*)(", addressing, type);
+         src_to_msl(ctx, &instr->src[0]);
+         P(ctx, "+");
+         src_to_msl(ctx, &instr->src[1]);
+         P(ctx, ", memory_order_relaxed);\n");
+      } else {
+         src_to_packed_load_offset(ctx, &instr->src[0], &instr->src[1],
+                                   addressing,
+                                   msl_type_for_def(ctx->types, &instr->def),
+                                   instr->def.num_components);
+      }
       P(ctx, ";\n");
       break;
    }
@@ -1113,15 +1139,29 @@ intrinsic_to_msl(struct nir_to_msl_ctx *ctx, nir_intrinsic_instr *instr)
       atomic_swap_to_msl(ctx, instr, "threadgroup", true);
       break;
    case nir_intrinsic_store_global: {
+      enum gl_access_qualifier access = nir_intrinsic_access(instr);
       const char *type = msl_type_for_src(ctx->types, &instr->src[0]);
-      src_to_packed_store(ctx, &instr->src[1], "device", type,
-                          instr->src[0].ssa->num_components);
-      writemask_to_msl(ctx, nir_intrinsic_write_mask(instr),
-                       instr->num_components);
-      P(ctx, " = ")
-      src_to_packed(ctx, &instr->src[0], type,
-                    instr->src[0].ssa->num_components);
-      P(ctx, ";\n");
+      const char *addressing =
+         access & ACCESS_COHERENT ? "coherent device" : "device";
+      if (access & ACCESS_ATOMIC) {
+         assert(instr->num_components == 1u &&
+                "We can only do single component with atomics");
+         P_IND(ctx, "atomic_store_explicit((%s atomic_%s*)", addressing, type);
+         src_to_msl(ctx, &instr->src[1]);
+         P(ctx, ", ")
+         src_to_packed(ctx, &instr->src[0], type,
+                       instr->src[0].ssa->num_components);
+         P(ctx, ", memory_order_relaxed);\n");
+      } else {
+         src_to_packed_store(ctx, &instr->src[1], addressing, type,
+                             instr->src[0].ssa->num_components);
+         writemask_to_msl(ctx, nir_intrinsic_write_mask(instr),
+                          instr->num_components);
+         P(ctx, " = ")
+         src_to_packed(ctx, &instr->src[0], type,
+                       instr->src[0].ssa->num_components);
+         P(ctx, ";\n");
+      }
       break;
    }
    case nir_intrinsic_barrier: {
@@ -1243,6 +1283,9 @@ intrinsic_to_msl(struct nir_to_msl_ctx *ctx, nir_intrinsic_instr *instr)
       break;
    case nir_intrinsic_load_texture_handle_kk: {
       const char *access = "";
+      const char *coherent = nir_intrinsic_access(instr) & ACCESS_COHERENT
+                                ? ", memory_coherence_device"
+                                : "";
       switch (nir_intrinsic_flags(instr)) {
       case MSL_ACCESS_READ:
          access = ", access::read";
@@ -1252,15 +1295,23 @@ intrinsic_to_msl(struct nir_to_msl_ctx *ctx, nir_intrinsic_instr *instr)
          break;
       case MSL_ACCESS_READ_WRITE:
          access = ", access::read_write";
+         /* TODO_KOSMICKRISP We shouldn't need this line below but it doesn't
+          * seem we get the correct access values for what should be device
+          * coherent textures from NIR. Example test:
+          * dEQP-VK.memory_model.message_passing.ext.u32.coherent.fence_fence.atomicwrite.device.payload_local.image.guard_local.buffer.comp
+          * This test declares the texture as devicecoherent, but in NIR it
+          * appears as resctrict only with no coherent.
+          */
+         coherent = ", memory_coherence_device";
          break;
       }
-      P_IND(ctx, "texture%s%s<%s%s> t%d = *(constant texture%s%s<%s%s>*)",
+      P_IND(ctx, "texture%s%s<%s%s%s> t%d = *(constant texture%s%s<%s%s%s>*)",
             texture_dim(nir_intrinsic_image_dim(instr)),
             nir_intrinsic_image_array(instr) ? "_array" : "",
-            tex_type_name(nir_intrinsic_dest_type(instr)), access,
+            tex_type_name(nir_intrinsic_dest_type(instr)), access, coherent,
             instr->def.index, texture_dim(nir_intrinsic_image_dim(instr)),
             nir_intrinsic_image_array(instr) ? "_array" : "",
-            tex_type_name(nir_intrinsic_dest_type(instr)), access);
+            tex_type_name(nir_intrinsic_dest_type(instr)), access, coherent);
       src_to_msl(ctx, &instr->src[0]);
       P(ctx, ";\n");
       break;
