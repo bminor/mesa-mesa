@@ -38,8 +38,10 @@ mtl_add_completed_handler(mtl_command_buffer *cmd, void (*callback)(void *data),
    @autoreleasepool {
       id<MTLCommandBuffer> mtl_cmd = (id<MTLCommandBuffer>)cmd;
       [mtl_cmd addCompletedHandler:^(id<MTLCommandBuffer> _Nonnull cmd_buf) {
-         if (callback)
-            callback(data);
+         @autoreleasepool {
+            if (callback)
+               callback(data);
+         }
       }];
    }
 }

@@ -2034,6 +2034,7 @@ nir_to_msl(nir_shader *shader, void *mem_ctx, uint64_t disabled_workarounds)
    ctx.indentlevel--;
    P(&ctx, "}\n");
    char *ret = ctx.text->buf;
+   _mesa_hash_table_destroy(ctx.types, NULL);
    ralloc_steal(mem_ctx, ctx.text->buf);
    ralloc_free(ctx.text);
    return ret;

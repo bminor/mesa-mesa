@@ -126,7 +126,9 @@ kk_sampler_create(struct kk_device *dev,
                   const struct mtl_sampler_packed *packed)
 {
    mtl_sampler_descriptor *desc = create_sampler_descriptor(packed);
-   return mtl_new_sampler(dev->mtl_handle, desc);
+   mtl_sampler *sampler = mtl_new_sampler(dev->mtl_handle, desc);
+   mtl_release(desc);
+   return sampler;
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL
