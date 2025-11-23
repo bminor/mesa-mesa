@@ -791,19 +791,11 @@ static void si_preprocess_nir(struct si_nir_shader_ctx *ctx)
    NIR_PASS(progress, nir, nir_opt_shrink_stores, false);
 
    if (nir->info.stage == MESA_SHADER_FRAGMENT) {
-      /* TODO: This doesn't have to be done for monolithic shaders because
-       * si_nir_lower_ps_color_inputs mostly reverts it.
-       */
-      if (sel->info.colors_read)
-         NIR_PASS(progress, nir, si_nir_lower_color_inputs_to_sysvals);
-
       /* This uses the prolog/epilog keys, so only monolithic shaders can call this. */
       if (shader->is_monolithic) {
-         /* This lowers load_color intrinsics to COLn/BFCn input loads and two-side color
-          * selection.
-          */
+         /* This applies the flatshade and color two-side PS prolog options. */
          if (sel->info.colors_read)
-            NIR_PASS(progress, nir, si_nir_lower_ps_color_inputs, &shader->key, &sel->info);
+            NIR_PASS(progress, nir, si_nir_lower_color_flatshade_twoside, shader);
 
          /* This adds discard and barycentrics. */
          if (key->ps.mono.point_smoothing)
@@ -856,6 +848,9 @@ static void si_preprocess_nir(struct si_nir_shader_ctx *ctx)
          if (key->ps.part.prolog.poly_stipple)
             NIR_PASS(progress, nir, si_nir_lower_polygon_stipple);
       } else {
+         if (sel->info.colors_read)
+            NIR_PASS(progress, nir, si_nir_lower_color_inputs_to_sysvals);
+
          ac_nir_lower_ps_early_options early_options = {
             .optimize_frag_coord = true,
             .frag_coord_is_center = true,

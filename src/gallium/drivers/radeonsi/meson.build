@@ -53,7 +53,7 @@ files_libradeonsi = files(
   'si_nir_lower_color_inputs_to_sysvals.c',
   'si_nir_lower_intrinsics_early.c',
   'si_nir_lower_polygon_stipple.c',
-  'si_nir_lower_ps_color_inputs.c',
+  'si_nir_lower_color_flatshade_twoside.c',
   'si_nir_lower_resource.c',
   'si_nir_lower_vs_inputs.c',
   'si_nir_mark_divergent_texture_non_uniform.c',
