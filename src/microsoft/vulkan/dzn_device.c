@@ -1838,13 +1838,13 @@ dzn_instance_create(const VkInstanceCreateInfo *pCreateInfo,
    instance->d3d12_mod = util_dl_open(UTIL_DL_PREFIX "d3d12" UTIL_DL_EXT);
    if (!instance->d3d12_mod) {
       dzn_instance_destroy(instance, pAllocator);
-      return vk_error(NULL, VK_ERROR_INITIALIZATION_FAILED);
+      return vk_error(NULL, VK_ERROR_INCOMPATIBLE_DRIVER);
    }
 
    instance->d3d12.serialize_root_sig = d3d12_get_serialize_root_sig(instance->d3d12_mod);
    if (!instance->d3d12.serialize_root_sig) {
       dzn_instance_destroy(instance, pAllocator);
-      return vk_error(NULL, VK_ERROR_INITIALIZATION_FAILED);
+      return vk_error(NULL, VK_ERROR_INCOMPATIBLE_DRIVER);
    }
 
    instance->factory = try_create_device_factory(instance->d3d12_mod);
