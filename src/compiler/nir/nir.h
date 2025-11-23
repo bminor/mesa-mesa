@@ -4997,7 +4997,7 @@ void _nir_assert_no_progress(bool progress, const char *when);
    } while (0)
 
 #else
-#define NIR_ASSERT_PASS_NO_PROGRESS(nir, pass, ...)
+#define NIR_PASS_ASSERT_NO_PROGRESS(nir, pass, ...)
 #endif
 
 /** An instruction filtering callback with writemask
