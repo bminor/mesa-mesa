@@ -34,6 +34,7 @@ pvr_files = files(
   'pvr_arch_job_render.c',
   'pvr_arch_job_transfer.c',
   'pvr_arch_pass.c',
+  'pvr_arch_spm.c',
   'pvr_arch_tex_state.c',
   'pvr_blit.c',
   'pvr_bo.c',
