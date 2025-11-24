@@ -1075,15 +1075,13 @@ update_ps_extra_wm(struct anv_gfx_dynamic_state *hw_state,
    if (!wm_prog_data)
       return;
 
-   const bool uses_coarse_pixel =
+   UNUSED const bool uses_coarse_pixel =
       brw_wm_prog_data_is_coarse(wm_prog_data, hw_state->fs_msaa_flags);
 
    uint32_t InputCoverageMaskState = ICMS_NONE;
    assert(!wm_prog_data->inner_coverage); /* Not available in SPIR-V */
    if (!wm_prog_data->uses_sample_mask)
       InputCoverageMaskState = ICMS_NONE;
-   else if (uses_coarse_pixel)
-      InputCoverageMaskState  = ICMS_NORMAL;
    else if (wm_prog_data->post_depth_coverage)
       InputCoverageMaskState = ICMS_DEPTH_COVERAGE;
    else
