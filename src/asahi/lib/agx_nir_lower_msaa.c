@@ -126,9 +126,12 @@ agx_nir_lower_monolithic_msaa(nir_shader *shader, uint8_t nr_samples)
    /* In single sampled programs, interpolateAtSample needs to return the
     * center pixel.
     */
-   if (nr_samples == 1)
-      nir_lower_single_sampled(shader);
-   else if (shader->info.fs.uses_sample_shading) {
+   if (nr_samples == 1) {
+      nir_lower_single_sampled_options lss_opts = {
+         .lower_sample_mask_in = true,
+      };
+      nir_lower_single_sampled(shader, &lss_opts);
+   } else if (shader->info.fs.uses_sample_shading) {
       agx_nir_lower_to_per_sample(shader);
       agx_nir_wrap_per_sample_loop(shader, nr_samples);
    }

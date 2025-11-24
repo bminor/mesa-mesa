@@ -1064,7 +1064,10 @@ brw_nir_lower_fs_inputs(nir_shader *nir,
       brw_nir_lower_fs_barycentrics(nir);
 
    if (key->multisample_fbo == INTEL_NEVER) {
-      NIR_PASS(_, nir, nir_lower_single_sampled);
+      nir_lower_single_sampled_options lss_opts = {
+         .lower_sample_mask_in = key->coarse_pixel == INTEL_NEVER,
+      };
+      NIR_PASS(_, nir, nir_lower_single_sampled, &lss_opts);
    } else if (key->persample_interp == INTEL_ALWAYS) {
       NIR_PASS(_, nir, nir_shader_intrinsics_pass,
                lower_barycentric_per_sample,

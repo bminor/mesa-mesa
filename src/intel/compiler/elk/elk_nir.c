@@ -594,7 +594,10 @@ elk_nir_lower_fs_inputs(nir_shader *nir,
                 nir_lower_io_use_interpolated_input_intrinsics);
 
    if (key->multisample_fbo == ELK_NEVER) {
-      nir_lower_single_sampled(nir);
+      nir_lower_single_sampled_options lss_opts = {
+         .lower_sample_mask_in = true,
+      };
+      nir_lower_single_sampled(nir, &lss_opts);
    } else if (key->persample_interp == ELK_ALWAYS) {
       nir_shader_intrinsics_pass(nir, lower_barycentric_per_sample,
                                    nir_metadata_control_flow,
