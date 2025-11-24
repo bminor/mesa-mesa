@@ -55,7 +55,6 @@ pvr_files = files(
   'pvr_descriptor_set.c',
   'pvr_device.c',
   'pvr_dump_bo.c',
-  'pvr_dump_csb.c',
   'pvr_free_list.c',
   'pvr_formats.c',
   'pvr_image.c',
@@ -111,14 +110,24 @@ if with_imagination_srv
   pvr_flags += '-DPVR_SUPPORT_SERVICES_DRIVER'
 endif
 
-per_arch_files = [
+common_per_arch_files = [
   pvr_entrypoints[0],
   sha1_h,
 ]
 
+rogue_files = files(
+  'rogue/pvr_dump_csb.c',
+)
+
 powervr_per_arch_libs = []
 
 foreach arch : ['rogue']
+  per_arch_files = common_per_arch_files
+
+  if arch == 'rogue'
+    per_arch_files += rogue_files
+  endif
+
   powervr_per_arch_libs += static_library(
     'powervr_@0@'.format(arch),
     per_arch_files,
@@ -129,10 +138,13 @@ foreach arch : ['rogue']
       inc_src,
     ],
     dependencies : [
+      dep_valgrind,
       idep_nir_headers,
+      idep_vulkan_runtime_headers,
       idep_vulkan_util_headers,
+      idep_vulkan_wsi_headers,
     ],
-    c_args : pvr_flags,
+    c_args : [pvr_flags, '-DPVR_BUILD_ARCH_@0@'.format(arch.to_upper())],
     gnu_symbol_visibility : 'hidden',
   )
 endforeach

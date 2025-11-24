@@ -222,11 +222,13 @@ VkResult pvr_compute_job_submit(struct pvr_compute_ctx *ctx,
 
    pvr_compute_job_ws_submit_info_init(ctx, sub_cmd, wait, &submit_info);
 
+#ifdef PVR_BUILD_ARCH_ROGUE
    if (PVR_IS_DEBUG_SET(DUMP_CONTROL_STREAM)) {
       pvr_csb_dump(&sub_cmd->control_stream,
                    submit_info.frame_num,
                    submit_info.job_num);
    }
+#endif
 
    return device->ws->ops->compute_submit(ctx->ws_ctx,
                                           &submit_info,

@@ -252,9 +252,11 @@ void pvr_csb_emit_link(struct pvr_csb *csb, pvr_dev_addr_t addr, bool ret);
 VkResult pvr_csb_emit_return(struct pvr_csb *csb);
 VkResult pvr_csb_emit_terminate(struct pvr_csb *csb);
 
+#ifdef PVR_BUILD_ARCH_ROGUE
 void pvr_csb_dump(const struct pvr_csb *csb,
                   uint32_t frame_num,
                   uint32_t job_num);
+#endif
 
 #define pvr_cmd_length(x) ROGUE_##x##_length
 #define pvr_cmd_header(x) ROGUE_##x##_header

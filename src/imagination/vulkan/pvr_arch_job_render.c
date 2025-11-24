@@ -1471,6 +1471,7 @@ VkResult pvr_render_job_submit(struct pvr_render_ctx *ctx,
                                       wait_frag,
                                       &submit_info);
 
+#ifdef PVR_BUILD_ARCH_ROGUE
    if (PVR_IS_DEBUG_SET(DUMP_CONTROL_STREAM)) {
       /* FIXME: This isn't an ideal method of accessing the information we
        * need, but it's considered good enough for a debug code path. It can be
@@ -1484,6 +1485,7 @@ VkResult pvr_render_job_submit(struct pvr_render_ctx *ctx,
                    submit_info.frame_num,
                    submit_info.job_num);
    }
+#endif
 
    result = device->ws->ops->render_submit(ctx->ws_ctx,
                                            &submit_info,
