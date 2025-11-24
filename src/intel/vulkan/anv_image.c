@@ -1682,15 +1682,7 @@ anv_image_finish_sparse_bindings(struct anv_image *image)
 
    assert(anv_image_is_sparse(image));
 
-   for (int i = 0; i < ANV_IMAGE_MEMORY_BINDING_END; i++) {
-      struct anv_image_binding *b = &image->bindings[i];
-
-      if (b->sparse_data.size != 0) {
-         assert(b->memory_range.size == b->sparse_data.size);
-         assert(b->address.offset == b->sparse_data.address);
-         anv_free_sparse_bindings(device, &b->sparse_data);
-      }
-   }
+   anv_free_sparse_bindings(device, &image->sparse_data);
 }
 
 static VkResult MUST_CHECK
@@ -1699,7 +1691,6 @@ anv_image_init_sparse_bindings(struct anv_image *image,
 {
    struct anv_device *device =
       container_of(image->vk.base.device, struct anv_device, vk);
-   VkResult result;
 
    assert(anv_image_is_sparse(image));
 
@@ -1715,51 +1706,35 @@ anv_image_init_sparse_bindings(struct anv_image *image,
          explicit_addresses = opaque_info->opaqueCaptureDescriptorData;
    }
 
+   uint64_t total_size = 0;
    for (int i = 0; i < ANV_IMAGE_MEMORY_BINDING_END; i++) {
       struct anv_image_binding *b = &image->bindings[i];
+      if (b->memory_range.size == 0)
+         continue;
 
-      if (b->memory_range.size != 0) {
-         assert(b->sparse_data.size == 0);
+      assert(b->memory_range.alignment == ANV_SPARSE_BLOCK_SIZE);
+      assert(b->memory_range.size % ANV_SPARSE_BLOCK_SIZE == 0);
 
-         uint64_t explicit_address = 0;
-         if (explicit_addresses) {
-            switch (i) {
-            case ANV_IMAGE_MEMORY_BINDING_MAIN:
-               explicit_address = explicit_addresses->planes[0];
-               break;
-            case ANV_IMAGE_MEMORY_BINDING_PLANE_0:
-            case ANV_IMAGE_MEMORY_BINDING_PLANE_1:
-            case ANV_IMAGE_MEMORY_BINDING_PLANE_2:
-               explicit_address = explicit_addresses->planes[i - ANV_IMAGE_MEMORY_BINDING_PLANE_0];
-               break;
-            case ANV_IMAGE_MEMORY_BINDING_PRIVATE:
-               explicit_address = explicit_addresses->private_binding;
-               break;
-            default:
-               UNREACHABLE("invalid binding");
-            }
-         }
+      total_size = MAX2(total_size,
+                        b->memory_range.offset + b->memory_range.size);
+   }
 
-         /* From the spec, Custom Sparse Image Block Shapes section:
-          *   "... the size in bytes of the custom sparse image block shape
-          *    will be reported in VkMemoryRequirements::alignment."
-          *
-          * ISL should have set this for us, so just assert it here.
-          */
-         assert(b->memory_range.alignment == ANV_SPARSE_BLOCK_SIZE);
-         assert(b->memory_range.size % ANV_SPARSE_BLOCK_SIZE == 0);
+   struct anv_address base_address;
+   VkResult result = anv_init_sparse_bindings(
+      device, total_size, &image->sparse_data, alloc_flags,
+      explicit_addresses != NULL ? explicit_addresses->main_binding : 0,
+      &base_address);
 
-         result = anv_init_sparse_bindings(device,
-                                           b->memory_range.size,
-                                           &b->sparse_data,
-                                           alloc_flags,
-                                           explicit_address,
-                                           &b->address);
-         if (result != VK_SUCCESS) {
-            anv_image_finish_sparse_bindings(image);
-            return result;
-         }
+   if (result == VK_SUCCESS) {
+      for (int i = 0; i < ANV_IMAGE_MEMORY_BINDING_END; i++) {
+         struct anv_image_binding *b = &image->bindings[i];
+         if (b->memory_range.size == 0)
+            continue;
+
+         b->address = anv_address_add(base_address, b->memory_range.offset);
       }
+   } else {
+      anv_image_finish_sparse_bindings(image);
    }
 
    return VK_SUCCESS;
@@ -2353,28 +2328,11 @@ anv_GetImageOpaqueCaptureDescriptorDataEXT(VkDevice device,
 
    struct anv_image_opaque_capture_data *bound_addresses = pData;
    memset(bound_addresses, 0, sizeof(*bound_addresses));
-   for (int i = 0; i < ANV_IMAGE_MEMORY_BINDING_END; i++) {
-      struct anv_image_binding *b = &image->bindings[i];
 
-      if (b->memory_range.size != 0) {
-         uint64_t addr = anv_address_physical(b->address);
-         switch (i) {
-         case ANV_IMAGE_MEMORY_BINDING_MAIN:
-            bound_addresses->planes[0] = addr;
-            break;
-         case ANV_IMAGE_MEMORY_BINDING_PLANE_0:
-         case ANV_IMAGE_MEMORY_BINDING_PLANE_1:
-         case ANV_IMAGE_MEMORY_BINDING_PLANE_2:
-            bound_addresses->planes[i - ANV_IMAGE_MEMORY_BINDING_PLANE_0] = addr;
-            break;
-         case ANV_IMAGE_MEMORY_BINDING_PRIVATE:
-            bound_addresses->private_binding = addr;
-            break;
-         default:
-            UNREACHABLE("invalid binding");
-         }
-      }
-   }
+   bound_addresses->main_binding =
+      anv_address_physical(image->bindings[ANV_IMAGE_MEMORY_BINDING_MAIN].address);
+   bound_addresses->private_binding =
+      anv_address_physical(image->bindings[ANV_IMAGE_MEMORY_BINDING_PRIVATE].address);
 
    return VK_SUCCESS;
 }

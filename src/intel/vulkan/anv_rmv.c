@@ -474,17 +474,17 @@ anv_rmv_log_image_create(struct anv_device *device,
    vk_rmv_emit_token(&device->vk.memory_trace_data, VK_RMV_TOKEN_TYPE_RESOURCE_CREATE, &token);
    if (image->vk.create_flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT) {
       for (uint32_t b = 0; b < ARRAY_SIZE(image->bindings); b++) {
-         if (image->bindings[b].sparse_data.size != 0) {
+         if (image->bindings[b].memory_range.size != 0) {
             anv_rmv_log_vma_locked(device,
-                                   image->bindings[b].sparse_data.address,
-                                   image->bindings[b].sparse_data.size,
+                                   anv_address_physical(image->bindings[b].address),
+                                   image->bindings[b].memory_range.size,
                                    false /* internal */, true /* TODO: vram */,
                                    true /* in_invisible_vram */);
             log_resource_bind_locked(device,
                                      resource_id_locked(device, image),
                                      NULL,
-                                     image->bindings[b].sparse_data.address,
-                                     image->bindings[b].sparse_data.size);
+                                     anv_address_physical(image->bindings[b].address),
+                                     image->bindings[b].memory_range.size);
          }
       }
    }
@@ -498,9 +498,9 @@ anv_rmv_log_image_destroy(struct anv_device *device,
    simple_mtx_lock(&device->vk.memory_trace_data.token_mtx);
    if (image->vk.create_flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT) {
       for (uint32_t b = 0; b < ARRAY_SIZE(image->bindings); b++) {
-         if (image->bindings[b].sparse_data.size != 0) {
+         if (image->bindings[b].memory_range.size != 0) {
             struct vk_rmv_virtual_free_token token = {
-               .address = image->bindings[b].sparse_data.address,
+               .address = anv_address_physical(image->bindings[b].address),
             };
 
             vk_rmv_emit_token(&device->vk.memory_trace_data, VK_RMV_TOKEN_TYPE_VIRTUAL_FREE, &token);
