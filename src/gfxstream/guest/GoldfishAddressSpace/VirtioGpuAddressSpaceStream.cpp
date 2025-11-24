@@ -39,15 +39,15 @@ static bool GetRingParamsFromCapset(enum VirtGpuCapset capset, const VirtGpuCaps
     return true;
 }
 
-address_space_handle_t virtgpu_address_space_open() {
+static address_space_handle_t virtgpu_address_space_open() {
     return (address_space_handle_t)(-EINVAL);
 }
 
-void virtgpu_address_space_close(address_space_handle_t) {
+static void virtgpu_address_space_close(address_space_handle_t) {
     // Handle opened by VirtioGpuDevice wrapper
 }
 
-bool virtgpu_address_space_ping(address_space_handle_t, struct address_space_ping* info) {
+static bool virtgpu_address_space_ping(address_space_handle_t, struct address_space_ping* info) {
     int ret;
     struct VirtGpuExecBuffer exec = {};
     VirtGpuDevice* instance = VirtGpuDevice::getInstance();

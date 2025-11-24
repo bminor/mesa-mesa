@@ -59,8 +59,7 @@ PERFETTO_DEFINE_CATEGORIES(
 #endif
 
 #ifndef VK_USE_PLATFORM_FUCHSIA
-void zx_handle_close(zx_handle_t) {}
-void zx_event_create(int, zx_handle_t*) {}
+static void zx_handle_close(zx_handle_t) {}
 #endif
 
 static constexpr uint32_t kDefaultApiVersion = VK_MAKE_VERSION(1, 1, 0);
@@ -243,51 +242,55 @@ struct CommandBufferPendingDescriptorSets {
 
 GOLDFISH_VK_LIST_HANDLE_TYPES(HANDLE_REGISTER_IMPL_IMPL)
 GOLDFISH_VK_LIST_TRIVIAL_HANDLE_TYPES(HANDLE_UNREGISTER_IMPL_IMPL)
-uint32_t getWaitSemaphoreCount(const VkSubmitInfo& pSubmit) { return pSubmit.waitSemaphoreCount; }
+static uint32_t getWaitSemaphoreCount(const VkSubmitInfo& pSubmit) {
+    return pSubmit.waitSemaphoreCount;
+}
 
-uint32_t getWaitSemaphoreCount(const VkSubmitInfo2& pSubmit) {
+static uint32_t getWaitSemaphoreCount(const VkSubmitInfo2& pSubmit) {
     return pSubmit.waitSemaphoreInfoCount;
 }
 
-uint32_t getCommandBufferCount(const VkSubmitInfo& pSubmit) { return pSubmit.commandBufferCount; }
+static uint32_t getCommandBufferCount(const VkSubmitInfo& pSubmit) {
+    return pSubmit.commandBufferCount;
+}
 
-uint32_t getCommandBufferCount(const VkSubmitInfo2& pSubmit) {
+static uint32_t getCommandBufferCount(const VkSubmitInfo2& pSubmit) {
     return pSubmit.commandBufferInfoCount;
 }
 
-uint32_t getSignalSemaphoreCount(const VkSubmitInfo& pSubmit) {
+static uint32_t getSignalSemaphoreCount(const VkSubmitInfo& pSubmit) {
     return pSubmit.signalSemaphoreCount;
 }
 
-uint32_t getSignalSemaphoreCount(const VkSubmitInfo2& pSubmit) {
+static uint32_t getSignalSemaphoreCount(const VkSubmitInfo2& pSubmit) {
     return pSubmit.signalSemaphoreInfoCount;
 }
 
-VkSemaphore getWaitSemaphore(const VkSubmitInfo& pSubmit, int i) {
+static VkSemaphore getWaitSemaphore(const VkSubmitInfo& pSubmit, int i) {
     return pSubmit.pWaitSemaphores[i];
 }
 
-VkSemaphore getWaitSemaphore(const VkSubmitInfo2& pSubmit, int i) {
+static VkSemaphore getWaitSemaphore(const VkSubmitInfo2& pSubmit, int i) {
     return pSubmit.pWaitSemaphoreInfos[i].semaphore;
 }
 
-VkSemaphore getSignalSemaphore(const VkSubmitInfo& pSubmit, int i) {
+static VkSemaphore getSignalSemaphore(const VkSubmitInfo& pSubmit, int i) {
     return pSubmit.pSignalSemaphores[i];
 }
 
-VkSemaphore getSignalSemaphore(const VkSubmitInfo2& pSubmit, int i) {
+static VkSemaphore getSignalSemaphore(const VkSubmitInfo2& pSubmit, int i) {
     return pSubmit.pSignalSemaphoreInfos[i].semaphore;
 }
 
-VkCommandBuffer getCommandBuffer(const VkSubmitInfo& pSubmit, int i) {
+static VkCommandBuffer getCommandBuffer(const VkSubmitInfo& pSubmit, int i) {
     return pSubmit.pCommandBuffers[i];
 }
 
-VkCommandBuffer getCommandBuffer(const VkSubmitInfo2& pSubmit, int i) {
+static VkCommandBuffer getCommandBuffer(const VkSubmitInfo2& pSubmit, int i) {
     return pSubmit.pCommandBufferInfos[i].commandBuffer;
 }
 
-bool descriptorPoolSupportsIndividualFreeLocked(VkDescriptorPool pool) {
+static bool descriptorPoolSupportsIndividualFreeLocked(VkDescriptorPool pool) {
     return as_goldfish_VkDescriptorPool(pool)->allocInfo->createFlags &
            VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
 }
@@ -311,7 +314,7 @@ VkDescriptorImageInfo createImmutableSamplersFilteredImageInfo(
     return res;
 }
 
-bool descriptorBindingIsImmutableSampler(VkDescriptorSet dstSet, uint32_t dstBinding) {
+static bool descriptorBindingIsImmutableSampler(VkDescriptorSet dstSet, uint32_t dstBinding) {
     return as_goldfish_VkDescriptorSet(dstSet)->reified->bindingIsImmutableSampler[dstBinding];
 }
 
@@ -750,7 +753,7 @@ uint64_t ResourceTracker::getAHardwareBufferId(AHardwareBuffer* ahw) {
 }
 #endif
 
-void transformExternalResourceMemoryDedicatedRequirementsForGuest(
+static void transformExternalResourceMemoryDedicatedRequirementsForGuest(
     VkMemoryDedicatedRequirements* dedicatedReqs) {
     dedicatedReqs->prefersDedicatedAllocation = VK_TRUE;
     dedicatedReqs->requiresDedicatedAllocation = VK_TRUE;
@@ -808,7 +811,7 @@ void ResourceTracker::EmitGuestAndHostTraceMarker(VkEncoder* encoder) {
 #endif  // HAVE_PERFETTO
 }
 
-VkResult acquireSync(uint64_t syncId, int64_t& osHandle) {
+static VkResult acquireSync(uint64_t syncId, int64_t& osHandle) {
     struct VirtGpuExecBuffer exec = {};
     struct gfxstreamAcquireSync acquireSync = {};
     VirtGpuDevice* instance = VirtGpuDevice::getInstance();
@@ -826,7 +829,7 @@ VkResult acquireSync(uint64_t syncId, int64_t& osHandle) {
     return VK_SUCCESS;
 }
 
-VkResult createFence(VkDevice device, uint64_t hostFenceHandle, int64_t& osHandle) {
+static VkResult createFence(VkDevice device, uint64_t hostFenceHandle, int64_t& osHandle) {
     struct VirtGpuExecBuffer exec = {};
     struct gfxstreamCreateExportSyncVK exportSync = {};
     VirtGpuDevice* instance = VirtGpuDevice::getInstance();
@@ -848,8 +851,8 @@ VkResult createFence(VkDevice device, uint64_t hostFenceHandle, int64_t& osHandl
     return VK_SUCCESS;
 }
 
-void collectAllPendingDescriptorSetsBottomUp(const std::vector<VkCommandBuffer>& workingSet,
-                                             std::unordered_set<VkDescriptorSet>& allDs) {
+static void collectAllPendingDescriptorSetsBottomUp(const std::vector<VkCommandBuffer>& workingSet,
+                                                    std::unordered_set<VkDescriptorSet>& allDs) {
     if (workingSet.empty()) return;
 
     std::vector<VkCommandBuffer> nextLevel;
@@ -880,8 +883,8 @@ void collectAllPendingDescriptorSetsBottomUp(const std::vector<VkCommandBuffer>&
     }
 }
 
-void commitDescriptorSetUpdates(void* context, VkQueue queue,
-                                const std::unordered_set<VkDescriptorSet>& sets) {
+static void commitDescriptorSetUpdates(void* context, VkQueue queue,
+                                       const std::unordered_set<VkDescriptorSet>& sets) {
     VkEncoder* enc = (VkEncoder*)context;
 
     std::unordered_map<VkDescriptorPool, uint32_t> poolSet;
@@ -1028,8 +1031,8 @@ uint32_t ResourceTracker::syncEncodersForCommandBuffer(VkCommandBuffer commandBu
     return 0;
 }
 
-void addPendingDescriptorSets(VkCommandBuffer commandBuffer, uint32_t descriptorSetCount,
-                              const VkDescriptorSet* pDescriptorSets) {
+static void addPendingDescriptorSets(VkCommandBuffer commandBuffer, uint32_t descriptorSetCount,
+                                     const VkDescriptorSet* pDescriptorSets) {
     struct goldfish_VkCommandBuffer* cb = as_goldfish_VkCommandBuffer(commandBuffer);
 
     if (!cb->userPtr) {
@@ -1045,9 +1048,9 @@ void addPendingDescriptorSets(VkCommandBuffer commandBuffer, uint32_t descriptor
     }
 }
 
-void decDescriptorSetLayoutRef(void* context, VkDevice device,
-                               VkDescriptorSetLayout descriptorSetLayout,
-                               const VkAllocationCallbacks* pAllocator) {
+static void decDescriptorSetLayoutRef(void* context, VkDevice device,
+                                      VkDescriptorSetLayout descriptorSetLayout,
+                                      const VkAllocationCallbacks* pAllocator) {
     if (!descriptorSetLayout) return;
 
     struct goldfish_VkDescriptorSetLayout* setLayout =
