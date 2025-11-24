@@ -664,7 +664,7 @@
         "description": "vulkan/cmd_queue: Use vk_strdup and free allocated string memory",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "9082715ab014270fb8bdf555526d7e55a4890538",
         "notes": null

@@ -564,7 +564,7 @@ def get_struct_copy(dst, src_name, src_type, size, types, level=0):
             if member.len and member.len == 'struct-ptr':
                 member_copies += get_struct_copy("%s->%s" % (tmp_dst_name, member.name), "%s->%s" % (tmp_src_name, member.name), member.type, 'sizeof(%s)' % member.type, types, level + 1)
             elif member.len and member.len == 'null-terminated':
-                member_copies += "%s%s->%s = strdup(%s->%s);" % (indent_sameline, tmp_dst_name, member.name, tmp_src_name, member.name)
+                member_copies += "%s%s->%s = vk_strdup(queue->alloc, %s->%s, VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);" % (indent_sameline, tmp_dst_name, member.name, tmp_src_name, member.name)
             elif member.len:
                 member_copies += get_array_member_copy(tmp_dst_name, tmp_src_name, member, level + 1)
             elif member.name == 'pNext':
@@ -585,6 +585,8 @@ def get_struct_free(field_name, struct_type, types):
         for member in types[struct_type].members:
             member_name = "%s ? %s->%s : NULL" % (field_name, field_name, member.name)
             if member.len and member.len != 'null-terminated':
+                member_frees += "vk_free(queue->alloc, (void*)(%s));\n" % member_name
+            if member.len and member.len == 'null-terminated':
                 member_frees += "vk_free(queue->alloc, (void*)(%s));\n" % member_name
             elif member.name == 'pNext':
                 member_frees += get_pnext_member_free(struct_type, types, member_name)
