@@ -58,6 +58,7 @@ struct radv_drirc {
       bool tex_non_uniform;
       bool zero_vram;
       bool no_implicit_varying_subgroup_size;
+      bool hide_rebar_on_dgpu;
       char *app_layer;
       int override_uniform_offset_alignment;
    } debug;
