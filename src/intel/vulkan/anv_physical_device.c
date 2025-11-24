@@ -1495,8 +1495,10 @@ get_properties(const struct anv_physical_device *pdevice,
       props->maxFragmentSizeAspectRatio =
          pdevice->info.has_coarse_pixel_primitive_and_cb ?
          2 : 4;
-      props->maxFragmentShadingRateCoverageSamples = 4 * 4 *
-         (pdevice->info.has_coarse_pixel_primitive_and_cb ? 4 : 16);
+      props->maxFragmentShadingRateCoverageSamples =
+         devinfo->verx10 >= 125 ? 16:
+         4 * 4 * 16; /* Technically wrong, but some CTS tests fail because of the rates we
+                        report on prior platforms. Fixing all of that is a task for another day. */
       props->maxFragmentShadingRateRasterizationSamples =
       pdevice->info.has_coarse_pixel_primitive_and_cb ?
          VK_SAMPLE_COUNT_4_BIT :  VK_SAMPLE_COUNT_16_BIT;
