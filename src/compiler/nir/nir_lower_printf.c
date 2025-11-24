@@ -85,7 +85,7 @@ lower_printf_intrin(nir_builder *b, nir_intrinsic_instr *prntf, void *_options)
     */
    nir_deref_instr *buffer =
       nir_build_deref_cast(b, buffer_addr, nir_var_mem_global,
-                           glsl_array_type(glsl_uint8_t_type(), 0, 4), 0);
+                           glsl_array_type(glsl_uint8_t_type(), 0, 1), 0);
 
    /* Align the struct size to 4 */
    nir_deref_instr *args = nir_src_as_deref(prntf->src[0]);
