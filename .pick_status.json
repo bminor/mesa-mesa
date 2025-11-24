@@ -3494,7 +3494,7 @@
         "description": "svga: Check if Stencil buffer is NULL",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "f29d93982420f26c25b78e65fad78b09dc71f187",
         "notes": null
