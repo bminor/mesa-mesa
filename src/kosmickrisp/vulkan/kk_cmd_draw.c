@@ -111,6 +111,10 @@ kk_fill_common_attachment_description(
       force_attachment_load
          ? MTL_LOAD_ACTION_LOAD
          : vk_attachment_load_op_to_mtl_load_action(info->loadOp);
+
+   /* TODO_KOSMICKRISP Need to tackle issue #14344 */
+   if (load_action == MTL_LOAD_ACTION_DONT_CARE)
+      load_action = MTL_LOAD_ACTION_LOAD;
    mtl_render_pass_attachment_descriptor_set_load_action(descriptor,
                                                          load_action);
    /* We need to force attachment store to correctly handle situations where the
