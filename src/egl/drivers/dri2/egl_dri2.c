@@ -542,8 +542,9 @@ dri2_detect_swrast_kopper(_EGLDisplay *disp)
 {
    struct dri2_egl_display *dri2_dpy = dri2_egl_display(disp);
 
+   /* Kopper won't work on Android without extra platform level support. */
    dri2_dpy->kopper = dri2_dpy->driver_name && !strcmp(dri2_dpy->driver_name, "zink") &&
-                      !debug_get_bool_option("LIBGL_KOPPER_DISABLE", false);
+                      !debug_get_bool_option("LIBGL_KOPPER_DISABLE", false) && disp->Platform != _EGL_PLATFORM_ANDROID;
    dri2_dpy->swrast = (disp->Options.ForceSoftware && !dri2_dpy->kopper && strcmp(dri2_dpy->driver_name, "vmwgfx")) ||
                       !dri2_dpy->driver_name || strstr(dri2_dpy->driver_name, "swrast");
    dri2_dpy->swrast_not_kms = dri2_dpy->swrast && (!dri2_dpy->driver_name || strcmp(dri2_dpy->driver_name, "kms_swrast"));
