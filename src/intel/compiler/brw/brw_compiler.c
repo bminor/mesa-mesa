@@ -107,6 +107,7 @@ brw_compiler_create(void *mem_ctx, const struct intel_device_info *devinfo)
 
    compiler->precise_trig = debug_get_bool_option("INTEL_PRECISE_TRIG", false);
 
+   compiler->extended_bindless_surface_offset = devinfo->verx10 >= 125;
    compiler->use_tcs_multi_patch = devinfo->ver >= 12;
 
    compiler->indirect_ubos_use_sampler = devinfo->ver < 12;
