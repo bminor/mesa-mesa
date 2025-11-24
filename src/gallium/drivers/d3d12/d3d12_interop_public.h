@@ -33,17 +33,19 @@ extern "C" {
 struct ID3D12Device;
 struct ID3D12CommandQueue;
 struct ID3D12Resource;
+struct pipe_video_buffer;
+struct pipe_context;
+struct pipe_resource;
 
 struct d3d12_interop_video_buffer_associated_data
 {
    /*
-    * Subresource index within the underlying ID3D12Resource
-    * representing this video buffer.
-    *
-    * This is useful when the underlying resource is a texture array
-    * and each video buffer maps to a different subresource within it.
+    * Function to get read-only resource from video buffer.
     */
-   uint32_t subresource_index;
+   bool (*get_read_only_resource)(struct pipe_video_buffer *buffer,
+                                  struct pipe_context *pipe,
+                                  struct pipe_resource **readonly_resource,
+                                  uint32_t *subresource_index);
 };
 
 struct d3d12_interop_device_info {

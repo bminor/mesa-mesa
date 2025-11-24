@@ -28,6 +28,7 @@
 #include "mfbufferhelp.h"
 #include "mfpipeinterop.h"
 #include "wpptrace.h"
+#include "gallium/drivers/d3d12/d3d12_interop_public.h"
 
 #include "mftransform.tmh"
 
@@ -2574,38 +2575,17 @@ CDX12EncHMFT::ProcessInput( DWORD dwInputStreamIndex, IMFSample *pSample, DWORD 
             }
 
             // Get read-only handle directly from the video buffer
-            HANDLE readOnlyHandle = nullptr;
-            HRESULT hr =
-               dpb_buffer_manager::get_read_only_handle( src_buffer,
-                                                         m_pPipeContext,
-                                                         m_spDevice,
-                                                         &readOnlyHandle,
-                                                         &pDX12EncodeContext->PipeResourceReconstructedPictureSubresource );
-            CHECKHR_GOTO( hr, done );
-            CHECKNULL_GOTO( readOnlyHandle, E_FAIL, done );
-            if( !readOnlyHandle )
-               debug_printf( "[dx12 hmft 0x%p] Failed to get read-only handle from video buffer\n", this );
-
-            struct winsys_handle src_wshandle = {};
-            src_wshandle.type = WINSYS_HANDLE_TYPE_FD;
-            src_wshandle.handle = readOnlyHandle;
-
-            assert( src_wshandle.handle );
-            if( !src_wshandle.handle )
+            struct d3d12_interop_video_buffer_associated_data *associated_data =
+                  static_cast<struct d3d12_interop_video_buffer_associated_data *>( src_buffer->associated_data );
+            if(associated_data->get_read_only_resource &&
+               (!associated_data->get_read_only_resource( src_buffer,
+                                                          m_pPipeContext,
+                                                          &pDX12EncodeContext->pPipeResourceReconstructedPicture,
+                                                          &pDX12EncodeContext->PipeResourceReconstructedPictureSubresource ) || !pDX12EncodeContext->pPipeResourceReconstructedPicture) )
             {
-               debug_printf( "[dx12 hmft 0x%p] Invalid handle for reconstructed picture resource\n", this );
-               CHECKHR_GOTO( E_FAIL, done );
+               debug_printf( "[dx12 hmft 0x%p] Failed to get read-only resource from reference video buffer\n", this );
             }
-            // Import the reconstructed picture resource from handle
-            pDX12EncodeContext->pPipeResourceReconstructedPicture =
-               m_pPipeContext->screen->resource_from_handle( m_pPipeContext->screen, NULL, &src_wshandle, 0 /*usage*/ );
-            assert( pDX12EncodeContext->pPipeResourceReconstructedPicture );
-            if( !pDX12EncodeContext->pPipeResourceReconstructedPicture )
-            {
-               debug_printf( "[dx12 hmft 0x%p] Failed to import reconstructed picture resource\n", this );
-               CHECKHR_GOTO( E_FAIL, done );
-            }
-            CloseHandle( readOnlyHandle );
+            CHECKNULL_GOTO( pDX12EncodeContext->pPipeResourceReconstructedPicture, E_FAIL, done );
          }
          else
          {
