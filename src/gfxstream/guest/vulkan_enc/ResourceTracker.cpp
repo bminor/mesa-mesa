@@ -295,25 +295,6 @@ static bool descriptorPoolSupportsIndividualFreeLocked(VkDescriptorPool pool) {
            VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
 }
 
-VkDescriptorImageInfo createImmutableSamplersFilteredImageInfo(
-    VkDescriptorType descType, VkDescriptorSet descSet, uint32_t binding,
-    const VkDescriptorImageInfo* pImageInfo) {
-    VkDescriptorImageInfo res = *pImageInfo;
-
-    if (descType != VK_DESCRIPTOR_TYPE_SAMPLER &&
-        descType != VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)
-        return res;
-
-    bool immutableSampler =
-        as_goldfish_VkDescriptorSet(descSet)->reified->bindingIsImmutableSampler[binding];
-
-    if (!immutableSampler) return res;
-
-    res.sampler = 0;
-
-    return res;
-}
-
 static bool descriptorBindingIsImmutableSampler(VkDescriptorSet dstSet, uint32_t dstBinding) {
     return as_goldfish_VkDescriptorSet(dstSet)->reified->bindingIsImmutableSampler[dstBinding];
 }
