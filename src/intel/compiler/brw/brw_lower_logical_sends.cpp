@@ -1121,9 +1121,10 @@ setup_lsc_surface_descriptors(const brw_builder &bld, brw_send_inst *send,
    const unsigned base_offset_bits =
       util_bitpack_sint(base_offset, 0, max_imm_bits - 1);
 
+   /* On Gfx20+ UGM always uses ExBSO which implies bindless. */
    send->bindless_surface =
       surf_type == LSC_ADDR_SURFTYPE_BSS ||
-      surf_type == LSC_ADDR_SURFTYPE_SS;
+      (devinfo->ver >= 20 && surf_type == LSC_ADDR_SURFTYPE_SS);
 
    switch (surf_type) {
    case LSC_ADDR_SURFTYPE_BSS:
@@ -1639,9 +1640,7 @@ lower_hdc_memory_logical_send(const brw_builder &bld, brw_mem_inst *mem)
       send->exec_size = components > 8 ? 16 : 8;
    }
 
-   send->bindless_surface =
-      binding_type == LSC_ADDR_SURFTYPE_BSS ||
-      binding_type == LSC_ADDR_SURFTYPE_SS;
+   send->bindless_surface = binding_type == LSC_ADDR_SURFTYPE_BSS;
 
    /* Set up descriptors */
    switch (binding_type) {
@@ -1711,8 +1710,9 @@ lower_lsc_varying_pull_constant_logical_send(const brw_builder &bld,
    inst = NULL;
 
    send->sfid = BRW_SFID_UGM;
-   send->bindless_surface = (surf_type == LSC_ADDR_SURFTYPE_BSS ||
-                             surf_type == LSC_ADDR_SURFTYPE_SS);
+   send->bindless_surface =
+      surf_type == LSC_ADDR_SURFTYPE_BSS ||
+      (devinfo->ver >= 20 && surf_type == LSC_ADDR_SURFTYPE_SS);
 
    assert(!compiler->indirect_ubos_use_sampler);
 
