@@ -148,7 +148,7 @@ a618-gles-asan:
   extends:
     - .lava-arm64-test-asan-gl
     - .lava-sc7180-trogdor-kingoftown:arm64
-    - .collabora-turnip-manual-rules
+    - .collabora-freedreno-manual-rules
   variables:
     DEQP_SUITE: freedreno-a618-gles-asan
     FLAKES_CHANNEL: "#freedreno-ci"
