@@ -261,6 +261,9 @@ spin_wait_for_sync_file(struct vk_device *device,
       for (uint32_t i = 0; i < wait_count; i++) {
          while (1) {
             VkResult result = sync_has_sync_file(device, waits[i].sync);
+            if (result == VK_SUCCESS)
+               break; /* Break out of the inner while */
+
             if (result != VK_TIMEOUT)
                return result;
 
