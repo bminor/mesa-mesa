@@ -3771,8 +3771,10 @@ cmd_buffer_gfx_state_emission(struct anv_cmd_buffer *cmd_buffer)
       if (IS_DIRTY(MESH_CONTROL))
          anv_batch_emit_gfx(batch, GENX(3DSTATE_MESH_CONTROL), mesh_control);
 
-      if (IS_DIRTY(MESH_SHADER))
+      if (IS_DIRTY(MESH_SHADER)) {
+         DEBUG_SHADER_HASH(MESA_SHADER_MESH);
          anv_batch_emit_gfx(batch, GENX(3DSTATE_MESH_SHADER), mesh_shader);
+      }
 
       if (IS_DIRTY(MESH_DISTRIB))
          anv_batch_emit_gfx(batch, GENX(3DSTATE_MESH_DISTRIB), mesh_distrib);
@@ -3780,8 +3782,10 @@ cmd_buffer_gfx_state_emission(struct anv_cmd_buffer *cmd_buffer)
       if (IS_DIRTY(TASK_CONTROL))
          anv_batch_emit_gfx(batch, GENX(3DSTATE_TASK_CONTROL), task_control);
 
-      if (IS_DIRTY(TASK_SHADER))
+      if (IS_DIRTY(TASK_SHADER)) {
+         DEBUG_SHADER_HASH(MESA_SHADER_TASK);
          anv_batch_emit_gfx(batch, GENX(3DSTATE_TASK_SHADER), task_shader);
+      }
 
       if (IS_DIRTY(TASK_REDISTRIB))
          anv_batch_emit_gfx(batch, GENX(3DSTATE_TASK_REDISTRIB), task_redistrib);
