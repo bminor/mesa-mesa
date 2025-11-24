@@ -330,6 +330,7 @@ main(int argc, char **argv)
    }
 
    glsl_type_singleton_init_or_ref();
+   u_printf_singleton_init_or_ref();
 
    for (unsigned i = 0; i < 2; ++i) {
       FILE *fp = i ? fp_c : fp_h;
@@ -457,6 +458,7 @@ main(int argc, char **argv)
    fprintf(fp_c, "   static vtn_bindgen_dummy vtn_bindgen_dummy_instance;\n");
    fprintf(fp_c, "}\n");
 
+   u_printf_singleton_decref();
    glsl_type_singleton_decref();
    fclose(fp_c);
    fclose(fp_h);

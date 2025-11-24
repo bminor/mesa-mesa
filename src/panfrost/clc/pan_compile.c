@@ -27,6 +27,7 @@
 #include "panfrost/util/pan_ir.h"
 #include "util/macros.h"
 #include "util/u_dynarray.h"
+#include "util/u_printf.h"
 #include <sys/mman.h>
 
 static const struct spirv_to_nir_options spirv_options = {
@@ -314,6 +315,7 @@ main(int argc, const char **argv)
    }
 
    glsl_type_singleton_init_or_ref();
+   u_printf_singleton_init_or_ref();
 
    /* POSIX basename can modify the content of the path */
    char *tmp_out_h_path = strdup(output_h_path);
@@ -461,6 +463,7 @@ main(int argc, const char **argv)
    nir_precomp_print_binary_map(fp_c, nir, library_name, target_name,
                                 remap_variant);
 
+   u_printf_singleton_decref();
    glsl_type_singleton_decref();
    fclose(fp_c);
    fclose(fp_h);
@@ -469,6 +472,7 @@ main(int argc, const char **argv)
    return 0;
 
 invalid_precomp:
+   u_printf_singleton_decref();
    glsl_type_singleton_decref();
 fp_c_open_failed:
    fclose(fp_h);
