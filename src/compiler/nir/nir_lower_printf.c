@@ -76,6 +76,7 @@ lower_printf_intrin(nir_builder *b, nir_intrinsic_instr *prntf, void *_options)
        */
       assert(fmt_str_id - 1 < b->shader->printf_info_count && "must be in-bounds");
 
+      u_printf_singleton_add(&b->shader->printf_info[fmt_str_id - 1], 1);
       uint32_t hash = u_printf_hash(&b->shader->printf_info[fmt_str_id - 1]);
       fmt_str_id = hash;
    }
