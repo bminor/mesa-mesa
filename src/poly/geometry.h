@@ -116,17 +116,12 @@ static_assert(sizeof(struct poly_heap) == 4 * 4);
 
 #ifdef __OPENCL_VERSION__
 static inline uint
-_poly_heap_alloc_offs(global struct poly_heap *heap, uint size_B, bool atomic)
+poly_heap_alloc_offs(global struct poly_heap *heap, uint size_B)
 {
    size_B = align(size_B, 16);
 
-   uint offs;
-   if (atomic) {
-      offs = atomic_fetch_add((volatile atomic_uint *)(&heap->bottom), size_B);
-   } else {
-      offs = heap->bottom;
-      heap->bottom = offs + size_B;
-   }
+   uint offs =
+      atomic_fetch_add((volatile atomic_uint *)(&heap->bottom), size_B);
 
    /* Use printf+abort because assert is stripped from release builds. */
    if (heap->bottom >= heap->size) {
@@ -140,22 +135,10 @@ _poly_heap_alloc_offs(global struct poly_heap *heap, uint size_B, bool atomic)
    return offs;
 }
 
-static inline uint
-poly_heap_alloc_nonatomic_offs(global struct poly_heap *heap, uint size_B)
-{
-   return _poly_heap_alloc_offs(heap, size_B, false);
-}
-
-static inline uint
-poly_heap_alloc_atomic_offs(global struct poly_heap *heap, uint size_B)
-{
-   return _poly_heap_alloc_offs(heap, size_B, true);
-}
-
 static inline global void *
-poly_heap_alloc_nonatomic(global struct poly_heap *heap, uint size_B)
+poly_heap_alloc(global struct poly_heap *heap, uint size_B)
 {
-   return heap->base + poly_heap_alloc_nonatomic_offs(heap, size_B);
+   return heap->base + poly_heap_alloc_offs(heap, size_B);
 }
 
 uint64_t nir_load_ro_sink_address_poly(void);
@@ -648,18 +631,17 @@ poly_gs_setup_indirect(uint64_t index_buffer, constant uint *draw,
       poly_tcs_in_size(vertex_count * instance_count, vs_outputs);
 
    if (is_prefix_summing) {
-      p->count_buffer = poly_heap_alloc_nonatomic(
+      p->count_buffer = poly_heap_alloc(
          heap, p->input_primitives * p->count_buffer_stride);
    }
 
-   vp->output_buffer =
-      (uintptr_t)poly_heap_alloc_nonatomic(heap, vertex_buffer_size);
+   vp->output_buffer = (uintptr_t)poly_heap_alloc(heap, vertex_buffer_size);
 
    vp->outputs = vs_outputs;
 
    if (shape == POLY_GS_SHAPE_DYNAMIC_INDEXED) {
       const uint32_t index_offset =
-         poly_heap_alloc_nonatomic_offs(heap, p->draw.index_count * 4);
+         poly_heap_alloc_offs(heap, p->draw.index_count * 4);
       p->draw.first_index = index_offset / 4;
       p->output_index_buffer = (global uint *)(heap->base + index_offset);
    }

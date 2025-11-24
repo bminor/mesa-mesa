@@ -44,7 +44,7 @@ libagx_tess_setup_indirect(
    alloc += vb_size;
 
    /* Allocate all patch calculations in one go */
-   global uchar *blob = poly_heap_alloc_nonatomic(p->heap, alloc);
+   global uchar *blob = poly_heap_alloc(p->heap, alloc);
 
    p->tcs_buffer = (global float *)(blob + tcs_out_offs);
    p->patches_per_instance = in_patches;

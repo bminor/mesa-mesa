@@ -162,7 +162,7 @@ libagx_draw_robust_index(global uint32_t *vdm, global struct poly_heap *heap,
       /* Allocate memory for the shadow index buffer */
       global uchar *padded;
       if (first) {
-         padded = poly_heap_alloc_nonatomic(heap, out_size_B);
+         padded = poly_heap_alloc(heap, out_size_B);
       }
       padded = (global uchar *)sub_group_broadcast((uintptr_t)padded, 0);
 

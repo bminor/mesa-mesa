@@ -149,7 +149,7 @@ poly_setup_unroll_for_draw(global struct poly_heap *heap,
     * TODO: For multidraw, should be atomic. But multidraw+unroll isn't
     * currently wired up in any driver.
     */
-   uint old_heap_bottom_B = poly_heap_alloc_nonatomic_offs(heap, alloc_size);
+   uint old_heap_bottom_B = poly_heap_alloc_offs(heap, alloc_size);
 
    /* Setup most of the descriptor. Count will be determined after unroll. */
    out_draw[1] = in_draw[1];                       /* instance count */

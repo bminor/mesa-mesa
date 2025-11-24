@@ -193,7 +193,7 @@ poly_heap_alloc_points(constant struct poly_tess_params *p, uint patch,
    }
 
    uint32_t elsize_B = sizeof(struct poly_tess_point);
-   uint32_t alloc_B = poly_heap_alloc_atomic_offs(p->heap, elsize_B * count);
+   uint32_t alloc_B = poly_heap_alloc_offs(p->heap, elsize_B * count);
    uint32_t alloc_el = alloc_B / elsize_B;
 
    p->coord_allocs[patch] = alloc_el;

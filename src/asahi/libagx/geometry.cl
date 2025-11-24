@@ -147,7 +147,7 @@ libagx_prefix_sum_tess(global struct poly_tess_params *p, global uint *c_prims,
    /* Allocate 4-byte indices */
    uint32_t elsize_B = sizeof(uint32_t);
    uint32_t size_B = total * elsize_B;
-   uint alloc_B = poly_heap_alloc_nonatomic_offs(p->heap, size_B);
+   uint alloc_B = poly_heap_alloc_offs(p->heap, size_B);
    p->index_buffer = (global uint32_t *)(((uintptr_t)p->heap->base) + alloc_B);
 
    /* ...and now we can generate the API indexed draw */
