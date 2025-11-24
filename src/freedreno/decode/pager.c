@@ -13,6 +13,8 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
+#include "util/os_misc.h"
+
 #include "pager.h"
 
 static pid_t pager_pid;

@@ -23,7 +23,9 @@
 
 #include <gtest/gtest.h>
 #include <driconf.h>
-#include <xmlconfig.h>
+
+#include "util/xmlconfig.h"
+#include "util/os_misc.h"
 
 class xmlconfig_test : public ::testing::Test {
 protected:

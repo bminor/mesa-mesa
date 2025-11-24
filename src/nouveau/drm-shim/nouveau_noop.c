@@ -440,7 +440,7 @@ drm_shim_driver_init(void)
    nouveau_driver_get_device_info();
 
    /* Ask userspace to consider all fences completed. */
-   setenv("NOUVEAU_DISABLE_FENCES", "true", true);
+   os_set_option("NOUVEAU_DISABLE_FENCES", "true", true);
 
    /* nothing looks at the pci id, so fix it to a GTX 780 */
    static const char uevent_content[] =

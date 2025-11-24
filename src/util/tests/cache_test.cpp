@@ -39,9 +39,10 @@
 #include <utime.h>
 
 #include "util/detect_os.h"
-#include "util/mesa-sha1.h"
-#include "util/disk_cache.h"
 #include "util/disk_cache_os.h"
+#include "util/disk_cache.h"
+#include "util/mesa-sha1.h"
+#include "util/os_misc.h"
 #include "util/ralloc.h"
 
 #ifdef FOZ_DB_UTIL_DYNAMIC_LIST

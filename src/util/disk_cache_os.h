@@ -25,6 +25,7 @@
 #define DISK_CACHE_OS_H
 
 #include "util/u_queue.h"
+#include "util/disk_cache.h"
 
 #if DETECT_OS_WINDOWS
 

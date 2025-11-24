@@ -13,6 +13,8 @@
 #include <string>
 #include <unordered_map>
 
+#include "util/os_misc.h"
+
 #define FUNCTION_LIST                                                                                                  \
    ITEM(CreateInstance)                                                                                                \
    ITEM(DestroyInstance)                                                                                               \

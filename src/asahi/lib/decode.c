@@ -1022,7 +1022,7 @@ agxdecode_dump_file_open(void)
       return;
 
    /* This does a os_get_option every frame, so it is possible to use
-    * setenv to change the base at runtime.
+    * os_set_option to change the base at runtime.
     */
    const char *dump_file_base =
       os_get_option("AGXDECODE_DUMP_FILE") ?: "agxdecode.dump";

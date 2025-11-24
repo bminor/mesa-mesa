@@ -252,7 +252,7 @@ pandecode_dump_file_open(struct pandecode_context *ctx)
    simple_mtx_assert_locked(&ctx->lock);
 
    /* This does a os_get_option every frame, so it is possible to use
-    * setenv to change the base at runtime.
+    * os_set_option to change the base at runtime.
     */
    const char *dump_file_base =
       debug_get_option("PANDECODE_DUMP_FILE", "pandecode.dump");
