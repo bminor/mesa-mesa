@@ -829,6 +829,7 @@ vtn_handle_debug_printf(struct vtn_builder *b, SpvOp ext_opcode,
 
    struct vtn_value *format = vtn_value(b, w[5], vtn_value_type_string);
 
+   b->shader->info.uses_printf = true;
    b->shader->printf_info_count++;
    b->shader->printf_info = reralloc(b->shader,
                                      b->shader->printf_info,
@@ -846,7 +847,7 @@ vtn_handle_debug_printf(struct vtn_builder *b, SpvOp ext_opcode,
       .string_size = strlen(format->str) + 1,
    };
 
-   uint32_t info_index = b->shader->printf_info_count - 1;
+   uint32_t info_index = b->shader->printf_info_count;
 
    if (argc) {
       glsl_struct_field *fields = calloc(argc, sizeof(glsl_struct_field));
