@@ -18,10 +18,6 @@
 
 #include "vk_sampler.h"
 
-#include "hwdef/rogue_hw_defs.h"
-
-#include "pco/pco_data.h"
-
 #include "pvr_common.h"
 
 struct pvr_sampler {

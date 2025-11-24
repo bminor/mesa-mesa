@@ -14,6 +14,12 @@
 #ifndef PVR_FRAMEBUFFER_H
 #define PVR_FRAMEBUFFER_H
 
+#include <pthread.h>
+
+#include "vk_object.h"
+
+#include "pvr_limits.h"
+
 struct pvr_render_target {
    struct pvr_rt_dataset *rt_dataset[PVR_MAX_MULTIVIEW];
 

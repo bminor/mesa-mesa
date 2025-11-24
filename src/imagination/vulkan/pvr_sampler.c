@@ -16,6 +16,7 @@
 #include "vk_log.h"
 
 #include "pvr_border.h"
+#include "pvr_csb.h"
 #include "pvr_device.h"
 #include "pvr_entrypoints.h"
 #include "pvr_physical_device.h"
