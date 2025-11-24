@@ -79,7 +79,8 @@ void GfxStreamConnectionManager::resetThreadLocalInstance() {
     }
 
     delete tls;
-    tss_set(gfxstream_connection_manager_tls_key, nullptr);
+    void* null_ptr = nullptr;
+    tss_set(gfxstream_connection_manager_tls_key, null_ptr);
 }
 
 GfxStreamConnectionManager::GfxStreamConnectionManager(GfxStreamTransportType type,
