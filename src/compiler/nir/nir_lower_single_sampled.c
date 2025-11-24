@@ -50,6 +50,8 @@ lower_single_sampled_instr(nir_builder *b,
 
       b->cursor = nir_before_instr(&intrin->instr);
       lowered = nir_b2i32(b, nir_inot(b, nir_load_helper_invocation(b, 1)));
+
+      BITSET_CLEAR(b->shader->info.system_values_read, SYSTEM_VALUE_SAMPLE_MASK_IN);
       break;
 
    case nir_intrinsic_interp_deref_at_centroid:
