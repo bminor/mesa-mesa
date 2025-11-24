@@ -401,6 +401,7 @@ kk_upload_descriptor_root(struct kk_cmd_buffer *cmd,
 
    memcpy(bo->cpu, root, sizeof(*root));
    root->root_buffer = bo;
+   desc->root_dirty = false;
 
    return bo->gpu;
 }
