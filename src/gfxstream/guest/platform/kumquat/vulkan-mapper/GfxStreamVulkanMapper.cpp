@@ -210,21 +210,16 @@ GfxStreamVulkanMapper* GfxStreamVulkanMapper::getInstance(std::optional<DeviceId
         // used for end2end tests, we should be good.
         char* driver = os_get_option_dup(VK_DRIVER_FILES);
 
-	// HACK: Need equivalents on Windows
-#if DETECT_OS_LINUX
         os_unset_option(VK_DRIVER_FILES);
-#endif
         sVkMapper = std::make_unique<GfxStreamVulkanMapper>();
         if (!sVkMapper->initialize(*deviceIdOpt)) {
             sVkMapper = nullptr;
             return nullptr;
         }
 
-#if DETECT_OS_LINUX
         if (driver) {
             os_set_option(VK_DRIVER_FILES, driver, true);
         }
-#endif
         free(driver);
     }
 
