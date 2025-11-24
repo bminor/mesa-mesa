@@ -79,10 +79,7 @@ lower_printf_intrin(nir_builder *b, nir_intrinsic_instr *prntf, void *_options)
       fmt_str_id = hash;
    }
 
-   nir_deref_instr *args = nir_src_as_deref(prntf->src[0]);
-   assert(args->deref_type == nir_deref_type_var);
-
-   /* Atomic add a buffer size counter to determine where to write.  If
+   /* Atomic add a buffer size counter to determine where to write. If
     * overflowed, return -1, otherwise, store the arguments and return 0.
     */
    nir_deref_instr *buffer =
@@ -90,9 +87,14 @@ lower_printf_intrin(nir_builder *b, nir_intrinsic_instr *prntf, void *_options)
                            glsl_array_type(glsl_uint8_t_type(), 0, 4), 0);
 
    /* Align the struct size to 4 */
-   assert(glsl_type_is_struct_or_ifc(args->type));
-   int args_size = align(glsl_get_cl_size(args->type), 4);
+   nir_deref_instr *args = nir_src_as_deref(prntf->src[0]);
+
+   int args_size = 0;
    int fmt_str_id_size = 4;
+   if (args != NULL) {
+      assert(glsl_type_is_struct_or_ifc(args->type));
+      args_size = align(glsl_get_cl_size(args->type), 4);
+   }
 
    /* Increment the counter at the beginning of the buffer */
    const unsigned counter_size = 4;
@@ -129,22 +131,26 @@ lower_printf_intrin(nir_builder *b, nir_intrinsic_instr *prntf, void *_options)
    fmt_str_id_deref->cast.align_mul = 4;
    nir_store_deref(b, fmt_str_id_deref, nir_imm_int(b, fmt_str_id), ~0);
 
-   /* Write the format args */
-   for (unsigned i = 0; i < glsl_get_length(args->type); ++i) {
-      nir_deref_instr *arg_deref = nir_build_deref_struct(b, args, i);
-      nir_def *arg = nir_load_deref(b, arg_deref);
-      const struct glsl_type *arg_type = arg_deref->type;
+   if (args != NULL) {
+      assert(args->deref_type == nir_deref_type_var);
 
-      unsigned field_offset = glsl_get_struct_field_offset(args->type, i);
-      nir_def *arg_offset =
-         nir_iadd_imm(b, offset, fmt_str_id_size + field_offset);
-      nir_deref_instr *dst_arg_deref =
-         nir_build_deref_array(b, buffer, arg_offset);
-      dst_arg_deref = nir_build_deref_cast(b, &dst_arg_deref->def,
+      /* Write the format args */
+      for (unsigned i = 0; i < glsl_get_length(args->type); ++i) {
+         nir_deref_instr *arg_deref = nir_build_deref_struct(b, args, i);
+         nir_def *arg = nir_load_deref(b, arg_deref);
+         const struct glsl_type *arg_type = arg_deref->type;
+
+         unsigned field_offset = glsl_get_struct_field_offset(args->type, i);
+         nir_def *arg_offset =
+            nir_iadd_imm(b, offset, fmt_str_id_size + field_offset);
+         nir_deref_instr *dst_arg_deref =
+            nir_build_deref_array(b, buffer, arg_offset);
+         dst_arg_deref = nir_build_deref_cast(b, &dst_arg_deref->def,
                                            nir_var_mem_global, arg_type, 0);
-      assert(field_offset % 4 == 0);
-      dst_arg_deref->cast.align_mul = 4;
-      nir_store_deref(b, dst_arg_deref, arg, ~0);
+         assert(field_offset % 4 == 0);
+         dst_arg_deref->cast.align_mul = 4;
+         nir_store_deref(b, dst_arg_deref, arg, ~0);
+      }
    }
 
    nir_push_else(b, NULL);
