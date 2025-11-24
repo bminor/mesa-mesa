@@ -2956,6 +2956,8 @@ _nir_print_shader_annotated(nir_shader *shader, FILE *fp,
       fprintf(fp, "scratch: %u\n", shader->scratch_size);
    if (shader->constant_data_size)
       fprintf(fp, "constants: %u\n", shader->constant_data_size);
+   if (shader->printf_info_count)
+      fprintf(fp, "printfs: %u\n", shader->printf_info_count);
 
    if (NIR_DEBUG(PRINT_STRUCT_DECLS)) {
       nir_foreach_variable_in_shader(var, shader) {
