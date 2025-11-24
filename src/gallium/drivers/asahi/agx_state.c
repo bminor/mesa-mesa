@@ -4547,6 +4547,18 @@ agx_draw_patches(struct agx_context *ctx, const struct pipe_draw_info *info,
       batch->cdm = agx_encoder_allocate(batch, dev);
    }
 
+   agx_upload_draw_params(batch, indirect, draws, info);
+   agx_upload_vbos(batch);
+   agx_update_vs(batch, info->index_size);
+   agx_update_tcs(ctx, info);
+   /* XXX */
+   ctx->stage[MESA_SHADER_TESS_CTRL].dirty = ~0;
+   ctx->stage[MESA_SHADER_TESS_EVAL].dirty = ~0;
+   agx_update_descriptors(batch, ctx->vs);
+   agx_update_descriptors(batch, ctx->tcs);
+
+   batch->uniforms.vertex_outputs = ctx->vs->b.info.outputs;
+
    uint64_t ib = 0;
    size_t ib_extent = 0;
 
@@ -4559,8 +4571,6 @@ agx_draw_patches(struct agx_context *ctx, const struct pipe_draw_info *info,
       .verts_per_instance = draws ? draws->count : 0,
       .outputs = ctx->vs->b.info.outputs,
    };
-
-   agx_upload_draw_params(batch, indirect, draws, info);
 
    /* Setup parameters */
    uint64_t heap = agx_batch_heap(batch);
@@ -4591,17 +4601,6 @@ agx_draw_patches(struct agx_context *ctx, const struct pipe_draw_info *info,
           sizeof(ctx->default_inner_level));
 
    struct agx_grid vs_grid, tcs_grid, tess_grid;
-
-   agx_upload_vbos(batch);
-   agx_update_vs(batch, info->index_size);
-   agx_update_tcs(ctx, info);
-   /* XXX */
-   ctx->stage[MESA_SHADER_TESS_CTRL].dirty = ~0;
-   ctx->stage[MESA_SHADER_TESS_EVAL].dirty = ~0;
-   agx_update_descriptors(batch, ctx->vs);
-   agx_update_descriptors(batch, ctx->tcs);
-
-   batch->uniforms.vertex_outputs = ctx->vs->b.info.outputs;
 
    if (indirect == NULL) {
       unsigned in_patches = draws->count / patch_vertices;
