@@ -57,6 +57,7 @@ kk_destroy_cmd_buffer(struct vk_command_buffer *vk_cmd_buffer)
    struct kk_device *dev = kk_cmd_buffer_device(cmd);
 
    kk_cmd_release_resources(dev, cmd);
+   util_dynarray_fini(&cmd->large_bos);
 
    vk_free(&pool->vk.alloc, cmd);
 }
