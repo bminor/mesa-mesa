@@ -288,7 +288,7 @@ TEST_F(xmlconfig_test, drirc_exec_regexp)
 
 TEST_F(xmlconfig_test, drirc_exec_override)
 {
-   putenv("MESA_DRICONF_EXECUTABLE_OVERRIDE=app1");
+   os_set_option("MESA_DRICONF_EXECUTABLE_OVERRIDE", "app1", true);
    driOptionCache cache = drirc_init("driver", "drm",
                                      NULL,
                                      NULL, 0,
