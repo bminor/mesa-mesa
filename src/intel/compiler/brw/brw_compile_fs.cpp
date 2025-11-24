@@ -1042,9 +1042,13 @@ brw_nir_populate_wm_prog_data(nir_shader *shader,
    prog_data->coarse_pixel_dispatch =
       intel_sometimes_invert(prog_data->persample_dispatch);
    if (!key->coarse_pixel ||
-       prog_data->uses_omask ||
+       /* DG2 should support this, but Wa_22012766191 says there are issues
+        * with CPS 1x1 + MSAA + FS writing to oMask.
+        */
+       (devinfo->verx10 < 200 &&
+        (prog_data->uses_omask ||
+         prog_data->uses_sample_mask)) ||
        prog_data->sample_shading ||
-       prog_data->uses_sample_mask ||
        (prog_data->computed_depth_mode != BRW_PSCDEPTH_OFF) ||
        prog_data->computed_stencil ||
        devinfo->ver < 11) {

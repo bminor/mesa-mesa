@@ -1504,7 +1504,7 @@ get_properties(const struct anv_physical_device *pdevice,
          VK_SAMPLE_COUNT_4_BIT :  VK_SAMPLE_COUNT_16_BIT;
       props->fragmentShadingRateWithShaderDepthStencilWrites = false;
       props->fragmentShadingRateWithSampleMask = true;
-      props->fragmentShadingRateWithShaderSampleMask = false;
+      props->fragmentShadingRateWithShaderSampleMask = devinfo->verx10 >= 200;
       props->fragmentShadingRateWithConservativeRasterization = true;
       props->fragmentShadingRateWithFragmentShaderInterlock = true;
       props->fragmentShadingRateWithCustomSampleLocations = true;

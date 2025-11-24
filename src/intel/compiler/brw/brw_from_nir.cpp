@@ -3678,14 +3678,18 @@ emit_sampleid_setup(nir_to_brw_state &ntb)
 static brw_reg
 emit_samplemaskin_setup(nir_to_brw_state &ntb)
 {
+   const intel_device_info *devinfo = ntb.devinfo;
    const brw_builder &bld = ntb.bld;
    brw_shader &s = ntb.s;
 
    assert(s.stage == MESA_SHADER_FRAGMENT);
    struct brw_wm_prog_data *wm_prog_data = brw_wm_prog_data(s.prog_data);
 
-   /* The HW doesn't provide us with expected values. */
-   assert(wm_prog_data->coarse_pixel_dispatch != INTEL_ALWAYS);
+   /* DG2 should support this, but Wa_22012766191 says there are issues
+    * with CPS 1x1 + MSAA + FS writing to oMask.
+    */
+   assert(devinfo->verx10 >= 200 ||
+          wm_prog_data->coarse_pixel_dispatch != INTEL_ALWAYS);
 
    brw_reg coverage_mask =
       brw_fetch_payload_reg(bld, s.fs_payload().sample_mask_in_reg, BRW_TYPE_UD);
