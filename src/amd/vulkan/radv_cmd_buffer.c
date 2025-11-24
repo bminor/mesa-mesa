@@ -15723,6 +15723,17 @@ radv_CmdBindShadersEXT(VkCommandBuffer commandBuffer, uint32_t stageCount, const
       radv_reset_pipeline_state(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS);
       radv_mark_descriptors_dirty(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS);
 
+      /* TODO: Try to bind graphics shaders earlier to remove this. */
+      if (bound_stages & VK_SHADER_STAGE_FRAGMENT_BIT) {
+         const struct radv_shader_object *shader_obj = cmd_buffer->state.shader_objs[MESA_SHADER_FRAGMENT];
+         const bool uses_fbfetch_output = shader_obj && shader_obj->shader->info.ps.uses_fbfetch_output;
+
+         if (cmd_buffer->state.uses_fbfetch_output != uses_fbfetch_output) {
+            cmd_buffer->state.uses_fbfetch_output = uses_fbfetch_output;
+            cmd_buffer->state.dirty |= RADV_CMD_DIRTY_FBFETCH_OUTPUT;
+         }
+      }
+
       /* Graphics shaders are handled at draw time because of shader variants. */
    }
 
