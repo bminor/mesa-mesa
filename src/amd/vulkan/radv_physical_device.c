@@ -435,6 +435,13 @@ radv_physical_device_init_mem_types(struct radv_physical_device *pdev)
       }
 
       vram_size = 0;
+   } else {
+      if (pdev->info.all_vram_visible && instance->drirc.debug.hide_rebar_on_dgpu) {
+         const uint32_t carveout_size = 256 * 1024 * 1024; /* 256 MiB for virtual carveout */
+
+         vram_size = visible_vram_size - carveout_size;
+         visible_vram_size = carveout_size;
+      }
    }
 
    /* Only get a VRAM heap if it is significant, not if it is a 16 MiB
@@ -2935,39 +2942,83 @@ radv_get_memory_budget_properties(VkPhysicalDevice physicalDevice,
          memoryBudget->heapUsage[gtt_heap_idx] = gtt_internal_usage;
       }
    } else {
-      unsigned mask = pdev->heaps;
-      unsigned heap = 0;
-      while (mask) {
-         uint64_t internal_usage = 0, system_usage = 0;
-         unsigned type = 1u << u_bit_scan(&mask);
+      if (pdev->info.all_vram_visible && instance->drirc.debug.hide_rebar_on_dgpu) {
+         /* When resizable BAR is explicitly hidden to workaround game bugs, clamp the VRAM visible
+          * system usage to the heap size because AMDGPU reports the same usage for both
+          * visible/invisible VRAM, and substract that from the VRAM usage.
+          */
+         assert(pdev->heaps == (RADV_HEAP_VRAM | RADV_HEAP_GTT | RADV_HEAP_VRAM_VIS));
+         const uint8_t vram_heap_idx = 0, gtt_heap_idx = 1, vram_vis_heap_idx = 2;
 
-         switch (type) {
-         case RADV_HEAP_VRAM:
-            internal_usage = pdev->ws->query_value(pdev->ws, RADEON_ALLOCATED_VRAM);
-            system_usage = pdev->ws->query_value(pdev->ws, RADEON_VRAM_USAGE);
-            break;
-         case RADV_HEAP_VRAM_VIS:
-            internal_usage = pdev->ws->query_value(pdev->ws, RADEON_ALLOCATED_VRAM_VIS);
-            if (!(pdev->heaps & RADV_HEAP_VRAM))
-               internal_usage += pdev->ws->query_value(pdev->ws, RADEON_ALLOCATED_VRAM);
-            system_usage = pdev->ws->query_value(pdev->ws, RADEON_VRAM_VIS_USAGE);
-            break;
-         case RADV_HEAP_GTT:
-            internal_usage = pdev->ws->query_value(pdev->ws, RADEON_ALLOCATED_GTT);
-            system_usage = pdev->ws->query_value(pdev->ws, RADEON_GTT_USAGE);
-            break;
+         /* GTT */
+         const uint64_t gtt_internal_usage = pdev->ws->query_value(pdev->ws, RADEON_ALLOCATED_GTT);
+         const uint64_t gtt_system_usage = pdev->ws->query_value(pdev->ws, RADEON_GTT_USAGE);
+         const uint64_t gtt_total_usage = MAX2(gtt_internal_usage, gtt_system_usage);
+
+         const uint64_t gtt_free_space = pdev->memory_properties.memoryHeaps[gtt_heap_idx].size -
+                                         MIN2(pdev->memory_properties.memoryHeaps[gtt_heap_idx].size, gtt_total_usage);
+
+         /* VRAM visible/invisible */
+         const uint64_t vram_internal_usage = pdev->ws->query_value(pdev->ws, RADEON_ALLOCATED_VRAM);
+         const uint64_t vram_vis_internal_usage = pdev->ws->query_value(pdev->ws, RADEON_ALLOCATED_VRAM_VIS);
+         uint64_t vram_system_usage = pdev->ws->query_value(pdev->ws, RADEON_VRAM_USAGE);
+         const uint64_t vram_vis_system_usage =
+            MIN2(vram_system_usage, pdev->memory_properties.memoryHeaps[vram_vis_heap_idx].size);
+
+         vram_system_usage -= vram_vis_system_usage;
+
+         const uint64_t vram_total_usage = MAX2(vram_internal_usage, vram_system_usage);
+         const uint64_t vram_free_space =
+            pdev->memory_properties.memoryHeaps[vram_heap_idx].size -
+            MIN2(pdev->memory_properties.memoryHeaps[vram_heap_idx].size, vram_total_usage);
+
+         const uint64_t vram_vis_total_usage = MAX2(vram_vis_internal_usage, vram_vis_system_usage);
+         const uint64_t vram_vis_free_space =
+            pdev->memory_properties.memoryHeaps[vram_vis_heap_idx].size -
+            MIN2(pdev->memory_properties.memoryHeaps[vram_vis_heap_idx].size, vram_vis_total_usage);
+
+         memoryBudget->heapBudget[gtt_heap_idx] = gtt_free_space + gtt_internal_usage;
+         memoryBudget->heapUsage[gtt_heap_idx] = gtt_internal_usage;
+         memoryBudget->heapBudget[vram_heap_idx] = vram_free_space + vram_internal_usage;
+         memoryBudget->heapUsage[vram_heap_idx] = vram_internal_usage;
+         memoryBudget->heapBudget[vram_vis_heap_idx] = vram_vis_free_space + vram_vis_internal_usage;
+         memoryBudget->heapUsage[vram_vis_heap_idx] = vram_vis_internal_usage;
+      } else {
+         unsigned mask = pdev->heaps;
+         unsigned heap = 0;
+         while (mask) {
+            uint64_t internal_usage = 0, system_usage = 0;
+            unsigned type = 1u << u_bit_scan(&mask);
+
+            switch (type) {
+            case RADV_HEAP_VRAM:
+               internal_usage = pdev->ws->query_value(pdev->ws, RADEON_ALLOCATED_VRAM);
+               system_usage = pdev->ws->query_value(pdev->ws, RADEON_VRAM_USAGE);
+               break;
+            case RADV_HEAP_VRAM_VIS:
+               internal_usage = pdev->ws->query_value(pdev->ws, RADEON_ALLOCATED_VRAM_VIS);
+               if (!(pdev->heaps & RADV_HEAP_VRAM))
+                  internal_usage += pdev->ws->query_value(pdev->ws, RADEON_ALLOCATED_VRAM);
+               system_usage = pdev->ws->query_value(pdev->ws, RADEON_VRAM_VIS_USAGE);
+               break;
+            case RADV_HEAP_GTT:
+               internal_usage = pdev->ws->query_value(pdev->ws, RADEON_ALLOCATED_GTT);
+               system_usage = pdev->ws->query_value(pdev->ws, RADEON_GTT_USAGE);
+               break;
+            }
+
+            uint64_t total_usage = MAX2(internal_usage, system_usage);
+
+            uint64_t free_space = pdev->memory_properties.memoryHeaps[heap].size -
+                                  MIN2(pdev->memory_properties.memoryHeaps[heap].size, total_usage);
+
+            memoryBudget->heapBudget[heap] = free_space + internal_usage;
+            memoryBudget->heapUsage[heap] = internal_usage;
+            ++heap;
          }
 
-         uint64_t total_usage = MAX2(internal_usage, system_usage);
-
-         uint64_t free_space = pdev->memory_properties.memoryHeaps[heap].size -
-                               MIN2(pdev->memory_properties.memoryHeaps[heap].size, total_usage);
-         memoryBudget->heapBudget[heap] = free_space + internal_usage;
-         memoryBudget->heapUsage[heap] = internal_usage;
-         ++heap;
+         assert(heap == memory_properties->memoryHeapCount);
       }
-
-      assert(heap == memory_properties->memoryHeapCount);
    }
 
    /* The heapBudget value must be less than or equal to VkMemoryHeap::size for each heap. */

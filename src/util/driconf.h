@@ -824,6 +824,10 @@
                         "Choose the specific HiZ workaround to apply on GFX12 (RDNA4). " \
                         "Accepted values are: disabled, partial or full")
 
+#define DRI_CONF_RADV_HIDE_REBAR_ON_DGPU(def) \
+   DRI_CONF_OPT_B(radv_hide_rebar_on_dgpu, def, \
+                  "Hide resizable bar on dGPUs by exposing a fake carveout of 256MiB.")
+
 /**
  * \brief ANV specific configuration options
  */
