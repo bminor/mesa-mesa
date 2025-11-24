@@ -578,7 +578,7 @@ def get_struct_copy(builder, dst, src_name, src_type, types, parent_name=None, l
                     tmp_src_name, member.name
                 ), member.type, types, tmp_src_name, member.len)
             elif member.len and member.len == 'null-terminated':
-                builder.add("%s->%s = strdup(%s->%s);" % (tmp_dst_name, member.name, tmp_src_name, member.name))
+                builder.add("%s->%s = vk_strdup(queue->alloc, %s->%s, VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);" % (tmp_dst_name, member.name, tmp_src_name, member.name))
             elif member.name == 'pNext':
                 get_pnext_member_copy(builder, tmp_dst_name, src_type, member, types)
 
@@ -637,6 +637,8 @@ def get_struct_free(builder, field_name, nullable, struct_type, types, parent_na
                 builder.add("}")
 
             builder.add("vk_free(queue->alloc, %s);" % (local_member_name))
+        elif member.len and member.len == 'null-terminated':
+            builder.add("vk_free(queue->alloc, (void*)%s);" % (member_name))
 
         elif member.name == 'pNext':
             get_pnext_member_free(builder, struct_type, types, member_name)
