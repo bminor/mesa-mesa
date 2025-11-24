@@ -971,3 +971,6 @@ vk_wacky_yuv_formats,Fail
 vk_wacky_yuv_formats_cs,Fail
 vk_xfermodes2,Fail
 vk_xfermodes3,Fail
+
+# Bisected to 08b5876c379 ("v3d: only expose rgba buffer-textures")
+TransferPixelsTest,Fail
