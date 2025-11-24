@@ -2624,7 +2624,7 @@
         "description": "egl: Disable kopper on Android",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "3294cad34159bd5317e3dfb0cb4e0ba5caca9f77",
         "notes": null
