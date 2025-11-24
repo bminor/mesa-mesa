@@ -7703,6 +7703,25 @@ ast_process_struct_or_iface_block_members(ir_exec_list *instructions,
                              "interface block contains %s variable",
                              state->has_bindless() ? "atomic" : "opaque");
          }
+
+         /* From section 4.3 ("Storage Qualifiers") of the GLSL 4.60.7 spec:
+          *
+          *     "It is a compile-time error to declare a tessellation control,
+          *      tessellation evaluation or geometry shader input with, or that
+          *      contains, any of the following types:
+          *         - boolean type
+          *         - An opaque type
+          *     "
+          *
+          * (Same condition applies to vertex and fragment stages, opaque types
+          *  are handled by check above. Also, same restriction is stated for
+          *  output interfaces in outputs section.)
+          */
+         if ((qual->flags.q.in || qual->flags.q.out) &&
+             glsl_type_is_boolean(decl_type)) {
+            _mesa_glsl_error(&loc, state,
+                             "boolean type used as input or output.");
+         }
       } else {
          if (glsl_contains_atomic(decl_type)) {
             /* From section 4.1.7.3 of the GLSL 4.40 spec:
