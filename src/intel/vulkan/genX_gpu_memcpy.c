@@ -405,20 +405,3 @@ genX(emit_so_memcpy)(struct anv_memcpy_state *state,
 
    emit_so_memcpy(state, dst, src, size);
 }
-
-void
-genX(cmd_buffer_so_memcpy)(struct anv_cmd_buffer *cmd_buffer,
-                           struct anv_address dst, struct anv_address src,
-                           uint32_t size)
-{
-   if (size == 0)
-      return;
-
-   struct anv_memcpy_state state;
-   genX(emit_so_memcpy_init)(&state,
-                             cmd_buffer->device,
-                             cmd_buffer,
-                             &cmd_buffer->batch);
-   emit_so_memcpy(&state, dst, src, size);
-   genX(emit_so_memcpy_fini)(&state);
-}

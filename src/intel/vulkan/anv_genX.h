@@ -262,10 +262,6 @@ genX(emit_urb_setup)(struct anv_batch *batch,
 void genX(emit_sample_pattern)(struct anv_batch *batch,
                                const struct vk_sample_locations_state *sl);
 
-void genX(cmd_buffer_so_memcpy)(struct anv_cmd_buffer *cmd_buffer,
-                                struct anv_address dst, struct anv_address src,
-                                uint32_t size);
-
 void genX(blorp_init_dynamic_states)(struct blorp_context *context);
 
 void genX(blorp_exec)(struct blorp_batch *batch,
