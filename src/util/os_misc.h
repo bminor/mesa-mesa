@@ -129,6 +129,26 @@ const char *
 os_get_option_cached(const char *name);
 
 /*
+ * Set an option(environment variable or os property) in a platform independent way.
+ * If @overwrite is true:
+ *   On windows, equivalent to SetEnvironmentVariableA.
+ *   On non-windows, when @value is NULL, equivalent to unsetenv, otherwise setenv(override=1).
+ * If @overwrite is false:
+ *   When name already exist, do nothing, otherwise, equivalent to @overwrite is true
+ */
+void
+os_set_option(const char *name, const char *value, bool override);
+
+/**
+ * Unset an option through os_set_option
+ */
+static inline void
+os_unset_option(const char *name)
+{
+   os_set_option(name, NULL, true);
+}
+
+/*
  * Get the total amount of physical memory available on the system.
  */
 bool

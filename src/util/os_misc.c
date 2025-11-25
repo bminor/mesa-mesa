@@ -328,6 +328,25 @@ exit_mutex:
    return opt;
 }
 
+void
+os_set_option(const char *name, const char *value, bool override)
+{
+   if (override == false) {
+      if (os_get_option(name)) {
+         return;
+      }
+   }
+#if DETECT_OS_WINDOWS
+   SetEnvironmentVariableA(name, value);
+#else
+   if (value == NULL) {
+      unsetenv(name);
+   } else {
+      setenv(name, value, 1);
+   }
+#endif
+}
+
 /**
  * Return the size of the total physical memory.
  * \param size returns the size of the total physical memory
