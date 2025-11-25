@@ -114,7 +114,7 @@
         "description": "nvk: Use rendering state attachment count when setting SET_CT_SELECT",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "84de6c12b26358fec759511fd2b6944fe85505a4",
         "notes": null
