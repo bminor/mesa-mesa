@@ -1372,9 +1372,12 @@ run_fs(brw_shader &s, bool allow_spilling, bool do_rep_send)
       }
 
       /* We handle discards by keeping track of the still-live pixels in f0.1.
-       * Initialize it with the dispatched pixels.
+       * On Xe2+, we also predicate stores with this mask. Initialize it with
+       * the dispatched pixels if we use discard or (on Xe2) memory stores.
        */
-      if (devinfo->ver >= 20 || wm_prog_data->uses_kill) {
+      if ((devinfo->ver >= 20 && nir->info.writes_memory) ||
+          wm_prog_data->uses_kill) {
+
          const unsigned lower_width = MIN2(s.dispatch_width, 16);
          for (unsigned i = 0; i < s.dispatch_width / lower_width; i++) {
             /* According to the "PS Thread Payload for Normal
