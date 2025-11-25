@@ -4728,21 +4728,18 @@ d3d12_video_encoder_get_feedback(struct pipe_video_codec *codec,
             //
             // Flush copies in batch and wait on this CPU thread for GPU work completion
             //
-
-            if (!d3d12_buffer_maps_directly(pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].comp_bit_destinations[0/*first slice*/])) { // If the buffer maps directly, the buffer_subdata is synchronous on unmap, no need to flush
-               struct pipe_fence_handle *pUploadGPUCompletionFence = NULL;
-               pD3D12Enc->base.context->flush(pD3D12Enc->base.context,
-                                             &pUploadGPUCompletionFence,
-                                             PIPE_FLUSH_ASYNC | PIPE_FLUSH_HINT_FINISH);
-               assert(pUploadGPUCompletionFence);
-               pD3D12Enc->m_pD3D12Screen->base.fence_finish(&pD3D12Enc->m_pD3D12Screen->base,
-                                                            NULL,
-                                                            pUploadGPUCompletionFence,
-                                                            OS_TIMEOUT_INFINITE);
-               pD3D12Enc->m_pD3D12Screen->base.fence_reference(&pD3D12Enc->m_pD3D12Screen->base,
-                                                               &pUploadGPUCompletionFence,
-                                                               NULL);
-            }
+            struct pipe_fence_handle *pUploadGPUCompletionFence = NULL;
+            pD3D12Enc->base.context->flush(pD3D12Enc->base.context,
+                                          &pUploadGPUCompletionFence,
+                                          PIPE_FLUSH_ASYNC | PIPE_FLUSH_HINT_FINISH);
+            assert(pUploadGPUCompletionFence);
+            pD3D12Enc->m_pD3D12Screen->base.fence_finish(&pD3D12Enc->m_pD3D12Screen->base,
+                                                         NULL,
+                                                         pUploadGPUCompletionFence,
+                                                         OS_TIMEOUT_INFINITE);
+            pD3D12Enc->m_pD3D12Screen->base.fence_reference(&pD3D12Enc->m_pD3D12Screen->base,
+                                                            &pUploadGPUCompletionFence,
+                                                            NULL);
          }
       }
 
