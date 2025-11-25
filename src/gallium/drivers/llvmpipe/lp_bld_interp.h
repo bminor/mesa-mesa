@@ -92,9 +92,8 @@ struct lp_build_interp_soa_context
    LLVMValueRef num_loop;
    LLVMTypeRef sample_pos_array_type;
    LLVMValueRef sample_pos_array;
-   LLVMValueRef statemask_store;
-   LLVMValueRef smask;
-   LLVMValueRef smask_all;
+   LLVMValueRef nonecovered_pos_x;
+   LLVMValueRef nonecovered_pos_y;
 
    LLVMValueRef x;
    LLVMValueRef y;
