@@ -29,7 +29,6 @@
 
 #include "pco/pco_data.h"
 #include "pco_uscgen_programs.h"
-#include "pvr_csb.h"
 #include "pvr_pass.h"
 #include "pvr_pds.h"
 #include "pvr_types.h"
@@ -276,6 +275,8 @@ void pvr_winsys_helper_free_static_memory(
    pvr_buffer_destroy_and_unmap(general_vma);
 }
 
+static uint32_t get_doutu_sample_rate(void);
+
 static void pvr_setup_static_vdm_sync(uint8_t *const pds_ptr,
                                       uint64_t pds_sync_offset_in_bytes,
                                       uint8_t *const usc_ptr,
@@ -292,7 +293,7 @@ static void pvr_setup_static_vdm_sync(uint8_t *const pds_ptr,
    pvr_pds_setup_doutu(&ppp_state_update_program.usc_task_control,
                        usc_sync_offset_in_bytes,
                        precomp_data->temps,
-                       ROGUE_PDSINST_DOUTU_SAMPLE_RATE_INSTANCE,
+                       get_doutu_sample_rate(),
                        false);
 
    pvr_pds_kick_usc(&ppp_state_update_program,
@@ -356,4 +357,13 @@ err_pvr_srv_winsys_buffer_unmap_general:
 
 err_out:
    return result;
+}
+
+/* Leave this at the very end, to avoid leakage of HW-defs here */
+#define PVR_BUILD_ARCH_ROGUE
+#include "pvr_csb.h"
+
+static uint32_t get_doutu_sample_rate(void)
+{
+   return ROGUE_PDSINST_DOUTU_SAMPLE_RATE_INSTANCE;
 }

@@ -26,6 +26,7 @@
 
 #include <vulkan/vulkan.h>
 
+struct rogue_fwif_cmd_compute;
 struct pvr_device_info;
 struct pvr_winsys;
 struct pvr_winsys_compute_ctx;
@@ -48,5 +49,10 @@ VkResult pvr_srv_winsys_compute_submit(
    const struct pvr_winsys_compute_submit_info *submit_info,
    const struct pvr_device_info *dev_info,
    struct vk_sync *signal_sync);
+
+void pvr_srv_compute_cmd_init(
+   const struct pvr_winsys_compute_submit_info *submit_info,
+   struct rogue_fwif_cmd_compute *cmd,
+   const struct pvr_device_info *const dev_info);
 
 #endif /* PVR_SRV_JOB_COMPUTE_H */

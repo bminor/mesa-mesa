@@ -16,6 +16,8 @@ pvr_entrypoints = custom_target(
 )
 
 pvr_files = files(
+  'winsys/powervr/pvr_arch_drm_job_compute.c',
+  'winsys/powervr/pvr_arch_drm_job_render.c',
   'winsys/powervr/pvr_drm.c',
   'winsys/powervr/pvr_drm_bo.c',
   'winsys/powervr/pvr_drm_job_compute.c',
@@ -92,6 +94,9 @@ pvr_flags = [
 
 if with_imagination_srv
   pvr_files += files(
+    'winsys/pvrsrvkm/pvr_arch_srv_job_compute.c',
+    'winsys/pvrsrvkm/pvr_arch_srv_job_render.c',
+    'winsys/pvrsrvkm/pvr_arch_srv_job_transfer.c',
     'winsys/pvrsrvkm/pvr_srv.c',
     'winsys/pvrsrvkm/pvr_srv_bo.c',
     'winsys/pvrsrvkm/pvr_srv_bridge.c',
