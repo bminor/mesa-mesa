@@ -1642,9 +1642,78 @@ ALWAYS_INLINE static enum anv_pipe_bits
 genX(emit_apply_pipe_flushes)(struct anv_batch *batch,
                               struct anv_device *device,
                               uint32_t current_pipeline,
+                              VkPipelineStageFlags2 src_stages,
+                              VkPipelineStageFlags2 dst_stages,
                               enum anv_pipe_bits bits,
                               enum anv_pipe_bits *emitted_flush_bits)
 {
+   /* What stage require a stall at pixel scoreboard */
+   VkPipelineStageFlags2 pb_stall_stages =
+      VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT |
+      VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT |
+      VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT;
+   if (batch->engine_class == INTEL_ENGINE_CLASS_RENDER) {
+      /* On a render queue, the following stages can also use a pixel shader.
+       */
+      pb_stall_stages |=
+         VK_PIPELINE_STAGE_2_TRANSFER_BIT |
+         VK_PIPELINE_STAGE_2_RESOLVE_BIT |
+         VK_PIPELINE_STAGE_2_BLIT_BIT |
+         VK_PIPELINE_STAGE_2_CLEAR_BIT;
+   }
+   VkPipelineStageFlags2 cs_stall_stages =
+      VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT |
+      VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT |
+      VK_PIPELINE_STAGE_2_VERTEX_INPUT_BIT |
+      VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT |
+      VK_PIPELINE_STAGE_2_TESSELLATION_CONTROL_SHADER_BIT |
+      VK_PIPELINE_STAGE_2_TESSELLATION_EVALUATION_SHADER_BIT |
+      VK_PIPELINE_STAGE_2_GEOMETRY_SHADER_BIT |
+      VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT |
+      VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT |
+      VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR |
+      VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_COPY_BIT_KHR |
+      VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR;
+   if (batch->engine_class == INTEL_ENGINE_CLASS_COMPUTE) {
+      /* On a compute queue, the following stages can also use a compute
+       * shader.
+       */
+      cs_stall_stages |=
+         VK_PIPELINE_STAGE_2_TRANSFER_BIT |
+         VK_PIPELINE_STAGE_2_RESOLVE_BIT |
+         VK_PIPELINE_STAGE_2_BLIT_BIT |
+         VK_PIPELINE_STAGE_2_CLEAR_BIT;
+   } else if (batch->engine_class == INTEL_ENGINE_CLASS_RENDER &&
+              current_pipeline == GPGPU) {
+      /* In GPGPU mode, the render queue can also use a compute shader for
+       * transfer operations.
+       */
+      cs_stall_stages |= VK_PIPELINE_STAGE_2_TRANSFER_BIT;
+   }
+
+   /* Prior to Gfx20, we can restrict pb-stall/cs-stall to some pipeline
+    * modes. Gfx20 doesn't do pipeline switches so we have to assume the worse
+    * case.
+    */
+   const bool needs_pb_stall =
+      batch->engine_class == INTEL_ENGINE_CLASS_RENDER &&
+#if GFX_VER < 20
+      current_pipeline == _3D &&
+#endif
+      (dst_stages & ~pb_stall_stages) == 0 &&
+      (dst_stages & pb_stall_stages);
+   if (needs_pb_stall) {
+      bits |= GFX_VERx10 >= 125 ?
+              ANV_PIPE_PSS_STALL_SYNC_BIT :
+              ANV_PIPE_STALL_AT_SCOREBOARD_BIT;
+   }
+   const bool needs_cs_stall =
+      (batch->engine_class == INTEL_ENGINE_CLASS_RENDER ||
+       batch->engine_class == INTEL_ENGINE_CLASS_COMPUTE) &&
+      (src_stages & cs_stall_stages);
+   if (needs_cs_stall)
+      bits |= ANV_PIPE_CS_STALL_BIT;
+
 #if GFX_VER >= 12
    /* From the TGL PRM, Volume 2a, "PIPE_CONTROL":
     *
@@ -1889,12 +1958,15 @@ genX(cmd_buffer_apply_pipe_flushes)(struct anv_cmd_buffer *cmd_buffer)
    enum anv_pipe_bits bits = cmd_buffer->state.pending_pipe_bits;
 
    /* Consume the stages here */
+   VkPipelineStageFlags2 src_stages = cmd_buffer->state.pending_src_stages;
+   VkPipelineStageFlags2 dst_stages = cmd_buffer->state.pending_dst_stages;
    cmd_buffer->state.pending_src_stages = 0;
    cmd_buffer->state.pending_dst_stages = 0;
 
+
    if (unlikely(cmd_buffer->device->physical->always_flush_cache))
       bits |= ANV_PIPE_BARRIER_FLUSH_BITS | ANV_PIPE_INVALIDATE_BITS;
-   else if (bits == 0)
+   else if (bits == 0 && src_stages == 0 && dst_stages == 0)
       return;
 
    if (anv_cmd_buffer_is_blitter_queue(cmd_buffer) ||
@@ -1911,7 +1983,7 @@ genX(cmd_buffer_apply_pipe_flushes)(struct anv_cmd_buffer *cmd_buffer)
             }
 
             genX(invalidate_aux_map)(&cmd_buffer->batch, cmd_buffer->device,
-                                     cmd_buffer->queue_family->engine_class, bits);
+                                     cmd_buffer->batch.engine_class, bits);
          }
          bits &= ~ANV_PIPE_INVALIDATE_BITS;
       }
@@ -1936,7 +2008,8 @@ genX(cmd_buffer_apply_pipe_flushes)(struct anv_cmd_buffer *cmd_buffer)
       genX(emit_apply_pipe_flushes)(&cmd_buffer->batch,
                                     cmd_buffer->device,
                                     cmd_buffer->state.current_pipeline,
-                                    bits, &emitted_bits);
+                                    src_stages, dst_stages, bits,
+                                    &emitted_bits);
    anv_cmd_buffer_update_pending_query_bits(cmd_buffer, emitted_bits);
 
 #if INTEL_NEEDS_WA_1508744258
@@ -4644,76 +4717,6 @@ cmd_buffer_accumulate_barrier_bits(struct anv_cmd_buffer *cmd_buffer,
    enum anv_pipe_bits bits =
       anv_pipe_flush_bits_for_access_flags(cmd_buffer, src_flags, src_flags3) |
       anv_pipe_invalidate_bits_for_access_flags(cmd_buffer, dst_flags, dst_flags3);
-
-   /* What stage require a stall at pixel scoreboard */
-   VkPipelineStageFlags2 pb_stall_stages =
-      VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT |
-      VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT |
-      VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT;
-   if (anv_cmd_buffer_is_render_queue(cmd_buffer)) {
-      /* On a render queue, the following stages can also use a pixel shader.
-       */
-      pb_stall_stages |=
-         VK_PIPELINE_STAGE_2_TRANSFER_BIT |
-         VK_PIPELINE_STAGE_2_RESOLVE_BIT |
-         VK_PIPELINE_STAGE_2_BLIT_BIT |
-         VK_PIPELINE_STAGE_2_CLEAR_BIT;
-   }
-   VkPipelineStageFlags2 cs_stall_stages =
-      VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT |
-      VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT |
-      VK_PIPELINE_STAGE_2_VERTEX_INPUT_BIT |
-      VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT |
-      VK_PIPELINE_STAGE_2_TESSELLATION_CONTROL_SHADER_BIT |
-      VK_PIPELINE_STAGE_2_TESSELLATION_EVALUATION_SHADER_BIT |
-      VK_PIPELINE_STAGE_2_GEOMETRY_SHADER_BIT |
-      VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT |
-      VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT |
-      VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_BUILD_BIT_KHR |
-      VK_PIPELINE_STAGE_2_ACCELERATION_STRUCTURE_COPY_BIT_KHR |
-      VK_PIPELINE_STAGE_2_RAY_TRACING_SHADER_BIT_KHR;
-   if (anv_cmd_buffer_is_compute_queue(cmd_buffer)) {
-      /* On a compute queue, the following stages can also use a compute
-       * shader.
-       */
-      cs_stall_stages |=
-         VK_PIPELINE_STAGE_2_TRANSFER_BIT |
-         VK_PIPELINE_STAGE_2_RESOLVE_BIT |
-         VK_PIPELINE_STAGE_2_BLIT_BIT |
-         VK_PIPELINE_STAGE_2_CLEAR_BIT;
-   } else if (anv_cmd_buffer_is_render_queue(cmd_buffer) &&
-              cmd_buffer->state.current_pipeline == GPGPU) {
-      /* In GPGPU mode, the render queue can also use a compute shader for
-       * transfer operations.
-       */
-      cs_stall_stages |= VK_PIPELINE_STAGE_2_TRANSFER_BIT;
-   }
-
-   /* Prior to Gfx20, we can restrict pb-stall/cs-stall to some pipeline
-    * modes. Gfx20 doesn't do pipeline switches so we have to assume the worse
-    * case.
-    *
-    * To use a PB-stall we need both destination stages to be contained to the
-    * fragment shader stages. That way the HW can hold the fragment shader
-    * dispatch until the synchronization operation happened.
-    */
-   const bool needs_pb_stall =
-      anv_cmd_buffer_is_render_queue(cmd_buffer) &&
-#if GFX_VER < 20
-      cmd_buffer->state.current_pipeline == _3D &&
-#endif
-      (dst_stages & ~pb_stall_stages) == 0 &&
-      (dst_stages & pb_stall_stages);
-   if (needs_pb_stall) {
-      bits |= GFX_VERx10 >= 125 ?
-              ANV_PIPE_PSS_STALL_SYNC_BIT :
-              ANV_PIPE_STALL_AT_SCOREBOARD_BIT;
-   }
-   const bool needs_cs_stall =
-      anv_cmd_buffer_is_render_or_compute_queue(cmd_buffer) &&
-      (dst_stages & cs_stall_stages);
-   if (needs_cs_stall)
-      bits |= ANV_PIPE_CS_STALL_BIT;
 
 #if GFX_VER < 20
    /* Our HW implementation of the sparse feature prior to Xe2 lives in the
