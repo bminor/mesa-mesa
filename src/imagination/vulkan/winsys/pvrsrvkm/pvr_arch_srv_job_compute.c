@@ -104,7 +104,7 @@ static void pvr_srv_compute_cmd_ext_stream_load(
    assert((const uint8_t *)ext_stream_ptr - stream == stream_len);
 }
 
-void pvr_srv_compute_cmd_init(
+void PVR_PER_ARCH(srv_compute_cmd_init)(
    const struct pvr_winsys_compute_submit_info *submit_info,
    struct rogue_fwif_cmd_compute *cmd,
    const struct pvr_device_info *const dev_info)

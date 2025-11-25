@@ -26,6 +26,8 @@
 
 #include <vulkan/vulkan.h>
 
+#include "pvr_macros.h"
+
 struct rogue_fwif_cmd_transfer;
 struct pvr_device_info;
 struct pvr_winsys;
@@ -50,10 +52,12 @@ VkResult pvr_srv_winsys_transfer_submit(
    const struct pvr_device_info *dev_info,
    struct vk_sync *signal_sync);
 
-void pvr_srv_transfer_cmd_stream_load(
+#ifdef PVR_PER_ARCH
+void PVR_PER_ARCH(srv_transfer_cmd_stream_load)(
    struct rogue_fwif_cmd_transfer *const cmd,
    const uint8_t *const stream,
    const uint32_t stream_len,
    const struct pvr_device_info *const dev_info);
+#endif
 
 #endif /* PVR_SRV_JOB_TRANSFER_H */

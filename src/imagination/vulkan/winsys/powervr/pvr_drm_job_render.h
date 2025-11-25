@@ -77,9 +77,11 @@ VkResult pvr_drm_winsys_render_submit(
    struct vk_sync *signal_sync_geom,
    struct vk_sync *signal_sync_frag);
 
-void pvr_drm_render_ctx_static_state_init(
+#ifdef PVR_PER_ARCH
+void PVR_PER_ARCH(drm_render_ctx_static_state_init)(
    struct pvr_winsys_render_ctx_create_info *create_info,
    uint8_t *stream_ptr_start,
    uint32_t *stream_len_ptr);
+#endif
 
 #endif /* PVR_DRM_JOB_RENDER_H */

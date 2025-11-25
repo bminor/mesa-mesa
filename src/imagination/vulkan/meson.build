@@ -17,8 +17,6 @@ pvr_entrypoints = custom_target(
 )
 
 pvr_files = files(
-  'winsys/powervr/pvr_arch_drm_job_compute.c',
-  'winsys/powervr/pvr_arch_drm_job_render.c',
   'winsys/powervr/pvr_drm.c',
   'winsys/powervr/pvr_drm_bo.c',
   'winsys/powervr/pvr_drm_job_compute.c',
@@ -67,25 +65,6 @@ pvr_flags = [
   no_override_init_args,
 ]
 
-if with_imagination_srv
-  pvr_files += files(
-    'winsys/pvrsrvkm/pvr_arch_srv_job_compute.c',
-    'winsys/pvrsrvkm/pvr_arch_srv_job_render.c',
-    'winsys/pvrsrvkm/pvr_arch_srv_job_transfer.c',
-    'winsys/pvrsrvkm/pvr_srv.c',
-    'winsys/pvrsrvkm/pvr_srv_bo.c',
-    'winsys/pvrsrvkm/pvr_srv_bridge.c',
-    'winsys/pvrsrvkm/pvr_srv_job_common.c',
-    'winsys/pvrsrvkm/pvr_srv_job_compute.c',
-    'winsys/pvrsrvkm/pvr_srv_job_null.c',
-    'winsys/pvrsrvkm/pvr_srv_job_render.c',
-    'winsys/pvrsrvkm/pvr_srv_job_transfer.c',
-    'winsys/pvrsrvkm/pvr_srv_sync.c',
-    'winsys/pvrsrvkm/pvr_srv_sync_prim.c',
-  )
-  pvr_flags += '-DPVR_SUPPORT_SERVICES_DRIVER'
-endif
-
 common_per_arch_files = [
   pvr_entrypoints[0],
   sha1_h,
@@ -115,7 +94,30 @@ common_per_arch_files += files(
   'pvr_arch_sampler.c',
   'pvr_arch_spm.c',
   'pvr_arch_tex_state.c',
+  'winsys/powervr/pvr_arch_drm_job_compute.c',
+  'winsys/powervr/pvr_arch_drm_job_render.c',
 )
+
+if with_imagination_srv
+  pvr_files += files(
+    'winsys/pvrsrvkm/pvr_srv.c',
+    'winsys/pvrsrvkm/pvr_srv_bo.c',
+    'winsys/pvrsrvkm/pvr_srv_bridge.c',
+    'winsys/pvrsrvkm/pvr_srv_job_common.c',
+    'winsys/pvrsrvkm/pvr_srv_job_compute.c',
+    'winsys/pvrsrvkm/pvr_srv_job_null.c',
+    'winsys/pvrsrvkm/pvr_srv_job_render.c',
+    'winsys/pvrsrvkm/pvr_srv_job_transfer.c',
+    'winsys/pvrsrvkm/pvr_srv_sync.c',
+    'winsys/pvrsrvkm/pvr_srv_sync_prim.c',
+  )
+  common_per_arch_files += files(
+    'winsys/pvrsrvkm/pvr_arch_srv_job_compute.c',
+    'winsys/pvrsrvkm/pvr_arch_srv_job_render.c',
+    'winsys/pvrsrvkm/pvr_arch_srv_job_transfer.c',
+  )
+  pvr_flags += '-DPVR_SUPPORT_SERVICES_DRIVER'
+endif
 
 rogue_files = files(
   'rogue/pvr_blit.c',

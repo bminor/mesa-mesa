@@ -44,6 +44,14 @@ struct pvr_drm_winsys_compute_ctx {
 #define to_pvr_drm_winsys_compute_ctx(ctx) \
    container_of(ctx, struct pvr_drm_winsys_compute_ctx, base)
 
+#define PER_ARCH_FUNCS(arch)                                        \
+   void pvr_##arch##_drm_compute_ctx_static_state_init(             \
+      const struct pvr_winsys_compute_ctx_create_info *create_info, \
+      uint8_t *stream_ptr_start,                                    \
+      uint32_t *stream_len_ptr);
+
+PER_ARCH_FUNCS(rogue);
+
 VkResult pvr_drm_winsys_compute_ctx_create(
    struct pvr_winsys *ws,
    const struct pvr_winsys_compute_ctx_create_info *create_info,
@@ -72,9 +80,12 @@ VkResult pvr_drm_winsys_compute_ctx_create(
       goto err_out;
    }
 
-   pvr_drm_compute_ctx_static_state_init(create_info,
-                                         static_ctx_state_fw_stream,
-                                         &ctx_args.static_context_state_len);
+   enum pvr_device_arch arch = dev_info->ident.arch;
+   PVR_ARCH_DISPATCH(drm_compute_ctx_static_state_init,
+                     arch,
+                     create_info,
+                     static_ctx_state_fw_stream,
+                     &ctx_args.static_context_state_len);
 
    result = pvr_ioctlf(ws->render_fd,
                        DRM_IOCTL_PVR_CREATE_CONTEXT,

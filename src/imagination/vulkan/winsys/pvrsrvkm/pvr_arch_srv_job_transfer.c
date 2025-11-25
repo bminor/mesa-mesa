@@ -27,7 +27,7 @@
 #include "pvr_csb.h"
 #include "pvr_device_info.h"
 
-void pvr_srv_transfer_cmd_stream_load(
+void PVR_PER_ARCH(srv_transfer_cmd_stream_load)(
    struct rogue_fwif_cmd_transfer *const cmd,
    const uint8_t *const stream,
    const uint32_t stream_len,

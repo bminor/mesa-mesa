@@ -299,7 +299,7 @@ static void pvr_rogue_ct_te_init(const struct pvr_device_info *dev_info,
    te_regs->mtile_stride = mtile_info->mtile_x1 * mtile_info->mtile_y1;
 }
 
-VkResult pvr_srv_render_target_dataset_create(
+VkResult PVR_PER_ARCH(srv_render_target_dataset_create)(
    struct pvr_winsys *ws,
    const struct pvr_winsys_rt_dataset_create_info *create_info,
    const struct pvr_device_info *dev_info,
@@ -523,7 +523,7 @@ static void pvr_srv_geometry_cmd_ext_stream_load(
    assert((const uint8_t *)ext_stream_ptr - stream == stream_len);
 }
 
-void pvr_srv_geometry_cmd_init(
+void PVR_PER_ARCH(srv_geometry_cmd_init)(
    const struct pvr_winsys_render_submit_info *submit_info,
    const struct pvr_srv_sync_prim *sync_prim,
    struct rogue_fwif_cmd_ta *cmd,
@@ -706,10 +706,11 @@ static void pvr_srv_fragment_cmd_ext_stream_load(
    assert((const uint8_t *)ext_stream_ptr - stream == stream_len);
 }
 
-void pvr_srv_fragment_cmd_init(struct rogue_fwif_cmd_3d *cmd,
-                               const struct pvr_winsys_fragment_state *state,
-                               const struct pvr_device_info *dev_info,
-                               uint32_t frame_num)
+void PVR_PER_ARCH(srv_fragment_cmd_init)(
+   struct rogue_fwif_cmd_3d *cmd,
+   const struct pvr_winsys_fragment_state *state,
+   const struct pvr_device_info *dev_info,
+   uint32_t frame_num)
 {
    uint32_t ext_stream_offset;
 

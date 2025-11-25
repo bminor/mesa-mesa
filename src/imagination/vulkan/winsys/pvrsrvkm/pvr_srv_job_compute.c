@@ -139,6 +139,14 @@ void pvr_srv_winsys_compute_ctx_destroy(struct pvr_winsys_compute_ctx *ctx)
    vk_free(srv_ws->base.alloc, srv_ctx);
 }
 
+#define PER_ARCH_FUNCS(arch)                                    \
+   void pvr_##arch##_srv_compute_cmd_init(                      \
+      const struct pvr_winsys_compute_submit_info *submit_info, \
+      struct rogue_fwif_cmd_compute *cmd,                       \
+      const struct pvr_device_info *const dev_info)
+
+PER_ARCH_FUNCS(rogue);
+
 VkResult pvr_srv_winsys_compute_submit(
    const struct pvr_winsys_compute_ctx *ctx,
    const struct pvr_winsys_compute_submit_info *submit_info,
@@ -154,7 +162,12 @@ VkResult pvr_srv_winsys_compute_submit(
    int in_fd = -1;
    int fence;
 
-   pvr_srv_compute_cmd_init(submit_info, &compute_cmd, dev_info);
+   enum pvr_device_arch arch = dev_info->ident.arch;
+   PVR_ARCH_DISPATCH(srv_compute_cmd_init,
+                     arch,
+                     submit_info,
+                     &compute_cmd,
+                     dev_info);
 
    if (submit_info->wait) {
       struct pvr_srv_sync *srv_wait_sync = to_srv_sync(submit_info->wait);

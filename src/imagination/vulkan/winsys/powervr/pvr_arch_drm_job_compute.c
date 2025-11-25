@@ -8,7 +8,7 @@
 
 #include "pvr_csb.h"
 
-void pvr_drm_compute_ctx_static_state_init(
+void PVR_PER_ARCH(drm_compute_ctx_static_state_init)(
    const struct pvr_winsys_compute_ctx_create_info *create_info,
    uint8_t *stream_ptr_start,
    uint32_t *stream_len_ptr)

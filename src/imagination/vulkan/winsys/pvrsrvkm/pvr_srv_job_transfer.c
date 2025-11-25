@@ -132,6 +132,15 @@ void pvr_srv_winsys_transfer_ctx_destroy(struct pvr_winsys_transfer_ctx *ctx)
    vk_free(srv_ws->base.alloc, srv_ctx);
 }
 
+#define PER_ARCH_FUNCS(arch)                       \
+   void pvr_##arch##_srv_transfer_cmd_stream_load( \
+      struct rogue_fwif_cmd_transfer *const cmd,   \
+      const uint8_t *const stream,                 \
+      const uint32_t stream_len,                   \
+      const struct pvr_device_info *const dev_info)
+
+PER_ARCH_FUNCS(rogue);
+
 static void pvr_srv_transfer_cmds_init(
    const struct pvr_winsys_transfer_submit_info *submit_info,
    struct rogue_fwif_cmd_transfer *cmds,
@@ -140,16 +149,19 @@ static void pvr_srv_transfer_cmds_init(
 {
    memset(cmds, 0, sizeof(*cmds) * submit_info->cmd_count);
 
+   enum pvr_device_arch arch = dev_info->ident.arch;
    for (uint32_t i = 0; i < cmd_count; i++) {
       const struct pvr_winsys_transfer_cmd *submit_cmd = &submit_info->cmds[i];
       struct rogue_fwif_cmd_transfer *cmd = &cmds[i];
 
       cmd->cmn.frame_num = submit_info->frame_num;
 
-      pvr_srv_transfer_cmd_stream_load(cmd,
-                                       submit_cmd->fw_stream,
-                                       submit_cmd->fw_stream_len,
-                                       dev_info);
+      PVR_ARCH_DISPATCH(srv_transfer_cmd_stream_load,
+                        arch,
+                        cmd,
+                        submit_cmd->fw_stream,
+                        submit_cmd->fw_stream_len,
+                        dev_info);
 
       if (submit_info->cmds[i].flags.use_single_core)
          cmd->flags |= ROGUE_FWIF_CMDTRANSFER_SINGLE_CORE;

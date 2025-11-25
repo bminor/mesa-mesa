@@ -166,6 +166,45 @@ void pvr_srv_winsys_free_list_destroy(struct pvr_winsys_free_list *free_list)
    vk_free(srv_ws->base.alloc, srv_free_list);
 }
 
+#define PER_ARCH_FUNCS(arch)                                       \
+   VkResult pvr_##arch##_srv_render_target_dataset_create(         \
+      struct pvr_winsys *ws,                                       \
+      const struct pvr_winsys_rt_dataset_create_info *create_info, \
+      const struct pvr_device_info *dev_info,                      \
+      struct pvr_winsys_rt_dataset **const rt_dataset_out);        \
+                                                                   \
+   void pvr_##arch##_srv_fragment_cmd_init(                        \
+      struct rogue_fwif_cmd_3d *cmd,                               \
+      const struct pvr_winsys_fragment_state *state,               \
+      const struct pvr_device_info *dev_info,                      \
+      uint32_t frame_num);                                         \
+                                                                   \
+   void pvr_##arch##_srv_geometry_cmd_init(                        \
+      const struct pvr_winsys_render_submit_info *submit_info,     \
+      const struct pvr_srv_sync_prim *sync_prim,                   \
+      struct rogue_fwif_cmd_ta *cmd,                               \
+      const struct pvr_device_info *const dev_info)
+
+PER_ARCH_FUNCS(rogue);
+
+VkResult pvr_srv_render_target_dataset_create(
+   struct pvr_winsys *ws,
+   const struct pvr_winsys_rt_dataset_create_info *create_info,
+   const struct pvr_device_info *dev_info,
+   struct pvr_winsys_rt_dataset **const rt_dataset_out)
+{
+   VkResult result = VK_SUCCESS;
+   enum pvr_device_arch arch = dev_info->ident.arch;
+   PVR_ARCH_DISPATCH_RET(srv_render_target_dataset_create,
+                         arch,
+                         result,
+                         ws,
+                         create_info,
+                         dev_info,
+                         rt_dataset_out);
+   return result;
+}
+
 void pvr_srv_render_target_dataset_destroy(
    struct pvr_winsys_rt_dataset *rt_dataset)
 {
@@ -341,19 +380,28 @@ VkResult pvr_srv_winsys_render_submit(
    int fence_geom;
 
    VkResult result;
+   enum pvr_device_arch arch = dev_info->ident.arch;
+   PVR_ARCH_DISPATCH(srv_geometry_cmd_init,
+                     arch,
+                     submit_info,
+                     sync_prim,
+                     &geom_cmd,
+                     dev_info);
 
-   pvr_srv_geometry_cmd_init(submit_info, sync_prim, &geom_cmd, dev_info);
-
-   pvr_srv_fragment_cmd_init(&pr_cmd,
-                             &submit_info->fragment_pr,
-                             dev_info,
-                             submit_info->frame_num);
+   PVR_ARCH_DISPATCH(srv_fragment_cmd_init,
+                     arch,
+                     &pr_cmd,
+                     &submit_info->fragment_pr,
+                     dev_info,
+                     submit_info->frame_num);
 
    if (submit_info->has_fragment_job) {
-      pvr_srv_fragment_cmd_init(&frag_cmd,
-                                &submit_info->fragment,
-                                dev_info,
-                                submit_info->frame_num);
+      PVR_ARCH_DISPATCH(srv_fragment_cmd_init,
+                        arch,
+                        &frag_cmd,
+                        &submit_info->fragment,
+                        dev_info,
+                        submit_info->frame_num);
 
       frag_cmd_ptr = (uint8_t *)&frag_cmd;
       frag_cmd_size = sizeof(frag_cmd);
