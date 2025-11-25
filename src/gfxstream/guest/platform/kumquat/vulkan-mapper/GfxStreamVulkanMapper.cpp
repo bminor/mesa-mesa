@@ -208,7 +208,7 @@ GfxStreamVulkanMapper* GfxStreamVulkanMapper::getInstance(std::optional<DeviceId
         // testing, VK_DRIVER_FILES shouldn't be defined.  For deqp-vk, this is
         // useful, but not safe for multi-threaded tests.  For now, since this is only
         // used for end2end tests, we should be good.
-        const char* driver = os_get_option(VK_DRIVER_FILES);
+        char* driver = os_get_option_dup(VK_DRIVER_FILES);
 
 	// HACK: Need equivalents on Windows
 #if DETECT_OS_LINUX
@@ -225,6 +225,7 @@ GfxStreamVulkanMapper* GfxStreamVulkanMapper::getInstance(std::optional<DeviceId
             setenv(VK_DRIVER_FILES, driver, 1);
         }
 #endif
+        free(driver);
     }
 
     return sVkMapper.get();
