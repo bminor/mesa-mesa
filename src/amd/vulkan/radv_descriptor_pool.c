@@ -239,6 +239,7 @@ radv_ResetDescriptorPool(VkDevice _device, VkDescriptorPool descriptorPool, VkDe
    if (!pool->host_memory_base && pool->size) {
       util_vma_heap_finish(&pool->bo_heap);
       util_vma_heap_init(&pool->bo_heap, RADV_POOL_HEAP_OFFSET, pool->size + RADV_POOL_HEAP_OFFSET);
+      pool->bo_heap.alloc_high = false;
    }
 
    pool->entry_count = 0;
