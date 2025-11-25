@@ -644,13 +644,18 @@ struct ir3_block *
 ir3_block_create(struct ir3 *shader)
 {
    struct ir3_block *block = ir3_alloc(shader, sizeof(*block));
-#if MESA_DEBUG
-   block->serialno = ++shader->block_count;
-#endif
    block->shader = shader;
    list_inithead(&block->node);
    list_inithead(&block->instr_list);
    return block;
+}
+
+uint32_t
+block_id(struct ir3_block *block)
+{
+   if (block->nblock)
+      return block->nblock->index;
+   return (uint32_t)(unsigned long)block;
 }
 
 struct ir3_instruction *

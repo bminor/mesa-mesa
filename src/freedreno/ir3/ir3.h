@@ -768,10 +768,6 @@ struct ir3_block {
    uint32_t dom_post_index;
 
    uint32_t loop_depth;
-
-#if MESA_DEBUG
-   uint32_t serialno;
-#endif
 };
 
 enum ir3_cursor_option {
@@ -793,15 +789,7 @@ struct ir3_builder {
    struct ir3_cursor cursor;
 };
 
-static inline uint32_t
-block_id(struct ir3_block *block)
-{
-#if MESA_DEBUG
-   return block->serialno;
-#else
-   return (uint32_t)(unsigned long)block;
-#endif
-}
+uint32_t block_id(struct ir3_block *block);
 
 static inline struct ir3_block *
 ir3_start_block(struct ir3 *ir)
