@@ -75,7 +75,7 @@ radv_taskmesh_enabled(const struct radv_physical_device *pdev)
           pdev->info.has_gang_submit;
 }
 
-static bool
+bool
 radv_sparse_enabled(const struct radv_physical_device *pdev)
 {
    const struct radv_instance *instance = radv_physical_device_instance(pdev);

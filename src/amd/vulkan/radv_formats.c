@@ -1059,7 +1059,7 @@ radv_get_image_format_properties(struct radv_physical_device *pdev, const VkPhys
    }
 
    if (info->flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT) {
-      if (!pdev->info.has_sparse)
+      if (!radv_sparse_enabled(pdev))
          goto unsupported;
 
       /* Sparse resources with multi-planar formats are unsupported. */
@@ -1072,6 +1072,9 @@ radv_get_image_format_properties(struct radv_physical_device *pdev, const VkPhys
    }
 
    if (info->flags & VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT) {
+      if (!radv_sparse_enabled(pdev))
+         goto unsupported;
+
       if (info->type == VK_IMAGE_TYPE_3D && !pdev->info.has_sparse_image_3d)
          goto unsupported;
 

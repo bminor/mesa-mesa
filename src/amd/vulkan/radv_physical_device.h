@@ -229,6 +229,8 @@ struct radv_physical_device {
 
 VK_DEFINE_HANDLE_CASTS(radv_physical_device, vk.base, VkPhysicalDevice, VK_OBJECT_TYPE_PHYSICAL_DEVICE)
 
+bool radv_sparse_enabled(const struct radv_physical_device *pdev);
+
 static inline struct radv_instance *
 radv_physical_device_instance(const struct radv_physical_device *pdev)
 {
@@ -241,7 +243,7 @@ radv_dedicated_sparse_queue_enabled(const struct radv_physical_device *pdev)
    /* Dedicated sparse queue requires VK_QUEUE_SUBMIT_MODE_THREADED, which is incompatible with
     * VK_DEVICE_TIMELINE_MODE_EMULATED. */
    return pdev->info.has_timeline_syncobj &&
-          pdev->info.has_sparse;
+          radv_sparse_enabled(pdev);
 }
 
 static inline bool
