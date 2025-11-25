@@ -1465,7 +1465,7 @@ ac_query_gpu_info(int fd, void *dev_p, struct radeon_info *info,
    }
 
    if (info->gfx_level >= GFX11 && (info->userq_ip_mask & (1 << AMD_IP_GFX))) {
-      struct drm_amdgpu_info_uq_fw_areas fw_info;
+      struct drm_amdgpu_info_uq_metadata fw_info;
 
       r = ac_drm_query_uq_fw_area_info(dev, AMDGPU_HW_IP_GFX, 0, &fw_info);
       if (r) {

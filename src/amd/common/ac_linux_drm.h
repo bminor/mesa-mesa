@@ -196,16 +196,36 @@ struct drm_amdgpu_info_hw_ip {
    uint32_t ip_discovery_version;
 };
 
-struct drm_amdgpu_info_uq_fw_areas_gfx {
+struct drm_amdgpu_info_uq_metadata_gfx {
+   /* shadow area size for gfx11 */
    uint32_t shadow_size;
+   /* shadow area base virtual alignment for gfx11 */
    uint32_t shadow_alignment;
+   /* context save area size for gfx11 */
    uint32_t csa_size;
+   /* context save area base virtual alignment for gfx11 */
    uint32_t csa_alignment;
 };
 
-struct drm_amdgpu_info_uq_fw_areas {
+struct drm_amdgpu_info_uq_metadata_compute {
+   /* EOP size for gfx11 */
+   uint32_t eop_size;
+   /* EOP base virtual alignment for gfx11 */
+   uint32_t eop_alignment;
+};
+
+struct drm_amdgpu_info_uq_metadata_sdma {
+   /* context save area size for sdma6 */
+   uint32_t csa_size;
+   /* context save area base virtual alignment for sdma6 */
+   uint32_t csa_alignment;
+};
+
+struct drm_amdgpu_info_uq_metadata {
    union {
-      struct drm_amdgpu_info_uq_fw_areas_gfx gfx;
+      struct drm_amdgpu_info_uq_metadata_gfx gfx;
+      struct drm_amdgpu_info_uq_metadata_compute compute;
+      struct drm_amdgpu_info_uq_metadata_sdma sdma;
    };
 };
 
@@ -405,7 +425,7 @@ PROC int ac_drm_query_hw_ip_info(ac_drm_device *dev, unsigned type, unsigned ip_
 PROC int ac_drm_query_firmware_version(ac_drm_device *dev, unsigned fw_type, unsigned ip_instance,
                                        unsigned index, uint32_t *version, uint32_t *feature) TAIL;
 PROC int ac_drm_query_uq_fw_area_info(ac_drm_device *dev, unsigned type, unsigned ip_instance,
-                                      struct drm_amdgpu_info_uq_fw_areas *info) TAIL;
+                                      struct drm_amdgpu_info_uq_metadata *info) TAIL;
 PROC int ac_drm_query_gpu_info(ac_drm_device *dev, struct amdgpu_gpu_info *info) TAIL;
 PROC int ac_drm_query_heap_info(ac_drm_device *dev, uint32_t heap, uint32_t flags,
                                 struct amdgpu_heap_info *info) TAIL;

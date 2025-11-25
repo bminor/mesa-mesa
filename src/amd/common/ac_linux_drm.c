@@ -652,13 +652,20 @@ int ac_drm_query_firmware_version(ac_drm_device *dev, unsigned fw_type, unsigned
 }
 
 int ac_drm_query_uq_fw_area_info(ac_drm_device *dev, unsigned type, unsigned ip_instance,
-                                 struct drm_amdgpu_info_uq_fw_areas *info)
+                                 struct drm_amdgpu_info_uq_metadata *info)
 {
    struct drm_amdgpu_info request;
 
    memset(&request, 0, sizeof(request));
    request.return_pointer = (uintptr_t)info;
-   request.return_size = sizeof(*info);
+   if (type == AMDGPU_HW_IP_GFX)
+      request.return_size = sizeof(struct drm_amdgpu_info_uq_metadata_gfx);
+   else if (type == AMDGPU_HW_IP_COMPUTE)
+      request.return_size = sizeof(struct drm_amdgpu_info_uq_metadata_compute);
+   else if (type == AMDGPU_HW_IP_DMA)
+      request.return_size = sizeof(struct drm_amdgpu_info_uq_metadata_sdma);
+   else
+      UNREACHABLE("invalid type");
    request.query = AMDGPU_INFO_UQ_FW_AREAS;
    request.query_hw_ip.type = type;
    request.query_hw_ip.ip_instance = ip_instance;
