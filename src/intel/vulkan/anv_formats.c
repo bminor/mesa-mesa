@@ -1732,9 +1732,6 @@ anv_get_image_format_properties(
        * non-mipmapped single-sample) 2D images.
        */
       if (info->type != VK_IMAGE_TYPE_2D && isl_mod_info->modifier != DRM_FORMAT_MOD_LINEAR) {
-         vk_errorf(physical_device, VK_ERROR_FORMAT_NOT_SUPPORTED,
-                   "non-linear VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT "
-                   "requires VK_IMAGE_TYPE_2D");
          goto unsupported;
       }
 
@@ -1968,13 +1965,8 @@ anv_get_image_format_properties(
          /* This memory handle has no restrictions on driverUUID nor deviceUUID,
           * and therefore requires explicit memory layout.
           */
-         if (!tiling_has_explicit_layout) {
-            vk_errorf(physical_device, VK_ERROR_FORMAT_NOT_SUPPORTED,
-                      "VK_EXTERNAL_MEMORY_HANDLE_TYPE_DMA_BUF_BIT_EXT "
-                      "requires VK_IMAGE_TILING_LINEAR or "
-                      "VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT");
+         if (!tiling_has_explicit_layout)
             goto unsupported;
-         }
 
          /* With an explicit memory layout, we don't care which type of fd
           * the image belongs too. Both OPAQUE_FD and DMA_BUF are
@@ -1987,13 +1979,8 @@ anv_get_image_format_properties(
          /* This memory handle has no restrictions on driverUUID nor deviceUUID,
           * and therefore requires explicit memory layout.
           */
-         if (!tiling_has_explicit_layout) {
-            vk_errorf(physical_device, VK_ERROR_FORMAT_NOT_SUPPORTED,
-                      "VK_EXTERNAL_MEMORY_HANDLE_TYPE_HOST_ALLOCATION_BIT_EXT "
-                      "requires VK_IMAGE_TILING_LINEAR or "
-                      "VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT");
+         if (!tiling_has_explicit_layout)
             goto unsupported;
-         }
 
          if (external_props)
             external_props->externalMemoryProperties = userptr_props;
@@ -2022,9 +2009,6 @@ anv_get_image_format_properties(
           *    vkGetPhysicalDeviceImageFormatProperties2 returns
           *    VK_ERROR_FORMAT_NOT_SUPPORTED.
           */
-         vk_errorf(physical_device, VK_ERROR_FORMAT_NOT_SUPPORTED,
-                   "unsupported VkExternalMemoryTypeFlagBits 0x%x",
-                   external_info->handleType);
          goto unsupported;
       }
    }
