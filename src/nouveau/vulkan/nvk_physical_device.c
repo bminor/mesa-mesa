@@ -762,6 +762,7 @@ nvk_get_device_properties(const struct nvk_instance *instance,
                           const struct nv_device_info *info,
                           struct vk_properties *properties)
 {
+   /* Note: update nir_shader_compiler_options.max_samples when changing this. */
    const VkSampleCountFlagBits sample_counts = VK_SAMPLE_COUNT_1_BIT |
                                                VK_SAMPLE_COUNT_2_BIT |
                                                VK_SAMPLE_COUNT_4_BIT |

@@ -174,6 +174,7 @@ valhal_writes_extended_fifo(uint64_t outputs_written,
       .lower_cs_local_index_to_id = true,                                      \
       .lower_device_index_to_zero = true,                                      \
       .max_unroll_iterations = 32,                                             \
+      .max_samples = 16,                                                       \
       .force_indirect_unrolling =                                              \
          (nir_var_shader_in | nir_var_shader_out | nir_var_function_temp),     \
       .force_indirect_unrolling_sampler = true,                                \

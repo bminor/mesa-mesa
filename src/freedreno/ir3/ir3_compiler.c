@@ -114,6 +114,7 @@ static const nir_shader_compiler_options ir3_base_options = {
    .force_indirect_unrolling_sampler = true,
    .lower_uniforms_to_ubo = true,
    .max_unroll_iterations = 32,
+   .max_samples = 4,
 
    /* Not actually supported but we want fmulz to be produced and then be
     * lowered with the abs min pattern since we have free abs on min.

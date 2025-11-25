@@ -55,6 +55,7 @@
    .avoid_ternary_with_two_constants = true,                                  \
    .has_pack_32_4x8 = true,                                                   \
    .max_unroll_iterations = 32,                                               \
+   .max_samples = 8,                                                          \
    .force_indirect_unrolling = nir_var_function_temp,                         \
    .divergence_analysis_options =                                             \
       (nir_divergence_single_patch_per_tcs_subgroup |                         \

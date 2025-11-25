@@ -191,6 +191,7 @@ fn nir_options(dev: &nv_device_info) -> nir_shader_compiler_options {
     op.discard_is_demote = true;
 
     op.max_unroll_iterations = 32;
+    op.max_samples = 8;
     op.scalarize_ddx = true;
 
     op

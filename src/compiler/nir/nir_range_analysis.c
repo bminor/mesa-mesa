@@ -1808,6 +1808,12 @@ get_intrinsic_uub(struct analysis_state *state, struct scalar_query q, uint32_t 
          *result = upper_bound;
       break;
    }
+
+   case nir_intrinsic_image_samples:
+      if (state->shader->options->max_samples > 0)
+         *result = state->shader->options->max_samples;
+      break;
+
    default:
       break;
    }
@@ -2112,6 +2118,15 @@ get_alu_uub(struct analysis_state *state, struct scalar_query q, uint32_t *resul
 }
 
 static void
+get_tex_uub(struct analysis_state *state, struct scalar_query q, uint32_t *result, const uint32_t *src)
+{
+   nir_tex_instr *tex = nir_scalar_as_tex(q.scalar);
+
+   if (tex->op == nir_texop_texture_samples && state->shader->options->max_samples > 0)
+      *result = state->shader->options->max_samples;
+}
+
+static void
 get_phi_uub(struct analysis_state *state, struct scalar_query q, uint32_t *result, const uint32_t *src)
 {
    nir_phi_instr *phi = nir_def_as_phi(q.scalar.def);
@@ -2158,6 +2173,8 @@ process_uub_query(struct analysis_state *state, struct analysis_query *aq, uint3
       get_intrinsic_uub(state, q, result, src);
    else if (nir_scalar_is_alu(q.scalar))
       get_alu_uub(state, q, result, src);
+   else if (nir_def_instr_type(q.scalar.def) == nir_instr_type_tex)
+      get_tex_uub(state, q, result, src);
    else if (nir_def_instr_type(q.scalar.def) == nir_instr_type_phi)
       get_phi_uub(state, q, result, src);
 }

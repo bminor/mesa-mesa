@@ -401,6 +401,7 @@ static const nir_shader_compiler_options agx_nir_options = {
                               BITFIELD_BIT(MESA_SHADER_TESS_EVAL) |
                               BITFIELD_BIT(MESA_SHADER_FRAGMENT),
    .support_indirect_outputs = (uint8_t)BITFIELD_MASK(MESA_SHADER_STAGES),
+   .max_samples = 4,
    .lower_fquantize2f16 = true,
    .compact_arrays = true,
    .discard_is_demote = true,

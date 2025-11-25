@@ -128,6 +128,7 @@ void ac_nir_set_options(struct radeon_info *info, bool use_llvm,
    options->max_workgroup_count[0] = UINT32_MAX;
    options->max_workgroup_count[1] = UINT16_MAX;
    options->max_workgroup_count[2] = UINT16_MAX;
+   options->max_samples = 8;
 }
 
 /* Sleep for the given number of clock cycles. */

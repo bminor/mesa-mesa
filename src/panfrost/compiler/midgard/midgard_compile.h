@@ -104,6 +104,7 @@ static const nir_shader_compiler_options midgard_nir_options = {
    .has_cs_global_id = true,
    .lower_cs_local_index_to_id = true,
    .max_unroll_iterations = 32,
+   .max_samples = 16,
    .force_indirect_unrolling =
       (nir_var_shader_in | nir_var_shader_out | nir_var_function_temp),
    .force_indirect_unrolling_sampler = true,

@@ -659,6 +659,7 @@ static bool pvr_physical_device_get_properties(
       .maxFramebufferHeight = 4096U,
       .maxFramebufferLayers = 256U,
 
+      /* Note: update nir_shader_compiler_options.max_samples when changing this. */
       .framebufferColorSampleCounts = VK_SAMPLE_COUNT_1_BIT | VK_SAMPLE_COUNT_4_BIT,
       .framebufferDepthSampleCounts = VK_SAMPLE_COUNT_1_BIT | VK_SAMPLE_COUNT_4_BIT,
       .framebufferStencilSampleCounts = VK_SAMPLE_COUNT_1_BIT | VK_SAMPLE_COUNT_4_BIT,

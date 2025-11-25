@@ -757,6 +757,12 @@ typedef struct nir_shader_compiler_options {
    uint8_t support_indirect_outputs;
 
    /**
+    * If set, the maximum MSAA sample count supported -- can hint loop unrolling
+    * to optimistically unroll a loop doing txf_ms per sample.
+    */
+   uint8_t max_samples;
+
+   /**
     * Lower fmulz to `min(abs(a), abs(b)) == 0.0 ? 0.0 : a * b`.
     */
    bool lower_fmulz_with_abs_min;

@@ -844,6 +844,7 @@ get_device_properties(const struct v3dv_physical_device *device,
    const float v3d_point_line_granularity = 2.0f / (1 << V3D_COORD_SHIFT);
    const uint32_t max_fb_size = V3D_MAX_IMAGE_DIMENSION;
 
+   /* Note: update nir_shader_compiler_options.max_samples when changing this. */
    const VkSampleCountFlags supported_sample_counts =
       VK_SAMPLE_COUNT_1_BIT | VK_SAMPLE_COUNT_4_BIT;
 

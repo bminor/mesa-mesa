@@ -875,7 +875,7 @@ static const size_t max_descriptor_set_size = MAX_SET_SIZE / (4 * A6XX_TEX_CONST
 static const VkSampleCountFlags sample_counts =
    VK_SAMPLE_COUNT_1_BIT | VK_SAMPLE_COUNT_2_BIT | VK_SAMPLE_COUNT_4_BIT;
 static const VkSampleCountFlags sample_location_counts =
-   VK_SAMPLE_COUNT_2_BIT | VK_SAMPLE_COUNT_4_BIT;
+   VK_SAMPLE_COUNT_2_BIT | VK_SAMPLE_COUNT_4_BIT; /* Note: update nir_shader_compiler_options.max_samples when changing this. */
 
 static void
 tu_get_physical_device_properties_1_2(struct tu_physical_device *pdevice,

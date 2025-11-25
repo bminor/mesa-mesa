@@ -74,6 +74,7 @@ static const nir_shader_compiler_options nir_options = {
    .lower_helper_invocation = true,
 
    .max_unroll_iterations = 16,
+   .max_samples = 4,
 
    .io_options = nir_io_vectorizer_ignores_types,
 };

@@ -507,6 +507,7 @@ isl_device_get_supported_tilings(const struct isl_device *dev)
  *
  * This function always returns non-zero, as ISL_SAMPLE_COUNT_1_BIT is always
  * supported.
+ * Note: update nir_shader_compiler_options.max_samples when changing this.
  */
 isl_sample_count_mask_t ATTRIBUTE_CONST
 isl_device_get_sample_counts(const struct isl_device *dev)

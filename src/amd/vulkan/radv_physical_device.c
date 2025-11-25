@@ -3060,6 +3060,7 @@ radv_GetPhysicalDeviceMultisamplePropertiesEXT(VkPhysicalDevice physicalDevice, 
 {
    VK_FROM_HANDLE(radv_physical_device, pdev, physicalDevice);
 
+   /* Note: update nir_shader_compiler_options.max_samples when changing this. */
    VkSampleCountFlagBits supported_samples = VK_SAMPLE_COUNT_2_BIT | VK_SAMPLE_COUNT_4_BIT | VK_SAMPLE_COUNT_8_BIT;
    if (pdev->info.gfx_level >= GFX10)
       supported_samples |= VK_SAMPLE_COUNT_1_BIT;

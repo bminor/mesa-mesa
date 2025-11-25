@@ -204,6 +204,7 @@ brw_compiler_create(void *mem_ctx, const struct intel_device_info *devinfo)
 
    nir_options->lower_int64_options = int64_options;
    nir_options->lower_doubles_options = fp64_options;
+   nir_options->max_samples = devinfo->ver >= 30 ? 8 : 16;
 
    if (compiler->use_tcs_multi_patch) {
       /* TCS MULTI_PATCH mode has multiple patches per subgroup */

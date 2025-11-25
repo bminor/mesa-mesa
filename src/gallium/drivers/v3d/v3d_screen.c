@@ -620,6 +620,7 @@ v3d_screen_get_compiler_options(struct pipe_screen *pscreen,
                  * limit register pressure impact.
                  */
                 .max_unroll_iterations = 16,
+                .max_samples = 4,
                 .force_indirect_unrolling_sampler = true,
                 .scalarize_ddx = true,
                 .max_varying_expression_cost = 4,

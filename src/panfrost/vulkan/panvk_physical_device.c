@@ -707,6 +707,7 @@ get_image_format_features(struct panvk_physical_device *physical_device,
    return features;
 }
 
+/* Note: update nir_shader_compiler_options.max_samples when changing this. */
 VkSampleCountFlags
 panvk_get_sample_counts(unsigned arch, unsigned max_tib_size,
                         unsigned max_cbuf_atts, unsigned format_size)
