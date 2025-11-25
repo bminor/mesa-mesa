@@ -673,10 +673,9 @@ genX(emit_simple_shader_dispatch)(struct anv_simple_shader *state,
          /* TODO: switch to use INTEL_NEEDS_WA_14025112257 */
          if (device->info->ver >= 20 &&
              batch->engine_class == INTEL_ENGINE_CLASS_COMPUTE) {
-            enum anv_pipe_bits emitted_bits = 0;
-            genX(emit_apply_pipe_flushes)(batch, device, GPGPU,
+            genX(batch_emit_pipe_control)(batch, devinfo, GPGPU,
                                           ANV_PIPE_STATE_CACHE_INVALIDATE_BIT,
-                                          &emitted_bits);
+                                          "Wa_14025112257");
          }
       }
 
@@ -693,15 +692,9 @@ genX(emit_simple_shader_dispatch)(struct anv_simple_shader *state,
        *     these scoreboard related states, a MEDIA_STATE_FLUSH is
        *     sufficient."
        */
-      enum anv_pipe_bits emitted_bits = 0;
-      genX(emit_apply_pipe_flushes)(batch, device, GPGPU, ANV_PIPE_CS_STALL_BIT,
-                                    &emitted_bits);
-
-      /* If we have a command buffer allocated with the emission, update the
-       * pending bits.
-       */
-      if (state->cmd_buffer)
-         anv_cmd_buffer_update_pending_query_bits(state->cmd_buffer, emitted_bits);
+      genX(batch_emit_pipe_control)(batch, devinfo, GPGPU,
+                                    ANV_PIPE_CS_STALL_BIT,
+                                    "pre MEDIA_VFE_STATE");
 
       anv_batch_emit(batch, GENX(MEDIA_VFE_STATE), vfe) {
          vfe.StackSize              = 0;

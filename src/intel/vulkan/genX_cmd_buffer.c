@@ -1632,7 +1632,7 @@ genX(invalidate_aux_map)(struct anv_batch *batch,
 #endif
 }
 
-ALWAYS_INLINE enum anv_pipe_bits
+ALWAYS_INLINE static enum anv_pipe_bits
 genX(emit_apply_pipe_flushes)(struct anv_batch *batch,
                               struct anv_device *device,
                               uint32_t current_pipeline,
@@ -3630,12 +3630,7 @@ genX(CmdExecuteCommands)(
                src_state.alloc_size);
          }
       }
-      genX(emit_so_memcpy_fini)(&memcpy_state);
-
-      anv_add_pending_pipe_bits(container,
-                                ANV_PIPE_CS_STALL_BIT | ANV_PIPE_STALL_AT_SCOREBOARD_BIT,
-                                "Wait for primary->secondary RP surface state copies");
-      genX(cmd_buffer_apply_pipe_flushes)(container);
+      genX(emit_so_memcpy_fini)(&memcpy_state, true);
 
       if (container->vk.pool->flags & VK_COMMAND_POOL_CREATE_PROTECTED_BIT)
          genX(cmd_buffer_set_protected_memory)(container, true);
@@ -3788,7 +3783,7 @@ genX(CmdExecuteCommands)(
                               &memcpy_state,
                               anv_device_utrace_emit_gfx_copy_buffer);
       }
-      genX(emit_so_memcpy_fini)(&memcpy_state);
+      genX(emit_so_memcpy_fini)(&memcpy_state, true);
 
       trace_intel_end_trace_copy(&container->trace, num_traces);
 

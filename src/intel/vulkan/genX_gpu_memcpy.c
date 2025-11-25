@@ -318,11 +318,14 @@ genX(emit_so_memcpy_init)(struct anv_memcpy_state *state,
 }
 
 void
-genX(emit_so_memcpy_fini)(struct anv_memcpy_state *state)
+genX(emit_so_memcpy_fini)(struct anv_memcpy_state *state,
+                          bool wait_completion)
 {
-   genX(emit_apply_pipe_flushes)(state->batch, state->device, _3D,
-                                 ANV_PIPE_END_OF_PIPE_SYNC_BIT,
-                                 NULL);
+   if (wait_completion) {
+      genX(batch_emit_pipe_control)(state->batch, state->device->info, _3D,
+                                    ANV_PIPE_END_OF_PIPE_SYNC_BIT,
+                                    "Post GPU memcpy wait");
+   }
 
    if (state->cmd_buffer) {
       /* Flag all the instructions emitted by the memcpy. */
@@ -375,7 +378,11 @@ genX(emit_so_memcpy_fini)(struct anv_memcpy_state *state)
 void
 genX(emit_so_memcpy_end)(struct anv_memcpy_state *state)
 {
-#if INTEL_WA_16013994831_GFX_VER
+   genX(batch_emit_pipe_control)(state->batch, state->device->info, _3D,
+                                 ANV_PIPE_END_OF_PIPE_SYNC_BIT,
+                                 "Post GPU memcpy wait");
+
+ #if INTEL_WA_16013994831_GFX_VER
    /* Turn preemption back on when we're done */
    if (intel_needs_workaround(state->device->info, 16013994831))
       genX(batch_set_preemption)(state->batch, state->device, _3D, true);
@@ -396,10 +403,10 @@ genX(emit_so_memcpy)(struct anv_memcpy_state *state,
        anv_gfx8_9_vb_cache_range_needs_workaround(&state->vb_bound,
                                                   &state->vb_dirty,
                                                   src, size)) {
-      genX(emit_apply_pipe_flushes)(state->batch, state->device, _3D,
+      genX(batch_emit_pipe_control)(state->batch, state->device->info, _3D,
                                     ANV_PIPE_CS_STALL_BIT |
                                     ANV_PIPE_VF_CACHE_INVALIDATE_BIT,
-                                    NULL);
+                                    "Gfx9 VB cache workaround");
       memset(&state->vb_dirty, 0, sizeof(state->vb_dirty));
    }
 

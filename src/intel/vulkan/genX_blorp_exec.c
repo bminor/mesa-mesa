@@ -330,12 +330,11 @@ blorp_exec_on_render(struct blorp_batch *batch,
          hw_state->ds_write_state = blorp_ds_state;
          BITSET_SET(hw_state->emit_dirty, ANV_GFX_STATE_WA_18019816803);
 
-         /* Add the stall that will flush prior to the blorp operation by
-          * genX(cmd_buffer_apply_pipe_flushes)
-          */
-         anv_add_pending_pipe_bits(cmd_buffer,
-                                   ANV_PIPE_PSS_STALL_SYNC_BIT,
-                                   "Wa_18019816803");
+         genX(batch_emit_pipe_control)(&cmd_buffer->batch,
+                                       cmd_buffer->device->info,
+                                       cmd_buffer->state.current_pipeline,
+                                       ANV_PIPE_PSS_STALL_SYNC_BIT,
+                                       "Wa_18019816803");
       }
    }
 #endif

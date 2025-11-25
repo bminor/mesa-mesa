@@ -108,12 +108,6 @@ void genX(batch_emit_vertex_input)(struct anv_batch *batch,
                                    struct anv_shader *shader,
                                    const struct vk_vertex_input_state *vi);
 
-enum anv_pipe_bits
-genX(emit_apply_pipe_flushes)(struct anv_batch *batch,
-                              struct anv_device *device,
-                              uint32_t current_pipeline,
-                              enum anv_pipe_bits bits,
-                              enum anv_pipe_bits *emitted_flush_bits);
 void
 genX(invalidate_aux_map)(struct anv_batch *batch,
                          struct anv_device *device,
@@ -174,24 +168,6 @@ genX(cmd_buffer_set_coarse_pixel_active)(struct anv_cmd_buffer *cmd_buffer,
 #endif
 }
 
-static inline void
-genX(cmd_buffer_post_dispatch_wa)(struct anv_cmd_buffer *cmd_buffer)
-{
-   /* TODO: Add INTEL_NEEDS_WA_14025112257 check once HSD is propogated for all
-    * other impacted platforms.
-    */
-   if (cmd_buffer->device->info->ver >= 20 &&
-       anv_cmd_buffer_is_compute_queue(cmd_buffer)) {
-      enum anv_pipe_bits emitted_bits = 0;
-      genX(emit_apply_pipe_flushes)(&cmd_buffer->batch,
-                                    cmd_buffer->device,
-                                    cmd_buffer->state.current_pipeline,
-                                    ANV_PIPE_STATE_CACHE_INVALIDATE_BIT,
-                                    &emitted_bits);
-      cmd_buffer->state.pending_pipe_bits &= ~emitted_bits;
-   }
-}
-
 void
 genX(setup_autostrip_state)(struct anv_cmd_buffer *cmd_buffer, bool enable);
 
@@ -200,7 +176,8 @@ void genX(emit_so_memcpy_init)(struct anv_memcpy_state *state,
                                struct anv_cmd_buffer *cmd_buffer,
                                struct anv_batch *batch);
 
-void genX(emit_so_memcpy_fini)(struct anv_memcpy_state *state);
+void genX(emit_so_memcpy_fini)(struct anv_memcpy_state *state,
+                               bool wait_completion);
 
 void genX(emit_so_memcpy_end)(struct anv_memcpy_state *state);
 
@@ -538,3 +515,19 @@ void genX(write_rt_shader_group)(struct anv_device *device,
 
 uint32_t genX(shader_cmd_size)(struct anv_device *device,
                                mesa_shader_stage stage);
+
+static inline void
+genX(cmd_buffer_post_dispatch_wa)(struct anv_cmd_buffer *cmd_buffer)
+{
+   /* TODO: Add INTEL_NEEDS_WA_14025112257 check once HSD is propogated for all
+    * other impacted platforms.
+    */
+   if (cmd_buffer->device->info->ver >= 20 &&
+       anv_cmd_buffer_is_compute_queue(cmd_buffer)) {
+      genX(batch_emit_pipe_control)(&cmd_buffer->batch,
+                                    cmd_buffer->device->info,
+                                    cmd_buffer->state.current_pipeline,
+                                    ANV_PIPE_STATE_CACHE_INVALIDATE_BIT,
+                                    "Wa_14025112257");
+   }
+}

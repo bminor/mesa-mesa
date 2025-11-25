@@ -46,15 +46,15 @@ genX(cmd_buffer_flush_generated_draws)(struct anv_cmd_buffer *cmd_buffer)
    struct anv_batch *batch = &cmd_buffer->generation.batch;
 
    /* Wait for all the generation vertex shader to generate the commands. */
-   genX(emit_apply_pipe_flushes)(batch,
-                                 cmd_buffer->device,
+   genX(batch_emit_pipe_control)(batch,
+                                 cmd_buffer->device->info,
                                  _3D,
 #if GFX_VER == 9
                                  ANV_PIPE_VF_CACHE_INVALIDATE_BIT |
 #endif
                                  ANV_PIPE_DATA_CACHE_FLUSH_BIT |
                                  ANV_PIPE_CS_STALL_BIT,
-                                 NULL /* emitted_bits */);
+                                 "generated draw flush");
 
 #if GFX_VER >= 12
    anv_batch_emit(batch, GENX(MI_ARB_CHECK), arb) {

@@ -3962,9 +3962,10 @@ cmd_buffer_gfx_state_emission(struct anv_cmd_buffer *cmd_buffer)
 
 #if INTEL_WA_18019816803_GFX_VER
    if (IS_DIRTY(WA_18019816803)) {
-      genx_batch_emit_pipe_control(batch, device->info,
-                                   cmd_buffer->state.current_pipeline,
-                                   ANV_PIPE_PSS_STALL_SYNC_BIT);
+      genX(batch_emit_pipe_control)(batch, device->info,
+                                    cmd_buffer->state.current_pipeline,
+                                    ANV_PIPE_PSS_STALL_SYNC_BIT,
+                                    "Wa_18019816803");
    }
 #endif
 

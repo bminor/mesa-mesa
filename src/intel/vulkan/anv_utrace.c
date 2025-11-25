@@ -219,7 +219,6 @@ anv_device_utrace_flush_cmd_buffers(struct anv_queue *queue,
                                     anv_device_utrace_emit_gfx_copy_buffer);
             }
          }
-         anv_genX(device->info, emit_so_memcpy_fini)(&submit->memcpy_state);
 
          trace_intel_end_trace_copy_cb(&submit->ds.trace, batch, num_traces);
 
