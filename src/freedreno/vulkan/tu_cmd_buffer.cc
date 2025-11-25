@@ -4089,6 +4089,17 @@ tu_cmd_buffer_destroy(struct vk_command_buffer *vk_cmd_buffer)
               cmd_buffer->descriptors[i].push_set.mapped_ptr);
    }
 
+   util_dynarray_foreach (&cmd_buffer->msrtss_color_temporaries,
+                          struct tu_device_memory *, mem) {
+      tu_destroy_memory(cmd_buffer->device, *mem);
+   }
+   util_dynarray_fini(&cmd_buffer->msrtss_color_temporaries);
+   util_dynarray_foreach (&cmd_buffer->msrtss_depth_temporaries,
+                          struct tu_device_memory *, mem) {
+      tu_destroy_memory(cmd_buffer->device, *mem);
+   }
+   util_dynarray_fini(&cmd_buffer->msrtss_depth_temporaries);
+
    ralloc_free(cmd_buffer->patchpoints_ctx);
    ralloc_free(cmd_buffer->pre_chain.patchpoints_ctx);
    util_dynarray_fini(&cmd_buffer->fdm_bin_patchpoints);
