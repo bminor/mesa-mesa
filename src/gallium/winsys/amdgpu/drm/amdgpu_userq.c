@@ -152,7 +152,8 @@ amdgpu_userq_init(struct amdgpu_winsys *aws, struct amdgpu_userq *userq, enum am
       break;
    case AMD_IP_COMPUTE:
       hw_ip_type = AMDGPU_HW_IP_COMPUTE;
-      userq->compute_data.eop_bo = amdgpu_bo_create(aws, aws->info.gart_page_size, 256,
+      userq->compute_data.eop_bo = amdgpu_bo_create(aws, aws->info.fw_based_mcbp.eop_size,
+                                                    aws->info.fw_based_mcbp.eop_alignment,
                                                     RADEON_DOMAIN_VRAM,
                                                     RADEON_FLAG_NO_INTERPROCESS_SHARING);
       if (!userq->compute_data.eop_bo)
@@ -164,8 +165,8 @@ amdgpu_userq_init(struct amdgpu_winsys *aws, struct amdgpu_userq *userq, enum am
       break;
    case AMD_IP_SDMA:
       hw_ip_type = AMDGPU_HW_IP_DMA;
-      userq->sdma_data.csa_bo = amdgpu_bo_create(aws, aws->info.fw_based_mcbp.csa_size,
-                                                 aws->info.fw_based_mcbp.csa_alignment,
+      userq->sdma_data.csa_bo = amdgpu_bo_create(aws, aws->info.fw_based_mcbp.sdma_csa_size,
+                                                 aws->info.fw_based_mcbp.sdma_csa_alignment,
                                                  RADEON_DOMAIN_VRAM,
                                                  RADEON_FLAG_NO_INTERPROCESS_SHARING);
       if (!userq->sdma_data.csa_bo)

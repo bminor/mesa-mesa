@@ -1469,7 +1469,7 @@ ac_query_gpu_info(int fd, void *dev_p, struct radeon_info *info,
 
       r = ac_drm_query_uq_fw_area_info(dev, AMDGPU_HW_IP_GFX, 0, &fw_info);
       if (r) {
-         fprintf(stderr, "amdgpu: amdgpu_query_uq_fw_area_info() failed.\n");
+         fprintf(stderr, "amdgpu: amdgpu_query_uq_fw_area_info() gfx failed.\n");
          return AC_QUERY_GPU_INFO_FAIL;
       }
 
@@ -1477,6 +1477,30 @@ ac_query_gpu_info(int fd, void *dev_p, struct radeon_info *info,
       info->fw_based_mcbp.shadow_alignment = fw_info.gfx.shadow_alignment;
       info->fw_based_mcbp.csa_size = fw_info.gfx.csa_size;
       info->fw_based_mcbp.csa_alignment = fw_info.gfx.csa_alignment;
+   }
+   if (info->gfx_level >= GFX11 && (info->userq_ip_mask & (1 << AMD_IP_COMPUTE))) {
+      struct drm_amdgpu_info_uq_metadata fw_info;
+
+      r = ac_drm_query_uq_fw_area_info(dev, AMDGPU_HW_IP_COMPUTE, 0, &fw_info);
+      if (r) {
+         fprintf(stderr, "amdgpu: amdgpu_query_uq_fw_area_info() compute failed.\n");
+         return AC_QUERY_GPU_INFO_FAIL;
+      }
+
+      info->fw_based_mcbp.eop_size = fw_info.compute.eop_size;
+      info->fw_based_mcbp.eop_alignment = fw_info.compute.eop_alignment;
+   }
+   if (info->gfx_level >= GFX11 && (info->userq_ip_mask & (1 << AMD_IP_SDMA))) {
+      struct drm_amdgpu_info_uq_metadata fw_info;
+
+      r = ac_drm_query_uq_fw_area_info(dev, AMDGPU_HW_IP_DMA, 0, &fw_info);
+      if (r) {
+         fprintf(stderr, "amdgpu: amdgpu_query_uq_fw_area_info() sdma failed.\n");
+         return AC_QUERY_GPU_INFO_FAIL;
+      }
+
+      info->fw_based_mcbp.sdma_csa_size = fw_info.sdma.csa_size;
+      info->fw_based_mcbp.sdma_csa_alignment = fw_info.sdma.csa_alignment;
    }
 
    /* WARNING: Register shadowing decreases performance by up to 50% on GFX11 with current FW. */
@@ -1791,6 +1815,25 @@ void ac_print_gpu_info(FILE *f, const struct radeon_info *info, int fd)
    fprintf(f, "    mec_fw_feature = %i\n", info->mec_fw_feature);
    fprintf(f, "    pfp_fw_version = %i\n", info->pfp_fw_version);
    fprintf(f, "    pfp_fw_feature = %i\n", info->pfp_fw_feature);
+
+   if (info->gfx_level >= GFX11) {
+      fprintf(f, "Userqueue info:\n");
+      fprintf(f, "    userq_ip_mask = %x\n", info->userq_ip_mask);
+      if (info->userq_ip_mask & (1 << AMD_IP_GFX)) {
+         fprintf(f, "    gfx shadow_size = %u\n", info->fw_based_mcbp.shadow_size);
+         fprintf(f, "    gfx shadow_alignment = %u\n", info->fw_based_mcbp.shadow_alignment);
+         fprintf(f, "    gfx csa_size = %u\n", info->fw_based_mcbp.csa_size);
+         fprintf(f, "    gfx csa_alignment = %u\n", info->fw_based_mcbp.csa_alignment);
+      }
+      if (info->userq_ip_mask & (1 << AMD_IP_COMPUTE)) {
+         fprintf(f, "    compute eop_size = %u\n", info->fw_based_mcbp.eop_size);
+         fprintf(f, "    compute eop_alignment = %u\n", info->fw_based_mcbp.eop_alignment);
+      }
+      if (info->userq_ip_mask & (1 << AMD_IP_SDMA)) {
+         fprintf(f, "    sdma csa_size = %u\n", info->fw_based_mcbp.sdma_csa_size);
+         fprintf(f, "    sdma csa_alignment = %u\n", info->fw_based_mcbp.sdma_csa_alignment);
+      }
+   }
 
    fprintf(f, "Multimedia info:\n");
    if (info->ip[AMD_IP_VCN_DEC].num_queues || info->ip[AMD_IP_VCN_UNIFIED].num_queues) {

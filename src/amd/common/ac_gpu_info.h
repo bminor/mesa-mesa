@@ -341,6 +341,10 @@ struct radeon_info {
       uint32_t shadow_alignment;
       uint32_t csa_size;
       uint32_t csa_alignment;
+      uint32_t eop_size;
+      uint32_t eop_alignment;
+      uint32_t sdma_csa_size;
+      uint32_t sdma_csa_alignment;
    } fw_based_mcbp;
 
    /* Device supports hardware-accelerated raytracing using
