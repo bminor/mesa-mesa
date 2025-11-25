@@ -45,6 +45,7 @@
 #include "pvr_device_info.h"
 #include "pvr_entrypoints.h"
 #include "pvr_formats.h"
+#include "pvr_framebuffer.h"
 #include "pvr_hw_pass.h"
 #include "pvr_image.h"
 #include "pvr_job_common.h"

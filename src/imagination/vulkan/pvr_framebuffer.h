@@ -21,6 +21,7 @@
 #include "vk_object.h"
 
 #include "pvr_limits.h"
+#include "pvr_macros.h"
 
 struct pvr_render_target {
    struct pvr_rt_dataset *rt_dataset[PVR_MAX_MULTIVIEW];

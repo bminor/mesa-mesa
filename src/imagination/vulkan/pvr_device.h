@@ -38,6 +38,7 @@ struct pvr_border_color_table;
 struct pvr_device_static_clear_state;
 struct pvr_instance;
 struct pvr_queue;
+struct pvr_render_target;
 
 struct pvr_compute_query_shader {
    struct pvr_suballoc_bo *usc_bo;
@@ -227,5 +228,8 @@ void pvr_rstate_entry_add(struct pvr_device *device,
 
 void pvr_rstate_entry_remove(struct pvr_device *device,
                              const struct pvr_render_state *rstate);
+
+void pvr_render_targets_fini(struct pvr_render_target *render_targets,
+                             uint32_t render_targets_count);
 
 #endif /* PVR_DEVICE_H */

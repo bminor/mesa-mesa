@@ -35,6 +35,7 @@ pvr_files = files(
   'pvr_device.c',
   'pvr_dump_bo.c',
   'pvr_dump_csb.c',
+  'pvr_framebuffer.c',
   'pvr_free_list.c',
   'pvr_formats.c',
   'pvr_hw_pass.c',
