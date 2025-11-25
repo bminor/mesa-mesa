@@ -60,7 +60,7 @@ panvk_image_view_plane_index(struct panvk_image_view *view)
        * stencil, and if it's not the stencil component the caller wants, it
        * has to be the depth.
        */
-      if (vk_format_get_blocksize(view->vk.view_format))
+      if (vk_format_get_blocksize(view->vk.view_format) == 1)
          return panvk_plane_index(image, VK_IMAGE_ASPECT_STENCIL_BIT);
       else
          return panvk_plane_index(image, VK_IMAGE_ASPECT_DEPTH_BIT);
