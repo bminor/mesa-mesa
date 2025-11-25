@@ -3459,7 +3459,7 @@ nvk_flush_cb_state(struct nvk_cmd_buffer *cmd)
       int8_t loc_att[NVK_MAX_RTS] = { -1, -1, -1, -1, -1, -1, -1, -1};
       uint8_t max_loc = 0;
       uint32_t att_used = 0;
-      for (uint8_t a = 0; a < MESA_VK_MAX_COLOR_ATTACHMENTS; a++) {
+      for (uint8_t a = 0; a < render->color_att_count; a++) {
          if (dyn->cal.color_map[a] == MESA_VK_ATTACHMENT_UNUSED)
             continue;
 
