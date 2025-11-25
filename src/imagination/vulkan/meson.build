@@ -48,9 +48,7 @@ pvr_files = files(
   'pvr_arch_sampler.c',
   'pvr_arch_spm.c',
   'pvr_arch_tex_state.c',
-  'pvr_blit.c',
   'pvr_bo.c',
-  'pvr_clear.c',
   'pvr_csb.c',
   'pvr_descriptor_set.c',
   'pvr_device.c',
@@ -116,6 +114,8 @@ common_per_arch_files = [
 ]
 
 rogue_files = files(
+  'rogue/pvr_blit.c',
+  'rogue/pvr_clear.c',
   'rogue/pvr_dump_csb.c',
 )
 
@@ -140,6 +140,7 @@ foreach arch : ['rogue']
     dependencies : [
       dep_valgrind,
       idep_nir_headers,
+      idep_pco_uscgen_programs_headers,
       idep_vulkan_runtime_headers,
       idep_vulkan_util_headers,
       idep_vulkan_wsi_headers,
