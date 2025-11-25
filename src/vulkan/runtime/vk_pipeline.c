@@ -1349,7 +1349,8 @@ vk_get_graphics_pipeline_compile_info(struct vk_graphics_pipeline_compile_info *
       }
    }
 
-   VkResult result = vk_graphics_pipeline_state_fill(device, info->state,
+   ASSERTED VkResult result = vk_graphics_pipeline_state_fill(device,
+                                                     info->state,
                                                      pCreateInfo,
                                                      NULL /* driver_rp */,
                                                      0 /* driver_rp_flags */,
