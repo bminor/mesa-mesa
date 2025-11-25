@@ -1434,8 +1434,19 @@ CDX12EncHMFT::xThreadProc( void *pCtx )
          HANDLE fence_handle = (HANDLE) pThis->m_pPipeContext->screen->fence_get_win32_handle( pThis->m_pPipeContext->screen,
                                                                                                pDX12EncodeContext->pAsyncFence,
                                                                                                &ResolveStatsCompletionFenceValue );
-         if( fence_handle )
-            CloseHandle( fence_handle );
+         if (!fence_handle ||
+            FAILED(pThis->m_spDevice->OpenSharedHandle(fence_handle, IID_PPV_ARGS(pDX12EncodeContext->spAsyncFence.ReleaseAndGetAddressOf()))))
+         {
+            debug_printf( "[dx12 hmft 0x%p] Failed to open frame pAsyncFence\n", pThis );
+            MFE_ERROR( "[dx12 hmft 0x%p] Failed to open frame pAsyncFence", pThis );
+            assert( false );
+            pThis->QueueEvent( MEError, GUID_NULL, E_FAIL, nullptr );
+            bHasEncodingError = TRUE;
+            delete pDX12EncodeContext;
+            break;
+         }
+
+         CloseHandle( fence_handle );
 
          {
             std::lock_guard<std::mutex> lock( pThis->m_encoderLock );
@@ -2511,16 +2522,6 @@ CDX12EncHMFT::ProcessInput( DWORD dwInputStreamIndex, IMFSample *pSample, DWORD 
                                                  &pDX12EncodeContext->encoderPicInfo.base );
       HMFT_ETW_EVENT_STOP( "PipeEndFrame", this );
 
-      uint64_t AsyncFenceValue = 0;
-      HANDLE fence_handle = (HANDLE) m_pPipeContext->screen->fence_get_win32_handle( m_pPipeContext->screen,
-                                                                                     pDX12EncodeContext->pAsyncFence,
-                                                                                     &AsyncFenceValue );
-      CHECKNULL_GOTO( fence_handle, E_FAIL, done );
-      CHECKHR_GOTO(
-         m_spDevice->OpenSharedHandle( fence_handle, IID_PPV_ARGS( pDX12EncodeContext->spAsyncFence.ReleaseAndGetAddressOf() ) ),
-         done );
-      CloseHandle( fence_handle );
-
       CHECKBOOL_GOTO( ( m_spDevice->GetDeviceRemovedReason() == S_OK ), DXGI_ERROR_DEVICE_REMOVED, done );
       // NULL returned fence indicates encode error
       CHECKNULL_GOTO( pDX12EncodeContext->pAsyncFence, MF_E_UNEXPECTED, done );
@@ -2536,27 +2537,8 @@ CDX12EncHMFT::ProcessInput( DWORD dwInputStreamIndex, IMFSample *pSample, DWORD 
       {
          HMFT_ETW_EVENT_START( "ReconstructedPictureSubmit", this );
 
-         // Get last slice completion fence
-         pipe_fence_handle *fence_to_wait = nullptr;
-         uint64_t fence_value = 0;
-         assert( m_ScreenInteropInfo.get_video_enc_last_slice_completion_fence );
-
-         m_ScreenInteropInfo.get_video_enc_last_slice_completion_fence( m_pPipeVideoCodec,
-                                                                        pDX12EncodeContext->pAsyncCookie,
-                                                                        &fence_to_wait );
-
-         if( fence_to_wait )
-         {
-            HANDLE fence_handle =
-               (HANDLE) m_pPipeContext->screen->fence_get_win32_handle( m_pPipeContext->screen, fence_to_wait, &fence_value );
-            if( fence_handle )
-               CloseHandle( fence_handle );
-         }
-
          struct pipe_video_buffer *src_buffer = pDX12EncodeContext->get_current_dpb_pic_buffer();
          assert( src_buffer );
-
-         // TODO: Readonly flags for get handle
 
          // We only support zero copy read only reconstructed picture in low latency mode
          // and guarantee the src_buffer won't be modified until the next ProcessInput.
@@ -2589,6 +2571,23 @@ CDX12EncHMFT::ProcessInput( DWORD dwInputStreamIndex, IMFSample *pSample, DWORD 
          }
          else
          {
+            // Get last slice completion fence
+            pipe_fence_handle *fence_to_wait = nullptr;
+            uint64_t fence_value = 0;
+            assert( m_ScreenInteropInfo.get_video_enc_last_slice_completion_fence );
+
+            m_ScreenInteropInfo.get_video_enc_last_slice_completion_fence( m_pPipeVideoCodec,
+                                                                           pDX12EncodeContext->pAsyncCookie,
+                                                                           &fence_to_wait );
+
+            if( fence_to_wait )
+            {
+               HANDLE fence_handle =
+                  (HANDLE) m_pPipeContext->screen->fence_get_win32_handle( m_pPipeContext->screen, fence_to_wait, &fence_value );
+               if( fence_handle )
+                  CloseHandle( fence_handle );
+            }
+
             assert( m_pPipeVideoBlitter );
 
             struct winsys_handle whandle = {};
