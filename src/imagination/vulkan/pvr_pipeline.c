@@ -102,7 +102,7 @@ static VkResult pvr_pds_coeff_program_create_and_upload(
                               allocator,
                               staging_buffer_size,
                               8,
-                              VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+                              VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
    if (!staging_buffer)
       return vk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);
 
@@ -153,7 +153,7 @@ static VkResult pvr_pds_fragment_program_create(
                               allocator,
                               staging_buffer_size,
                               8,
-                              VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+                              VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
    if (!staging_buffer)
       return vk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);
 
