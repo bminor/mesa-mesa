@@ -2015,7 +2015,7 @@ bool
 detect_clamp(Instruction* instr, unsigned* clamped_idx)
 {
    VALU_instruction& valu = instr->valu();
-   if (valu.omod != 0 || valu.opsel != 0)
+   if (valu.omod != 0 || valu.opsel != 0 || instr->isDPP())
       return false;
 
    unsigned idx = 0;
@@ -4585,24 +4585,6 @@ combine_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
       ctx.info[instr->definitions[0].tempId()].set_combined(ctx.pre_combine_instrs.size() - 1);
    }
 #undef add_opt
-
-   if (instr->opcode == aco_opcode::v_med3_f32 || instr->opcode == aco_opcode::v_med3_f16) {
-      /* Optimize v_med3 to v_add so that it can be dual issued on GFX11. We start with v_med3 in
-       * case omod can be applied.
-       */
-      unsigned idx;
-      if (detect_clamp(instr.get(), &idx)) {
-         instr->format = asVOP3(Format::VOP2);
-         instr->operands[0] = instr->operands[idx];
-         instr->operands[1] = Operand::zero();
-         instr->opcode =
-            instr->opcode == aco_opcode::v_med3_f32 ? aco_opcode::v_add_f32 : aco_opcode::v_add_f16;
-         instr->valu().clamp = true;
-         instr->valu().abs = (uint8_t)instr->valu().abs[idx];
-         instr->valu().neg = (uint8_t)instr->valu().neg[idx];
-         instr->operands.pop_back();
-      }
-   }
 }
 
 struct remat_entry {
@@ -4770,6 +4752,24 @@ select_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
    if (is_dead(ctx.uses, instr.get())) {
       instr.reset();
       return;
+   }
+
+   if (instr->opcode == aco_opcode::v_med3_f32 || instr->opcode == aco_opcode::v_med3_f16) {
+      /* Optimize v_med3 to v_add so that it can be dual issued on GFX11. We start with v_med3 in
+       * case omod can be applied.
+       */
+      unsigned idx;
+      if (detect_clamp(instr.get(), &idx)) {
+         instr->format = asVOP3(Format::VOP2);
+         instr->operands[0] = instr->operands[idx];
+         instr->operands[1] = Operand::zero();
+         instr->opcode =
+            instr->opcode == aco_opcode::v_med3_f32 ? aco_opcode::v_add_f32 : aco_opcode::v_add_f16;
+         instr->valu().clamp = true;
+         instr->valu().abs = (uint8_t)instr->valu().abs[idx];
+         instr->valu().neg = (uint8_t)instr->valu().neg[idx];
+         instr->operands.pop_back();
+      }
    }
 
    /* convert split_vector into a copy or extract_vector if only one definition is ever used */
