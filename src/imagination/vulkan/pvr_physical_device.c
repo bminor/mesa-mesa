@@ -274,7 +274,7 @@ static void pvr_physical_device_get_supported_features(
       .samplerYcbcrConversion = false,
 
       /* Vulkan 1.2 */
-      .samplerMirrorClampToEdge = false,
+      .samplerMirrorClampToEdge = true,
       .drawIndirectCount = false,
       .storageBuffer8BitAccess = false,
       .uniformAndStorageBuffer8BitAccess = false,
