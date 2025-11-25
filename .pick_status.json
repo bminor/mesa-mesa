@@ -2414,7 +2414,7 @@
         "description": "pvr: enable samplerMirrorClampToEdge feature",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "4d34c07b7a9f58e92061844a378ceaf2f737c27a",
         "notes": null
