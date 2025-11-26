@@ -1259,6 +1259,7 @@ ac_query_gpu_info(int fd, void *dev_p, struct radeon_info *info,
       }
    }
 
+   /* Fill ac_cu_info */
    if (info->gfx_level >= GFX10_3)
       info->cu_info.max_waves_per_simd = 16;
    else if (info->gfx_level == GFX10)
@@ -1269,16 +1270,25 @@ ac_query_gpu_info(int fd, void *dev_p, struct radeon_info *info,
       info->cu_info.max_waves_per_simd = 10;
 
    if (info->gfx_level >= GFX10) {
-      info->cu_info.num_physical_sgprs_per_simd = 128 * info->cu_info.max_waves_per_simd;
-      info->cu_info.min_sgpr_alloc = 128;
-      info->cu_info.sgpr_alloc_granularity = 128;
+      info->cu_info.num_physical_sgprs_per_simd = 108 * info->cu_info.max_waves_per_simd;
+      info->cu_info.min_sgpr_alloc = 108;
+      info->cu_info.max_sgpr_alloc = 108; /* includes VCC, which can be treated as s[106-107] on GFX10+ */
+      info->cu_info.sgpr_alloc_granularity = 108;
+   } else if (info->family == CHIP_TONGA || info->family == CHIP_ICELAND) {
+      /* SGPRInitBug: Due to a HW bug, we always have to allocate the same amount of SGPRs. */
+      info->cu_info.num_physical_sgprs_per_simd = 800;
+      info->cu_info.min_sgpr_alloc = 96;
+      info->cu_info.max_sgpr_alloc = 96;
+      info->cu_info.sgpr_alloc_granularity = 96;
    } else if (info->gfx_level >= GFX8) {
       info->cu_info.num_physical_sgprs_per_simd = 800;
       info->cu_info.min_sgpr_alloc = 16;
+      info->cu_info.max_sgpr_alloc = 102;
       info->cu_info.sgpr_alloc_granularity = 16;
    } else {
       info->cu_info.num_physical_sgprs_per_simd = 512;
       info->cu_info.min_sgpr_alloc = 8;
+      info->cu_info.max_sgpr_alloc = 104;
       info->cu_info.sgpr_alloc_granularity = 8;
    }
 
@@ -1298,32 +1308,33 @@ ac_query_gpu_info(int fd, void *dev_p, struct radeon_info *info,
    /* On GFX10.3, the polarity of AUTO_FLUSH_MODE is inverted. */
    info->has_sqtt_auto_flush_mode_bug = info->gfx_level == GFX10_3;
 
-   info->cu_info.max_sgpr_alloc = info->family == CHIP_TONGA || info->family == CHIP_ICELAND ? 96 : 104;
-
-   if (!info->has_graphics && info->family >= CHIP_MI200) {
-      info->cu_info.min_wave64_vgpr_alloc = 8;
-      info->cu_info.max_vgpr_alloc = 512;
-      info->cu_info.wave64_vgpr_alloc_granularity = 8;
-   } else {
-      info->cu_info.min_wave64_vgpr_alloc = 4;
-      info->cu_info.max_vgpr_alloc = 256;
-      info->cu_info.wave64_vgpr_alloc_granularity = 4;
-   }
-
    /* Some GPU info was broken before DRM 3.45.0. */
    if (info->drm_minor >= 45 && device_info.num_shader_visible_vgprs) {
       /* The Gfx10 VGPR count is in Wave32, so divide it by 2 for Wave64.
-       * Gfx6-9 numbers are in Wave64.
+       * Gfx6-9 numbers are in Wave64. CDNA also includes Accumulation VGPRs.
        */
-      if (info->gfx_level >= GFX10)
+      if (info->gfx_level >= GFX10 || (info->gfx_level == GFX9 && info->family >= CHIP_MI100))
          info->cu_info.num_physical_wave64_vgprs_per_simd = device_info.num_shader_visible_vgprs / 2;
       else
          info->cu_info.num_physical_wave64_vgprs_per_simd = device_info.num_shader_visible_vgprs;
-   } else if (info->gfx_level >= GFX10) {
-      info->cu_info.num_physical_wave64_vgprs_per_simd = 512;
    } else {
-      info->cu_info.num_physical_wave64_vgprs_per_simd = 256;
+      if (info->family == CHIP_NAVI31 || info->family == CHIP_NAVI32 ||
+          info->family == CHIP_STRIX_HALO || info->gfx_level == GFX12) {
+         info->cu_info.num_physical_wave64_vgprs_per_simd = 768;
+      } else if (info->gfx_level >= GFX10) {
+         info->cu_info.num_physical_wave64_vgprs_per_simd = 512;
+      } else {
+         info->cu_info.num_physical_wave64_vgprs_per_simd = 256;
+      }
    }
+   if (info->gfx_level >= GFX10_3)
+      info->cu_info.wave64_vgpr_alloc_granularity = info->cu_info.num_physical_wave64_vgprs_per_simd / 64;
+   else if (info->gfx_level == GFX9 && info->family >= CHIP_MI200)
+      info->cu_info.wave64_vgpr_alloc_granularity = 8;
+   else
+      info->cu_info.wave64_vgpr_alloc_granularity = 4;
+   info->cu_info.min_wave64_vgpr_alloc = info->cu_info.wave64_vgpr_alloc_granularity;
+   info->cu_info.max_vgpr_alloc = 256;
 
    info->cu_info.num_simd_per_compute_unit = info->gfx_level >= GFX10 ? 2 : 4;
 
