@@ -2717,7 +2717,7 @@ intrinsic("ssa_bar_nv", src_comp=[1])
 intrinsic("cmat_muladd_nv", src_comp=[-1, -1, -1], dest_comp=0, bit_sizes=src2,
           indices=[FLAGS], flags=[CAN_ELIMINATE])
 
-intrinsic("cmat_load_shared_nv", src_comp=[1], dest_comp=0, indices=[NUM_MATRICES, MATRIX_LAYOUT, BASE])
+intrinsic("cmat_load_shared_nv", src_comp=[1], dest_comp=0, indices=[NUM_MATRICES, MATRIX_LAYOUT, BASE], flags=[CAN_ELIMINATE])
 
 # NVIDIA-specific system values
 system_value("warps_per_sm_nv", 1, bit_sizes=[32])
