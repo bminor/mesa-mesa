@@ -520,6 +520,26 @@ update_push_descriptor_flags(struct anv_cmd_pipeline_state *state,
    }
 }
 
+static bool
+maybe_update_dynamic_buffers_indices(struct anv_cmd_pipeline_state *state,
+                                     const uint8_t *offsets)
+{
+   struct anv_push_constants *push = &state->push_constants;
+
+   bool modified = false;
+   for (uint32_t i = 0; i < MAX_SETS; i++) {
+      if ((push->desc_surface_offsets[i] &
+           ANV_DESCRIPTOR_SET_DYNAMIC_INDEX_MASK) !=
+          offsets[i]) {
+         push->desc_surface_offsets[i] &= ~ANV_DESCRIPTOR_SET_DYNAMIC_INDEX_MASK;
+         push->desc_surface_offsets[i] |= offsets[i];
+         modified = true;
+      }
+   }
+
+   return modified;
+}
+
 static struct anv_cmd_pipeline_state *
 anv_cmd_buffer_get_pipeline_layout_state(struct anv_cmd_buffer *cmd_buffer,
                                          VkPipelineBindPoint bind_point,
@@ -1259,6 +1279,12 @@ anv_cmd_buffer_set_rt_state(struct vk_command_buffer *vk_cmd_buffer,
       anv_cmd_buffer_set_rt_query_buffer(cmd_buffer, &rt->base, ray_queries,
                                          ANV_RT_STAGE_BITS);
    }
+
+   if (maybe_update_dynamic_buffers_indices(&rt->base,
+                                            dynamic_descriptor_offsets)) {
+      cmd_buffer->state.push_constants_dirty |= ANV_RT_STAGE_BITS;
+      rt->base.push_constants_data_dirty = true;
+   }
 }
 
 void
@@ -1550,6 +1576,7 @@ bind_graphics_shaders(struct anv_cmd_buffer *cmd_buffer,
 #undef diff_fix_state_stage
 #undef diff_var_state_stage
 
+   uint8_t dynamic_descriptors[MAX_SETS] = {};
    for (uint32_t s = 0; s < ANV_GRAPHICS_SHADER_STAGE_COUNT; s++) {
       struct anv_shader *shader = new_shaders[s];
 
@@ -1559,6 +1586,13 @@ bind_graphics_shaders(struct anv_cmd_buffer *cmd_buffer,
          ray_queries = MAX2(ray_queries, shader->vk.ray_queries);
          if (gfx->shaders[s] != shader)
             set_dirty_for_bind_map(cmd_buffer, s, &shader->bind_map);
+
+         for (uint32_t i = 0; i < MAX_SETS; i++) {
+            assert(dynamic_descriptors[i] == 0 ||
+                   dynamic_descriptors[i] ==
+                   shader->bind_map.dynamic_descriptors[i]);
+            dynamic_descriptors[i] = shader->bind_map.dynamic_descriptors[i];
+         }
       }
 
       if (gfx->shaders[s] != shader)
@@ -1683,10 +1717,22 @@ bind_graphics_shaders(struct anv_cmd_buffer *cmd_buffer,
                                 cmd_buffer->state.gfx.shaders,
                                 ARRAY_SIZE(cmd_buffer->state.gfx.shaders));
 
+   uint8_t dynamic_descriptor_count = 0;
+   uint8_t dynamic_descriptor_offsets[MAX_SETS] = {};
+   for (uint32_t i = 0; i < MAX_SETS; i++) {
+      dynamic_descriptor_offsets[i] = dynamic_descriptor_count;
+      dynamic_descriptor_count += dynamic_descriptors[i];
+   }
+   if (maybe_update_dynamic_buffers_indices(&gfx->base,
+                                            dynamic_descriptor_offsets)) {
+      cmd_buffer->state.push_constants_dirty |= gfx->active_stages;
+      gfx->base.push_constants_data_dirty = true;
+   }
+
    if (ray_queries > 0) {
       assert(cmd_buffer->device->info->verx10 >= 125);
       anv_cmd_buffer_set_rt_query_buffer(cmd_buffer, &gfx->base, ray_queries,
-                                         cmd_buffer->state.gfx.active_stages);
+                                         gfx->active_stages);
    }
 }
 

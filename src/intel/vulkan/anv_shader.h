@@ -108,6 +108,8 @@ struct anv_shader_data {
 
    struct anv_pipeline_push_map push_map;
 
+   uint8_t dynamic_descriptors[MAX_SETS];
+
    bool uses_bt_for_push_descs;
 
    unsigned *code;
