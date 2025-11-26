@@ -121,7 +121,10 @@ BEGIN_TEST(regalloc.precolor.vector.collect)
    if (!setup_cs("s2 s1 s1", GFX10))
       return;
 
-   //! s2: %tmp0_2:s[2-3], s1: %tmp1_2:s[#t1], s1: %tmp2_2:s[#t2] = p_parallelcopy %tmp0:s[0-1], %tmp1:s[2], %tmp2:s[3]
+   //! p_parallelcopy
+   //!    s2: %tmp0_2:s[2-3] = %tmp0:s[0-1]
+   //!    s1: %tmp1_2:s[#t1] = %tmp1:s[2]
+   //!    s1: %tmp2_2:s[#t2] = %tmp2:s[3]
    //! p_unit_test %tmp0_2:s[2-3]
    Operand op(inputs[0]);
    op.setPrecolored(PhysReg(2));
@@ -150,7 +153,11 @@ BEGIN_TEST(regalloc.precolor.multiple_operands)
    if (!setup_cs("v1 v1 v1 v1", GFX10))
       return;
 
-   //! v1: %tmp3_2:v[0], v1: %tmp0_2:v[1], v1: %tmp1_2:v[2], v1: %tmp2_2:v[3] = p_parallelcopy %tmp3:v[3], %tmp0:v[0], %tmp1:v[1], %tmp2:v[2]
+   //! p_parallelcopy
+   //!    v1: %tmp3_2:v[0] = %tmp3:v[3]
+   //!    v1: %tmp0_2:v[1] = %tmp0:v[0]
+   //!    v1: %tmp1_2:v[2] = %tmp1:v[1]
+   //!    v1: %tmp2_2:v[3] = %tmp2:v[2]
    //! p_unit_test %tmp3_2:v[0], %tmp0_2:v[1], %tmp1_2:v[2], %tmp2_2:v[3]
    bld.pseudo(aco_opcode::p_unit_test, Operand(inputs[3], PhysReg(256 + 0)),
               Operand(inputs[0], PhysReg(256 + 1)), Operand(inputs[1], PhysReg(256 + 2)),
@@ -210,7 +217,10 @@ BEGIN_TEST(regalloc.precolor.different_regs_def_all_clobbered)
       return;
 
    Temp def = bld.tmp(v3);
-   //! v1: %tmp1:v[1], v1: %tmp2:v[2], v1: %tmp3:v[3] = p_parallelcopy %tmp0:v[0], %tmp0:v[0], %tmp0:v[0]
+   //! p_parallelcopy
+   //!    v1: %tmp1:v[1] = %tmp0:v[0]
+   //!    v1: %tmp2:v[2] = %tmp0:v[0]
+   //!    v1: %tmp3:v[3] = %tmp0:v[0]
    //! v3: %tmp4:v[0-2] = p_unit_test %tmp0:v[0], %tmp1:v[1], %tmp2:v[2]
    bld.pseudo(aco_opcode::p_unit_test, Definition(def, PhysReg(256 + 0)),
               Operand(inputs[0], PhysReg(256 + 0)), Operand(inputs[0], PhysReg(256 + 1)),
@@ -912,7 +922,10 @@ BEGIN_TEST(regalloc.tied_defs.atomic64.live_through.compact_relocate)
    //! v2: %data:v[6-7] = p_unit_test
    Temp data = bld.pseudo(aco_opcode::p_unit_test, bld.def(v2, PhysReg(256 + 6)));
 
-   //! v2: %tmp0_copy:v[2-3], v2: %tmp1_copy:v[4-5], v2: %data_copy:v[0-1] = p_parallelcopy %tmp0:v[1-2], %tmp1:v[3-4], %data:v[6-7]
+   //! p_parallelcopy
+   //!    v2: %tmp0_copy:v[2-3] = %tmp0:v[1-2]
+   //!    v2: %tmp1_copy:v[4-5] = %tmp1:v[3-4]
+   //!    v2: %data_copy:v[0-1] = %data:v[6-7]
    //! v2: %_:v[0-1] = buffer_atomic_or_x2 %_:s[0-3], v1: undef, 0, %data_copy:v[0-1] glc
    Instruction* instr = bld.mubuf(aco_opcode::buffer_atomic_or_x2, bld.def(v2), inputs[0],
                                   Operand(v1), Operand::c32(0), data, 0, false)
@@ -1053,7 +1066,10 @@ BEGIN_TEST(regalloc.tied_defs.bvh8.killed.duplicate_ops)
    Temp new_origin = bld.tmp(v3);
    Temp new_dir = bld.tmp(v3);
    Temp result = bld.tmp(v10);
-   //! v1: %origin_dir_copy_x:v[8], v1: %origin_dir_copy_y:v[9], v1: %origin_dir_copy_z:v[10] = p_parallelcopy %origin_dir_x:v[0], %origin_dir_y:v[1], %origin_dir_z:v[2]
+   //! p_parallelcopy
+   //!    v1: %origin_dir_copy_x:v[8] = %origin_dir_x:v[0]
+   //!    v1: %origin_dir_copy_y:v[9] = %origin_dir_y:v[1]
+   //!    v1: %origin_dir_copy_z:v[10] = %origin_dir_z:v[2]
    //! v3: %new_origin:v[0-2], v3: %new_dir:v[8-10], v10: %_:v[12-21] = image_bvh8_intersect_ray %_:s[0-7], s4: undef, v1: undef, (%base_lo:v[3], %base_hi:v[4]), (%tmax:v[5], %cull_mask:v[6]), (%origin_dir_x:v[0], %origin_dir_y:v[1], %origin_dir_z:v[2]), (%origin_dir_copy_x:v[8], %origin_dir_copy_y:v[9], %origin_dir_copy_z:v[10]), %node:v[7] 1d
    Instruction* instr =
       bld.mimg(aco_opcode::image_bvh8_intersect_ray, Definition(new_origin), Definition(new_dir),
@@ -1102,7 +1118,13 @@ BEGIN_TEST(regalloc.tied_defs.bvh8.live_through.simple)
    Temp new_origin = bld.tmp(v3);
    Temp new_dir = bld.tmp(v3);
    Temp result = bld.tmp(v10);
-   //! v1: %origin_copy_x:v[11], v1: %origin_copy_y:v[12], v1: %origin_copy_z:v[13], v1: %dir_copy_x:v[14], v1: %dir_copy_y:v[15], v1: %dir_copy_z:v[16] = p_parallelcopy %origin_x:v[4], %origin_y:v[5], %origin_z:v[6], %dir_x:v[7], %dir_y:v[8], %dir_z:v[9]
+   //! p_parallelcopy
+   //!    v1: %origin_copy_x:v[11] = %origin_x:v[4]
+   //!    v1: %origin_copy_y:v[12] = %origin_y:v[5]
+   //!    v1: %origin_copy_z:v[13] = %origin_z:v[6]
+   //!    v1: %dir_copy_x:v[14] = %dir_x:v[7]
+   //!    v1: %dir_copy_y:v[15] = %dir_y:v[8]
+   //!    v1: %dir_copy_z:v[16] = %dir_z:v[9]
    //! v3: %new_origin:v[4-6], v3: %new_dir:v[7-9], v10: %_:v[18-27] = image_bvh8_intersect_ray %_:s[0-7], s4: undef, v1: undef, (%base_lo:v[0], %base_hi:v[1]), (%tmax:v[2], %cull_mask:v[3]), (%origin_x2:v[4], %origin_y2:v[5], %origin_z2:v[6]), (%dir_x2:v[7], %dir_y2:v[8], %dir_z2:v[9]), %node:v[10] 1d
    Instruction* instr =
       bld.mimg(aco_opcode::image_bvh8_intersect_ray, Definition(new_origin), Definition(new_dir),
@@ -1315,7 +1337,12 @@ BEGIN_TEST(regalloc.vector_aligned.reuse_temporaries)
    Operand op5(tmp1);
    op3.setVectorAligned(true);
    op4.setVectorAligned(true);
-   //! v1: %tmp1_copy1:v[1], v1: %tmp2_copy1:v[2], v1: %tmp0_copy:v[3], v1: %tmp2_copy0:v[4], v1: %tmp1_copy0:v[5] = p_parallelcopy %tmp1:v[2], %tmp2:v[1], %tmp0:v[0], %tmp2:v[1], %tmp1:v[2]
+   //! p_parallelcopy
+   //!    v1: %tmp1_copy1:v[1] = %tmp1:v[2]
+   //!    v1: %tmp2_copy1:v[2] = %tmp2:v[1]
+   //!    v1: %tmp0_copy:v[3] = %tmp0:v[0]
+   //!    v1: %tmp2_copy0:v[4] = %tmp2:v[1]
+   //!    v1: %tmp1_copy0:v[5] = %tmp1:v[2]
    //! p_unit_test (%tmp0:v[0], %tmp1_copy1:v[1], %tmp2_copy1:v[2]), (%tmp0_copy:v[3], %tmp2_copy0:v[4], %tmp1_copy0:v[5])
    bld.pseudo(aco_opcode::p_unit_test, op0, op1, op2, op3, op4, op5);
 

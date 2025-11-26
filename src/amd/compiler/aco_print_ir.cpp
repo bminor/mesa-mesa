@@ -960,7 +960,18 @@ aco_print_block(enum amd_gfx_level gfx_level, const Block* block, FILE* output, 
       if (flags & print_perf_info)
          fprintf(output, "(%3u clk)   ", instr->pass_flags);
 
-      aco_print_instr(gfx_level, instr.get(), output, flags);
+      if (instr->opcode == aco_opcode::p_parallelcopy &&
+          instr->definitions.size() == instr->operands.size() && instr->definitions.size() > 2) {
+         fprintf(output, "p_parallelcopy");
+         for (unsigned i = 0; i < instr->definitions.size(); i++) {
+            fprintf(output, "\n\t   ");
+            print_definition(&instr->definitions[i], output, flags);
+            fprintf(output, " = ");
+            aco_print_operand(&instr->operands[i], output, flags);
+         }
+      } else {
+         aco_print_instr(gfx_level, instr.get(), output, flags);
+      }
       fprintf(output, "\n");
    }
 }
