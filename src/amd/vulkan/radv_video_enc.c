@@ -1037,7 +1037,8 @@ radv_enc_latency(struct radv_cmd_buffer *cmd_buffer, VkVideoEncodeTuningModeKHR 
 }
 
 static void
-radv_enc_slice_header(struct radv_cmd_buffer *cmd_buffer, const VkVideoEncodeInfoKHR *enc_info)
+radv_enc_slice_header(struct radv_cmd_buffer *cmd_buffer, const VkVideoEncodeInfoKHR *enc_info,
+                      unsigned num_active_l0_refs_minus1)
 {
    struct radv_enc_state *enc = &cmd_buffer->video.enc;
    uint32_t instruction[RENCODE_SLICE_HEADER_TEMPLATE_MAX_NUM_INSTRUCTIONS] = {0};
@@ -1119,13 +1120,19 @@ radv_enc_slice_header(struct radv_cmd_buffer *cmd_buffer, const VkVideoEncodeInf
    if (pic->primary_pic_type != STD_VIDEO_H264_PICTURE_TYPE_IDR &&
        pic->primary_pic_type != STD_VIDEO_H264_PICTURE_TYPE_I) {
 
-      /* it never has to be 1 since we only support one L0/L1 pic */
-      radv_enc_code_fixed_bits(cmd_buffer, 0 /* slice_info->pStdSliceHeader->flags.num_ref_idx_active_override_flag */,
-                               1);
+      /* num ref idx active override flag
+       * only override if it's different from the PPS value */
+      bool ref_idx_active_override_flag = num_active_l0_refs_minus1 != pps->num_ref_idx_l0_default_active_minus1;
+      radv_enc_code_fixed_bits(cmd_buffer, ref_idx_active_override_flag, 1);
+      if (ref_idx_active_override_flag) {
+         radv_enc_code_ue(cmd_buffer, num_active_l0_refs_minus1);
+         if (pic->primary_pic_type == STD_VIDEO_H264_PICTURE_TYPE_B)
+            radv_enc_code_ue(cmd_buffer, 0 /* num_active_l1_refs_minus1 */);
+      }
 
       radv_enc_code_fixed_bits(cmd_buffer, ref_lists->flags.ref_pic_list_modification_flag_l0, 1);
       if (ref_lists->flags.ref_pic_list_modification_flag_l0) {
-         for (unsigned op = 0; op < MIN2(ref_lists->refList0ModOpCount, 1); op++) {
+         for (unsigned op = 0; op < MIN2(ref_lists->refList0ModOpCount, num_active_l0_refs_minus1 + 1); op++) {
             const StdVideoEncodeH264RefListModEntry *entry = &ref_lists->pRefList0ModOperations[op];
 
             radv_enc_code_ue(cmd_buffer, entry->modification_of_pic_nums_idc);
@@ -1141,7 +1148,7 @@ radv_enc_slice_header(struct radv_cmd_buffer *cmd_buffer, const VkVideoEncodeInf
       if (pic->primary_pic_type == STD_VIDEO_H264_PICTURE_TYPE_B) {
          radv_enc_code_fixed_bits(cmd_buffer, ref_lists->flags.ref_pic_list_modification_flag_l1, 1);
          if (ref_lists->flags.ref_pic_list_modification_flag_l1) {
-            for (unsigned op = 0; op < MIN2(ref_lists->refList1ModOpCount, 1); op++) {
+            for (unsigned op = 0; op < MIN2(ref_lists->refList1ModOpCount, /* num_active_l1_refs_minus1 + */ 1); op++) {
                const StdVideoEncodeH264RefListModEntry *entry = &ref_lists->pRefList1ModOperations[op];
 
                radv_enc_code_ue(cmd_buffer, entry->modification_of_pic_nums_idc);
@@ -2086,7 +2093,8 @@ radv_enc_params(struct radv_cmd_buffer *cmd_buffer, const VkVideoEncodeInfoKHR *
 }
 
 static void
-radv_enc_params_h264(struct radv_cmd_buffer *cmd_buffer, const VkVideoEncodeInfoKHR *enc_info)
+radv_enc_params_h264(struct radv_cmd_buffer *cmd_buffer, const VkVideoEncodeInfoKHR *enc_info,
+                     uint32_t num_active_l0_refs)
 {
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    const struct radv_physical_device *pdev = radv_device_physical(device);
@@ -2102,22 +2110,26 @@ radv_enc_params_h264(struct radv_cmd_buffer *cmd_buffer, const VkVideoEncodeInfo
    }
 
    const StdVideoEncodeH264PictureInfo *h264_pic = h264_picture_info->pStdPictureInfo;
-   unsigned slot_idx_0 = 0xffffffff;
+   unsigned slot_idx_0[2] = {0xffffffff, 0xffffffff};
    unsigned slot_idx_1 = 0xffffffff;
-   const VkVideoEncodeH264DpbSlotInfoKHR *slot_info_0 = NULL;
+   const VkVideoEncodeH264DpbSlotInfoKHR *slot_info_0[2] = {NULL, NULL};
    const VkVideoEncodeH264DpbSlotInfoKHR *slot_info_1 = NULL;
 
    switch (h264_pic->primary_pic_type) {
    case STD_VIDEO_H264_PICTURE_TYPE_P:
-      slot_idx_0 = h264_pic->pRefLists->RefPicList0[0];
-      slot_info_0 = vk_find_struct_const(enc_info->pReferenceSlots[slot_to_ref_idx[slot_idx_0]].pNext,
-                                         VIDEO_ENCODE_H264_DPB_SLOT_INFO_KHR);
+      assert(num_active_l0_refs <= 2);
+      for (unsigned i = 0; i < num_active_l0_refs; i++) {
+         slot_idx_0[i] = h264_pic->pRefLists->RefPicList0[i];
+         slot_info_0[i] = vk_find_struct_const(enc_info->pReferenceSlots[slot_to_ref_idx[slot_idx_0[i]]].pNext,
+                                               VIDEO_ENCODE_H264_DPB_SLOT_INFO_KHR);
+      }
       break;
    case STD_VIDEO_H264_PICTURE_TYPE_B:
-      slot_idx_0 = h264_pic->pRefLists->RefPicList0[0];
+      assert(num_active_l0_refs == 1);
+      slot_idx_0[0] = h264_pic->pRefLists->RefPicList0[0];
       slot_idx_1 = h264_pic->pRefLists->RefPicList1[0];
-      slot_info_0 = vk_find_struct_const(enc_info->pReferenceSlots[slot_to_ref_idx[slot_idx_0]].pNext,
-                                         VIDEO_ENCODE_H264_DPB_SLOT_INFO_KHR);
+      slot_info_0[0] = vk_find_struct_const(enc_info->pReferenceSlots[slot_to_ref_idx[slot_idx_0[0]]].pNext,
+                                            VIDEO_ENCODE_H264_DPB_SLOT_INFO_KHR);
       slot_info_1 = vk_find_struct_const(enc_info->pReferenceSlots[slot_to_ref_idx[slot_idx_1]].pNext,
                                          VIDEO_ENCODE_H264_DPB_SLOT_INFO_KHR);
       break;
@@ -2136,22 +2148,29 @@ radv_enc_params_h264(struct radv_cmd_buffer *cmd_buffer, const VkVideoEncodeInfo
       RADEON_ENC_CS(RENCODE_H264_PICTURE_STRUCTURE_FRAME);
       RADEON_ENC_CS(h264_pic->PicOrderCnt);
       RADEON_ENC_CS(RENCODE_H264_INTERLACING_MODE_PROGRESSIVE);
-      if (slot_info_0) {
-         RADEON_ENC_CS(radv_enc_h264_pic_type(slot_info_0->pStdReferenceInfo->primary_pic_type));
-         RADEON_ENC_CS(slot_info_0->pStdReferenceInfo->flags.used_for_long_term_reference);
+      if (slot_info_0[0]) {
+         RADEON_ENC_CS(radv_enc_h264_pic_type(slot_info_0[0]->pStdReferenceInfo->primary_pic_type));
+         RADEON_ENC_CS(slot_info_0[0]->pStdReferenceInfo->flags.used_for_long_term_reference);
          RADEON_ENC_CS(RENCODE_H264_PICTURE_STRUCTURE_FRAME);
-         RADEON_ENC_CS(slot_info_0->pStdReferenceInfo->PicOrderCnt);
+         RADEON_ENC_CS(slot_info_0[0]->pStdReferenceInfo->PicOrderCnt);
       } else {
          RADEON_ENC_CS(0); // l0 ref pic0 pic_type
          RADEON_ENC_CS(0); // l0 ref pic0 is long term
          RADEON_ENC_CS(0); // l0 ref pic0 picture structure
          RADEON_ENC_CS(0); // l0 ref pic0 pic order cnt
       }
-      RADEON_ENC_CS(0xffffffff); // l0 ref pic1 index
-      RADEON_ENC_CS(0);          // l0 ref pic1 pic_type
-      RADEON_ENC_CS(0);          // l0 ref pic1 is long term
-      RADEON_ENC_CS(0);          // l0 ref pic1 picture structure
-      RADEON_ENC_CS(0);          // l0 ref pic1 pic order cnt
+      RADEON_ENC_CS(slot_idx_0[1]); // l0 ref pic1 index
+      if (slot_info_0[1]) {
+         RADEON_ENC_CS(radv_enc_h264_pic_type(slot_info_0[1]->pStdReferenceInfo->primary_pic_type));
+         RADEON_ENC_CS(slot_info_0[1]->pStdReferenceInfo->flags.used_for_long_term_reference);
+         RADEON_ENC_CS(RENCODE_H264_PICTURE_STRUCTURE_FRAME);
+         RADEON_ENC_CS(slot_info_0[1]->pStdReferenceInfo->PicOrderCnt);
+      } else {
+         RADEON_ENC_CS(0); // l0 ref pic1 pic_type
+         RADEON_ENC_CS(0); // l0 ref pic1 is long term
+         RADEON_ENC_CS(0); // l0 ref pic1 picture structure
+         RADEON_ENC_CS(0); // l0 ref pic1 pic order cnt
+      }
       RADEON_ENC_CS(slot_idx_1); // l1 ref pic0 index
       if (slot_info_1) {
          RADEON_ENC_CS(radv_enc_h264_pic_type(slot_info_1->pStdReferenceInfo->primary_pic_type));
@@ -2172,18 +2191,19 @@ radv_enc_params_h264(struct radv_cmd_buffer *cmd_buffer, const VkVideoEncodeInfo
       RADEON_ENC_CS(h264_pic->flags.is_reference);
       RADEON_ENC_CS(h264_pic->flags.long_term_reference_flag);
       RADEON_ENC_CS(RENCODE_H264_INTERLACING_MODE_PROGRESSIVE);
-      RADEON_ENC_CS(slot_idx_0); // ref_list0[0]
-      for (int i = 1; i < RENCODE_H264_MAX_REFERENCE_LIST_SIZE; i++)
-         RADEON_ENC_CS(0);
-      RADEON_ENC_CS(slot_idx_0 != 0xffffffff ? 1 : 0); // num_active_references_l0
+      RADEON_ENC_CS(slot_idx_0[0]); // ref_list0[0]
+      RADEON_ENC_CS(slot_idx_0[1]); // ref_list0[1]
+      for (int i = 2; i < RENCODE_H264_MAX_REFERENCE_LIST_SIZE; i++)
+         RADEON_ENC_CS(0);                             // ref_list0[i]
+      RADEON_ENC_CS(num_active_l0_refs);               // num_active_references_l0
       RADEON_ENC_CS(slot_idx_1);                       // ref_list1[0]
       for (int i = 1; i < RENCODE_H264_MAX_REFERENCE_LIST_SIZE; i++)
          RADEON_ENC_CS(0);
       RADEON_ENC_CS(slot_idx_1 != 0xffffffff ? 1 : 0); // num_active_references_l1
       RADEON_ENC_CS(0);                                // lsm_reference_pictures[0].list
       RADEON_ENC_CS(0);                                // lsm_reference_pictures[0].list_index
-      RADEON_ENC_CS(1);                                // lsm_reference_pictures[1].list
-      RADEON_ENC_CS(0);                                // lsm_reference_pictures[0].list_index
+      RADEON_ENC_CS(num_active_l0_refs > 1 ? 0 : 1);   // lsm_reference_pictures[1].list
+      RADEON_ENC_CS(num_active_l0_refs > 1 ? 1 : 0);   // lsm_reference_pictures[1].list_index
    }
    RADEON_ENC_END();
 }
@@ -2441,9 +2461,32 @@ radv_enc_output_format(struct radv_cmd_buffer *cmd_buffer)
 static void
 radv_enc_headers_h264(struct radv_cmd_buffer *cmd_buffer, const VkVideoEncodeInfoKHR *enc_info)
 {
-   radv_enc_slice_header(cmd_buffer, enc_info);
+   const struct radv_physical_device *pdev = radv_device_physical(radv_cmd_buffer_device(cmd_buffer));
+   const struct VkVideoEncodeH264PictureInfoKHR *h264_picture_info =
+      vk_find_struct_const(enc_info->pNext, VIDEO_ENCODE_H264_PICTURE_INFO_KHR);
+   const StdVideoEncodeH264PictureInfo *pic = h264_picture_info->pStdPictureInfo;
+
+   unsigned num_ref_l0 = 0;
+   switch (pic->primary_pic_type) {
+   case STD_VIDEO_H264_PICTURE_TYPE_P:
+      num_ref_l0 =
+         MIN2(pic->pRefLists->num_ref_idx_l0_active_minus1, pdev->info.vcn_ip_version >= VCN_3_0_0 ? 1 : 0) + 1;
+      break;
+   case STD_VIDEO_H264_PICTURE_TYPE_B:
+      /* maxBPictureL0ReferenceCount = 1 when supported */
+      num_ref_l0 = 1;
+      break;
+   case STD_VIDEO_H264_PICTURE_TYPE_IDR:
+   case STD_VIDEO_H264_PICTURE_TYPE_I:
+      num_ref_l0 = 0;
+      break;
+   default:
+      UNREACHABLE("invalid primary_pic_type");
+   }
+
+   radv_enc_slice_header(cmd_buffer, enc_info, num_ref_l0 > 1 ? num_ref_l0 - 1 : 0);
    radv_enc_params(cmd_buffer, enc_info);
-   radv_enc_params_h264(cmd_buffer, enc_info);
+   radv_enc_params_h264(cmd_buffer, enc_info, num_ref_l0);
 }
 
 static void
