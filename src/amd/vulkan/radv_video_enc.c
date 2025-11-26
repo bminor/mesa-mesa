@@ -940,17 +940,13 @@ radv_enc_slice_header(struct radv_cmd_buffer *cmd_buffer, const VkVideoEncodeInf
    if (pic->primary_pic_type != STD_VIDEO_H264_PICTURE_TYPE_IDR &&
        pic->primary_pic_type != STD_VIDEO_H264_PICTURE_TYPE_I) {
 
-      /* num ref idx active override flag */
-      radv_enc_code_fixed_bits(cmd_buffer, slice_info->pStdSliceHeader->flags.num_ref_idx_active_override_flag, 1);
-      if (slice_info->pStdSliceHeader->flags.num_ref_idx_active_override_flag) {
-         radv_enc_code_ue(cmd_buffer, ref_lists->num_ref_idx_l0_active_minus1);
-         if (pic->primary_pic_type == STD_VIDEO_H264_PICTURE_TYPE_B)
-            radv_enc_code_ue(cmd_buffer, ref_lists->num_ref_idx_l1_active_minus1);
-      }
+      /* it never has to be 1 since we only support one L0/L1 pic */
+      radv_enc_code_fixed_bits(cmd_buffer, 0 /* slice_info->pStdSliceHeader->flags.num_ref_idx_active_override_flag */,
+                               1);
 
       radv_enc_code_fixed_bits(cmd_buffer, ref_lists->flags.ref_pic_list_modification_flag_l0, 1);
       if (ref_lists->flags.ref_pic_list_modification_flag_l0) {
-         for (unsigned op = 0; op < ref_lists->refList0ModOpCount; op++) {
+         for (unsigned op = 0; op < MIN2(ref_lists->refList0ModOpCount, 1); op++) {
             const StdVideoEncodeH264RefListModEntry *entry = &ref_lists->pRefList0ModOperations[op];
 
             radv_enc_code_ue(cmd_buffer, entry->modification_of_pic_nums_idc);
@@ -966,7 +962,7 @@ radv_enc_slice_header(struct radv_cmd_buffer *cmd_buffer, const VkVideoEncodeInf
       if (pic->primary_pic_type == STD_VIDEO_H264_PICTURE_TYPE_B) {
          radv_enc_code_fixed_bits(cmd_buffer, ref_lists->flags.ref_pic_list_modification_flag_l1, 1);
          if (ref_lists->flags.ref_pic_list_modification_flag_l1) {
-            for (unsigned op = 0; op < ref_lists->refList1ModOpCount; op++) {
+            for (unsigned op = 0; op < MIN2(ref_lists->refList1ModOpCount, 1); op++) {
                const StdVideoEncodeH264RefListModEntry *entry = &ref_lists->pRefList1ModOperations[op];
 
                radv_enc_code_ue(cmd_buffer, entry->modification_of_pic_nums_idc);
@@ -1229,25 +1225,18 @@ radv_enc_slice_header_hevc(struct radv_cmd_buffer *cmd_buffer, const VkVideoEnco
    }
 
    if ((pic->pic_type == STD_VIDEO_H265_PICTURE_TYPE_P) || (pic->pic_type == STD_VIDEO_H265_PICTURE_TYPE_B)) {
-      radv_enc_code_fixed_bits(cmd_buffer, slice->flags.num_ref_idx_active_override_flag, 1);
-      if (slice->flags.num_ref_idx_active_override_flag) {
-         radv_enc_code_ue(cmd_buffer, pic->pRefLists->num_ref_idx_l0_active_minus1);
-         if (pic->pic_type == STD_VIDEO_H265_PICTURE_TYPE_B)
-            radv_enc_code_ue(cmd_buffer, pic->pRefLists->num_ref_idx_l1_active_minus1);
-      }
+      /* it never has to be 1 since we only support one L0 pic */
+      radv_enc_code_fixed_bits(cmd_buffer, 0 /* slice->flags.num_ref_idx_active_override_flag */, 1);
+
       if (pps->flags.lists_modification_present_flag && num_pic_total_curr > 1) {
          const StdVideoEncodeH265ReferenceListsInfo *rl = pic->pRefLists;
          unsigned num_pic_bits = util_logbase2_ceil(num_pic_total_curr);
-         unsigned num_ref_l0_minus1 = slice->flags.num_ref_idx_active_override_flag
-                                         ? rl->num_ref_idx_l0_active_minus1
-                                         : pps->num_ref_idx_l0_default_active_minus1;
+         unsigned num_ref_l0_minus1 = 0;
          radv_enc_code_fixed_bits(cmd_buffer, rl->flags.ref_pic_list_modification_flag_l0, 1);
          for (unsigned i = 0; i <= num_ref_l0_minus1; i++)
             radv_enc_code_fixed_bits(cmd_buffer, rl->list_entry_l0[i], num_pic_bits);
          if (pic->pic_type == STD_VIDEO_H265_PICTURE_TYPE_B) {
-            unsigned num_ref_l1_minus1 = slice->flags.num_ref_idx_active_override_flag
-                                            ? rl->num_ref_idx_l1_active_minus1
-                                            : pps->num_ref_idx_l1_default_active_minus1;
+            unsigned num_ref_l1_minus1 = 0;
             radv_enc_code_fixed_bits(cmd_buffer, rl->flags.ref_pic_list_modification_flag_l1, 1);
             for (unsigned i = 0; i <= num_ref_l1_minus1; i++)
                radv_enc_code_fixed_bits(cmd_buffer, rl->list_entry_l1[i], num_pic_bits);
@@ -3136,6 +3125,9 @@ radv_video_patch_encode_session_parameters(struct radv_device *device, struct vk
          if (pdev->enc_hw_ver < RADV_VIDEO_ENC_HW_5 ||
              !params->h264_enc.h264_pps[i].base.flags.entropy_coding_mode_flag)
             params->h264_enc.h264_pps[i].base.flags.transform_8x8_mode_flag = 0;
+
+         params->h264_enc.h264_pps[i].base.num_ref_idx_l0_default_active_minus1 = 0;
+         params->h264_enc.h264_pps[i].base.num_ref_idx_l1_default_active_minus1 = 0;
       }
       break;
    case VK_VIDEO_CODEC_OPERATION_ENCODE_H265_BIT_KHR: {
@@ -3181,6 +3173,9 @@ radv_video_patch_encode_session_parameters(struct radv_device *device, struct vk
          params->h265_enc.h265_pps[i].base.flags.dependent_slice_segments_enabled_flag = 1;
          if (pdev->enc_hw_ver < RADV_VIDEO_ENC_HW_3)
             params->h265_enc.h265_pps[i].base.flags.transform_skip_enabled_flag = 0;
+
+         params->h265_enc.h265_pps[i].base.num_ref_idx_l0_default_active_minus1 = 0;
+         params->h265_enc.h265_pps[i].base.num_ref_idx_l1_default_active_minus1 = 0;
       }
       break;
    }
