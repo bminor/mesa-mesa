@@ -102,23 +102,6 @@ gl_nir_opts(nir_shader *nir)
       NIR_PASS(progress, nir, nir_opt_algebraic);
       NIR_PASS(progress, nir, nir_opt_constant_folding);
 
-      if (!nir->info.flrp_lowered) {
-         unsigned lower_flrp =
-            (nir->options->lower_flrp16 ? 16 : 0) |
-            (nir->options->lower_flrp32 ? 32 : 0) |
-            (nir->options->lower_flrp64 ? 64 : 0);
-
-         if (lower_flrp) {
-            NIR_PASS(progress, nir, nir_lower_flrp,
-                     lower_flrp, false /* always_precise */);
-         }
-
-         /* Nothing should rematerialize any flrps, so we only need to do this
-          * lowering once.
-          */
-         nir->info.flrp_lowered = true;
-      }
-
       NIR_PASS(progress, nir, nir_opt_undef);
 
       peephole_select_options = (nir_opt_peephole_select_options){
@@ -132,6 +115,16 @@ gl_nir_opts(nir_shader *nir)
          NIR_PASS(progress, nir, nir_opt_loop_unroll);
       }
    } while (progress);
+
+   unsigned lower_flrp =
+      (nir->options->lower_flrp16 ? 16 : 0) |
+      (nir->options->lower_flrp32 ? 32 : 0) |
+      (nir->options->lower_flrp64 ? 64 : 0);
+
+   if (lower_flrp) {
+      NIR_PASS(progress, nir, nir_lower_flrp,
+               lower_flrp, false /* always_precise */);
+   }
 
    NIR_PASS(_, nir, nir_lower_var_copies);
 }
