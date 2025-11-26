@@ -1271,10 +1271,11 @@ tu_update_descriptor_sets(const struct tu_device *device,
             memcpy(dst, src, to_write);
 
             binding_layout++;
-            ptr = set->mapped_ptr + binding_layout->offset / 4;
             dst_offset = 0;
             src += to_write;
             remaining -= to_write;
+            if (remaining)
+               ptr = set->mapped_ptr + binding_layout->offset / 4;
          } while (remaining > 0);
 
          continue;
@@ -1379,7 +1380,9 @@ tu_update_descriptor_sets(const struct tu_device *device,
             src_remaining -= to_write;
             dst_remaining -= to_write;
             remaining -= to_write;
-            
+            if (!remaining)
+               break;
+
             if (src_remaining == 0) {
                src_binding_layout++;
                src_ptr = src_set->mapped_ptr + src_binding_layout->offset / 4;
