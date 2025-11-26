@@ -4815,6 +4815,7 @@ fail:
    if (shader)
       vk_pipeline_cache_object_unref(&dev->vk, &shader->base);
 
+   ralloc_free(pipeline->base.executables_mem_ctx);
    ralloc_free(pipeline_mem_ctx);
 
    vk_object_free(&dev->vk, pAllocator, pipeline);
