@@ -895,6 +895,7 @@ VkResult pvr_render_ctx_create(struct pvr_device *device,
 
    result = device->ws->ops->render_ctx_create(device->ws,
                                                &create_info,
+                                               &device->pdevice->dev_info,
                                                &ctx->ws_ctx);
    if (result != VK_SUCCESS)
       goto err_render_ctx_reset_cmd_fini;
@@ -1159,6 +1160,7 @@ VkResult pvr_compute_ctx_create(struct pvr_device *const device,
 
    result = device->ws->ops->compute_ctx_create(device->ws,
                                                 &create_info,
+                                                &device->pdevice->dev_info,
                                                 &ctx->ws_ctx);
    if (result != VK_SUCCESS)
       goto err_fini_reset_cmd;

@@ -40,6 +40,7 @@ struct vk_sync;
 VkResult pvr_drm_winsys_compute_ctx_create(
    struct pvr_winsys *ws,
    const struct pvr_winsys_compute_ctx_create_info *create_info,
+   const struct pvr_device_info *dev_info,
    struct pvr_winsys_compute_ctx **const ctx_out);
 void pvr_drm_winsys_compute_ctx_destroy(struct pvr_winsys_compute_ctx *ctx);
 

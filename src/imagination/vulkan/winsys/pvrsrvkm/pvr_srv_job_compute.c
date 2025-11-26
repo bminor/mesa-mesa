@@ -58,6 +58,7 @@ struct pvr_srv_winsys_compute_ctx {
 VkResult pvr_srv_winsys_compute_ctx_create(
    struct pvr_winsys *ws,
    const struct pvr_winsys_compute_ctx_create_info *create_info,
+   const struct pvr_device_info *dev_info,
    struct pvr_winsys_compute_ctx **const ctx_out)
 {
    struct rogue_fwif_static_computecontext_state static_state = {

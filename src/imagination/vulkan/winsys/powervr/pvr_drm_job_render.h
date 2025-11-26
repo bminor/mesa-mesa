@@ -58,6 +58,7 @@ void pvr_drm_winsys_free_list_destroy(struct pvr_winsys_free_list *free_list);
 VkResult pvr_drm_winsys_render_ctx_create(
    struct pvr_winsys *ws,
    struct pvr_winsys_render_ctx_create_info *create_info,
+   const struct pvr_device_info *dev_info,
    struct pvr_winsys_render_ctx **const ctx_out);
 void pvr_drm_winsys_render_ctx_destroy(struct pvr_winsys_render_ctx *ctx);
 

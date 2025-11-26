@@ -221,6 +221,7 @@ static void pvr_srv_render_ctx_fw_static_state_init(
 VkResult pvr_srv_winsys_render_ctx_create(
    struct pvr_winsys *ws,
    struct pvr_winsys_render_ctx_create_info *create_info,
+   const struct pvr_device_info *dev_info,
    struct pvr_winsys_render_ctx **const ctx_out)
 {
    struct pvr_srv_winsys *srv_ws = to_pvr_srv_winsys(ws);

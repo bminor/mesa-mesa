@@ -158,6 +158,7 @@ struct pvr_drm_winsys_render_ctx {
 VkResult pvr_drm_winsys_render_ctx_create(
    struct pvr_winsys *ws,
    struct pvr_winsys_render_ctx_create_info *create_info,
+   const struct pvr_device_info *dev_info,
    struct pvr_winsys_render_ctx **const ctx_out)
 {
    uint8_t static_ctx_state_fw_stream[192];
