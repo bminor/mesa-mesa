@@ -4952,6 +4952,7 @@ tu_GetPipelineExecutableStatisticsKHR(
    stats.sy = exe->stats.sy;
    stats.ss_stall = exe->stats.sstall;
    stats.sy_stall = exe->stats.systall;
+   stats.loops = exe->stats.loops;
    stats.stps = exe->stats.stp_count;
    stats.ldps = exe->stats.ldp_count;
    stats.preamble_inst = exe->stats.preamble_instrs_count;

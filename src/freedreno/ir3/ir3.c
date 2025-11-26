@@ -380,6 +380,7 @@ ir3_collect_info(struct ir3_shader_variant *v)
    info->sizedwords = info->size / 4;
 
    info->early_preamble = v->early_preamble;
+   info->loops = v->loops;
 
    bool in_preamble = false;
    bool has_eq = false;

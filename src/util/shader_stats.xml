@@ -15,6 +15,7 @@
       <stat name="Estimated cycles stalled on SS" display="(ss)-stall">A better metric to estimate the impact of SS syncs.</stat>
       <stat name="Estimated cycles stalled on SY" display="(sy)-stall">A better metric to estimate the impact of SY syncs.</stat>
       <stat name="cat# instructions" display="cat#" count="8">Number of cat# instructions.</stat>
+      <stat name="Loops">Number of hardware loops</stat>
       <stat name="STP Count" display="STPs">Number of STore Private instructions in the final generated shader executable.</stat>
       <stat name="LDP Count" display="LDPs">Number of LoaD Private instructions in the final generated shader executable.</stat>
       <stat name="Preamble Instruction Count" display="Preamble inst">Total number of IR3 instructions in the preamble.</stat>
