@@ -599,6 +599,9 @@ nir_lower_flrp(nir_shader *shader,
                unsigned lowering_mask,
                bool always_precise)
 {
+   if (shader->info.flrp_lowered || lowering_mask == 0)
+      return false;
+
    struct u_vector dead_flrp;
 
    if (!u_vector_init_pow2(&dead_flrp, 8, sizeof(struct nir_alu_instr *)))
@@ -618,6 +621,8 @@ nir_lower_flrp(nir_shader *shader,
       nir_instr_remove(&(*instr)->instr);
 
    u_vector_finish(&dead_flrp);
+
+   shader->info.flrp_lowered = true;
 
    return progress;
 }
