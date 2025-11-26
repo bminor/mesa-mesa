@@ -1321,6 +1321,42 @@ st_choose_matching_format(struct st_context *st, unsigned bind,
    return PIPE_FORMAT_NONE;
 }
 
+static mesa_format
+choose_format_with_bindings(struct gl_context *ctx, GLint internalFormat,
+                            GLenum format, GLenum type,
+                            enum pipe_texture_target target, unsigned bindings)
+{
+   struct st_context *st = st_context(ctx);
+
+   /* GLES allows the driver to choose any format which matches
+    * the format+type combo, because GLES only supports unsized internal
+    * formats and expects the driver to choose whatever suits it.
+    */
+   if (_mesa_is_gles(ctx)) {
+      GLenum baseFormat = _mesa_base_tex_format(ctx, internalFormat);
+      GLenum basePackFormat = _mesa_base_pack_format(format);
+      GLenum iformat = internalFormat;
+
+      /* Treat GL_BGRA as GL_RGBA. */
+      if (iformat == GL_BGRA)
+         iformat = GL_RGBA;
+
+      /* Check if the internalformat is unsized and compatible
+       * with the "format".
+       */
+      if (iformat == baseFormat && iformat == basePackFormat) {
+         enum pipe_format pFormat =
+            st_choose_matching_format(st, bindings, format, type,
+                                      ctx->Unpack.SwapBytes);
+
+         if (pFormat != PIPE_FORMAT_NONE)
+            return st_pipe_format_to_mesa_format(pFormat);
+      }
+   }
+
+   return st_choose_format(st, internalFormat, format, type, target, 0, 0,
+                           bindings, ctx->Unpack.SwapBytes, true);
+}
 
 /**
  * Called via ctx->Driver.ChooseTextureFormat().
@@ -1414,51 +1450,12 @@ st_ChooseTextureFormat(struct gl_context *ctx, GLenum target,
         internalFormat == GL_LUMINANCE_ALPHA16F_ARB))
       bindings |= PIPE_BIND_RENDER_TARGET;
 
-   /* GLES allows the driver to choose any format which matches
-    * the format+type combo, because GLES only supports unsized internal
-    * formats and expects the driver to choose whatever suits it.
-    */
-   if (_mesa_is_gles(ctx)) {
-      GLenum baseFormat = _mesa_base_tex_format(ctx, internalFormat);
-      GLenum basePackFormat = _mesa_base_pack_format(format);
-      GLenum iformat = internalFormat;
-
-      /* Treat GL_BGRA as GL_RGBA. */
-      if (iformat == GL_BGRA)
-         iformat = GL_RGBA;
-
-      /* Check if the internalformat is unsized and compatible
-       * with the "format".
-       */
-      if (iformat == baseFormat && iformat == basePackFormat) {
-         pFormat = st_choose_matching_format(st, bindings, format, type,
-                                             ctx->Unpack.SwapBytes);
-
-         if (pFormat != PIPE_FORMAT_NONE)
-            return st_pipe_format_to_mesa_format(pFormat);
-
-         if (!is_renderbuffer) {
-            /* try choosing format again, this time without render
-             * target bindings.
-             */
-            pFormat = st_choose_matching_format(st, PIPE_BIND_SAMPLER_VIEW,
-                                                format, type,
-                                                ctx->Unpack.SwapBytes);
-            if (pFormat != PIPE_FORMAT_NONE)
-               return st_pipe_format_to_mesa_format(pFormat);
-         }
-      }
-   }
-
-   pFormat = st_choose_format(st, internalFormat, format, type,
-                              pTarget, 0, 0, bindings,
-                              ctx->Unpack.SwapBytes, true);
+   pFormat = choose_format_with_bindings(ctx, internalFormat, format, type,
+                                         pTarget, bindings);
 
    if (pFormat == PIPE_FORMAT_NONE && !is_renderbuffer) {
-      /* try choosing format again, this time without render target bindings */
-      pFormat = st_choose_format(st, internalFormat, format, type,
-                                 pTarget, 0, 0, PIPE_BIND_SAMPLER_VIEW,
-                                 ctx->Unpack.SwapBytes, true);
+      pFormat = choose_format_with_bindings(ctx, internalFormat, format, type,
+                                            pTarget, PIPE_BIND_SAMPLER_VIEW);
    }
 
    if (pFormat == PIPE_FORMAT_NONE) {
