@@ -3023,23 +3023,23 @@ vk_get_rt_pipeline_compile_info(struct vk_rt_pipeline_compile_info *info,
       group->stage_count = 0;
       switch (group_info->type) {
       case VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR:
-         assert(group_info->generalShader < pCreateInfo->stageCount);
+         assert(group_info->generalShader < info->stage_count);
          group->stage_indices[group->stage_count++] = group_info->generalShader;
          break;
 
       case VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_KHR:
-         if (group_info->anyHitShader < pCreateInfo->stageCount)
+         if (group_info->anyHitShader < info->stage_count)
             group->stage_indices[group->stage_count++] = group_info->anyHitShader;
-         if (group_info->closestHitShader < pCreateInfo->stageCount)
+         if (group_info->closestHitShader < info->stage_count)
             group->stage_indices[group->stage_count++] = group_info->closestHitShader;
          break;
 
       case VK_RAY_TRACING_SHADER_GROUP_TYPE_PROCEDURAL_HIT_GROUP_KHR:
-         if (group_info->closestHitShader < pCreateInfo->stageCount)
+         if (group_info->closestHitShader < info->stage_count)
             group->stage_indices[group->stage_count++] = group_info->closestHitShader;
-         if (group_info->anyHitShader < pCreateInfo->stageCount)
+         if (group_info->anyHitShader < info->stage_count)
             group->stage_indices[group->stage_count++] = group_info->anyHitShader;
-         assert(group_info->intersectionShader < pCreateInfo->stageCount);
+         assert(group_info->intersectionShader < info->stage_count);
          group->stage_indices[group->stage_count++] = group_info->intersectionShader;
          break;
 
