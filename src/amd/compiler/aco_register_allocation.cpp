@@ -3212,7 +3212,7 @@ get_affinities(ra_ctx& ctx)
                affinity_related->emplace_back(op.getTemp());
                if (ctx.assignments[def.id()].precolor_affinity)
                   ctx.assignments[op.tempId()].set_precolor_affinity(ctx.assignments[def.id()].reg);
-               if (block.kind & block_kind_loop_header)
+               if (block.kind & block_kind_loop_header && &op != &instr->operands[0])
                   continue;
                temp_to_phi_resources[op.tempId()] = index;
             }
