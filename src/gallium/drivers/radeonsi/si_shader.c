@@ -244,7 +244,7 @@ static void si_calculate_max_simd_waves(struct si_shader *shader)
    unsigned lds_per_wave = 0;
    unsigned max_simd_waves;
 
-   max_simd_waves = sscreen->info.max_waves_per_simd;
+   max_simd_waves = sscreen->info.cu_info.max_waves_per_simd;
 
    /* Compute LDS usage for PS. */
    switch (shader->selector->stage) {
@@ -275,7 +275,7 @@ static void si_calculate_max_simd_waves(struct si_shader *shader)
    /* Compute the per-SIMD wave counts. */
    if (conf->num_sgprs) {
       max_simd_waves =
-         MIN2(max_simd_waves, sscreen->info.num_physical_sgprs_per_simd / conf->num_sgprs);
+         MIN2(max_simd_waves, sscreen->info.cu_info.num_physical_sgprs_per_simd / conf->num_sgprs);
    }
 
    if (conf->num_vgprs) {
@@ -287,7 +287,7 @@ static void si_calculate_max_simd_waves(struct si_shader *shader)
        */
       unsigned num_vgprs = conf->num_vgprs;
       if (sscreen->info.gfx_level >= GFX10_3) {
-         unsigned real_vgpr_gran = sscreen->info.num_physical_wave64_vgprs_per_simd / 64;
+         unsigned real_vgpr_gran = sscreen->info.cu_info.num_physical_wave64_vgprs_per_simd / 64;
          num_vgprs = util_align_npot(num_vgprs, real_vgpr_gran * (shader->wave_size == 32 ? 2 : 1));
       } else {
          num_vgprs = align(num_vgprs, shader->wave_size == 32 ? 8 : 4);
@@ -295,11 +295,11 @@ static void si_calculate_max_simd_waves(struct si_shader *shader)
 
       /* Always print wave limits as Wave64, so that we can compare
        * Wave32 and Wave64 with shader-db fairly. */
-      unsigned max_vgprs = sscreen->info.num_physical_wave64_vgprs_per_simd;
+      unsigned max_vgprs = sscreen->info.cu_info.num_physical_wave64_vgprs_per_simd;
       max_simd_waves = MIN2(max_simd_waves, max_vgprs / num_vgprs);
    }
 
-   unsigned max_lds_per_simd = sscreen->info.lds_size_per_workgroup / sscreen->info.num_simd_per_compute_unit;
+   unsigned max_lds_per_simd = sscreen->info.lds_size_per_workgroup / sscreen->info.cu_info.num_simd_per_compute_unit;
    if (lds_per_wave)
       max_simd_waves = MIN2(max_simd_waves, max_lds_per_simd / lds_per_wave);
 
@@ -1365,8 +1365,8 @@ bool si_compile_shader(struct si_screen *sscreen, struct ac_llvm_compiler *compi
    /* Validate SGPR and VGPR usage for compute to detect compiler bugs. */
    if (mesa_shader_stage_is_compute(nir->info.stage)) {
       unsigned max_vgprs =
-         sscreen->info.num_physical_wave64_vgprs_per_simd * (shader->wave_size == 32 ? 2 : 1);
-      unsigned max_sgprs = sscreen->info.num_physical_sgprs_per_simd;
+         sscreen->info.cu_info.num_physical_wave64_vgprs_per_simd * (shader->wave_size == 32 ? 2 : 1);
+      unsigned max_sgprs = sscreen->info.cu_info.num_physical_sgprs_per_simd;
       unsigned max_sgprs_per_wave = 128;
       unsigned simds_per_tg = 4; /* assuming WGP mode on gfx10 */
       unsigned threads_per_tg = si_get_max_workgroup_size(shader);

@@ -34,7 +34,7 @@ static void init_polaris12(struct radeon_info *info)
    info->has_graphics = true;
    info->tcc_cache_line_size = 64;
    info->max_render_backends = 4;
-   info->num_physical_wave64_vgprs_per_simd = 256;
+   info->cu_info.num_physical_wave64_vgprs_per_simd = 256;
 
    uint32_t si_tile_mode_array[] = {
       0x00800150, 0x00800950, 0x00801150, 0x00801950, 0x00802950,
@@ -60,7 +60,7 @@ static void init_vega10(struct radeon_info *info)
    info->has_graphics = true;
    info->tcc_cache_line_size = 64;
    info->max_render_backends = 16;
-   info->num_physical_wave64_vgprs_per_simd = 256;
+   info->cu_info.num_physical_wave64_vgprs_per_simd = 256;
 
    info->gb_addr_config = 0x2a114042;
 }
@@ -76,7 +76,7 @@ static void init_vega20(struct radeon_info *info)
    info->has_graphics = true;
    info->tcc_cache_line_size = 64;
    info->max_render_backends = 16;
-   info->num_physical_wave64_vgprs_per_simd = 256;
+   info->cu_info.num_physical_wave64_vgprs_per_simd = 256;
 
    info->gb_addr_config = 0x2a114042;
 }
@@ -93,7 +93,7 @@ static void init_raven(struct radeon_info *info)
    info->has_graphics = true;
    info->tcc_cache_line_size = 64;
    info->max_render_backends = 2;
-   info->num_physical_wave64_vgprs_per_simd = 256;
+   info->cu_info.num_physical_wave64_vgprs_per_simd = 256;
 
    info->gb_addr_config = 0x24000042;
 }
@@ -109,7 +109,7 @@ static void init_raven2(struct radeon_info *info)
    info->has_graphics = true;
    info->tcc_cache_line_size = 64;
    info->max_render_backends = 1;
-   info->num_physical_wave64_vgprs_per_simd = 256;
+   info->cu_info.num_physical_wave64_vgprs_per_simd = 256;
 
    info->gb_addr_config = 0x26013041;
 }
@@ -124,7 +124,7 @@ static void init_navi10(struct radeon_info *info)
    info->use_display_dcc_with_retile_blit = false;
    info->has_graphics = true;
    info->tcc_cache_line_size = 128;
-   info->num_physical_wave64_vgprs_per_simd = 512;
+   info->cu_info.num_physical_wave64_vgprs_per_simd = 512;
 
    info->gb_addr_config = 0x00100044;
 }
@@ -139,7 +139,7 @@ static void init_navi14(struct radeon_info *info)
    info->use_display_dcc_with_retile_blit = false;
    info->has_graphics = true;
    info->tcc_cache_line_size = 128;
-   info->num_physical_wave64_vgprs_per_simd = 512;
+   info->cu_info.num_physical_wave64_vgprs_per_simd = 512;
 
    info->gb_addr_config = 0x00000043;
 }
@@ -156,7 +156,7 @@ static void init_gfx103(struct radeon_info *info)
    info->tcc_cache_line_size = 128;
    info->has_rbplus = true;
    info->rbplus_allowed = true;
-   info->num_physical_wave64_vgprs_per_simd = 512;
+   info->cu_info.num_physical_wave64_vgprs_per_simd = 512;
 
    info->gb_addr_config = 0x00000040; /* Other fields are set by test cases. */
 }
@@ -173,7 +173,7 @@ static void init_navi31(struct radeon_info *info)
    info->tcc_cache_line_size = 128;
    info->has_rbplus = true;
    info->rbplus_allowed = true;
-   info->num_physical_wave64_vgprs_per_simd = 768;
+   info->cu_info.num_physical_wave64_vgprs_per_simd = 768;
 
    info->gb_addr_config = 0x00000040; /* Other fields are set by test cases. */
 }
@@ -190,7 +190,7 @@ static void init_navi32(struct radeon_info *info)
    info->tcc_cache_line_size = 128;
    info->has_rbplus = true;
    info->rbplus_allowed = true;
-   info->num_physical_wave64_vgprs_per_simd = 768;
+   info->cu_info.num_physical_wave64_vgprs_per_simd = 768;
 
    info->gb_addr_config = 0x00000040; /* Other fields are set by test cases. */
 }
@@ -207,7 +207,7 @@ static void init_navi33(struct radeon_info *info)
    info->tcc_cache_line_size = 128;
    info->has_rbplus = true;
    info->rbplus_allowed = true;
-   info->num_physical_wave64_vgprs_per_simd = 512;
+   info->cu_info.num_physical_wave64_vgprs_per_simd = 512;
 
    info->gb_addr_config = 0x00000040; /* Other fields are set by test cases. */
 }
@@ -224,7 +224,7 @@ static void init_gfx11_apu(struct radeon_info *info)
    info->tcc_cache_line_size = 128;
    info->has_rbplus = true;
    info->rbplus_allowed = true;
-   info->num_physical_wave64_vgprs_per_simd = 512;
+   info->cu_info.num_physical_wave64_vgprs_per_simd = 512;
 
    info->gb_addr_config = 0x00000040; /* Other fields are set by test cases. */
 }
@@ -239,7 +239,7 @@ static void init_gfx12(struct radeon_info *info)
    info->tcc_cache_line_size = 256;
    info->has_rbplus = true;
    info->rbplus_allowed = true;
-   info->num_physical_wave64_vgprs_per_simd = 768;
+   info->cu_info.num_physical_wave64_vgprs_per_simd = 768;
 
    info->gb_addr_config = 0; /* Other fields are set by test cases. */
 }

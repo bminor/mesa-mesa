@@ -31,6 +31,19 @@ struct amd_ip_info {
    uint32_t ib_pad_dw_mask;
 };
 
+struct ac_cu_info {
+   uint32_t max_waves_per_simd;
+   uint32_t num_physical_sgprs_per_simd;
+   uint32_t num_physical_wave64_vgprs_per_simd;
+   uint32_t num_simd_per_compute_unit;
+   uint32_t min_sgpr_alloc;
+   uint32_t max_sgpr_alloc;
+   uint32_t sgpr_alloc_granularity;
+   uint32_t min_wave64_vgpr_alloc;
+   uint32_t max_vgpr_alloc;
+   uint32_t wave64_vgpr_alloc_granularity;
+};
+
 struct radeon_info {
    /* Device info. */
    char marketing_name[64];
@@ -273,6 +286,7 @@ struct radeon_info {
    bool uses_kernel_cu_mask;
 
    /* Shader cores. */
+   struct ac_cu_info cu_info;
    uint16_t cu_mask[AMD_MAX_SE][AMD_MAX_SA_PER_SE];
    uint32_t r600_max_quad_pipes; /* wave size / 16 */
    uint32_t max_good_cu_per_sa;
@@ -280,16 +294,6 @@ struct radeon_info {
    uint32_t max_se;             /* number of shader engines incl. disabled ones */
    uint32_t max_sa_per_se;      /* shader arrays per shader engine */
    uint32_t num_cu_per_sh;
-   uint32_t max_waves_per_simd;
-   uint32_t num_physical_sgprs_per_simd;
-   uint32_t num_physical_wave64_vgprs_per_simd;
-   uint32_t num_simd_per_compute_unit;
-   uint32_t min_sgpr_alloc;
-   uint32_t max_sgpr_alloc;
-   uint32_t sgpr_alloc_granularity;
-   uint32_t min_wave64_vgpr_alloc;
-   uint32_t max_vgpr_alloc;
-   uint32_t wave64_vgpr_alloc_granularity;
    uint32_t scratch_wavesize_granularity_shift;
    uint32_t scratch_wavesize_granularity;
    uint32_t max_scratch_waves;

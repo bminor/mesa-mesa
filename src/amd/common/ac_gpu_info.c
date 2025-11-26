@@ -1260,26 +1260,26 @@ ac_query_gpu_info(int fd, void *dev_p, struct radeon_info *info,
    }
 
    if (info->gfx_level >= GFX10_3)
-      info->max_waves_per_simd = 16;
+      info->cu_info.max_waves_per_simd = 16;
    else if (info->gfx_level == GFX10)
-      info->max_waves_per_simd = 20;
+      info->cu_info.max_waves_per_simd = 20;
    else if (info->family >= CHIP_POLARIS10 && info->family <= CHIP_VEGAM)
-      info->max_waves_per_simd = 8;
+      info->cu_info.max_waves_per_simd = 8;
    else
-      info->max_waves_per_simd = 10;
+      info->cu_info.max_waves_per_simd = 10;
 
    if (info->gfx_level >= GFX10) {
-      info->num_physical_sgprs_per_simd = 128 * info->max_waves_per_simd;
-      info->min_sgpr_alloc = 128;
-      info->sgpr_alloc_granularity = 128;
+      info->cu_info.num_physical_sgprs_per_simd = 128 * info->cu_info.max_waves_per_simd;
+      info->cu_info.min_sgpr_alloc = 128;
+      info->cu_info.sgpr_alloc_granularity = 128;
    } else if (info->gfx_level >= GFX8) {
-      info->num_physical_sgprs_per_simd = 800;
-      info->min_sgpr_alloc = 16;
-      info->sgpr_alloc_granularity = 16;
+      info->cu_info.num_physical_sgprs_per_simd = 800;
+      info->cu_info.min_sgpr_alloc = 16;
+      info->cu_info.sgpr_alloc_granularity = 16;
    } else {
-      info->num_physical_sgprs_per_simd = 512;
-      info->min_sgpr_alloc = 8;
-      info->sgpr_alloc_granularity = 8;
+      info->cu_info.num_physical_sgprs_per_simd = 512;
+      info->cu_info.min_sgpr_alloc = 8;
+      info->cu_info.sgpr_alloc_granularity = 8;
    }
 
    info->has_3d_cube_border_color_mipmap = info->has_graphics || info->family == CHIP_MI100;
@@ -1298,16 +1298,16 @@ ac_query_gpu_info(int fd, void *dev_p, struct radeon_info *info,
    /* On GFX10.3, the polarity of AUTO_FLUSH_MODE is inverted. */
    info->has_sqtt_auto_flush_mode_bug = info->gfx_level == GFX10_3;
 
-   info->max_sgpr_alloc = info->family == CHIP_TONGA || info->family == CHIP_ICELAND ? 96 : 104;
+   info->cu_info.max_sgpr_alloc = info->family == CHIP_TONGA || info->family == CHIP_ICELAND ? 96 : 104;
 
    if (!info->has_graphics && info->family >= CHIP_MI200) {
-      info->min_wave64_vgpr_alloc = 8;
-      info->max_vgpr_alloc = 512;
-      info->wave64_vgpr_alloc_granularity = 8;
+      info->cu_info.min_wave64_vgpr_alloc = 8;
+      info->cu_info.max_vgpr_alloc = 512;
+      info->cu_info.wave64_vgpr_alloc_granularity = 8;
    } else {
-      info->min_wave64_vgpr_alloc = 4;
-      info->max_vgpr_alloc = 256;
-      info->wave64_vgpr_alloc_granularity = 4;
+      info->cu_info.min_wave64_vgpr_alloc = 4;
+      info->cu_info.max_vgpr_alloc = 256;
+      info->cu_info.wave64_vgpr_alloc_granularity = 4;
    }
 
    /* Some GPU info was broken before DRM 3.45.0. */
@@ -1316,16 +1316,16 @@ ac_query_gpu_info(int fd, void *dev_p, struct radeon_info *info,
        * Gfx6-9 numbers are in Wave64.
        */
       if (info->gfx_level >= GFX10)
-         info->num_physical_wave64_vgprs_per_simd = device_info.num_shader_visible_vgprs / 2;
+         info->cu_info.num_physical_wave64_vgprs_per_simd = device_info.num_shader_visible_vgprs / 2;
       else
-         info->num_physical_wave64_vgprs_per_simd = device_info.num_shader_visible_vgprs;
+         info->cu_info.num_physical_wave64_vgprs_per_simd = device_info.num_shader_visible_vgprs;
    } else if (info->gfx_level >= GFX10) {
-      info->num_physical_wave64_vgprs_per_simd = 512;
+      info->cu_info.num_physical_wave64_vgprs_per_simd = 512;
    } else {
-      info->num_physical_wave64_vgprs_per_simd = 256;
+      info->cu_info.num_physical_wave64_vgprs_per_simd = 256;
    }
 
-   info->num_simd_per_compute_unit = info->gfx_level >= GFX10 ? 2 : 4;
+   info->cu_info.num_simd_per_compute_unit = info->gfx_level >= GFX10 ? 2 : 4;
 
    /* BIG_PAGE is supported since gfx10.3 and requires VRAM. VRAM is only guaranteed
     * with AMDGPU_GEM_CREATE_DISCARDABLE. DISCARDABLE was added in DRM 3.47.0.
@@ -1926,17 +1926,17 @@ void ac_print_gpu_info(FILE *f, const struct radeon_info *info, int fd)
    fprintf(f, "    max_se = %i\n", info->max_se);
    fprintf(f, "    max_sa_per_se = %i\n", info->max_sa_per_se);
    fprintf(f, "    num_cu_per_sh = %i\n", info->num_cu_per_sh);
-   fprintf(f, "    max_waves_per_simd = %i\n", info->max_waves_per_simd);
-   fprintf(f, "    num_physical_sgprs_per_simd = %i\n", info->num_physical_sgprs_per_simd);
+   fprintf(f, "    max_waves_per_simd = %i\n", info->cu_info.max_waves_per_simd);
+   fprintf(f, "    num_physical_sgprs_per_simd = %i\n", info->cu_info.num_physical_sgprs_per_simd);
    fprintf(f, "    num_physical_wave64_vgprs_per_simd = %i\n",
-           info->num_physical_wave64_vgprs_per_simd);
-   fprintf(f, "    num_simd_per_compute_unit = %i\n", info->num_simd_per_compute_unit);
-   fprintf(f, "    min_sgpr_alloc = %i\n", info->min_sgpr_alloc);
-   fprintf(f, "    max_sgpr_alloc = %i\n", info->max_sgpr_alloc);
-   fprintf(f, "    sgpr_alloc_granularity = %i\n", info->sgpr_alloc_granularity);
-   fprintf(f, "    min_wave64_vgpr_alloc = %i\n", info->min_wave64_vgpr_alloc);
-   fprintf(f, "    max_vgpr_alloc = %i\n", info->max_vgpr_alloc);
-   fprintf(f, "    wave64_vgpr_alloc_granularity = %i\n", info->wave64_vgpr_alloc_granularity);
+           info->cu_info.num_physical_wave64_vgprs_per_simd);
+   fprintf(f, "    num_simd_per_compute_unit = %i\n", info->cu_info.num_simd_per_compute_unit);
+   fprintf(f, "    min_sgpr_alloc = %i\n", info->cu_info.min_sgpr_alloc);
+   fprintf(f, "    max_sgpr_alloc = %i\n", info->cu_info.max_sgpr_alloc);
+   fprintf(f, "    sgpr_alloc_granularity = %i\n", info->cu_info.sgpr_alloc_granularity);
+   fprintf(f, "    min_wave64_vgpr_alloc = %i\n", info->cu_info.min_wave64_vgpr_alloc);
+   fprintf(f, "    max_vgpr_alloc = %i\n", info->cu_info.max_vgpr_alloc);
+   fprintf(f, "    wave64_vgpr_alloc_granularity = %i\n", info->cu_info.wave64_vgpr_alloc_granularity);
    fprintf(f, "    max_scratch_waves = %i\n", info->max_scratch_waves);
    fprintf(f, "    has_scratch_base_registers = %i\n", info->has_scratch_base_registers);
    fprintf(f, "Ring info:\n");
@@ -2264,8 +2264,8 @@ ac_get_compute_resource_limits(const struct radeon_info *info, unsigned waves_pe
 
       /* Gfx9 should set the limit to max instead of 0 to fix high priority compute. */
       if (info->gfx_level == GFX9 && !max_waves_per_sh) {
-         max_waves_per_sh = info->max_good_cu_per_sa * info->num_simd_per_compute_unit *
-                            info->max_waves_per_simd;
+         max_waves_per_sh = info->max_good_cu_per_sa * info->cu_info.num_simd_per_compute_unit *
+                            info->cu_info.max_waves_per_simd;
       }
 
       /* On GFX12+, WAVES_PER_SH means waves per SE. */

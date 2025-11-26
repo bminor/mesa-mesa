@@ -2775,7 +2775,7 @@ radv_get_max_waves(const struct radv_device *device, const struct ac_shader_conf
    const enum amd_gfx_level gfx_level = gpu_info->gfx_level;
    const uint8_t wave_size = info->wave_size;
    mesa_shader_stage stage = info->stage;
-   unsigned max_simd_waves = gpu_info->max_waves_per_simd;
+   unsigned max_simd_waves = gpu_info->cu_info.max_waves_per_simd;
    unsigned lds_increment = ac_shader_get_lds_alloc_granularity(gfx_level);
    unsigned lds_per_workgroup = align(conf->lds_size, lds_increment);
    unsigned waves_per_workgroup = DIV_ROUND_UP(info->workgroup_size, wave_size);
@@ -2786,20 +2786,20 @@ radv_get_max_waves(const struct radv_device *device, const struct ac_shader_conf
 
    if (conf->num_sgprs && gfx_level < GFX10) {
       unsigned sgprs = align(conf->num_sgprs, gfx_level >= GFX8 ? 16 : 8);
-      max_simd_waves = MIN2(max_simd_waves, gpu_info->num_physical_sgprs_per_simd / sgprs);
+      max_simd_waves = MIN2(max_simd_waves, gpu_info->cu_info.num_physical_sgprs_per_simd / sgprs);
    }
 
    if (conf->num_vgprs) {
-      unsigned physical_vgprs = gpu_info->num_physical_wave64_vgprs_per_simd * (64 / wave_size);
+      unsigned physical_vgprs = gpu_info->cu_info.num_physical_wave64_vgprs_per_simd * (64 / wave_size);
       unsigned vgprs = align(conf->num_vgprs, wave_size == 32 ? 8 : 4);
       if (gfx_level >= GFX10_3) {
-         unsigned real_vgpr_gran = gpu_info->num_physical_wave64_vgprs_per_simd / 64;
+         unsigned real_vgpr_gran = gpu_info->cu_info.num_physical_wave64_vgprs_per_simd / 64;
          vgprs = util_align_npot(vgprs, real_vgpr_gran * (wave_size == 32 ? 2 : 1));
       }
       max_simd_waves = MIN2(max_simd_waves, physical_vgprs / vgprs);
    }
 
-   unsigned simd_per_cu_wgp = gpu_info->num_simd_per_compute_unit;
+   unsigned simd_per_cu_wgp = gpu_info->cu_info.num_simd_per_compute_unit;
    if (conf->wgp_mode)
       simd_per_cu_wgp *= 2;
 

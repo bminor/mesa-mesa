@@ -434,17 +434,17 @@ static void ac_sqtt_fill_asic_info(const struct radeon_info *rad_info,
 
    chunk->device_id = rad_info->pci_id;
    chunk->device_revision_id = rad_info->pci_rev_id;
-   chunk->vgprs_per_simd = rad_info->num_physical_wave64_vgprs_per_simd * (has_wave32 ? 2 : 1);
-   chunk->sgprs_per_simd = rad_info->num_physical_sgprs_per_simd;
+   chunk->vgprs_per_simd = rad_info->cu_info.num_physical_wave64_vgprs_per_simd * (has_wave32 ? 2 : 1);
+   chunk->sgprs_per_simd = rad_info->cu_info.num_physical_sgprs_per_simd;
    chunk->shader_engines = rad_info->max_se;
    chunk->compute_unit_per_shader_engine = rad_info->min_good_cu_per_sa * rad_info->max_sa_per_se;
-   chunk->simd_per_compute_unit = rad_info->num_simd_per_compute_unit;
-   chunk->wavefronts_per_simd = rad_info->max_waves_per_simd;
+   chunk->simd_per_compute_unit = rad_info->cu_info.num_simd_per_compute_unit;
+   chunk->wavefronts_per_simd = rad_info->cu_info.max_waves_per_simd;
 
-   chunk->minimum_vgpr_alloc = rad_info->min_wave64_vgpr_alloc;
-   chunk->vgpr_alloc_granularity = rad_info->wave64_vgpr_alloc_granularity * (has_wave32 ? 2 : 1);
-   chunk->minimum_sgpr_alloc = rad_info->min_sgpr_alloc;
-   chunk->sgpr_alloc_granularity = rad_info->sgpr_alloc_granularity;
+   chunk->minimum_vgpr_alloc = rad_info->cu_info.min_wave64_vgpr_alloc;
+   chunk->vgpr_alloc_granularity = rad_info->cu_info.wave64_vgpr_alloc_granularity * (has_wave32 ? 2 : 1);
+   chunk->minimum_sgpr_alloc = rad_info->cu_info.min_sgpr_alloc;
+   chunk->sgpr_alloc_granularity = rad_info->cu_info.sgpr_alloc_granularity;
 
    chunk->hardware_contexts = 8;
    chunk->gpu_type =

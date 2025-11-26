@@ -632,9 +632,9 @@ static bool do_winsys_init(struct radeon_drm_winsys *ws)
    ws->info.max_alignment = 1024*1024;
    ws->info.has_graphics = true;
    ws->info.cpdma_prefetch_writes_memory = true;
-   ws->info.max_waves_per_simd = 10;
-   ws->info.num_physical_sgprs_per_simd = 512;
-   ws->info.num_physical_wave64_vgprs_per_simd = 256;
+   ws->info.cu_info.max_waves_per_simd = 10;
+   ws->info.cu_info.num_physical_sgprs_per_simd = 512;
+   ws->info.cu_info.num_physical_wave64_vgprs_per_simd = 256;
    ws->info.has_3d_cube_border_color_mipmap = true;
    ws->info.has_image_opcodes = true;
    ws->info.spi_cu_en_has_effect = false;
@@ -644,13 +644,13 @@ static bool do_winsys_init(struct radeon_drm_winsys *ws)
    ws->info.max_gflops = 128 * ws->info.num_cu * ws->info.max_gpu_freq_mhz / 1000;
    ws->info.num_tcc_blocks = ws->info.max_tcc_blocks;
    ws->info.tcp_cache_size = 16 * 1024;
-   ws->info.num_simd_per_compute_unit = 4;
-   ws->info.min_sgpr_alloc = 8;
-   ws->info.max_sgpr_alloc = 104;
-   ws->info.sgpr_alloc_granularity = 8;
-   ws->info.min_wave64_vgpr_alloc = 4;
-   ws->info.max_vgpr_alloc = 256;
-   ws->info.wave64_vgpr_alloc_granularity = 4;
+   ws->info.cu_info.num_simd_per_compute_unit = 4;
+   ws->info.cu_info.min_sgpr_alloc = 8;
+   ws->info.cu_info.max_sgpr_alloc = 104;
+   ws->info.cu_info.sgpr_alloc_granularity = 8;
+   ws->info.cu_info.min_wave64_vgpr_alloc = 4;
+   ws->info.cu_info.max_vgpr_alloc = 256;
+   ws->info.cu_info.wave64_vgpr_alloc_granularity = 4;
    ws->info.lds_size_per_workgroup = ws->info.gfx_level == GFX7 ? 64 * 1024 : 32 * 1024;
 
    for (unsigned se = 0; se < ws->info.max_se; se++) {

@@ -208,7 +208,7 @@ enum {
    TCP_PERF_SEL_REQ_MISS_GFX10 = CTR(TCP, 0x12),
 };
 
-#define CTR_NUM_SIMD CONSTANT(pdev->info.num_simd_per_compute_unit * pdev->info.num_cu)
+#define CTR_NUM_SIMD CONSTANT(pdev->info.cu_info.num_simd_per_compute_unit * pdev->info.num_cu)
 #define CTR_NUM_CUS  CONSTANT(pdev->info.num_cu)
 
 static void

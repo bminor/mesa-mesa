@@ -1890,21 +1890,21 @@ radv_get_physical_device_properties(struct radv_physical_device *pdev)
       .shaderEngineCount = pdev->info.max_se,
       .shaderArraysPerEngineCount = pdev->info.max_sa_per_se,
       .computeUnitsPerShaderArray = pdev->info.min_good_cu_per_sa,
-      .simdPerComputeUnit = pdev->info.num_simd_per_compute_unit,
-      .wavefrontsPerSimd = pdev->info.max_waves_per_simd,
+      .simdPerComputeUnit = pdev->info.cu_info.num_simd_per_compute_unit,
+      .wavefrontsPerSimd = pdev->info.cu_info.max_waves_per_simd,
       .wavefrontSize = 64,
 
       /* SGPR. */
-      .sgprsPerSimd = pdev->info.num_physical_sgprs_per_simd,
-      .minSgprAllocation = pdev->info.min_sgpr_alloc,
-      .maxSgprAllocation = pdev->info.max_sgpr_alloc,
-      .sgprAllocationGranularity = pdev->info.sgpr_alloc_granularity,
+      .sgprsPerSimd = pdev->info.cu_info.num_physical_sgprs_per_simd,
+      .minSgprAllocation = pdev->info.cu_info.min_sgpr_alloc,
+      .maxSgprAllocation = pdev->info.cu_info.max_sgpr_alloc,
+      .sgprAllocationGranularity = pdev->info.cu_info.sgpr_alloc_granularity,
 
       /* VGPR. */
-      .vgprsPerSimd = pdev->info.num_physical_wave64_vgprs_per_simd,
-      .minVgprAllocation = pdev->info.min_wave64_vgpr_alloc,
-      .maxVgprAllocation = pdev->info.max_vgpr_alloc,
-      .vgprAllocationGranularity = pdev->info.wave64_vgpr_alloc_granularity,
+      .vgprsPerSimd = pdev->info.cu_info.num_physical_wave64_vgprs_per_simd,
+      .minVgprAllocation = pdev->info.cu_info.min_wave64_vgpr_alloc,
+      .maxVgprAllocation = pdev->info.cu_info.max_vgpr_alloc,
+      .vgprAllocationGranularity = pdev->info.cu_info.wave64_vgpr_alloc_granularity,
 
       /* VK_AMD_shader_core_properties2 */
       .shaderCoreFeatures = 0,
