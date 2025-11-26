@@ -139,7 +139,7 @@ if not with_platform_windows
   )
 endif
 
-link_with = []
+link_with = [ libamdgpu_addrlib ]
 c_args = ['-DADDR_FASTCALL=']
 if with_amdgpu_virtio
   c_args += ['-DHAVE_AMDGPU_VIRTIO', '-DENABLE_DRM_AMDGPU']
