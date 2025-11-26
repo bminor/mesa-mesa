@@ -31,6 +31,8 @@ struct radv_image_create_info;
 #define RADV_BIND_INTRA_ONLY           2
 #define RADV_BIND_ENCODE_AV1_CDF_STORE RADV_BIND_DECODER_CTX
 
+#define RADV_VIDEO_H264_MAX_DPB_SLOTS 17
+
 struct radv_vid_mem {
    struct radv_device_memory *mem;
    VkDeviceSize offset;

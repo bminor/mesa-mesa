@@ -24,7 +24,6 @@
 #include "radv_image_view.h"
 #include "radv_video.h"
 
-#define RADV_VIDEO_H264_MAX_DPB_SLOTS     17
 #define RADV_VIDEO_H264_MAX_NUM_REF_FRAME 16
 #define RADV_VIDEO_H265_MAX_DPB_SLOTS     17
 #define RADV_VIDEO_H265_MAX_NUM_REF_FRAME 15
