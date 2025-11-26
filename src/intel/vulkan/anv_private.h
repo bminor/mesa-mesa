@@ -1175,6 +1175,9 @@ struct anv_pipeline_bind_map {
    BITSET_DECLARE(input_attachments, MAX_DESCRIPTOR_SET_INPUT_ATTACHMENTS + 1);
 
    struct anv_push_range                        push_ranges[4];
+
+   /* Number of dynamic descriptor in each set */
+   uint8_t                                      dynamic_descriptors[MAX_SETS];
 };
 
 struct anv_push_descriptor_info {

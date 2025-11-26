@@ -1900,6 +1900,12 @@ anv_shader_compile(struct vk_device *vk_device,
 
       shader_data->source_hash = ((uint32_t*)info->nir->info.source_blake3)[0];
 
+      for (uint32_t i = 0; i < info->set_layout_count; i++) {
+         shader_data->dynamic_descriptors[i] =
+            info->set_layouts[i] != NULL ?
+            info->set_layouts[i]->dynamic_descriptor_count : 0;
+      }
+
       shader_data->bind_map.layout_type =
          set_layouts_get_layout_type((struct anv_descriptor_set_layout * const *)info->set_layouts,
                                      info->set_layout_count);
