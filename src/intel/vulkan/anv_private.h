@@ -6125,7 +6125,8 @@ anv_cmd_buffer_ensure_rcs_companion(struct anv_cmd_buffer *cmd_buffer);
 void
 anv_cmd_buffer_set_rt_state(struct vk_command_buffer *vk_cmd_buffer,
                             VkDeviceSize scratch_size,
-                            uint32_t ray_queries);
+                            uint32_t ray_queries,
+                            const uint8_t *dynamic_descriptor_offsets);
 
 void
 anv_cmd_buffer_set_stack_size(struct vk_command_buffer *vk_cmd_buffer,

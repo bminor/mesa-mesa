@@ -329,7 +329,8 @@ struct vk_device_shader_ops {
    /** Sets scratch size & ray query count for RT pipelines */
    void (*cmd_set_rt_state)(struct vk_command_buffer *cmd_buffer,
                             VkDeviceSize scratch_size,
-                            uint32_t ray_queries);
+                            uint32_t ray_queries,
+                            const uint8_t *dynamic_descriptor_offsets);
 
    /** Sets stack size for RT pipelines */
    void (*cmd_set_stack_size)(struct vk_command_buffer *cmd_buffer,
