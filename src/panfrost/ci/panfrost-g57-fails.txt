@@ -313,8 +313,6 @@ afbcp-spec@arb_texture_rg@fbo-blending-formats@GL_RG8,Fail
 afbcp-spec@arb_texture_rg@fbo-blending-formats@GL_RG,Fail
 afbcp-spec@arb_transform_feedback_instanced@draw-auto instanced,Fail
 afbcp-spec@egl 1.4@eglterminate then unbind context,Fail
-afbcp-spec@egl_chromium_sync_control@conformance@eglGetSyncValuesCHROMIUM_msc_and_sbc_test,Fail
-afbcp-spec@egl_chromium_sync_control@conformance,Fail
 afbcp-spec@egl_khr_gl_image@egl_khr_gl_renderbuffer_image-clear-shared-image gl_depth_component24,Fail
 afbcp-spec@egl_khr_gl_image@egl_khr_gl_renderbuffer_image-clear-shared-image gl_rgba,Fail
 afbcp-spec@egl_khr_surfaceless_context@viewport,Fail
