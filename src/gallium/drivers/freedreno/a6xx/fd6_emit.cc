@@ -907,7 +907,7 @@ fd6_emit_static_non_context_regs(struct fd_context *ctx, fd_cs &cs)
    ncrb.add(PC_CONTEXT_SWITCH_GFX_PREEMPTION_MODE(CHIP));
 
    if (CHIP == A7XX)
-      ncrb.add(RB_UNKNOWN_8E09(CHIP, 0x4));
+      ncrb.add(RB_UNKNOWN_8E09(CHIP, 0x7));
 }
 
 /**

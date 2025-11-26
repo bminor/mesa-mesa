@@ -2048,7 +2048,7 @@ tu6_init_static_regs(struct tu_device *dev, struct tu_cs *cs)
    tu_cs_emit_write_reg(cs, REG_A6XX_RB_RBP_CNTL,
                         phys_dev->info->magic.RB_RBP_CNTL);
    if (CHIP >= A7XX) {
-      tu_cs_emit_regs(cs, A7XX_RB_UNKNOWN_8E09(0x4));
+      tu_cs_emit_regs(cs, A7XX_RB_UNKNOWN_8E09(0x7));
       tu_cond_exec_end(cs);
    }
 
