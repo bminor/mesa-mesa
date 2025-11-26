@@ -1452,10 +1452,22 @@ anv_shader_lower_nir(struct anv_device *device,
    if (nir->info.stage == MESA_SHADER_FRAGMENT)
       anv_shader_compute_fragment_rts(compiler, state, shader_data);
 
+
+   uint32_t dynamic_descriptors_offset = 0;
+   uint32_t dynamic_descriptors_offsets[MAX_SETS] = {};
+   for (uint32_t i = 0; i < set_layout_count; i++) {
+      dynamic_descriptors_offsets[i] = dynamic_descriptors_offset;
+      dynamic_descriptors_offset += set_layouts[i] != NULL ?
+         set_layouts[i]->vk.dynamic_descriptor_count : 0;
+   }
+
    /* Apply the actual pipeline layout to UBOs, SSBOs, and textures */
    NIR_PASS(_, nir, anv_nir_apply_pipeline_layout,
                pdevice, shader_data->key.base.robust_flags,
-               set_layouts, set_layout_count, NULL, /* TODO? */
+               set_layouts, set_layout_count,
+               (shader_data->info->flags &
+                VK_SHADER_CREATE_INDEPENDENT_SETS_BIT_MESA) ? NULL:
+               dynamic_descriptors_offsets,
                &shader_data->bind_map, &shader_data->push_map, mem_ctx);
 
    NIR_PASS(_, nir, anv_nir_lower_driver_values, pdevice);
