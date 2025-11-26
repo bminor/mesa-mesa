@@ -309,6 +309,87 @@ panvk_bind_queue_submit_sparse_memory_bind(
    }
 }
 
+struct panvk_sparse_block_memory_bind {
+   uint32_t plane_index;
+   uint32_t layer;
+   uint32_t level;
+   VkOffset3D offset; /* must be a multiple of extent */
+   VkExtent3D extent;
+   VkDeviceMemory mem;
+   VkDeviceSize mem_offset;
+};
+
+static int
+panvk_bind_queue_submit_sparse_block_memory_bind(
+   struct panvk_bind_queue_submit *submit,
+   const struct panvk_image *image,
+   const struct panvk_sparse_block_memory_bind *in)
+{
+   uint64_t resource_va = image->sparse.device_address;
+   const struct panvk_image_plane *plane = &image->planes[in->plane_index];
+   int ret;
+
+   /* 3D images are not yet supported. See
+    * https://gitlab.freedesktop.org/panfrost/mesa/-/issues/242 */
+   assert(image->vk.image_type == VK_IMAGE_TYPE_2D);
+
+   /*
+    * Right now we only handle U interleaved, but it would be beneficial to use
+    * 64K interleaved for sparse partially-resident images. See
+    * https://gitlab.freedesktop.org/panfrost/mesa/-/issues/244 for details.
+    */
+   assert(image->vk.drm_format_mod == DRM_FORMAT_MOD_ARM_16X16_BLOCK_U_INTERLEAVED);
+   VkExtent3D oblock_clumps =
+      vk_format_is_block_compressed(image->vk.format)
+         ? (VkExtent3D){4, 4, 1}
+         : (VkExtent3D){16, 16, 1};
+   VkExtent3D oblock_extent = {
+      oblock_clumps.width * vk_format_get_blockwidth(image->vk.format),
+      oblock_clumps.height * vk_format_get_blockheight(image->vk.format),
+      oblock_clumps.depth * 1,
+   };
+   uint32_t oblock_size_B =
+      oblock_clumps.width * oblock_clumps.height * oblock_clumps.depth *
+         vk_format_get_blocksize(image->vk.format);
+
+   VkOffset3D offset_oblocks = {
+      in->offset.x / oblock_extent.width,
+      in->offset.y / oblock_extent.height,
+      in->offset.z / oblock_extent.depth,
+   };
+   VkExtent3D extent_oblocks = {
+      DIV_ROUND_UP(in->extent.width, oblock_extent.width),
+      DIV_ROUND_UP(in->extent.height, oblock_extent.height),
+      DIV_ROUND_UP(in->extent.depth, oblock_extent.depth),
+   };
+
+   assert(offset_oblocks.z == 0 && extent_oblocks.depth == 1);
+
+   uint32_t max_y = offset_oblocks.y + extent_oblocks.height;
+
+   uint64_t mem_offset = in->mem_offset;
+   for (uint32_t y = offset_oblocks.y; y < max_y; y++) {
+      const struct pan_image_slice_layout *slayout = &plane->plane.layout.slices[in->level];
+
+      VkSparseMemoryBind bind = {
+         .resourceOffset = resource_va +
+            in->layer * plane->plane.layout.array_stride_B +
+            slayout->offset_B +
+            y * slayout->tiled_or_linear.row_stride_B +
+            offset_oblocks.x * oblock_size_B,
+         .size = extent_oblocks.width * oblock_size_B,
+         .memory = in->mem,
+         .memoryOffset = mem_offset,
+      };
+      ret = panvk_bind_queue_submit_sparse_memory_bind(submit, resource_va, &bind);
+      if (ret)
+         return ret;
+      mem_offset += bind.size;
+   }
+
+   return 0;
+}
+
 static int
 panvk_bind_queue_submit_do(struct panvk_bind_queue_submit *submit,
                            const struct vk_queue_submit *vk_submit)
@@ -347,7 +428,46 @@ panvk_bind_queue_submit_do(struct panvk_bind_queue_submit *submit,
       }
    }
    for (uint32_t i = 0; i < vk_submit->image_bind_count; i++) {
-      UNREACHABLE("not implemented");
+      VK_FROM_HANDLE(panvk_image, image, vk_submit->image_binds[i].image);
+      assert(image->vk.create_flags & VK_IMAGE_CREATE_SPARSE_BINDING_BIT);
+      assert(image->vk.create_flags & VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT);
+
+      struct panvk_sparse_block_desc sblock = panvk_get_sparse_block_desc(image->vk.image_type, image->vk.format);
+
+      for (uint32_t j = 0; j < vk_submit->image_binds[i].bindCount; j++) {
+         const VkSparseImageMemoryBind *in =
+            &vk_submit->image_binds[i].pBinds[j];
+
+         VkOffset3D max = {
+            in->offset.x + in->extent.width,
+            in->offset.y + in->extent.height,
+            in->offset.z + in->extent.depth,
+         };
+         struct panvk_sparse_block_memory_bind bind = {
+            /* We only support single-plane images right now. See
+             * https://gitlab.freedesktop.org/panfrost/mesa/-/issues/243 details. */
+            .plane_index = 0,
+            .level = in->subresource.mipLevel,
+            .layer = in->subresource.arrayLayer,
+            .offset = {},
+            .extent = sblock.extent,
+            .mem = in->memory,
+            .mem_offset = in->memoryOffset,
+         };
+         for (bind.offset.z = in->offset.z;
+              bind.offset.z < max.z; bind.offset.z += sblock.extent.depth) {
+            for (bind.offset.y = in->offset.y;
+                 bind.offset.y < max.y; bind.offset.y += sblock.extent.height) {
+               for (bind.offset.x = in->offset.x;
+                    bind.offset.x < max.x; bind.offset.x += sblock.extent.width) {
+                  ret = panvk_bind_queue_submit_sparse_block_memory_bind(submit, image, &bind);
+                  if (ret)
+                     return ret;
+                  bind.mem_offset += sblock.size_B;
+               }
+            }
+         }
+      }
    }
 
    return panvk_bind_queue_submit_process_signals(submit);
