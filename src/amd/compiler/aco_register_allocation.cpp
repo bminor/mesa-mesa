@@ -3252,11 +3252,20 @@ get_affinities(ra_ctx& ctx)
          }
       }
    }
+
    /* create affinities */
    for (std::vector<Temp>& vec : phi_resources) {
-      for (unsigned i = 1; i < vec.size(); i++)
-         if (vec[i].id() != vec[0].id())
-            ctx.assignments[vec[i].id()].affinity = vec[0].id();
+      for (unsigned i = 1; i < vec.size(); i++) {
+         if (vec[i].id() == vec[0].id())
+            continue;
+
+         ctx.assignments[vec[i].id()].affinity = vec[0].id();
+
+         /* Propagate vector-info up the affinity-chain */
+         auto it = ctx.vectors.find(vec[i].id());
+         if (it != ctx.vectors.end() && !ctx.vectors.count(vec[0].id()))
+            ctx.vectors[vec[0].id()] = it->second;
+      }
    }
 }
 
