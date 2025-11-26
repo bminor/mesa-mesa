@@ -980,10 +980,13 @@ v3dX(meta_emit_tfu_job)(struct v3dv_cmd_buffer *cmd_buffer,
 #endif
 
 #if V3D_VERSION >= 71
-   tfu.v71.ioc = (V3D71_TFU_IOC_FORMAT_LINEARTILE +
-                  (dst_tiling - V3D_TILING_LINEARTILE)) <<
-                   V3D71_TFU_IOC_FORMAT_SHIFT;
-
+   if (dst_tiling == V3D_TILING_RASTER) {
+      tfu.v71.ioc = V3D71_TFU_IOC_FORMAT_RASTER << V3D71_TFU_IOC_FORMAT_SHIFT;
+   } else {
+      tfu.v71.ioc = (V3D71_TFU_IOC_FORMAT_LINEARTILE +
+                     (dst_tiling - V3D_TILING_LINEARTILE)) <<
+                      V3D71_TFU_IOC_FORMAT_SHIFT;
+   }
    switch (dst_tiling) {
    case V3D_TILING_UIF_NO_XOR:
    case V3D_TILING_UIF_XOR:
@@ -1012,10 +1015,10 @@ v3dX(meta_emit_tfu_job)(struct v3dv_cmd_buffer *cmd_buffer,
       break;
    }
 
+#if V3D_VERSION <= 42
    /* The TFU can handle raster sources but always produces UIF results */
    assert(dst_tiling != V3D_TILING_RASTER);
 
-#if V3D_VERSION <= 42
    /* If we're writing level 0 (!IOA_DIMTW), then we need to supply the
     * OPAD field for the destination (how many extra UIF blocks beyond
     * those necessary to cover the height).

@@ -1152,8 +1152,8 @@ copy_image_tfu(struct v3dv_cmd_buffer *cmd_buffer,
       return false;
    }
 
-   /* Destination can't be raster format */
-   if (!dst->tiled)
+   /* Destination can't be raster format on V3D 4.2 */
+   if (cmd_buffer->device->devinfo.ver < 71 && !dst->tiled)
       return false;
 
    /* We can only do full copies, so if the format is D24S8 both aspects need
@@ -1266,7 +1266,8 @@ copy_image_tfu(struct v3dv_cmd_buffer *cmd_buffer,
          dst->planes[dst_plane].mem->bo->handle,
          dst_offset,
          dst_slice->tiling,
-         dst_slice->padded_height,
+         dst_slice->tiling == V3D_TILING_RASTER ?
+                              dst_slice->stride : dst_slice->padded_height,
          dst->planes[dst_plane].cpp,
          src->planes[src_plane].mem->bo->handle,
          src_offset,
@@ -1869,8 +1870,8 @@ copy_buffer_to_image_tfu(struct v3dv_cmd_buffer *cmd_buffer,
 
    assert(image->vk.samples == VK_SAMPLE_COUNT_1_BIT);
 
-   /* Destination can't be raster format */
-   if (!image->tiled)
+   /* Destination can't be raster format on V3D 4.2 */
+   if (cmd_buffer->device->devinfo.ver < 71 && !image->tiled)
       return false;
 
    /* We can't copy D24S8 because buffer to image copies only copy one aspect
@@ -1968,7 +1969,8 @@ copy_buffer_to_image_tfu(struct v3dv_cmd_buffer *cmd_buffer,
              dst_bo->handle,
              dst_offset,
              slice->tiling,
-             slice->padded_height,
+             slice->tiling == V3D_TILING_RASTER ?
+                              slice->stride : slice->padded_height,
              image->planes[plane].cpp,
              src_bo->handle,
              src_offset,
@@ -3398,8 +3400,8 @@ blit_tfu(struct v3dv_cmd_buffer *cmd_buffer,
    if (src->vk.format != dst->vk.format)
       return false;
 
-   /* Destination can't be raster format */
-   if (!dst->tiled)
+   /* Destination can't be raster format on V3D 4.2 */
+   if (cmd_buffer->device->devinfo.ver < 71 && !dst->tiled)
       return false;
 
    /* Source region must start at (0,0) */
@@ -3507,7 +3509,8 @@ blit_tfu(struct v3dv_cmd_buffer *cmd_buffer,
          dst->planes[0].mem->bo->handle,
          dst_offset,
          dst_slice->tiling,
-         dst_slice->padded_height,
+         dst_slice->tiling == V3D_TILING_RASTER ?
+                              dst_slice->stride : dst_slice->padded_height,
          dst->planes[0].cpp,
          src->planes[0].mem->bo->handle,
          src_offset,
