@@ -46,21 +46,6 @@ ac_null_device_create(struct radeon_info *gpu_info, const char *family)
    gpu_info->pci_id = pci_ids[gpu_info->family].pci_id;
    gpu_info->max_se = pci_ids[gpu_info->family].has_dedicated_vram ? 4 : 1;
    gpu_info->num_se = gpu_info->max_se;
-   if (gpu_info->gfx_level >= GFX10_3)
-      gpu_info->cu_info.max_waves_per_simd = 16;
-   else if (gpu_info->gfx_level >= GFX10)
-      gpu_info->cu_info.max_waves_per_simd = 20;
-   else if (gpu_info->family >= CHIP_POLARIS10 && gpu_info->family <= CHIP_VEGAM)
-      gpu_info->cu_info.max_waves_per_simd = 8;
-   else
-      gpu_info->cu_info.max_waves_per_simd = 10;
-
-   if (gpu_info->gfx_level >= GFX10)
-      gpu_info->cu_info.num_physical_sgprs_per_simd = 128 * gpu_info->cu_info.max_waves_per_simd;
-   else if (gpu_info->gfx_level >= GFX8)
-      gpu_info->cu_info.num_physical_sgprs_per_simd = 800;
-   else
-      gpu_info->cu_info.num_physical_sgprs_per_simd = 512;
 
    gpu_info->has_timeline_syncobj = true;
    gpu_info->has_vm_always_valid = true;
@@ -71,13 +56,6 @@ ac_null_device_create(struct radeon_info *gpu_info, const char *family)
    gpu_info->has_ngg_fully_culled_bug = gpu_info->gfx_level == GFX10;
    gpu_info->has_ngg_passthru_no_msg = gpu_info->family >= CHIP_NAVI23;
 
-   if (gpu_info->family == CHIP_NAVI31 || gpu_info->family == CHIP_NAVI32 || gpu_info->gfx_level >= GFX12)
-      gpu_info->cu_info.num_physical_wave64_vgprs_per_simd = 768;
-   else if (gpu_info->gfx_level >= GFX10)
-      gpu_info->cu_info.num_physical_wave64_vgprs_per_simd = 512;
-   else
-      gpu_info->cu_info.num_physical_wave64_vgprs_per_simd = 256;
-   gpu_info->cu_info.num_simd_per_compute_unit = gpu_info->gfx_level >= GFX10 ? 2 : 4;
    gpu_info->lds_size_per_workgroup = gpu_info->gfx_level >= GFX7 ? 64 * 1024 : 32 * 1024;
    gpu_info->max_render_backends = pci_ids[gpu_info->family].num_render_backends;
 
@@ -114,6 +92,9 @@ ac_null_device_create(struct radeon_info *gpu_info, const char *family)
    gpu_info->ip[AMD_IP_GFX].num_queues = 1;
 
    gpu_info->gart_page_size = 4096;
+
+   ac_fill_cu_info(gpu_info, NULL);
+
    gpu_info->family_overridden = true;
 
    return true;

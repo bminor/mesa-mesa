@@ -20,6 +20,7 @@ extern "C" {
 #define AMD_MAX_WGP        60
 
 struct amdgpu_gpu_info;
+struct drm_amdgpu_info_device;
 
 struct amd_ip_info {
    uint8_t ver_major;
@@ -364,6 +365,7 @@ enum ac_query_gpu_info_result {
 
 enum ac_query_gpu_info_result ac_query_gpu_info(int fd, void *dev_p, struct radeon_info *info,
                                                 bool require_pci_bus_info);
+void ac_fill_cu_info(struct radeon_info *info, struct drm_amdgpu_info_device *device_info);
 
 void ac_compute_driver_uuid(char *uuid, size_t size);
 

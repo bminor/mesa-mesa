@@ -233,6 +233,74 @@ static bool handle_env_var_force_family(struct radeon_info *info)
    return true;
 }
 
+void
+ac_fill_cu_info(struct radeon_info *info, struct drm_amdgpu_info_device *device_info)
+{
+   struct ac_cu_info *cu_info = &info->cu_info;
+
+   if (info->gfx_level >= GFX10_3)
+      cu_info->max_waves_per_simd = 16;
+   else if (info->gfx_level == GFX10)
+      cu_info->max_waves_per_simd = 20;
+   else if (info->family >= CHIP_POLARIS10 && info->family <= CHIP_VEGAM)
+      cu_info->max_waves_per_simd = 8;
+   else
+      cu_info->max_waves_per_simd = 10;
+
+   if (info->gfx_level >= GFX10) {
+      cu_info->num_physical_sgprs_per_simd = 108 * cu_info->max_waves_per_simd;
+      cu_info->min_sgpr_alloc = 108;
+      cu_info->max_sgpr_alloc = 108; /* includes VCC, which can be treated as s[106-107] on GFX10+ */
+      cu_info->sgpr_alloc_granularity = 108;
+   } else if (info->family == CHIP_TONGA || info->family == CHIP_ICELAND) {
+      /* SGPRInitBug: Due to a HW bug, we always have to allocate the same amount of SGPRs. */
+      cu_info->num_physical_sgprs_per_simd = 800;
+      cu_info->min_sgpr_alloc = 96;
+      cu_info->max_sgpr_alloc = 96;
+      cu_info->sgpr_alloc_granularity = 96;
+   } else if (info->gfx_level >= GFX8) {
+      cu_info->num_physical_sgprs_per_simd = 800;
+      cu_info->min_sgpr_alloc = 16;
+      cu_info->max_sgpr_alloc = 102;
+      cu_info->sgpr_alloc_granularity = 16;
+   } else {
+      cu_info->num_physical_sgprs_per_simd = 512;
+      cu_info->min_sgpr_alloc = 8;
+      cu_info->max_sgpr_alloc = 104;
+      cu_info->sgpr_alloc_granularity = 8;
+   }
+
+   /* Some GPU info was broken before DRM 3.45.0. */
+   if (info->drm_minor >= 45 && device_info && device_info->num_shader_visible_vgprs) {
+      /* The Gfx10 VGPR count is in Wave32, so divide it by 2 for Wave64.
+       * Gfx6-9 numbers are in Wave64. CDNA also includes Accumulation VGPRs.
+       */
+      if (info->gfx_level >= GFX10 || (info->gfx_level == GFX9 && info->family >= CHIP_MI100))
+         cu_info->num_physical_wave64_vgprs_per_simd = device_info->num_shader_visible_vgprs / 2;
+      else
+         cu_info->num_physical_wave64_vgprs_per_simd = device_info->num_shader_visible_vgprs;
+   } else {
+      if (info->family == CHIP_NAVI31 || info->family == CHIP_NAVI32 ||
+          info->family == CHIP_STRIX_HALO || info->gfx_level == GFX12) {
+         cu_info->num_physical_wave64_vgprs_per_simd = 768;
+      } else if (info->gfx_level >= GFX10) {
+         cu_info->num_physical_wave64_vgprs_per_simd = 512;
+      } else {
+         cu_info->num_physical_wave64_vgprs_per_simd = 256;
+      }
+   }
+   if (info->gfx_level >= GFX10_3)
+      cu_info->wave64_vgpr_alloc_granularity = cu_info->num_physical_wave64_vgprs_per_simd / 64;
+   else if (info->gfx_level == GFX9 && info->family >= CHIP_MI200)
+      cu_info->wave64_vgpr_alloc_granularity = 8;
+   else
+      cu_info->wave64_vgpr_alloc_granularity = 4;
+   cu_info->min_wave64_vgpr_alloc = cu_info->wave64_vgpr_alloc_granularity;
+   cu_info->max_vgpr_alloc = 256;
+
+   cu_info->num_simd_per_compute_unit = info->gfx_level >= GFX10 ? 2 : 4;
+}
+
 enum ac_query_gpu_info_result
 ac_query_gpu_info(int fd, void *dev_p, struct radeon_info *info,
                   bool require_pci_bus_info)
@@ -1259,39 +1327,6 @@ ac_query_gpu_info(int fd, void *dev_p, struct radeon_info *info,
       }
    }
 
-   /* Fill ac_cu_info */
-   if (info->gfx_level >= GFX10_3)
-      info->cu_info.max_waves_per_simd = 16;
-   else if (info->gfx_level == GFX10)
-      info->cu_info.max_waves_per_simd = 20;
-   else if (info->family >= CHIP_POLARIS10 && info->family <= CHIP_VEGAM)
-      info->cu_info.max_waves_per_simd = 8;
-   else
-      info->cu_info.max_waves_per_simd = 10;
-
-   if (info->gfx_level >= GFX10) {
-      info->cu_info.num_physical_sgprs_per_simd = 108 * info->cu_info.max_waves_per_simd;
-      info->cu_info.min_sgpr_alloc = 108;
-      info->cu_info.max_sgpr_alloc = 108; /* includes VCC, which can be treated as s[106-107] on GFX10+ */
-      info->cu_info.sgpr_alloc_granularity = 108;
-   } else if (info->family == CHIP_TONGA || info->family == CHIP_ICELAND) {
-      /* SGPRInitBug: Due to a HW bug, we always have to allocate the same amount of SGPRs. */
-      info->cu_info.num_physical_sgprs_per_simd = 800;
-      info->cu_info.min_sgpr_alloc = 96;
-      info->cu_info.max_sgpr_alloc = 96;
-      info->cu_info.sgpr_alloc_granularity = 96;
-   } else if (info->gfx_level >= GFX8) {
-      info->cu_info.num_physical_sgprs_per_simd = 800;
-      info->cu_info.min_sgpr_alloc = 16;
-      info->cu_info.max_sgpr_alloc = 102;
-      info->cu_info.sgpr_alloc_granularity = 16;
-   } else {
-      info->cu_info.num_physical_sgprs_per_simd = 512;
-      info->cu_info.min_sgpr_alloc = 8;
-      info->cu_info.max_sgpr_alloc = 104;
-      info->cu_info.sgpr_alloc_granularity = 8;
-   }
-
    info->has_3d_cube_border_color_mipmap = info->has_graphics || info->family == CHIP_MI100;
    info->has_image_opcodes = debug_get_bool_option("AMD_IMAGE_OPCODES",
                                                    info->has_graphics || info->family < CHIP_GFX940);
@@ -1308,35 +1343,7 @@ ac_query_gpu_info(int fd, void *dev_p, struct radeon_info *info,
    /* On GFX10.3, the polarity of AUTO_FLUSH_MODE is inverted. */
    info->has_sqtt_auto_flush_mode_bug = info->gfx_level == GFX10_3;
 
-   /* Some GPU info was broken before DRM 3.45.0. */
-   if (info->drm_minor >= 45 && device_info.num_shader_visible_vgprs) {
-      /* The Gfx10 VGPR count is in Wave32, so divide it by 2 for Wave64.
-       * Gfx6-9 numbers are in Wave64. CDNA also includes Accumulation VGPRs.
-       */
-      if (info->gfx_level >= GFX10 || (info->gfx_level == GFX9 && info->family >= CHIP_MI100))
-         info->cu_info.num_physical_wave64_vgprs_per_simd = device_info.num_shader_visible_vgprs / 2;
-      else
-         info->cu_info.num_physical_wave64_vgprs_per_simd = device_info.num_shader_visible_vgprs;
-   } else {
-      if (info->family == CHIP_NAVI31 || info->family == CHIP_NAVI32 ||
-          info->family == CHIP_STRIX_HALO || info->gfx_level == GFX12) {
-         info->cu_info.num_physical_wave64_vgprs_per_simd = 768;
-      } else if (info->gfx_level >= GFX10) {
-         info->cu_info.num_physical_wave64_vgprs_per_simd = 512;
-      } else {
-         info->cu_info.num_physical_wave64_vgprs_per_simd = 256;
-      }
-   }
-   if (info->gfx_level >= GFX10_3)
-      info->cu_info.wave64_vgpr_alloc_granularity = info->cu_info.num_physical_wave64_vgprs_per_simd / 64;
-   else if (info->gfx_level == GFX9 && info->family >= CHIP_MI200)
-      info->cu_info.wave64_vgpr_alloc_granularity = 8;
-   else
-      info->cu_info.wave64_vgpr_alloc_granularity = 4;
-   info->cu_info.min_wave64_vgpr_alloc = info->cu_info.wave64_vgpr_alloc_granularity;
-   info->cu_info.max_vgpr_alloc = 256;
-
-   info->cu_info.num_simd_per_compute_unit = info->gfx_level >= GFX10 ? 2 : 4;
+   ac_fill_cu_info(info, &device_info);
 
    /* BIG_PAGE is supported since gfx10.3 and requires VRAM. VRAM is only guaranteed
     * with AMDGPU_GEM_CREATE_DISCARDABLE. DISCARDABLE was added in DRM 3.47.0.
