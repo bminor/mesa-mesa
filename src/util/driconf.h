@@ -308,6 +308,9 @@
    DRI_CONF_OPT_S_NODEF(glx_extension_override, \
                   "Allow enabling/disabling a list of GLX extensions")
 
+#define DRI_CONF_GLX_CLEAR_CONTEXT_RESET_ISOLATION_BIT(def) \
+   DRI_CONF_OPT_B(glx_clear_context_reset_isolation_bit, def, "Clear context reset isolation bit before creating context")
+
 #define DRI_CONF_INDIRECT_GL_EXTENSION_OVERRIDE() \
    DRI_CONF_OPT_S_NODEF(indirect_gl_extension_override, \
                   "Allow enabling/disabling a list of indirect-GL extensions")

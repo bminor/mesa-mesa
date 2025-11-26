@@ -22,6 +22,7 @@
  */
 
 #include <limits.h>
+#include "dri_util.h"
 #include "glxclient.h"
 #include "glx_error.h"
 #include <xcb/glx.h>
@@ -44,7 +45,7 @@
 GLXContext
 glXCreateContextAttribsARB(Display *dpy, GLXFBConfig config,
                            GLXContext share_context, Bool direct,
-                           const int *attrib_list)
+                           const int *orig_attrib_list)
 {
    xcb_connection_t *const c = XGetXCBConnection(dpy);
    struct glx_config *const cfg = (struct glx_config *) config;
@@ -57,6 +58,7 @@ glXCreateContextAttribsARB(Display *dpy, GLXFBConfig config,
    unsigned error = BadImplementation;
    uint32_t xid, share_xid;
    int screen = -1;
+   int *attrib_list = NULL;
 
    if (dpy == NULL)
       return NULL;
@@ -64,8 +66,8 @@ glXCreateContextAttribsARB(Display *dpy, GLXFBConfig config,
    /* Count the number of attributes specified by the application.  All
     * attributes appear in pairs, except the terminating None.
     */
-   if (attrib_list != NULL) {
-      for (/* empty */; attrib_list[num_attribs * 2] != 0; num_attribs++)
+   if (orig_attrib_list != NULL) {
+      for (/* empty */; orig_attrib_list[num_attribs * 2] != 0; num_attribs++)
          /* empty */ ;
    }
 
@@ -73,8 +75,8 @@ glXCreateContextAttribsARB(Display *dpy, GLXFBConfig config,
       screen = cfg->screen;
    } else {
       for (unsigned int i = 0; i < num_attribs; i++) {
-         if (attrib_list[i * 2] == GLX_SCREEN)
-            screen = attrib_list[i * 2 + 1];
+         if (orig_attrib_list[i * 2] == GLX_SCREEN)
+            screen = orig_attrib_list[i * 2 + 1];
       }
       if (screen == -1) {
          __glXSendError(dpy, BadValue, 0, X_GLXCreateContextAttribsARB, True);
@@ -91,6 +93,27 @@ glXCreateContextAttribsARB(Display *dpy, GLXFBConfig config,
       return NULL;
 
    assert(screen == psc->scr);
+
+   if (orig_attrib_list != NULL) {
+      attrib_list = malloc(sizeof(int) * num_attribs * 2);
+
+      uint8_t clear_ctx_reset_isolation_bit = false;
+      dri2GalliumConfigQueryb(psc->frontend_screen,
+                              "glx_clear_context_reset_isolation_bit",
+                              &clear_ctx_reset_isolation_bit);
+
+      for (unsigned i = 0; i < num_attribs; i++) {
+         attrib_list[i * 2] = orig_attrib_list[i * 2];
+         if (clear_ctx_reset_isolation_bit &&
+             attrib_list[i * 2] == GLX_CONTEXT_FLAGS_ARB) {
+            attrib_list[i * 2 + 1] =
+               orig_attrib_list[i * 2 + 1] & ~__DRI_CTX_FLAG_RESET_ISOLATION;
+         } else {
+            attrib_list[i * 2 + 1] =
+               orig_attrib_list[i * 2 + 1];
+         }
+      }
+   }
 
    /* Some application may request an indirect context but we may want to force a direct
     * one because Xorg only allows indirect contexts if they were enabled.
@@ -130,6 +153,8 @@ glXCreateContextAttribsARB(Display *dpy, GLXFBConfig config,
          __glXSendError(dpy, error, -1, 0, False);
       else
          __glXSendError(dpy, error, -1, 0, True);
+
+      free(attrib_list);
       return NULL;
    }
 
@@ -167,5 +192,6 @@ glXCreateContextAttribsARB(Display *dpy, GLXFBConfig config,
       gc->share_xid = share_xid;
    }
 
+   free(attrib_list);
    return (GLXContext) gc;
 }
