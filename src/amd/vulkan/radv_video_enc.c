@@ -2026,7 +2026,7 @@ radv_enc_params(struct radv_cmd_buffer *cmd_buffer, const VkVideoEncodeInfoKHR *
       switch (h264_pic->primary_pic_type) {
       case STD_VIDEO_H264_PICTURE_TYPE_P:
       case STD_VIDEO_H264_PICTURE_TYPE_B:
-         slot_idx = enc_info->pReferenceSlots[0].slotIndex;
+         slot_idx = h264_pic->pRefLists->RefPicList0[0];
          break;
       default:
          break;
@@ -2037,7 +2037,7 @@ radv_enc_params(struct radv_cmd_buffer *cmd_buffer, const VkVideoEncodeInfoKHR *
       switch (h265_pic->pic_type) {
       case STD_VIDEO_H265_PICTURE_TYPE_P:
       case STD_VIDEO_H265_PICTURE_TYPE_B:
-         slot_idx = enc_info->pReferenceSlots[0].slotIndex;
+         slot_idx = h265_pic->pRefLists->RefPicList0[0];
          break;
       default:
          break;
@@ -2095,6 +2095,12 @@ radv_enc_params_h264(struct radv_cmd_buffer *cmd_buffer, const VkVideoEncodeInfo
 
    assert(h264_picture_info);
 
+   unsigned slot_to_ref_idx[RADV_VIDEO_H264_MAX_DPB_SLOTS];
+   memset(slot_to_ref_idx, 0xFF, sizeof(slot_to_ref_idx));
+   for (unsigned idx = 0; idx < enc_info->referenceSlotCount; idx++) {
+      slot_to_ref_idx[enc_info->pReferenceSlots[idx].slotIndex] = idx;
+   }
+
    const StdVideoEncodeH264PictureInfo *h264_pic = h264_picture_info->pStdPictureInfo;
    unsigned slot_idx_0 = 0xffffffff;
    unsigned slot_idx_1 = 0xffffffff;
@@ -2103,14 +2109,17 @@ radv_enc_params_h264(struct radv_cmd_buffer *cmd_buffer, const VkVideoEncodeInfo
 
    switch (h264_pic->primary_pic_type) {
    case STD_VIDEO_H264_PICTURE_TYPE_P:
-      slot_idx_0 = enc_info->pReferenceSlots[0].slotIndex;
-      slot_info_0 = vk_find_struct_const(enc_info->pReferenceSlots[0].pNext, VIDEO_ENCODE_H264_DPB_SLOT_INFO_KHR);
+      slot_idx_0 = h264_pic->pRefLists->RefPicList0[0];
+      slot_info_0 = vk_find_struct_const(enc_info->pReferenceSlots[slot_to_ref_idx[slot_idx_0]].pNext,
+                                         VIDEO_ENCODE_H264_DPB_SLOT_INFO_KHR);
       break;
    case STD_VIDEO_H264_PICTURE_TYPE_B:
-      slot_idx_0 = enc_info->pReferenceSlots[0].slotIndex;
-      slot_idx_1 = enc_info->pReferenceSlots[1].slotIndex;
-      slot_info_0 = vk_find_struct_const(enc_info->pReferenceSlots[0].pNext, VIDEO_ENCODE_H264_DPB_SLOT_INFO_KHR);
-      slot_info_1 = vk_find_struct_const(enc_info->pReferenceSlots[1].pNext, VIDEO_ENCODE_H264_DPB_SLOT_INFO_KHR);
+      slot_idx_0 = h264_pic->pRefLists->RefPicList0[0];
+      slot_idx_1 = h264_pic->pRefLists->RefPicList1[0];
+      slot_info_0 = vk_find_struct_const(enc_info->pReferenceSlots[slot_to_ref_idx[slot_idx_0]].pNext,
+                                         VIDEO_ENCODE_H264_DPB_SLOT_INFO_KHR);
+      slot_info_1 = vk_find_struct_const(enc_info->pReferenceSlots[slot_to_ref_idx[slot_idx_1]].pNext,
+                                         VIDEO_ENCODE_H264_DPB_SLOT_INFO_KHR);
       break;
    default:
       break;
@@ -2198,7 +2207,7 @@ radv_enc_params_hevc(struct radv_cmd_buffer *cmd_buffer, const VkVideoEncodeInfo
 
    switch (h265_pic->pic_type) {
    case STD_VIDEO_H265_PICTURE_TYPE_P:
-      slot_idx_0 = enc_info->pReferenceSlots[0].slotIndex;
+      slot_idx_0 = h265_pic->pRefLists->RefPicList0[0];
       break;
    default:
       break;

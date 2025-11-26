@@ -35,6 +35,8 @@ struct radv_cmd_stream;
 
 #define RADV_ENC_FEEDBACK_STATUS_IDX 10
 
+#define RADV_VIDEO_H264_MAX_DPB_SLOTS 17
+
 struct radv_vid_mem {
    struct radv_device_memory *mem;
    VkDeviceSize offset;
