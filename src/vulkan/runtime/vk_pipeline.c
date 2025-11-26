@@ -2352,6 +2352,8 @@ struct vk_rt_pipeline {
    VkDeviceSize stack_size;
    VkDeviceSize scratch_size;
    uint32_t ray_queries;
+
+   uint8_t dynamic_descriptor_offsets[MESA_VK_MAX_DESCRIPTOR_SETS];
 };
 
 static struct vk_rt_stage
@@ -2409,7 +2411,8 @@ vk_rt_pipeline_cmd_bind(struct vk_command_buffer *cmd_buffer,
 
       ops->cmd_set_rt_state(cmd_buffer,
                             rt_pipeline->scratch_size,
-                            rt_pipeline->ray_queries);
+                            rt_pipeline->ray_queries,
+                            rt_pipeline->dynamic_descriptor_offsets);
 
       if (rt_pipeline->stack_size > 0)
          ops->cmd_set_stack_size(cmd_buffer, rt_pipeline->stack_size);
@@ -2898,6 +2901,17 @@ vk_create_rt_pipeline(struct vk_device *device,
    if (pipeline == NULL) {
       result = vk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);
       goto fail_stages;
+   }
+
+   if (pipeline_layout != NULL) {
+      uint32_t dynamic_desc_offset = 0;
+      for (uint32_t i = 0; i < pipeline_layout->set_count; i++) {
+         if (pipeline_layout->set_layouts[i] != NULL) {
+            pipeline->dynamic_descriptor_offsets[i] = dynamic_desc_offset;
+            dynamic_desc_offset +=
+               pipeline_layout->set_layouts[i]->dynamic_descriptor_count;
+         }
+      }
    }
 
    pipeline->stages = pipeline_stages;

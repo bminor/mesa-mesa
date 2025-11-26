@@ -64,7 +64,7 @@
         "description": "vulkan/runtime: track dynamic descriptor offsets for RT pipelines",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "69a04151db48e4d06072dab38e33129b6681230a",
         "notes": null

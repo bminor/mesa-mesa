@@ -1247,7 +1247,8 @@ void anv_CmdPushDescriptorSetWithTemplate2KHR(
 void
 anv_cmd_buffer_set_rt_state(struct vk_command_buffer *vk_cmd_buffer,
                             VkDeviceSize scratch_size,
-                            uint32_t ray_queries)
+                            uint32_t ray_queries,
+                            const uint8_t *dynamic_descriptor_offsets)
 {
    struct anv_cmd_buffer *cmd_buffer =
       container_of(vk_cmd_buffer, struct anv_cmd_buffer, vk);
