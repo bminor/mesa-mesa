@@ -4487,6 +4487,7 @@ instr_can_be_predicated(nir_instr *instr)
       case nir_intrinsic_ballot:
       case nir_intrinsic_elect:
       case nir_intrinsic_elect_any_ir3:
+      case nir_intrinsic_read_getlast_ir3:
       case nir_intrinsic_read_invocation_cond_ir3:
       case nir_intrinsic_demote:
       case nir_intrinsic_demote_if:
