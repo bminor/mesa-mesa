@@ -6980,6 +6980,77 @@ iris_emit_binding_tables(struct iris_context *ice, struct iris_batch *batch,
 }
 
 static void
+iris_emit_push_constants(struct iris_context *ice, struct iris_batch *batch,
+                         uint64_t dirty, uint64_t stage_dirty)
+{
+   /* Wa_1604061319
+    *
+    *    3DSTATE_CONSTANT_* needs to be programmed before BTP_*
+    *
+    * Testing shows that all the 3DSTATE_CONSTANT_XS need to be emitted if
+    * any stage has a dirty binding table.
+    */
+   const bool emit_const_wa = INTEL_NEEDS_WA_1604061319 &&
+      ((dirty & IRIS_DIRTY_RENDER_BUFFER) ||
+       (stage_dirty & IRIS_ALL_STAGE_DIRTY_BINDINGS_FOR_RENDER));
+
+#if GFX_VER >= 12
+   uint32_t nobuffer_stages = 0;
+#endif
+
+   for (int stage = 0; stage <= MESA_SHADER_FRAGMENT; stage++) {
+      if (!(stage_dirty & (IRIS_STAGE_DIRTY_CONSTANTS_VS << stage)) &&
+          !emit_const_wa)
+         continue;
+
+      struct iris_shader_state *shs = &ice->state.shaders[stage];
+      struct iris_compiled_shader *shader = ice->shaders.prog[stage];
+
+      if (!shader)
+         continue;
+
+      if (shs->sysvals_need_upload)
+         upload_sysvals(ice, stage, NULL);
+
+      struct push_bos push_bos = {};
+      setup_constant_buffers(ice, batch, stage, &push_bos);
+
+#if GFX_VER >= 12
+      /* If this stage doesn't have any push constants, emit it later in a
+       * single CONSTANT_ALL packet with all the other stages.
+       */
+      if (push_bos.buffer_count == 0) {
+         nobuffer_stages |= 1 << stage;
+         continue;
+      }
+
+      /* The Constant Buffer Read Length field from 3DSTATE_CONSTANT_ALL
+       * contains only 5 bits, so we can only use it for buffers smaller than
+       * 32.
+       *
+       * According to Wa_16011448509, Gfx12.0 misinterprets some address bits
+       * in 3DSTATE_CONSTANT_ALL.  It should still be safe to use the command
+       * for disabling stages, where all address bits are zero.  However, we
+       * can't safely use it for general buffers with arbitrary addresses.
+       * Just fall back to the individual 3DSTATE_CONSTANT_XS commands in that
+       * case.
+       */
+      if (push_bos.max_length < 32 && GFX_VERx10 > 120) {
+         emit_push_constant_packet_all(ice, batch, 1 << stage, &push_bos);
+         continue;
+      }
+#endif
+      emit_push_constant_packets(ice, batch, stage, &push_bos);
+   }
+
+#if GFX_VER >= 12
+   if (nobuffer_stages)
+      /* Wa_16011448509: all address bits are zero */
+      emit_push_constant_packet_all(ice, batch, nobuffer_stages, NULL);
+#endif
+}
+
+static void
 iris_upload_dirty_render_state(struct iris_context *ice,
                                struct iris_batch *batch,
                                const struct pipe_draw_info *draw,
@@ -7321,72 +7392,7 @@ iris_upload_dirty_render_state(struct iris_context *ice,
    }
 #endif
 
-   /* Wa_1604061319
-    *
-    *    3DSTATE_CONSTANT_* needs to be programmed before BTP_*
-    *
-    * Testing shows that all the 3DSTATE_CONSTANT_XS need to be emitted if
-    * any stage has a dirty binding table.
-    */
-   const bool emit_const_wa = INTEL_NEEDS_WA_1604061319 &&
-      ((dirty & IRIS_DIRTY_RENDER_BUFFER) ||
-       (stage_dirty & IRIS_ALL_STAGE_DIRTY_BINDINGS_FOR_RENDER));
-
-#if GFX_VER >= 12
-   uint32_t nobuffer_stages = 0;
-#endif
-
-   for (int stage = 0; stage <= MESA_SHADER_FRAGMENT; stage++) {
-      if (!(stage_dirty & (IRIS_STAGE_DIRTY_CONSTANTS_VS << stage)) &&
-          !emit_const_wa)
-         continue;
-
-      struct iris_shader_state *shs = &ice->state.shaders[stage];
-      struct iris_compiled_shader *shader = ice->shaders.prog[stage];
-
-      if (!shader)
-         continue;
-
-      if (shs->sysvals_need_upload)
-         upload_sysvals(ice, stage, NULL);
-
-      struct push_bos push_bos = {};
-      setup_constant_buffers(ice, batch, stage, &push_bos);
-
-#if GFX_VER >= 12
-      /* If this stage doesn't have any push constants, emit it later in a
-       * single CONSTANT_ALL packet with all the other stages.
-       */
-      if (push_bos.buffer_count == 0) {
-         nobuffer_stages |= 1 << stage;
-         continue;
-      }
-
-      /* The Constant Buffer Read Length field from 3DSTATE_CONSTANT_ALL
-       * contains only 5 bits, so we can only use it for buffers smaller than
-       * 32.
-       *
-       * According to Wa_16011448509, Gfx12.0 misinterprets some address bits
-       * in 3DSTATE_CONSTANT_ALL.  It should still be safe to use the command
-       * for disabling stages, where all address bits are zero.  However, we
-       * can't safely use it for general buffers with arbitrary addresses.
-       * Just fall back to the individual 3DSTATE_CONSTANT_XS commands in that
-       * case.
-       */
-      if (push_bos.max_length < 32 && GFX_VERx10 > 120) {
-         emit_push_constant_packet_all(ice, batch, 1 << stage, &push_bos);
-         continue;
-      }
-#endif
-      emit_push_constant_packets(ice, batch, stage, &push_bos);
-   }
-
-#if GFX_VER >= 12
-   if (nobuffer_stages)
-      /* Wa_16011448509: all address bits are zero */
-      emit_push_constant_packet_all(ice, batch, nobuffer_stages, NULL);
-#endif
-
+   iris_emit_push_constants(ice, batch, dirty, stage_dirty);
    iris_emit_binding_tables(ice, batch, stage_dirty);
 
    if (GFX_VER >= 11 && (dirty & IRIS_DIRTY_RENDER_BUFFER)) {
