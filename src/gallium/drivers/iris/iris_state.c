@@ -5859,7 +5859,7 @@ iris_populate_binding_table(struct iris_context *ice,
 
 #define foreach_surface_used(index, group) \
    bt_assert(group); \
-   for (int index = 0; index < bt->sizes[group]; index++) \
+   for (int index = 0; index < bt->surf_count[group]; index++) \
       if (iris_group_index_to_bti(bt, group, index) != \
           IRIS_SURFACE_NOT_USED)
 

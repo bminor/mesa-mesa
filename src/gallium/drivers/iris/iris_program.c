@@ -1246,9 +1246,9 @@ iris_print_binding_table(FILE *fp, const char *name,
    uint32_t compacted = 0;
 
    for (int i = 0; i < IRIS_SURFACE_GROUP_COUNT; i++) {
-      uint32_t size = bt->sizes[i];
-      total += size;
-      if (size)
+      uint32_t surf_count = bt->surf_count[i];
+      total += surf_count;
+      if (surf_count)
          compacted += util_bitcount64(bt->used_mask[i]);
    }
 
@@ -1290,7 +1290,7 @@ uint32_t
 iris_group_index_to_bti(const struct iris_binding_table *bt,
                         enum iris_surface_group group, uint32_t index)
 {
-   assert(index < bt->sizes[group]);
+   assert(index < bt->surf_count[group]);
    uint64_t mask = bt->used_mask[group];
    uint64_t bit = 1ull << index;
    if (bit & mask) {
@@ -1328,7 +1328,7 @@ rewrite_src_with_bti(nir_builder *b, struct iris_binding_table *bt,
                      nir_instr *instr, nir_src *src,
                      enum iris_surface_group group)
 {
-   assert(bt->sizes[group] > 0);
+   assert(bt->surf_count[group] > 0);
 
    b->cursor = nir_before_instr(instr);
    nir_def *bti;
@@ -1340,7 +1340,7 @@ rewrite_src_with_bti(nir_builder *b, struct iris_binding_table *bt,
       /* Indirect usage makes all the surfaces of the group to be available,
        * so we can just add the base.
        */
-      assert(bt->used_mask[group] == BITFIELD64_MASK(bt->sizes[group]));
+      assert(bt->used_mask[group] == BITFIELD64_MASK(bt->surf_count[group]));
       bti = nir_iadd_imm(b, src->ssa, bt->offsets[group]);
    }
    nir_src_rewrite(src, bti);
@@ -1350,15 +1350,15 @@ static void
 mark_used_with_src(struct iris_binding_table *bt, nir_src *src,
                    enum iris_surface_group group)
 {
-   assert(bt->sizes[group] > 0);
+   assert(bt->surf_count[group] > 0);
 
    if (nir_src_is_const(*src)) {
       uint64_t index = nir_src_as_uint(*src);
-      assert(index < bt->sizes[group]);
+      assert(index < bt->surf_count[group]);
       bt->used_mask[group] |= 1ull << index;
    } else {
       /* There's an indirect usage, we need all the surfaces. */
-      bt->used_mask[group] = BITFIELD64_MASK(bt->sizes[group]);
+      bt->used_mask[group] = BITFIELD64_MASK(bt->surf_count[group]);
    }
 }
 
@@ -1391,7 +1391,7 @@ iris_setup_binding_table(const struct intel_device_info *devinfo,
     * upfront how many will be used, so mark them.
     */
    if (info->stage == MESA_SHADER_FRAGMENT) {
-      bt->sizes[IRIS_SURFACE_GROUP_RENDER_TARGET] = num_render_targets;
+      bt->surf_count[IRIS_SURFACE_GROUP_RENDER_TARGET] = num_render_targets;
       /* All render targets used. */
       bt->used_mask[IRIS_SURFACE_GROUP_RENDER_TARGET] =
          BITFIELD64_MASK(num_render_targets);
@@ -1400,28 +1400,28 @@ iris_setup_binding_table(const struct intel_device_info *devinfo,
        * framebuffer fetch on Gfx8
        */
       if (devinfo->ver == 8 && info->outputs_read) {
-         bt->sizes[IRIS_SURFACE_GROUP_RENDER_TARGET_READ] = num_render_targets;
+         bt->surf_count[IRIS_SURFACE_GROUP_RENDER_TARGET_READ] = num_render_targets;
          bt->used_mask[IRIS_SURFACE_GROUP_RENDER_TARGET_READ] =
             BITFIELD64_MASK(num_render_targets);
       }
 
       bt->use_null_rt = use_null_rt;
    } else if (info->stage == MESA_SHADER_COMPUTE) {
-      bt->sizes[IRIS_SURFACE_GROUP_CS_WORK_GROUPS] = 1;
+      bt->surf_count[IRIS_SURFACE_GROUP_CS_WORK_GROUPS] = 1;
    }
 
    assert(ARRAY_SIZE(info->textures_used) >= 4);
    int max_tex = BITSET_LAST_BIT(info->textures_used);
    assert(max_tex <= 128);
-   bt->sizes[IRIS_SURFACE_GROUP_TEXTURE_LOW64] = MIN2(64, max_tex);
-   bt->sizes[IRIS_SURFACE_GROUP_TEXTURE_HIGH64] = MAX2(0, max_tex - 64);
+   bt->surf_count[IRIS_SURFACE_GROUP_TEXTURE_LOW64] = MIN2(64, max_tex);
+   bt->surf_count[IRIS_SURFACE_GROUP_TEXTURE_HIGH64] = MAX2(0, max_tex - 64);
    bt->used_mask[IRIS_SURFACE_GROUP_TEXTURE_LOW64] =
       info->textures_used[0] | ((uint64_t)info->textures_used[1]) << 32;
    bt->used_mask[IRIS_SURFACE_GROUP_TEXTURE_HIGH64] =
       info->textures_used[2] | ((uint64_t)info->textures_used[3]) << 32;
    bt->samplers_used_mask = info->samplers_used[0];
 
-   bt->sizes[IRIS_SURFACE_GROUP_IMAGE] = BITSET_LAST_BIT(info->images_used);
+   bt->surf_count[IRIS_SURFACE_GROUP_IMAGE] = BITSET_LAST_BIT(info->images_used);
 
    /* Allocate an extra slot in the UBO section for NIR constants.
     * Binding table compaction will remove it if unnecessary.
@@ -1430,12 +1430,12 @@ iris_setup_binding_table(const struct intel_device_info *devinfo,
     * they are uploaded separately from shs->constbuf[], but from a shader
     * point of view, they're another UBO (at the end of the section).
     */
-   bt->sizes[IRIS_SURFACE_GROUP_UBO] = num_cbufs + 1;
+   bt->surf_count[IRIS_SURFACE_GROUP_UBO] = num_cbufs + 1;
 
-   bt->sizes[IRIS_SURFACE_GROUP_SSBO] = info->num_ssbos;
+   bt->surf_count[IRIS_SURFACE_GROUP_SSBO] = info->num_ssbos;
 
    for (int i = 0; i < IRIS_SURFACE_GROUP_COUNT; i++)
-      assert(bt->sizes[i] <= SURFACE_GROUP_MAX_ELEMENTS);
+      assert(bt->surf_count[i] <= SURFACE_GROUP_MAX_ELEMENTS);
 
    /* Mark surfaces used for the cases we don't have the information available
     * upfront.
@@ -1493,7 +1493,7 @@ iris_setup_binding_table(const struct intel_device_info *devinfo,
    /* When disable we just mark everything as used. */
    if (unlikely(skip_compacting_binding_tables())) {
       for (int i = 0; i < IRIS_SURFACE_GROUP_COUNT; i++)
-         bt->used_mask[i] = BITFIELD64_MASK(bt->sizes[i]);
+         bt->used_mask[i] = BITFIELD64_MASK(bt->surf_count[i]);
    }
 
    /* Calculate the offsets and the binding table size based on the used

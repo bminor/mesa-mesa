@@ -626,7 +626,7 @@ struct iris_binding_table {
    uint32_t size_bytes;
 
    /** Number of surfaces in each group, before compacting. */
-   uint32_t sizes[IRIS_SURFACE_GROUP_COUNT];
+   uint32_t surf_count[IRIS_SURFACE_GROUP_COUNT];
 
    /** Initial offset of each group. */
    uint32_t offsets[IRIS_SURFACE_GROUP_COUNT];
