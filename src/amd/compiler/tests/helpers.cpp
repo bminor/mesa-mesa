@@ -62,13 +62,36 @@ static std::mutex create_device_mutex;
 FUNCTION_LIST
 #undef ITEM
 
+enum radeon_family
+get_family(enum amd_gfx_level gfx_level, enum radeon_family family)
+{
+   if (family == CHIP_UNKNOWN) {
+      switch (gfx_level) {
+      case GFX6: return CHIP_TAHITI;
+      case GFX7: return CHIP_BONAIRE;
+      case GFX8: return CHIP_POLARIS10;
+      case GFX9: return CHIP_VEGA10;
+      case GFX10: return CHIP_NAVI10;
+      case GFX10_3: return CHIP_NAVI21;
+      case GFX11: return CHIP_NAVI31;
+      case GFX11_5: return CHIP_STRIX_HALO;
+      case GFX12: return CHIP_GFX1201;
+      default: return CHIP_UNKNOWN;
+      }
+   }
+
+   return family;
+}
+
 void
 create_program(enum amd_gfx_level gfx_level, Stage stage, unsigned wave_size,
                enum radeon_family family)
 {
+   family = get_family(gfx_level, family);
+   assert(family != CHIP_UNKNOWN);
+
    memset(&config, 0, sizeof(config));
    info.wave_size = wave_size;
-
    program.reset(new Program);
    aco::init_program(program.get(), stage, &info, gfx_level, family, false, &config);
    program->workgroup_size = UINT_MAX;
@@ -135,18 +158,8 @@ setup_nir_cs(enum amd_gfx_level gfx_level, mesa_shader_stage stage, enum radeon_
    if (!set_variant(gfx_level, subvariant))
       return false;
 
-   if (family == CHIP_UNKNOWN) {
-      switch (gfx_level) {
-      case GFX6: family = CHIP_TAHITI; break;
-      case GFX7: family = CHIP_BONAIRE; break;
-      case GFX8: family = CHIP_POLARIS10; break;
-      case GFX9: family = CHIP_VEGA10; break;
-      case GFX10: family = CHIP_NAVI10; break;
-      case GFX10_3: family = CHIP_NAVI21; break;
-      case GFX11: family = CHIP_NAVI31; break;
-      default: family = CHIP_UNKNOWN; break;
-      }
-   }
+   family = get_family(gfx_level, family);
+   assert(family != CHIP_UNKNOWN);
 
    memset(&rad_info, 0, sizeof(rad_info));
    rad_info.gfx_level = gfx_level;

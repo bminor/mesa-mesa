@@ -64,27 +64,13 @@ init_program(Program* program, Stage stage, const struct aco_shader_info* info,
              enum amd_gfx_level gfx_level, enum radeon_family family, bool wgp_mode,
              ac_shader_config* config)
 {
+   assert(family != CHIP_UNKNOWN);
    instruction_buffer = &program->m;
    program->stage = stage;
    program->config = config;
    program->info = *info;
    program->gfx_level = gfx_level;
-   if (family == CHIP_UNKNOWN) {
-      switch (gfx_level) {
-      case GFX6: program->family = CHIP_TAHITI; break;
-      case GFX7: program->family = CHIP_BONAIRE; break;
-      case GFX8: program->family = CHIP_POLARIS10; break;
-      case GFX9: program->family = CHIP_VEGA10; break;
-      case GFX10: program->family = CHIP_NAVI10; break;
-      case GFX10_3: program->family = CHIP_NAVI21; break;
-      case GFX11: program->family = CHIP_NAVI31; break;
-      case GFX11_5: program->family = CHIP_STRIX1; break;
-      case GFX12: program->family = CHIP_GFX1200; break;
-      default: program->family = CHIP_UNKNOWN; break;
-      }
-   } else {
-      program->family = family;
-   }
+   program->family = family;
    program->wave_size = info->wave_size;
    program->lane_mask = program->wave_size == 32 ? s1 : s2;
 
