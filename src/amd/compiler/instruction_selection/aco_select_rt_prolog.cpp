@@ -16,8 +16,7 @@ select_rt_prolog(Program* program, ac_shader_config* config,
                  const struct aco_compiler_options* options, const struct aco_shader_info* info,
                  const struct ac_shader_args* in_args, const struct ac_shader_args* out_args)
 {
-   init_program(program, compute_cs, info, options->gfx_level, options->family, options->wgp_mode,
-                config);
+   init_program(program, compute_cs, info, options, config);
    Block* block = program->create_and_insert_block();
    block->kind = block_kind_top_level;
    program->workgroup_size = info->workgroup_size;

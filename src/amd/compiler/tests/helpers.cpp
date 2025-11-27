@@ -13,6 +13,7 @@
 #include "drm-shim/amdgpu_noop_drm_shim.h"
 #include <llvm-c/Target.h>
 
+#include "ac_gpu_info.h"
 #include <mutex>
 #include <stdio.h>
 
@@ -93,7 +94,13 @@ create_program(enum amd_gfx_level gfx_level, Stage stage, unsigned wave_size,
    memset(&config, 0, sizeof(config));
    info.wave_size = wave_size;
    program.reset(new Program);
-   aco::init_program(program.get(), stage, &info, gfx_level, family, false, &config);
+   rad_info.gfx_level = gfx_level;
+   rad_info.family = family;
+   struct aco_compiler_options options = {
+      .family = family,
+      .gfx_level = gfx_level,
+   };
+   aco::init_program(program.get(), stage, &info, &options, &config);
    program->workgroup_size = UINT_MAX;
    calc_min_waves(program.get());
 

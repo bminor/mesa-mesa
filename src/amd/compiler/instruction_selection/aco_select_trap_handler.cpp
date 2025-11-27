@@ -297,8 +297,7 @@ select_trap_handler_shader(Program* program, ac_shader_config* config,
 
    assert(options->gfx_level >= GFX8 && options->gfx_level <= GFX12);
 
-   init_program(program, compute_cs, info, options->gfx_level, options->family, options->wgp_mode,
-                config);
+   init_program(program, compute_cs, info, options, config);
 
    isel_context ctx = {};
    ctx.program = program;

@@ -2387,8 +2387,7 @@ struct ra_test_policy {
 void init();
 
 void init_program(Program* program, Stage stage, const struct aco_shader_info* info,
-                  enum amd_gfx_level gfx_level, enum radeon_family family, bool wgp_mode,
-                  ac_shader_config* config);
+                  const aco_compiler_options* options, ac_shader_config* config);
 
 void select_program(Program* program, unsigned shader_count, struct nir_shader* const* shaders,
                     ac_shader_config* config, const struct aco_compiler_options* options,

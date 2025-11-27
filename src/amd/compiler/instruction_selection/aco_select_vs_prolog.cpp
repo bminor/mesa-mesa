@@ -366,8 +366,7 @@ select_vs_prolog(Program* program, const struct aco_vs_prolog_info* pinfo, ac_sh
    /* This should be enough for any shader/stage. */
    unsigned max_user_sgprs = options->gfx_level >= GFX9 ? 32 : 16;
 
-   init_program(program, compute_cs, info, options->gfx_level, options->family, options->wgp_mode,
-                config);
+   init_program(program, compute_cs, info, options, config);
    program->dev.vgpr_limit = 256;
 
    Block* block = program->create_and_insert_block();

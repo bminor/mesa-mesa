@@ -7,6 +7,7 @@
 #include "aco_ir.h"
 
 #include "aco_builder.h"
+#include "aco_shader_info.h"
 
 #include "util/u_debug.h"
 
@@ -61,42 +62,41 @@ init()
 
 void
 init_program(Program* program, Stage stage, const struct aco_shader_info* info,
-             enum amd_gfx_level gfx_level, enum radeon_family family, bool wgp_mode,
-             ac_shader_config* config)
+             const aco_compiler_options* options, ac_shader_config* config)
 {
-   assert(family != CHIP_UNKNOWN);
+   assert(options->family != CHIP_UNKNOWN);
    instruction_buffer = &program->m;
    program->stage = stage;
    program->config = config;
    program->info = *info;
-   program->gfx_level = gfx_level;
-   program->family = family;
+   program->gfx_level = options->gfx_level;
+   program->family = options->family;
    program->wave_size = info->wave_size;
    program->lane_mask = program->wave_size == 32 ? s1 : s2;
 
    /* GFX6: There is 64KB LDS per CU, but a single workgroup can only use 32KB. */
-   program->dev.lds_limit = gfx_level >= GFX7 ? 65536 : 32768;
+   program->dev.lds_limit = program->gfx_level >= GFX7 ? 65536 : 32768;
 
    /* apparently gfx702 also has 16-bank LDS but I can't find a family for that */
-   program->dev.has_16bank_lds = family == CHIP_KABINI || family == CHIP_STONEY;
+   program->dev.has_16bank_lds = program->family == CHIP_KABINI || program->family == CHIP_STONEY;
 
    program->dev.vgpr_limit = 256;
    program->dev.physical_vgprs = 256;
    program->dev.vgpr_alloc_granule = 4;
 
-   if (gfx_level >= GFX10) {
+   if (program->gfx_level >= GFX10) {
       program->dev.physical_sgprs = 128 * 20; /* enough for max waves */
       program->dev.sgpr_alloc_granule = 128;
       program->dev.sgpr_limit =
          108; /* includes VCC, which can be treated as s[106-107] on GFX10+ */
 
-      if (family == CHIP_NAVI31 || family == CHIP_NAVI32 || family == CHIP_STRIX_HALO ||
-          gfx_level >= GFX12) {
+      if (program->family == CHIP_NAVI31 || program->family == CHIP_NAVI32 ||
+          program->family == CHIP_STRIX_HALO || program->gfx_level >= GFX12) {
          program->dev.physical_vgprs = program->wave_size == 32 ? 1536 : 768;
          program->dev.vgpr_alloc_granule = program->wave_size == 32 ? 24 : 12;
       } else {
          program->dev.physical_vgprs = program->wave_size == 32 ? 1024 : 512;
-         if (gfx_level >= GFX10_3)
+         if (program->gfx_level >= GFX10_3)
             program->dev.vgpr_alloc_granule = program->wave_size == 32 ? 16 : 8;
          else
             program->dev.vgpr_alloc_granule = program->wave_size == 32 ? 8 : 4;
@@ -105,7 +105,7 @@ init_program(Program* program, Stage stage, const struct aco_shader_info* info,
       program->dev.physical_sgprs = 800;
       program->dev.sgpr_alloc_granule = 16;
       program->dev.sgpr_limit = 102;
-      if (family == CHIP_TONGA || family == CHIP_ICELAND)
+      if (program->family == CHIP_TONGA || program->family == CHIP_ICELAND)
          program->dev.sgpr_alloc_granule = 96; /* workaround hardware bug */
    } else {
       program->dev.physical_sgprs = 512;
@@ -120,7 +120,7 @@ init_program(Program* program, Stage stage, const struct aco_shader_info* info,
       program->dev.vgpr_limit = util_round_down_npot(vgpr_limit, program->dev.vgpr_alloc_granule);
    }
 
-   program->dev.scratch_alloc_granule = gfx_level >= GFX11 ? 256 : 1024;
+   program->dev.scratch_alloc_granule = program->gfx_level >= GFX11 ? 256 : 1024;
 
    program->dev.max_waves_per_simd = 10;
    if (program->gfx_level >= GFX10_3)
@@ -201,7 +201,7 @@ init_program(Program* program, Stage stage, const struct aco_shader_info* info,
       program->dev.max_nsa_vgprs = 0;
    }
 
-   program->wgp_mode = wgp_mode;
+   program->wgp_mode = options->wgp_mode;
 
    program->progress = CompilationProgress::after_isel;
 

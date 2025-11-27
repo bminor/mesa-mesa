@@ -740,8 +740,7 @@ setup_isel_context(Program* program, unsigned shader_count, struct nir_shader* c
       }
    }
 
-   init_program(program, Stage{info->hw_stage, sw_stage}, info, options->gfx_level, options->family,
-                options->wgp_mode, config);
+   init_program(program, Stage{info->hw_stage, sw_stage}, info, options, config);
 
    isel_context ctx = {};
    ctx.program = program;
