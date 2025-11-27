@@ -2278,7 +2278,6 @@ public:
    ac_shader_config* config;
    struct aco_shader_info info;
    enum amd_gfx_level gfx_level;
-   enum radeon_family family;
    DeviceInfo dev;
    unsigned wave_size;
    RegClass lane_mask;
@@ -2452,8 +2451,9 @@ unsigned emit_program(Program* program, std::vector<uint32_t>& code,
  * Returns true if print_asm can disassemble the given program for the current build/runtime
  * configuration
  */
-bool check_print_asm_support(Program* program);
-bool print_asm(Program* program, std::vector<uint32_t>& binary, unsigned exec_size, FILE* output);
+bool check_print_asm_support(Program* program, enum radeon_family family);
+bool print_asm(Program* program, enum radeon_family family, std::vector<uint32_t>& binary,
+               unsigned exec_size, FILE* output);
 bool validate_ir(Program* program);
 bool validate_cfg(Program* program);
 bool validate_ra(Program* program);

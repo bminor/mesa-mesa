@@ -31,7 +31,8 @@ validate(Program* program)
 }
 
 static std::string
-get_disasm_string(Program* program, std::vector<uint32_t>& code, unsigned exec_size)
+get_disasm_string(Program* program, enum radeon_family family, std::vector<uint32_t>& code,
+                  unsigned exec_size)
 {
    std::string disasm;
 
@@ -40,8 +41,8 @@ get_disasm_string(Program* program, std::vector<uint32_t>& code, unsigned exec_s
    struct u_memstream mem;
    if (u_memstream_open(&mem, &data, &disasm_size)) {
       FILE* const memf = u_memstream_get(&mem);
-      if (check_print_asm_support(program)) {
-         print_asm(program, code, exec_size / 4u, memf);
+      if (check_print_asm_support(program, family)) {
+         print_asm(program, family, code, exec_size / 4u, memf);
       } else {
          fprintf(memf, "Shader disassembly is not supported in the current configuration"
 #if !AMD_LLVM_AVAILABLE
@@ -219,7 +220,7 @@ aco_compile_shader_part(const struct aco_compiler_options* options,
 
    std::string disasm;
    if (options->record_asm)
-      disasm = get_disasm_string(program.get(), code, exec_size);
+      disasm = get_disasm_string(program.get(), options->family, code, exec_size);
 
    (*build_binary)(binary, config.num_sgprs, config.num_vgprs, code.data(), code.size(),
                    disasm.data(), disasm.size());
@@ -262,7 +263,7 @@ aco_compile_shader(const struct aco_compiler_options* options, const struct aco_
 
    std::string disasm;
    if (options->record_asm)
-      disasm = get_disasm_string(program.get(), code, exec_size);
+      disasm = get_disasm_string(program.get(), options->family, code, exec_size);
 
    (*build_binary)(binary, &config, llvm_ir.c_str(), llvm_ir.size(), disasm.c_str(), disasm.size(),
                    &program->statistics, exec_size, code.data(), code.size(), symbols.data(),
@@ -305,7 +306,7 @@ aco_compile_rt_prolog(const struct aco_compiler_options* options,
 
    std::string disasm;
    if (options->record_asm)
-      disasm = get_disasm_string(program.get(), code, exec_size);
+      disasm = get_disasm_string(program.get(), options->family, code, exec_size);
 
    (*build_prolog)(binary, &config, NULL, 0, disasm.c_str(), disasm.size(), NULL, exec_size,
                    code.data(), code.size(), NULL, 0, NULL, 0);
@@ -343,7 +344,7 @@ aco_compile_vs_prolog(const struct aco_compiler_options* options,
 
    std::string disasm;
    if (options->record_asm)
-      disasm = get_disasm_string(program.get(), code, exec_size);
+      disasm = get_disasm_string(program.get(), options->family, code, exec_size);
 
    (*build_prolog)(binary, config.num_sgprs, config.num_vgprs, code.data(), code.size(),
                    disasm.data(), disasm.size());
@@ -405,7 +406,7 @@ aco_compile_trap_handler(const struct aco_compiler_options* options,
 
    std::string disasm;
    if (options->record_asm)
-      disasm = get_disasm_string(program.get(), code, exec_size);
+      disasm = get_disasm_string(program.get(), options->family, code, exec_size);
 
    (*build_binary)(binary, &config, NULL, 0, disasm.c_str(), disasm.size(), NULL, exec_size,
                    code.data(), code.size(), NULL, 0, NULL, 0);
@@ -450,9 +451,8 @@ aco_print_asm(const struct radeon_info *info, unsigned wave_size,
    aco::Program prog;
 
    prog.gfx_level = info->gfx_level;
-   prog.family = info->family;
    prog.wave_size = wave_size;
    prog.blocks.push_back(aco::Block());
 
-   aco::print_asm(&prog, binarray, num_dw, stderr);
+   aco::print_asm(&prog, info->family, binarray, num_dw, stderr);
 }

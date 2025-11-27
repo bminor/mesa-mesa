@@ -391,7 +391,7 @@ finish_assembler_test()
    /* we could use CLRX for disassembly but that would require it to be
     * installed */
    if (program->gfx_level >= GFX8) {
-      print_asm(program.get(), binary, exec_size / 4u, output);
+      print_asm(program.get(), rad_info.family, binary, exec_size / 4u, output);
    } else {
       // TODO: maybe we should use CLRX and skip this test if it's not available?
       for (uint32_t dword : binary)

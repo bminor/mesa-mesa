@@ -70,7 +70,6 @@ init_program(Program* program, Stage stage, const struct aco_shader_info* info,
    program->config = config;
    program->info = *info;
    program->gfx_level = options->gfx_level;
-   program->family = options->family;
    program->wave_size = info->wave_size;
    program->lane_mask = program->wave_size == 32 ? s1 : s2;
 
