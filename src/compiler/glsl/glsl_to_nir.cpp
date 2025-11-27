@@ -2897,12 +2897,25 @@ nir_visitor::visit(ir_dereference_array *ir)
 void
 nir_visitor::visit(ir_barrier *)
 {
-   if (shader->info.stage == MESA_SHADER_COMPUTE) {
+   switch (shader->info.stage) {
+   case MESA_SHADER_COMPUTE:
       nir_barrier(&b, SCOPE_WORKGROUP, SCOPE_WORKGROUP,
-                      NIR_MEMORY_ACQ_REL, nir_var_mem_shared);
-   } else if (shader->info.stage == MESA_SHADER_TESS_CTRL) {
+                  NIR_MEMORY_ACQ_REL, nir_var_mem_shared);
+      break;
+   case MESA_SHADER_TESS_CTRL:
       nir_barrier(&b, SCOPE_WORKGROUP, SCOPE_WORKGROUP,
-                      NIR_MEMORY_ACQ_REL, nir_var_shader_out);
+                  NIR_MEMORY_ACQ_REL, nir_var_shader_out);
+      break;
+   case MESA_SHADER_TASK:
+      nir_barrier(&b, SCOPE_WORKGROUP, SCOPE_WORKGROUP, NIR_MEMORY_ACQ_REL,
+                  nir_var_mem_task_payload | nir_var_mem_shared);
+      break;
+   case MESA_SHADER_MESH:
+      nir_barrier(&b, SCOPE_WORKGROUP, SCOPE_WORKGROUP, NIR_MEMORY_ACQ_REL,
+                  nir_var_shader_out | nir_var_mem_shared);
+      break;
+   default:
+      UNREACHABLE("barrier() not supported in this shader stage");
    }
 }
 
