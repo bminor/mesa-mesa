@@ -52,6 +52,8 @@ struct ac_cu_info {
     * Otherwise, unfused v_mad_mix* is available on GFX9.
     */
    bool has_fma_mix : 1;
+   /* Whether chips support unfused multiply-add instructions. */
+   bool has_mad32 : 1;
    /* Whether chips support double rate packed math instructions. */
    bool has_packed_math_16bit : 1;
    /* Whether chips support dot product instructions. A subset of these support a smaller

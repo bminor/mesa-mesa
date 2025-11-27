@@ -112,6 +112,7 @@ init_program(Program* program, Stage stage, const struct aco_shader_info* info,
    program->dev.has_mac_legacy32 = program->gfx_level <= GFX7 || program->gfx_level == GFX10;
    program->dev.has_fmac_legacy32 = program->gfx_level >= GFX10_3 && program->gfx_level < GFX12;
    program->dev.fused_mad_mix = options->cu_info->has_fma_mix;
+   program->dev.has_mad32 = options->cu_info->has_mad32;
 
    if (program->gfx_level >= GFX12) {
       program->dev.scratch_global_offset_min = -8388608;

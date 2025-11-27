@@ -310,6 +310,7 @@ ac_fill_cu_info(struct radeon_info *info, struct drm_amdgpu_info_device *device_
       info->family == CHIP_VEGA12 || info->family == CHIP_VEGA20 ||
        info->family == CHIP_MI100 || info->family == CHIP_MI200 ||
        info->family == CHIP_GFX940;
+   cu_info->has_mad32 = info->gfx_level == GFX9 ? info->family <= CHIP_MI200 : info->gfx_level < GFX10_3;
    cu_info->has_packed_math_16bit = info->gfx_level >= GFX9;
    cu_info->has_accelerated_dot_product =
       info->family == CHIP_VEGA20 ||

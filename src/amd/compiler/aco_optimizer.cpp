@@ -4202,8 +4202,7 @@ combine_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
       combine_instr_pattern{aco_opcode::src_op, aco_opcode::res_op, mask, swizzle, __VA_ARGS__})
 
    if (info.opcode == aco_opcode::v_add_f32) {
-      if (ctx.program->gfx_level < GFX10_3 && ctx.program->family != CHIP_GFX940 &&
-          ctx.fp_mode.denorm32 == 0) {
+      if (ctx.program->dev.has_mad32 && ctx.fp_mode.denorm32 == 0) {
          add_opt(v_mul_f32, v_mad_f32, 0x3, "120");
          add_opt(v_mul_legacy_f32, v_mad_legacy_f32, 0x3, "120");
       }
