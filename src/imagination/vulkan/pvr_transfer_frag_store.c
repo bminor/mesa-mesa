@@ -399,6 +399,7 @@ void pvr_transfer_frag_store_fini(struct pvr_device *device,
 }
 
 /* Leave this at the very end, to avoid leakage of HW-defs here */
+#define PVR_BUILD_ARCH_ROGUE
 #include "pvr_csb.h"
 
 static uint32_t get_doutu_sample_rate(const struct pvr_device_info *dev_info,

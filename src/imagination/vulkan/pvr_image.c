@@ -317,6 +317,7 @@ void pvr_GetImageSubresourceLayout(VkDevice device,
 }
 
 /* Leave this at the very end, to avoid leakage of HW-defs here */
+#define PVR_BUILD_ARCH_ROGUE
 #include "pvr_csb.h"
 
 static unsigned get_pbe_stride_align(const struct pvr_device_info *dev_info)

@@ -1238,6 +1238,7 @@ pvr_physical_device_setup_formats(struct pvr_physical_device *const pdevice)
 }
 
 /* Leave this at the very end, to avoid leakage of HW-defs here */
+#define PVR_BUILD_ARCH_ROGUE
 #include "pvr_border.h"
 
 static unsigned
