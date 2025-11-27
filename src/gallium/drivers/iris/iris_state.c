@@ -6943,6 +6943,10 @@ iris_emit_binding_tables(struct iris_context *ice, struct iris_batch *batch,
    struct iris_binder *binder = &ice->state.binder;
 
    for (int stage = 0; stage <= MESA_SHADER_FRAGMENT; stage++) {
+      if (stage_dirty & (IRIS_STAGE_DIRTY_BINDINGS_VS << stage)) {
+         iris_populate_binding_table(ice, batch, stage, false);
+      }
+
       /* Gfx9 requires 3DSTATE_BINDING_TABLE_POINTERS_XS to be re-emitted
        * in order to commit constants.  TODO: Investigate "Disable Gather
        * at Set Shader" to go back to legacy mode...
@@ -6956,30 +6960,21 @@ iris_emit_binding_tables(struct iris_context *ice, struct iris_batch *batch,
                binder->bt_offset[stage] >> IRIS_BT_OFFSET_SHIFT;
          }
       }
-   }
 
-   for (int stage = 0; stage <= MESA_SHADER_FRAGMENT; stage++) {
-      if (stage_dirty & (IRIS_STAGE_DIRTY_BINDINGS_VS << stage)) {
-         iris_populate_binding_table(ice, batch, stage, false);
-      }
-   }
+      if (stage_dirty & (IRIS_STAGE_DIRTY_SAMPLER_STATES_VS << stage) &&
+          ice->shaders.prog[stage]) {
+         iris_upload_sampler_states(ice, stage);
 
-   for (int stage = 0; stage <= MESA_SHADER_FRAGMENT; stage++) {
-      if (!(stage_dirty & (IRIS_STAGE_DIRTY_SAMPLER_STATES_VS << stage)) ||
-          !ice->shaders.prog[stage])
-         continue;
+         struct iris_shader_state *shs = &ice->state.shaders[stage];
+         struct pipe_resource *res = shs->sampler_table.res;
+         if (res)
+            iris_use_pinned_bo(batch, iris_resource_bo(res), false,
+                              IRIS_DOMAIN_NONE);
 
-      iris_upload_sampler_states(ice, stage);
-
-      struct iris_shader_state *shs = &ice->state.shaders[stage];
-      struct pipe_resource *res = shs->sampler_table.res;
-      if (res)
-         iris_use_pinned_bo(batch, iris_resource_bo(res), false,
-                            IRIS_DOMAIN_NONE);
-
-      iris_emit_cmd(batch, GENX(3DSTATE_SAMPLER_STATE_POINTERS_VS), ptr) {
-         ptr._3DCommandSubOpcode = 43 + stage;
-         ptr.PointertoVSSamplerState = shs->sampler_table.offset;
+         iris_emit_cmd(batch, GENX(3DSTATE_SAMPLER_STATE_POINTERS_VS), ptr) {
+            ptr._3DCommandSubOpcode = 43 + stage;
+            ptr.PointertoVSSamplerState = shs->sampler_table.offset;
+         }
       }
    }
 }
