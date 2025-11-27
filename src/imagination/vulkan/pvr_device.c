@@ -54,6 +54,7 @@
 #include "pvr_dump_info.h"
 #include "pvr_entrypoints.h"
 #include "pvr_framebuffer.h"
+#include "pvr_free_list.h"
 #include "pvr_hw_pass.h"
 #include "pvr_image.h"
 #include "pvr_instance.h"

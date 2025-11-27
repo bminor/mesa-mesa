@@ -36,7 +36,6 @@
 
 struct pvr_device;
 struct pvr_device_info;
-struct pvr_free_list;
 struct pvr_render_ctx;
 struct pvr_rt_dataset;
 struct vk_sync;
@@ -171,15 +170,6 @@ void pvr_rt_mtile_info_init(const struct pvr_device_info *dev_info,
                             uint32_t width,
                             uint32_t height,
                             uint32_t samples);
-
-VkResult pvr_free_list_create(struct pvr_device *device,
-                              uint32_t initial_size,
-                              uint32_t max_size,
-                              uint32_t grow_size,
-                              uint32_t grow_threshold,
-                              struct pvr_free_list *parent_free_list,
-                              struct pvr_free_list **const free_list_out);
-void pvr_free_list_destroy(struct pvr_free_list *free_list);
 
 VkResult
 pvr_render_target_dataset_create(struct pvr_device *device,
