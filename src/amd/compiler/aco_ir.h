@@ -2250,6 +2250,7 @@ struct DeviceInfo {
    bool xnack_enabled = false;
    bool sram_ecc_enabled = false;
    bool has_point_sample_accel = false;
+   bool has_gfx6_mrt_export_bug = false;
 
    int32_t scratch_global_offset_min;
    int32_t scratch_global_offset_max;

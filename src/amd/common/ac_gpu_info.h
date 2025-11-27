@@ -66,6 +66,8 @@ struct ac_cu_info {
     * image_bvh*_intersect_ray instructions
     */
    bool has_image_bvh_intersect_ray : 1;
+   /* Some GFX6 GPUs have a bug where it only looks at the x writemask component. */
+   bool has_gfx6_mrt_export_bug : 1;
 };
 
 struct radeon_info {

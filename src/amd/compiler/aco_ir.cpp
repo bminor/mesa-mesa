@@ -108,6 +108,7 @@ init_program(Program* program, Stage stage, const struct aco_shader_info* info,
 
    program->dev.sram_ecc_enabled = options->cu_info->has_sram_ecc_enabled;
    program->dev.has_point_sample_accel = options->cu_info->has_point_sample_accel;
+   program->dev.has_gfx6_mrt_export_bug = options->cu_info->has_gfx6_mrt_export_bug;
 
    program->dev.has_fast_fma32 = options->cu_info->has_fast_fma32;
    program->dev.has_mac_legacy32 = program->gfx_level <= GFX7 || program->gfx_level == GFX10;

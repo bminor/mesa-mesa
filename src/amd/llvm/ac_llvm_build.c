@@ -1470,8 +1470,7 @@ void ac_build_export(struct ac_llvm_context *ctx, struct ac_export_args *a)
     * X writemask component.
     */
    unsigned enabled_channels = a->enabled_channels;
-   if (ctx->gfx_level == GFX6 && ctx->info->family != CHIP_OLAND &&
-       ctx->info->family  != CHIP_HAINAN && enabled_channels &&
+   if (ctx->info->cu_info.has_gfx6_mrt_export_bug && enabled_channels &&
        a->target <= V_008DFC_SQ_EXP_MRTZ) {
       enabled_channels |= 1;
    }

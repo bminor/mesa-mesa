@@ -319,6 +319,9 @@ ac_fill_cu_info(struct radeon_info *info, struct drm_amdgpu_info_device *device_
       (info->family >= CHIP_MI100 && info->family != CHIP_NAVI10 && info->family != CHIP_GFX1013);
    /* GFX1013 is GFX10 plus ray tracing instructions */
    cu_info->has_image_bvh_intersect_ray = info->gfx_level >= GFX10_3 || info->family == CHIP_GFX1013;
+
+   cu_info->has_gfx6_mrt_export_bug =
+      info->family == CHIP_TAHITI || info->family == CHIP_PITCAIRN || info->family == CHIP_VERDE;
 }
 
 enum ac_query_gpu_info_result

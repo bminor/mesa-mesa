@@ -1003,8 +1003,7 @@ emit_exp_instruction(asm_context& ctx, std::vector<uint32_t>& out, const Instruc
    /* GFX6 (except OLAND and HAINAN) has a bug that it only looks at the X
     * writemask component.
     */
-   if (ctx.gfx_level == GFX6 && ctx.program->family != CHIP_OLAND &&
-       ctx.program->family != CHIP_HAINAN && exp.enabled_mask && exp.dest <= V_008DFC_SQ_EXP_MRTZ) {
+   if (ctx.program->dev.has_gfx6_mrt_export_bug && exp.enabled_mask && exp.dest <= V_008DFC_SQ_EXP_MRTZ) {
       encoding |= 0x1;
    }
 
