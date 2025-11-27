@@ -146,16 +146,10 @@ init_program(Program* program, Stage stage, const struct aco_shader_info* info,
 
    program->dev.simd_per_cu = program->gfx_level >= GFX10 ? 2 : 4;
 
-   switch (program->family) {
-   /* GFX8 APUs */
-   case CHIP_CARRIZO:
-   case CHIP_STONEY:
-   /* GFX9 APUS */
-   case CHIP_RAVEN:
-   case CHIP_RAVEN2:
-   case CHIP_RENOIR: program->dev.xnack_enabled = true; break;
-   default: break;
-   }
+   /* XNACK replay can be used for demand paging and page migration.
+    * This is only relevant to GPGPU programming with unified shared memory.
+    */
+   program->dev.xnack_enabled = false;
 
    program->dev.sram_ecc_enabled = program->family == CHIP_VEGA20 ||
                                    program->family == CHIP_MI100 || program->family == CHIP_MI200 ||
