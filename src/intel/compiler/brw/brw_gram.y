@@ -947,6 +947,12 @@ sendinstruction:
       brw_eu_inst_set_exec_size(p->devinfo, brw_last_inst, $3);
       brw_set_dest(p, brw_last_inst, $4);
       brw_set_src0(p, brw_last_inst, $5);
+      if ($6.file != ARF &&
+          $6.nr != BRW_ARF_ADDRESS &&
+          $6.subnr != 0) {
+         error(&@2, "SEND with indirect desc must use a0.0\n");
+      }
+      brw_eu_inst_set_send_sel_reg32_desc(p->devinfo, brw_last_inst, 1);
       brw_eu_inst_set_bits(brw_last_inst, 127, 96, $7);
       brw_eu_inst_set_sfid(p->devinfo, brw_last_inst, $8);
       brw_eu_inst_set_eot(p->devinfo, brw_last_inst, $10.end_of_thread);
