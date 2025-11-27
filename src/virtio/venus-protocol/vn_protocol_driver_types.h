@@ -673,6 +673,27 @@ vn_decode_VkFramebufferCreateFlagBits(struct vn_cs_decoder *dec, VkFramebufferCr
     vn_decode_int32_t(dec, (int32_t *)val);
 }
 
+/* enum VkQueryPoolCreateFlagBits */
+
+static inline size_t
+vn_sizeof_VkQueryPoolCreateFlagBits(const VkQueryPoolCreateFlagBits *val)
+{
+    assert(sizeof(*val) == sizeof(int32_t));
+    return vn_sizeof_int32_t((const int32_t *)val);
+}
+
+static inline void
+vn_encode_VkQueryPoolCreateFlagBits(struct vn_cs_encoder *enc, const VkQueryPoolCreateFlagBits *val)
+{
+    vn_encode_int32_t(enc, (const int32_t *)val);
+}
+
+static inline void
+vn_decode_VkQueryPoolCreateFlagBits(struct vn_cs_decoder *dec, VkQueryPoolCreateFlagBits *val)
+{
+    vn_decode_int32_t(dec, (int32_t *)val);
+}
+
 /* enum VkRenderPassCreateFlagBits */
 
 static inline size_t
