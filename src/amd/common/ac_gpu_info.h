@@ -68,6 +68,8 @@ struct ac_cu_info {
    bool has_image_bvh_intersect_ray : 1;
    /* Some GFX6 GPUs have a bug where it only looks at the x writemask component. */
    bool has_gfx6_mrt_export_bug : 1;
+   /* Pre-GFX9: A bug where the alpha component of 10_10_10_2 formats is always unsigned.*/
+   bool has_vtx_format_alpha_adjust_bug : 1;
 };
 
 struct radeon_info {

@@ -227,8 +227,8 @@ lower_load_vs_input(nir_builder *b, nir_intrinsic_instr *intrin, lower_vs_inputs
    const uint32_t attrib_stride = s->gfx_state->vi.vertex_attribute_strides[location];
    const enum pipe_format attrib_format = s->gfx_state->vi.vertex_attribute_formats[location];
    const struct util_format_description *f = util_format_description(attrib_format);
-   const struct ac_vtx_format_info *vtx_info =
-      ac_get_vtx_format_info(s->gpu_info->gfx_level, s->gpu_info->family, attrib_format);
+   const struct ac_vtx_format_info *vtx_info = ac_get_vtx_format_info(
+      s->gpu_info->gfx_level, s->gpu_info->cu_info.has_vtx_format_alpha_adjust_bug, attrib_format);
    const unsigned binding_index = s->info->vs.use_per_attribute_vb_descs ? location : attrib_binding;
    const unsigned desc_index = util_bitcount(s->info->vs.vb_desc_usage_mask & BITFIELD_MASK(binding_index));
 

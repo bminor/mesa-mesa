@@ -748,8 +748,8 @@ radv_pipeline_init_vertex_input_state(const struct radv_device *device, struct r
 
    if (vs->info.vs.use_per_attribute_vb_descs) {
       const enum amd_gfx_level gfx_level = pdev->info.gfx_level;
-      const enum radeon_family family = pdev->info.family;
-      const struct ac_vtx_format_info *vtx_info_table = ac_get_vtx_format_info_table(gfx_level, family);
+      const bool alpha_adjust = pdev->info.cu_info.has_vtx_format_alpha_adjust_bug;
+      const struct ac_vtx_format_info *vtx_info_table = ac_get_vtx_format_info_table(gfx_level, alpha_adjust);
 
       dynamic->vertex_input.bindings_match_attrib = true;
 
@@ -2031,7 +2031,7 @@ radv_generate_graphics_state_key(const struct radv_device *device, const struct 
          }
 
          const struct ac_vtx_format_info *vtx_info =
-            ac_get_vtx_format_info(pdev->info.gfx_level, pdev->info.family, format);
+            ac_get_vtx_format_info(pdev->info.gfx_level, pdev->info.cu_info.has_vtx_format_alpha_adjust_bug, format);
          unsigned attrib_align = vtx_info->chan_byte_size ? vtx_info->chan_byte_size : vtx_info->element_size;
 
          /* If offset is misaligned, then the buffer offset must be too. Just skip updating

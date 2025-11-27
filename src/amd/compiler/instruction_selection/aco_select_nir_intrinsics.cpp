@@ -1379,8 +1379,7 @@ mtbuf_load_callback(Builder& bld, const LoadEmitInfo& info, unsigned bytes_neede
    /* Determine number of fetched components.
     * Note, ACO IR works with GFX6-8 nfmt + dfmt fields, these are later converted for GFX10+.
     */
-   const struct ac_vtx_format_info* vtx_info =
-      ac_get_vtx_format_info(GFX8, CHIP_POLARIS10, info.format);
+   const struct ac_vtx_format_info* vtx_info = ac_get_vtx_format_info(GFX8, true, info.format);
    /* The number of channels in the format determines the memory range. */
    const unsigned max_components = vtx_info->num_channels;
    /* Calculate maximum number of components loaded according to alignment. */
@@ -2754,7 +2753,7 @@ visit_load_buffer(isel_context* ctx, nir_intrinsic_instr* intrin)
    if (intrin->intrinsic == nir_intrinsic_load_typed_buffer_amd) {
       const pipe_format format = nir_intrinsic_format(intrin);
       const struct ac_vtx_format_info* vtx_info =
-         ac_get_vtx_format_info(ctx->program->gfx_level, ctx->program->family, format);
+         ac_get_vtx_format_info(ctx->program->gfx_level, true, format);
       const struct util_format_description* f = util_format_description(format);
 
       /* Avoid splitting:

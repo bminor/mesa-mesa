@@ -1139,7 +1139,8 @@ LLVMValueRef ac_build_safe_tbuffer_load(struct ac_llvm_context *ctx, LLVMValueRe
                                         enum gl_access_qualifier access,
                                         bool can_speculate)
 {
-   const struct ac_vtx_format_info *vtx_info = ac_get_vtx_format_info(ctx->gfx_level, ctx->info->family, format);
+   const struct ac_vtx_format_info *vtx_info =
+      ac_get_vtx_format_info(ctx->gfx_level, ctx->info->cu_info.has_vtx_format_alpha_adjust_bug, format);
    const unsigned max_channels = vtx_info->num_channels;
    LLVMValueRef voffset_plus_const =
       LLVMBuildAdd(ctx->builder, base_voffset, LLVMConstInt(ctx->i32, const_offset, 0), "");

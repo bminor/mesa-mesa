@@ -322,6 +322,7 @@ ac_fill_cu_info(struct radeon_info *info, struct drm_amdgpu_info_device *device_
 
    cu_info->has_gfx6_mrt_export_bug =
       info->family == CHIP_TAHITI || info->family == CHIP_PITCAIRN || info->family == CHIP_VERDE;
+   cu_info->has_vtx_format_alpha_adjust_bug = info->gfx_level <= GFX8 && info->family != CHIP_STONEY;
 }
 
 enum ac_query_gpu_info_result

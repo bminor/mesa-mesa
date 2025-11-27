@@ -9218,8 +9218,8 @@ radv_CmdSetVertexInputEXT(VkCommandBuffer commandBuffer, uint32_t vertexBindingD
    vertex_input.bindings_match_attrib = true;
 
    enum amd_gfx_level chip = pdev->info.gfx_level;
-   enum radeon_family family = pdev->info.family;
-   const struct ac_vtx_format_info *vtx_info_table = ac_get_vtx_format_info_table(chip, family);
+   bool alpha_adjust = pdev->info.cu_info.has_vtx_format_alpha_adjust_bug;
+   const struct ac_vtx_format_info *vtx_info_table = ac_get_vtx_format_info_table(chip, alpha_adjust);
 
    for (unsigned i = 0; i < vertexAttributeDescriptionCount; i++) {
       const VkVertexInputAttributeDescription2EXT *attrib = &pVertexAttributeDescriptions[i];

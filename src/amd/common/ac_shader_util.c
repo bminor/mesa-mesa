@@ -482,20 +482,19 @@ static const struct ac_vtx_format_info vb_formats_gfx10[] = {VB_FORMATS};
 static const struct ac_vtx_format_info vb_formats_gfx11[] = {VB_FORMATS};
 
 const struct ac_vtx_format_info *
-ac_get_vtx_format_info_table(enum amd_gfx_level level, enum radeon_family family)
+ac_get_vtx_format_info_table(enum amd_gfx_level level, bool has_alpha_adjust_bug)
 {
    if (level >= GFX11)
       return vb_formats_gfx11;
    else if (level >= GFX10)
       return vb_formats_gfx10;
-   bool alpha_adjust = level <= GFX8 && family != CHIP_STONEY;
-   return alpha_adjust ? vb_formats_gfx6_alpha_adjust : vb_formats_gfx6;
+   return has_alpha_adjust_bug ? vb_formats_gfx6_alpha_adjust : vb_formats_gfx6;
 }
 
 const struct ac_vtx_format_info *
-ac_get_vtx_format_info(enum amd_gfx_level level, enum radeon_family family, enum pipe_format fmt)
+ac_get_vtx_format_info(enum amd_gfx_level level, bool has_alpha_adjust_bug, enum pipe_format fmt)
 {
-   return &ac_get_vtx_format_info_table(level, family)[fmt];
+   return &ac_get_vtx_format_info_table(level, has_alpha_adjust_bug)[fmt];
 }
 
 /**
