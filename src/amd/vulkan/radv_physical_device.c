@@ -179,7 +179,7 @@ radv_shader_fp16_enabled(const struct radv_physical_device *pdev)
    /* GFX8 supports fp16, but not double rate packed math.  We don't enable
     * that by default because it can sometimes hurt perf.
     */
-   return pdev->info.has_packed_math_16bit ||
+   return pdev->info.cu_info.has_packed_math_16bit ||
           (pdev->info.gfx_level == GFX8 && instance->drirc.features.expose_float16_gfx8);
 }
 
@@ -193,7 +193,7 @@ radv_host_image_copy_enabled(const struct radv_physical_device *pdev)
 bool
 radv_enable_rt(const struct radv_physical_device *pdev)
 {
-   if (!pdev->info.has_image_bvh_intersect_ray && !radv_emulate_rt(pdev))
+   if (!pdev->info.cu_info.has_image_bvh_intersect_ray && !radv_emulate_rt(pdev))
       return false;
 
    if (pdev->use_llvm)
@@ -210,7 +210,7 @@ radv_emulate_rt(const struct radv_physical_device *pdev)
       return true;
 
    /* Do not force emulated RT on GPUs that have native support. */
-   return !pdev->info.has_image_bvh_intersect_ray && instance->drirc.features.emulate_rt;
+   return !pdev->info.cu_info.has_image_bvh_intersect_ray && instance->drirc.features.emulate_rt;
 }
 
 bool
@@ -830,8 +830,8 @@ radv_physical_device_get_supported_extensions(const struct radv_physical_device 
       .AMD_device_coherent_memory = pdev->info.has_l2_uncached,
       .AMD_draw_indirect_count = true,
       .AMD_gcn_shader = true,
-      .AMD_gpu_shader_half_float = pdev->info.has_packed_math_16bit,
-      .AMD_gpu_shader_int16 = pdev->info.has_packed_math_16bit,
+      .AMD_gpu_shader_half_float = pdev->info.cu_info.has_packed_math_16bit,
+      .AMD_gpu_shader_int16 = pdev->info.cu_info.has_packed_math_16bit,
       .AMD_memory_overallocation_behavior = true,
       .AMD_mixed_attachment_samples = true,
       .AMD_rasterization_order = pdev->info.has_out_of_order_rast,
@@ -931,7 +931,7 @@ radv_physical_device_get_features(const struct radv_physical_device *pdev, struc
       .storageBuffer16BitAccess = true,
       .uniformAndStorageBuffer16BitAccess = true,
       .storagePushConstant16 = true,
-      .storageInputOutput16 = pdev->info.has_packed_math_16bit,
+      .storageInputOutput16 = pdev->info.cu_info.has_packed_math_16bit,
       .multiview = true,
       .multiviewGeometryShader = true,
       .multiviewTessellationShader = true,
@@ -1589,7 +1589,7 @@ radv_get_physical_device_properties(struct radv_physical_device *pdev)
       radv_taskmesh_enabled(pdev) ? VK_SHADER_STAGE_MESH_BIT_EXT | VK_SHADER_STAGE_TASK_BIT_EXT : 0;
    VkShaderStageFlags rt_stages = radv_enable_rt(pdev) ? RADV_RT_STAGE_BITS : 0;
 
-   bool accel_dot = pdev->info.has_accelerated_dot_product;
+   bool accel_dot = pdev->info.cu_info.has_accelerated_dot_product;
    bool gfx11plus = pdev->info.gfx_level >= GFX11;
 
    VkExtent2D vrs_texel_extent = radv_vrs_attachment_enabled(pdev) ? (VkExtent2D){8, 8} : (VkExtent2D){0, 0};

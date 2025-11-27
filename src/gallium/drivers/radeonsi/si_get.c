@@ -821,7 +821,7 @@ void si_init_screen_get_functions(struct si_screen *sscreen)
    options->lower_uniforms_to_ubo = true;
    options->lower_to_scalar = true;
    options->lower_to_scalar_filter =
-      sscreen->info.has_packed_math_16bit ? si_alu_to_scalar_packed_math_filter : NULL;
+      sscreen->info.cu_info.has_packed_math_16bit ? si_alu_to_scalar_packed_math_filter : NULL;
    options->max_unroll_iterations = 128;
    options->max_unroll_iterations_aggressive = 128;
    /* For OpenGL, rounding mode is undefined. We want fast packing with v_cvt_pkrtz_f16,

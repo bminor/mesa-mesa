@@ -122,7 +122,7 @@ void si_nir_opts(struct si_screen *sscreen, struct nir_shader *nir, bool has_arr
       if (nir->info.stage == MESA_SHADER_FRAGMENT)
          NIR_PASS(_, nir, nir_opt_move_discards_to_top);
 
-      if (sscreen->info.has_packed_math_16bit)
+      if (sscreen->info.cu_info.has_packed_math_16bit)
          NIR_PASS(progress, nir, nir_opt_vectorize, si_vectorize_callback, NULL);
    } while (progress);
 

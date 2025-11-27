@@ -43,6 +43,25 @@ struct ac_cu_info {
    uint32_t min_wave64_vgpr_alloc;
    uint32_t max_vgpr_alloc;
    uint32_t wave64_vgpr_alloc_granularity;
+
+   /* Flags */
+   bool has_lds_bank_count_16 : 1;
+   bool has_sram_ecc_enabled : 1;
+   bool has_fast_fma32 : 1;
+   /* Whether chips support fused v_fma_mix* instructions.
+    * Otherwise, unfused v_mad_mix* is available on GFX9.
+    */
+   bool has_fma_mix : 1;
+   /* Whether chips support double rate packed math instructions. */
+   bool has_packed_math_16bit : 1;
+   /* Whether chips support dot product instructions. A subset of these support a smaller
+    * instruction encoding which accumulates with the destination.
+    */
+   bool has_accelerated_dot_product : 1;
+   /* Device supports hardware-accelerated raytracing using
+    * image_bvh*_intersect_ray instructions
+    */
+   bool has_image_bvh_intersect_ray : 1;
 };
 
 struct radeon_info {
@@ -101,8 +120,6 @@ struct radeon_info {
    bool rbplus_allowed; /* if RB+ is allowed */
    bool has_load_ctx_reg_pkt;
    bool has_out_of_order_rast;
-   bool has_packed_math_16bit;
-   bool has_accelerated_dot_product;
    bool cpdma_prefetch_writes_memory;
    bool has_gfx9_scissor_bug;
    bool has_htile_stencil_mipmap_bug;
@@ -350,11 +367,6 @@ struct radeon_info {
       uint32_t sdma_csa_size;
       uint32_t sdma_csa_alignment;
    } fw_based_mcbp;
-
-   /* Device supports hardware-accelerated raytracing using
-    * image_bvh*_intersect_ray instructions
-    */
-   bool has_image_bvh_intersect_ray;
 };
 
 enum ac_query_gpu_info_result {

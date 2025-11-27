@@ -60,7 +60,6 @@ ac_null_device_create(struct radeon_info *gpu_info, const char *family)
    gpu_info->max_render_backends = pci_ids[gpu_info->family].num_render_backends;
 
    gpu_info->has_dedicated_vram = pci_ids[gpu_info->family].has_dedicated_vram;
-   gpu_info->has_packed_math_16bit = gpu_info->gfx_level >= GFX9;
 
    gpu_info->has_cb_lt16bit_int_clamp_bug = gpu_info->gfx_level <= GFX7 &&
                                             gpu_info->family != CHIP_HAWAII;
@@ -69,12 +68,6 @@ ac_null_device_create(struct radeon_info *gpu_info, const char *family)
 
    gpu_info->has_distributed_tess =
       gpu_info->gfx_level >= GFX10 || (gpu_info->gfx_level >= GFX8 && gpu_info->max_se >= 2);
-
-   gpu_info->has_accelerated_dot_product =
-      gpu_info->family == CHIP_VEGA20 ||
-      (gpu_info->family >= CHIP_MI100 && gpu_info->family != CHIP_NAVI10 && gpu_info->family != CHIP_GFX1013);
-
-   gpu_info->has_image_bvh_intersect_ray = gpu_info->gfx_level >= GFX10_3 || gpu_info->family == CHIP_GFX1013;
 
    gpu_info->address32_hi = gpu_info->gfx_level >= GFX9 ? 0xffff8000u : 0x0;
 

@@ -299,6 +299,23 @@ ac_fill_cu_info(struct radeon_info *info, struct drm_amdgpu_info_device *device_
    cu_info->max_vgpr_alloc = 256;
 
    cu_info->num_simd_per_compute_unit = info->gfx_level >= GFX10 ? 2 : 4;
+
+   /* Flags */
+   cu_info->has_lds_bank_count_16 = info->family == CHIP_KABINI || info->family == CHIP_STONEY;
+   cu_info->has_sram_ecc_enabled = info->family == CHIP_VEGA20 || info->family == CHIP_MI100 ||
+                                   info->family == CHIP_MI200 || info->family == CHIP_GFX940;
+   cu_info->has_fast_fma32 = info->gfx_level >= GFX9 || info->family == CHIP_TAHITI ||
+                             info->family == CHIP_HAWAII || info->family == CHIP_CARRIZO;
+   cu_info->has_fma_mix = info->gfx_level >= GFX10 ||
+      info->family == CHIP_VEGA12 || info->family == CHIP_VEGA20 ||
+       info->family == CHIP_MI100 || info->family == CHIP_MI200 ||
+       info->family == CHIP_GFX940;
+   cu_info->has_packed_math_16bit = info->gfx_level >= GFX9;
+   cu_info->has_accelerated_dot_product =
+      info->family == CHIP_VEGA20 ||
+      (info->family >= CHIP_MI100 && info->family != CHIP_NAVI10 && info->family != CHIP_GFX1013);
+   /* GFX1013 is GFX10 plus ray tracing instructions */
+   cu_info->has_image_bvh_intersect_ray = info->gfx_level >= GFX10_3 || info->family == CHIP_GFX1013;
 }
 
 enum ac_query_gpu_info_result
@@ -968,16 +985,6 @@ ac_query_gpu_info(int fd, void *dev_p, struct radeon_info *info,
    info->has_out_of_order_rast =
       info->gfx_level >= GFX8 && info->gfx_level <= GFX9 && info->max_se >= 2;
 
-   /* Whether chips support double rate packed math instructions. */
-   info->has_packed_math_16bit = info->gfx_level >= GFX9;
-
-   /* Whether chips support dot product instructions. A subset of these support a smaller
-    * instruction encoding which accumulates with the destination.
-    */
-   info->has_accelerated_dot_product =
-      info->family == CHIP_VEGA20 ||
-      (info->family >= CHIP_MI100 && info->family != CHIP_NAVI10 && info->family != CHIP_GFX1013);
-
    /* TODO: Figure out how to use LOAD_CONTEXT_REG on GFX6-GFX7. */
    info->has_load_ctx_reg_pkt =
       info->gfx_level >= GFX9 || (info->gfx_level >= GFX8 && info->me_fw_feature >= 41);
@@ -1608,15 +1615,11 @@ ac_query_gpu_info(int fd, void *dev_p, struct radeon_info *info,
                                  info->max_good_cu_per_sa * info->max_sa_per_se * info->max_se;
    info->total_tess_ring_size = info->tess_offchip_ring_size + info->tess_factor_ring_size;
 
-   /* GFX1013 is GFX10 plus ray tracing instructions */
-   info->has_image_bvh_intersect_ray = info->gfx_level >= GFX10_3 ||
-                                       info->family == CHIP_GFX1013;
-
    if (info->gfx_level >= GFX12)
       info->rt_ip_version = RT_3_1;
    else if (info->gfx_level >= GFX11)
       info->rt_ip_version = RT_2_0;
-   else if (info->has_image_bvh_intersect_ray)
+   else if (info->cu_info.has_image_bvh_intersect_ray)
       info->rt_ip_version = RT_1_1;
 
    set_custom_cu_en_mask(info);

@@ -221,8 +221,8 @@ static void run_subtest(subtest *st, bool print = false)
 
    struct radeon_info info = {};
    info.gfx_level = st->gfx_level;
-   info.has_packed_math_16bit = true;
-   info.has_accelerated_dot_product = true;
+   info.cu_info.has_packed_math_16bit = true;
+   info.cu_info.has_accelerated_dot_product = true;
 
    nir_shader_compiler_options options = {};
    ac_nir_set_options(&info, st->use_llvm, &options);
