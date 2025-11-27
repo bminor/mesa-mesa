@@ -107,6 +107,7 @@ init_program(Program* program, Stage stage, const struct aco_shader_info* info,
    program->dev.xnack_enabled = false;
 
    program->dev.sram_ecc_enabled = options->cu_info->has_sram_ecc_enabled;
+   program->dev.has_point_sample_accel = options->cu_info->has_point_sample_accel;
 
    program->dev.has_fast_fma32 = options->cu_info->has_fast_fma32;
    program->dev.has_mac_legacy32 = program->gfx_level <= GFX7 || program->gfx_level == GFX10;
@@ -1470,7 +1471,7 @@ get_tied_defs(Instruction* instr)
 }
 
 uint8_t
-get_vmem_type(amd_gfx_level gfx_level, radeon_family family, Instruction* instr)
+get_vmem_type(Instruction* instr, bool has_point_sample_accel)
 {
    if (instr->opcode == aco_opcode::image_bvh_intersect_ray ||
        instr->opcode == aco_opcode::image_bvh64_intersect_ray ||
@@ -1481,10 +1482,10 @@ get_vmem_type(amd_gfx_level gfx_level, radeon_family family, Instruction* instr)
       return vmem_sampler;
    } else if (instr->isMIMG() && !instr->operands[1].isUndefined() &&
               instr->operands[1].regClass() == s4) {
-      bool point_sample_accel = gfx_level == GFX11_5 && family != CHIP_GFX1153 &&
-                                (instr->opcode == aco_opcode::image_sample ||
-                                 instr->opcode == aco_opcode::image_sample_l ||
-                                 instr->opcode == aco_opcode::image_sample_lz);
+      bool point_sample_accel =
+         has_point_sample_accel && (instr->opcode == aco_opcode::image_sample ||
+                                    instr->opcode == aco_opcode::image_sample_l ||
+                                    instr->opcode == aco_opcode::image_sample_lz);
       return vmem_sampler | (point_sample_accel ? vmem_nosampler : 0);
    } else if (instr->isVMEM() || instr->isScratch() || instr->isGlobal()) {
       return vmem_nosampler;

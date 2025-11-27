@@ -320,7 +320,7 @@ get_wait_counter_info(Program* program, aco_ptr<Instruction>& instr)
    } else if (instr->isVMEM() && instr->definitions.empty() && program->gfx_level >= GFX10) {
       info[wait_type_vs] = 320;
    } else if (instr->isVMEM()) {
-      uint8_t vm_type = get_vmem_type(program->gfx_level, program->family, instr.get());
+      uint8_t vm_type = get_vmem_type(instr.get(), program->dev.has_point_sample_accel);
       wait_type type = wait_type_vm;
       if (program->gfx_level >= GFX12 && vm_type == vmem_bvh)
          type = wait_type_bvh;

@@ -47,6 +47,8 @@ struct ac_cu_info {
    /* Flags */
    bool has_lds_bank_count_16 : 1;
    bool has_sram_ecc_enabled : 1;
+   /* Whether image_sample* instructions can be either a sampler or no-sampler access.*/
+   bool has_point_sample_accel : 1;
    bool has_fast_fma32 : 1;
    /* Whether chips support fused v_fma_mix* instructions.
     * Otherwise, unfused v_mad_mix* is available on GFX9.

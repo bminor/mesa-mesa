@@ -304,6 +304,8 @@ ac_fill_cu_info(struct radeon_info *info, struct drm_amdgpu_info_device *device_
    cu_info->has_lds_bank_count_16 = info->family == CHIP_KABINI || info->family == CHIP_STONEY;
    cu_info->has_sram_ecc_enabled = info->family == CHIP_VEGA20 || info->family == CHIP_MI100 ||
                                    info->family == CHIP_MI200 || info->family == CHIP_GFX940;
+   cu_info->has_point_sample_accel = info->family == CHIP_STRIX1 || info->family == CHIP_STRIX_HALO ||
+                                     info->family == CHIP_KRACKAN1;
    cu_info->has_fast_fma32 = info->gfx_level >= GFX9 || info->family == CHIP_TAHITI ||
                              info->family == CHIP_HAWAII || info->family == CHIP_CARRIZO;
    cu_info->has_fma_mix = info->gfx_level >= GFX10 ||

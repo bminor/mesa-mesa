@@ -2054,7 +2054,7 @@ enum vmem_type : uint8_t {
 /* VMEM instructions of the same type return in-order. For GFX12+, this determines which counter
  * is used.
  */
-uint8_t get_vmem_type(amd_gfx_level gfx_level, radeon_family family, Instruction* instr);
+uint8_t get_vmem_type(Instruction* instr, bool has_point_sample_accel);
 
 /* For all of the counters, the maximum value means no wait.
  * Some of the counters are larger than their bit field,
@@ -2249,6 +2249,7 @@ struct DeviceInfo {
    bool fused_mad_mix = false;
    bool xnack_enabled = false;
    bool sram_ecc_enabled = false;
+   bool has_point_sample_accel = false;
 
    int32_t scratch_global_offset_min;
    int32_t scratch_global_offset_max;

@@ -408,7 +408,7 @@ check_instr(wait_ctx& ctx, wait_imm& wait, Instruction* instr)
           * We can do this for GFX12 and different types for GFX11 if we know that the two
           * VMEM loads do not write the same register half or the same lanes.
           */
-         uint8_t vmem_type = get_vmem_type(ctx.gfx_level, ctx.program->family, instr);
+         uint8_t vmem_type = get_vmem_type(instr, ctx.program->dev.has_point_sample_accel);
          if (vmem_type) {
             wait_event event = get_vmem_event(ctx, instr, vmem_type);
             wait_type type = (wait_type)(ffs(ctx.info->get_counters_for_event(event)) - 1);
@@ -834,7 +834,7 @@ gen(Instruction* instr, wait_ctx& ctx)
    case Format::MIMG:
    case Format::GLOBAL:
    case Format::SCRATCH: {
-      uint8_t type = get_vmem_type(ctx.gfx_level, ctx.program->family, instr);
+      uint8_t type = get_vmem_type(instr, ctx.program->dev.has_point_sample_accel);
       wait_event ev = get_vmem_event(ctx, instr, type);
       uint32_t mask = ev == event_vmem ? get_vmem_mask(ctx, instr) : 0;
 

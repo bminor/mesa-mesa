@@ -1687,7 +1687,7 @@ handle_instruction_gfx11(State& state, NOP_ctx_gfx11& ctx, aco_ptr<Instruction>&
       } else {
          uint8_t vmem_type =
             state.program->gfx_level >= GFX12
-               ? get_vmem_type(state.program->gfx_level, state.program->family, instr.get())
+               ? get_vmem_type(instr.get(), state.program->dev.has_point_sample_accel)
                : vmem_nosampler;
          std::bitset<256>* vgprs = &ctx.vgpr_used_by_vmem_load;
          if (vmem_type == vmem_sampler)
