@@ -723,7 +723,8 @@ ir3_finalize_nir(struct ir3_compiler *compiler,
     * descriptor, even when it doesn't.
     */
    nir_load_store_vectorize_options vectorize_opts = {
-      .modes = nir_var_mem_ubo | nir_var_mem_ssbo | nir_var_mem_shared | nir_var_uniform,
+      .modes = nir_var_mem_ubo | nir_var_mem_ssbo | nir_var_mem_shared |
+               nir_var_uniform | nir_var_mem_global,
       .callback = ir3_nir_should_vectorize_mem,
       .robust_modes = options->robust_modes,
       .cb_data = compiler,
