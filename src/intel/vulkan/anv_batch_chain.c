@@ -573,14 +573,14 @@ anv_cmd_buffer_chain_batch(struct anv_batch *batch, uint32_t size, void *_data)
    if (result != VK_SUCCESS)
       return result;
 
-   batch->allocated_batch_size += alloc_size;
-
    struct anv_batch_bo **seen_bbo = u_vector_add(&cmd_buffer->seen_bbos);
    if (seen_bbo == NULL) {
       anv_batch_bo_destroy(new_bbo, cmd_buffer);
       return vk_error(cmd_buffer, VK_ERROR_OUT_OF_HOST_MEMORY);
    }
    *seen_bbo = new_bbo;
+
+   batch->allocated_batch_size += new_bbo->bo->size;
 
    cmd_buffer_chain_to_batch_bo(cmd_buffer, new_bbo, ANV_CMD_BUFFER_BATCH_MAIN);
 
@@ -601,16 +601,18 @@ anv_cmd_buffer_chain_generation_batch(struct anv_batch *batch, uint32_t size, vo
 
    struct anv_cmd_buffer *cmd_buffer = _data;
    struct anv_batch_bo *new_bbo = NULL;
+   /* Amount of reserved space at the end of the batch to account for the
+    * chaining instruction.
+    */
+   const uint32_t batch_padding = GFX9_MI_BATCH_BUFFER_START_length * 4;
    /* Cap reallocation to chunk. */
    uint32_t alloc_size = MIN2(
-      MAX2(batch->allocated_batch_size, size),
+      MAX2(batch->allocated_batch_size, size + batch_padding),
       ANV_MAX_CMD_BUFFER_BATCH_SIZE);
 
    VkResult result = anv_batch_bo_create(cmd_buffer, alloc_size, &new_bbo);
    if (result != VK_SUCCESS)
       return result;
-
-   batch->allocated_batch_size += alloc_size;
 
    struct anv_batch_bo **seen_bbo = u_vector_add(&cmd_buffer->seen_bbos);
    if (seen_bbo == NULL) {
@@ -619,6 +621,8 @@ anv_cmd_buffer_chain_generation_batch(struct anv_batch *batch, uint32_t size, vo
    }
    *seen_bbo = new_bbo;
 
+   batch->allocated_batch_size += new_bbo->bo->size;
+
    if (!list_is_empty(&cmd_buffer->generation.batch_bos)) {
       cmd_buffer_chain_to_batch_bo(cmd_buffer, new_bbo,
                                    ANV_CMD_BUFFER_BATCH_GENERATION);
@@ -626,7 +630,7 @@ anv_cmd_buffer_chain_generation_batch(struct anv_batch *batch, uint32_t size, vo
 
    list_addtail(&new_bbo->link, &cmd_buffer->generation.batch_bos);
 
-   anv_batch_bo_start(new_bbo, batch, GFX9_MI_BATCH_BUFFER_START_length * 4);
+   anv_batch_bo_start(new_bbo, batch, batch_padding);
 
    return VK_SUCCESS;
 }
