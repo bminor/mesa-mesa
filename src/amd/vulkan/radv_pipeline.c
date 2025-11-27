@@ -280,7 +280,7 @@ opt_vectorize_callback(const nir_instr *instr, const void *_)
    }
 
    const unsigned bit_size = alu->def.bit_size;
-   if (bit_size == 16 && aco_nir_op_supports_packed_math_16bit(alu))
+   if (bit_size == 16 && ac_nir_op_supports_packed_math_16bit(alu))
       return 2;
 
    if (bit_size != 8 && bit_size != 16)

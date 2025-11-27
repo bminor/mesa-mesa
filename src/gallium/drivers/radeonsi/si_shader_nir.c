@@ -17,7 +17,7 @@ bool si_alu_to_scalar_packed_math_filter(const nir_instr *instr, const void *dat
       nir_alu_instr *alu = nir_instr_as_alu(instr);
 
       if (alu->def.bit_size == 16 && alu->def.num_components == 2 &&
-          aco_nir_op_supports_packed_math_16bit(alu)) {
+          ac_nir_op_supports_packed_math_16bit(alu)) {
          /* ACO requires that all but the first bit of swizzle must be equal. */
          for (unsigned i = 0; i < nir_op_infos[alu->op].num_inputs; i++) {
             if ((alu->src[i].swizzle[0] >> 1) != (alu->src[i].swizzle[1] >> 1))
@@ -39,7 +39,7 @@ static uint8_t si_vectorize_callback(const nir_instr *instr, const void *data)
    if (alu->def.bit_size != 16)
       return 1;
 
-   return aco_nir_op_supports_packed_math_16bit(alu) ? 2 : 1;
+   return ac_nir_op_supports_packed_math_16bit(alu) ? 2 : 1;
 }
 
 void si_nir_opts(struct si_screen *sscreen, struct nir_shader *nir, bool has_array_temps)

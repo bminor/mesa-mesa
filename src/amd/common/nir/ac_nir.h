@@ -444,6 +444,9 @@ ac_nir_lower_phis_to_scalar_cb(const nir_instr *instr, const void *_);
 bool
 ac_nir_allow_offset_wrap_cb(nir_intrinsic_instr *instr, const void *data);
 
+bool
+ac_nir_op_supports_packed_math_16bit(const nir_alu_instr* alu);
+
 #ifdef __cplusplus
 }
 #endif

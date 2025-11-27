@@ -440,52 +440,6 @@ aco_is_gpu_supported(const struct radeon_info* info)
    }
 }
 
-bool
-aco_nir_op_supports_packed_math_16bit(const nir_alu_instr* alu)
-{
-   switch (alu->op) {
-   case nir_op_f2f16: {
-      nir_shader* shader = nir_cf_node_get_function(&alu->instr.block->cf_node)->function->shader;
-      unsigned execution_mode = shader->info.float_controls_execution_mode;
-      return (shader->options->force_f2f16_rtz && !nir_is_rounding_mode_rtne(execution_mode, 16)) ||
-             nir_is_rounding_mode_rtz(execution_mode, 16);
-   }
-   case nir_op_fadd:
-   case nir_op_fsub:
-   case nir_op_fmul:
-   case nir_op_ffma:
-   case nir_op_fdiv:
-   case nir_op_flrp:
-   case nir_op_fabs:
-   case nir_op_fneg:
-   case nir_op_fsat:
-   case nir_op_fmin:
-   case nir_op_fmax:
-   case nir_op_f2f16_rtz:
-   case nir_op_iabs:
-   case nir_op_iadd:
-   case nir_op_iadd_sat:
-   case nir_op_uadd_sat:
-   case nir_op_isub:
-   case nir_op_isub_sat:
-   case nir_op_usub_sat:
-   case nir_op_ineg:
-   case nir_op_imul:
-   case nir_op_imin:
-   case nir_op_imax:
-   case nir_op_umin:
-   case nir_op_umax:
-   case nir_op_extract_u8:
-   case nir_op_extract_i8:
-   case nir_op_ishl:
-   case nir_op_ishr:
-   case nir_op_ushr: return true;
-   case nir_op_u2u16:
-   case nir_op_i2i16: return alu->src[0].src.ssa->bit_size == 8;
-   default: return false;
-   }
-}
-
 void
 aco_print_asm(const struct radeon_info *info, unsigned wave_size,
               uint32_t *binary, unsigned num_dw)
