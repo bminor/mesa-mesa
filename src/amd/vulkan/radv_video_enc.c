@@ -1113,7 +1113,7 @@ radv_enc_slice_header(struct radv_cmd_buffer *cmd_buffer, const VkVideoEncodeInf
       radv_enc_code_ue(cmd_buffer, 0);
 
    if (pic->primary_pic_type == STD_VIDEO_H264_PICTURE_TYPE_B) {
-      radv_enc_code_fixed_bits(cmd_buffer, slice_info->pStdSliceHeader->flags.direct_spatial_mv_pred_flag, 1);
+      radv_enc_code_fixed_bits(cmd_buffer, 1, 1); /* direct_spatial_mv_pred */
    }
    const StdVideoEncodeH264ReferenceListsInfo *ref_lists = pic->pRefLists;
    /* ref_pic_list_modification() */
