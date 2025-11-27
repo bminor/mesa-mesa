@@ -24,6 +24,7 @@ pvr_files = files(
   'winsys/powervr/pvr_drm_job_transfer.c',
   'winsys/pvr_winsys.c',
   'winsys/pvr_winsys_helper.c',
+  'pvr_arch_csb.c',
   'pvr_arch_device.c',
   'pvr_blit.c',
   'pvr_bo.c',
