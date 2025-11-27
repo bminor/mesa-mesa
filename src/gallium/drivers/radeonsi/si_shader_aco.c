@@ -42,6 +42,7 @@ si_fill_aco_options(struct si_screen *screen, mesa_shader_stage stage,
                     mesa_shader_stage next_merged_stage, struct aco_compiler_options *options,
                     struct util_debug_callback *debug)
 {
+   options->cu_info = &screen->info.cu_info;
    options->dump_ir = si_can_dump_shader(screen, stage, SI_DUMP_ACO_IR);
    options->dump_preoptir = si_can_dump_shader(screen, stage, SI_DUMP_INIT_ACO_IR);
    options->record_asm = si_can_dump_shader(screen, stage, SI_DUMP_ASM) ||

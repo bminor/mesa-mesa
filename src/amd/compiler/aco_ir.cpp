@@ -80,37 +80,18 @@ init_program(Program* program, Stage stage, const struct aco_shader_info* info,
    /* apparently gfx702 also has 16-bank LDS but I can't find a family for that */
    program->dev.has_16bank_lds = program->family == CHIP_KABINI || program->family == CHIP_STONEY;
 
-   program->dev.vgpr_limit = 256;
-   program->dev.physical_vgprs = 256;
-   program->dev.vgpr_alloc_granule = 4;
+   program->dev.max_waves_per_simd = options->cu_info->max_waves_per_simd;
+   program->dev.simd_per_cu = options->cu_info->num_simd_per_compute_unit;
+   program->dev.physical_sgprs = options->cu_info->num_physical_sgprs_per_simd;
+   program->dev.sgpr_alloc_granule = options->cu_info->sgpr_alloc_granularity;
+   program->dev.sgpr_limit = options->cu_info->max_sgpr_alloc;
+   program->dev.physical_vgprs = options->cu_info->num_physical_wave64_vgprs_per_simd;
+   program->dev.vgpr_alloc_granule = options->cu_info->wave64_vgpr_alloc_granularity;
+   program->dev.vgpr_limit = options->cu_info->max_vgpr_alloc;
 
-   if (program->gfx_level >= GFX10) {
-      program->dev.physical_sgprs = 128 * 20; /* enough for max waves */
-      program->dev.sgpr_alloc_granule = 128;
-      program->dev.sgpr_limit =
-         108; /* includes VCC, which can be treated as s[106-107] on GFX10+ */
-
-      if (program->family == CHIP_NAVI31 || program->family == CHIP_NAVI32 ||
-          program->family == CHIP_STRIX_HALO || program->gfx_level >= GFX12) {
-         program->dev.physical_vgprs = program->wave_size == 32 ? 1536 : 768;
-         program->dev.vgpr_alloc_granule = program->wave_size == 32 ? 24 : 12;
-      } else {
-         program->dev.physical_vgprs = program->wave_size == 32 ? 1024 : 512;
-         if (program->gfx_level >= GFX10_3)
-            program->dev.vgpr_alloc_granule = program->wave_size == 32 ? 16 : 8;
-         else
-            program->dev.vgpr_alloc_granule = program->wave_size == 32 ? 8 : 4;
-      }
-   } else if (program->gfx_level >= GFX8) {
-      program->dev.physical_sgprs = 800;
-      program->dev.sgpr_alloc_granule = 16;
-      program->dev.sgpr_limit = 102;
-      if (program->family == CHIP_TONGA || program->family == CHIP_ICELAND)
-         program->dev.sgpr_alloc_granule = 96; /* workaround hardware bug */
-   } else {
-      program->dev.physical_sgprs = 512;
-      program->dev.sgpr_alloc_granule = 8;
-      program->dev.sgpr_limit = 104;
+   if (program->wave_size == 32) {
+      program->dev.physical_vgprs *= 2;
+      program->dev.vgpr_alloc_granule *= 2;
    }
 
    if (program->stage == raytracing_cs) {
@@ -121,16 +102,6 @@ init_program(Program* program, Stage stage, const struct aco_shader_info* info,
    }
 
    program->dev.scratch_alloc_granule = program->gfx_level >= GFX11 ? 256 : 1024;
-
-   program->dev.max_waves_per_simd = 10;
-   if (program->gfx_level >= GFX10_3)
-      program->dev.max_waves_per_simd = 16;
-   else if (program->gfx_level == GFX10)
-      program->dev.max_waves_per_simd = 20;
-   else if (program->family >= CHIP_POLARIS10 && program->family <= CHIP_VEGAM)
-      program->dev.max_waves_per_simd = 8;
-
-   program->dev.simd_per_cu = program->gfx_level >= GFX10 ? 2 : 4;
 
    /* XNACK replay can be used for demand paging and page migration.
     * This is only relevant to GPGPU programming with unified shared memory.

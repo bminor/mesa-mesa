@@ -10,6 +10,7 @@
 #ifndef ACO_SHADER_INFO_H
 #define ACO_SHADER_INFO_H
 
+#include "ac_gpu_info.h"
 #include "ac_hw_stage.h"
 #include "ac_shader_args.h"
 #include "amd_family.h"
@@ -140,6 +141,7 @@ enum aco_compiler_debug_level {
 };
 
 struct aco_compiler_options {
+   const struct ac_cu_info* cu_info;
    bool dump_ir;
    bool dump_preoptir;
    bool record_asm;

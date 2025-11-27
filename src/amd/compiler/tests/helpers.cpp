@@ -96,7 +96,9 @@ create_program(enum amd_gfx_level gfx_level, Stage stage, unsigned wave_size,
    program.reset(new Program);
    rad_info.gfx_level = gfx_level;
    rad_info.family = family;
+   ac_fill_cu_info(&rad_info, NULL);
    struct aco_compiler_options options = {
+      .cu_info = &rad_info.cu_info,
       .family = family,
       .gfx_level = gfx_level,
    };
@@ -171,6 +173,7 @@ setup_nir_cs(enum amd_gfx_level gfx_level, mesa_shader_stage stage, enum radeon_
    memset(&rad_info, 0, sizeof(rad_info));
    rad_info.gfx_level = gfx_level;
    rad_info.family = family;
+   ac_fill_cu_info(&rad_info, NULL);
 
    memset(&nir_options, 0, sizeof(nir_options));
    ac_nir_set_options(&rad_info, false, &nir_options);
@@ -417,6 +420,7 @@ finish_isel_test(enum ac_hw_stage hw_stage, unsigned wave_size)
    aco_compiler_options options = {};
    options.family = rad_info.family;
    options.gfx_level = rad_info.gfx_level;
+   options.cu_info = &rad_info.cu_info;
 
    memset(&info, 0, sizeof(info));
    info.hw_stage = hw_stage;
