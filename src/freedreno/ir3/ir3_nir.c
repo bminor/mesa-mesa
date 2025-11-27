@@ -689,8 +689,6 @@ ir3_finalize_nir(struct ir3_compiler *compiler,
    NIR_PASS(_, s, nir_lower_frexp);
    NIR_PASS(_, s, nir_lower_amul, ir3_glsl_type_size);
 
-   OPT(s, nir_lower_wrmasks);
-
    OPT(s, nir_lower_tex, &tex_options);
    OPT(s, nir_lower_load_const_to_scalar);
 
@@ -1207,7 +1205,6 @@ ir3_nir_lower_variant(struct ir3_shader_variant *so,
    }
 
    /* Lower scratch writemasks */
-   progress |= OPT(s, nir_lower_wrmasks);
    progress |= OPT(s, nir_lower_atomics, atomic_supported);
 
    if (OPT(s, nir_lower_locals_to_regs, 1)) {
