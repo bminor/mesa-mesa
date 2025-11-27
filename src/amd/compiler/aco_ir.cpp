@@ -76,9 +76,7 @@ init_program(Program* program, Stage stage, const struct aco_shader_info* info,
 
    /* GFX6: There is 64KB LDS per CU, but a single workgroup can only use 32KB. */
    program->dev.lds_limit = program->gfx_level >= GFX7 ? 65536 : 32768;
-
-   /* apparently gfx702 also has 16-bank LDS but I can't find a family for that */
-   program->dev.has_16bank_lds = program->family == CHIP_KABINI || program->family == CHIP_STONEY;
+   program->dev.has_16bank_lds = options->cu_info->has_lds_bank_count_16;
 
    program->dev.max_waves_per_simd = options->cu_info->max_waves_per_simd;
    program->dev.simd_per_cu = options->cu_info->num_simd_per_compute_unit;
@@ -108,22 +106,12 @@ init_program(Program* program, Stage stage, const struct aco_shader_info* info,
     */
    program->dev.xnack_enabled = false;
 
-   program->dev.sram_ecc_enabled = program->family == CHIP_VEGA20 ||
-                                   program->family == CHIP_MI100 || program->family == CHIP_MI200 ||
-                                   program->family == CHIP_GFX940;
-   /* apparently gfx702 also has fast v_fma_f32 but I can't find a family for that */
-   program->dev.has_fast_fma32 = program->gfx_level >= GFX9;
-   if (program->family == CHIP_TAHITI || program->family == CHIP_CARRIZO ||
-       program->family == CHIP_HAWAII)
-      program->dev.has_fast_fma32 = true;
+   program->dev.sram_ecc_enabled = options->cu_info->has_sram_ecc_enabled;
+
+   program->dev.has_fast_fma32 = options->cu_info->has_fast_fma32;
    program->dev.has_mac_legacy32 = program->gfx_level <= GFX7 || program->gfx_level == GFX10;
    program->dev.has_fmac_legacy32 = program->gfx_level >= GFX10_3 && program->gfx_level < GFX12;
-
-   program->dev.fused_mad_mix = program->gfx_level >= GFX10;
-   if (program->family == CHIP_VEGA12 || program->family == CHIP_VEGA20 ||
-       program->family == CHIP_MI100 || program->family == CHIP_MI200 ||
-       program->family == CHIP_GFX940)
-      program->dev.fused_mad_mix = true;
+   program->dev.fused_mad_mix = options->cu_info->has_fma_mix;
 
    if (program->gfx_level >= GFX12) {
       program->dev.scratch_global_offset_min = -8388608;
