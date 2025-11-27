@@ -84,7 +84,7 @@
         "description": "glsl: support barrier() for task and mesh shader",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "d52452a486c5861384c67909e9fc502ca99f23bb",
         "notes": null
