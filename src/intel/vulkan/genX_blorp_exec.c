@@ -315,7 +315,7 @@ blorp_exec_on_render(struct blorp_batch *batch,
       anv_add_pending_pipe_bits(cmd_buffer,
                                 VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
                                 VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
-                                ANV_PIPE_RENDER_TARGET_CACHE_FLUSH_BIT,
+                                ANV_PIPE_RT_BTI_CHANGE,
                                 "before blorp BTI change");
    }
 #endif
@@ -383,7 +383,7 @@ blorp_exec_on_render(struct blorp_batch *batch,
       anv_add_pending_pipe_bits(cmd_buffer,
                                 VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
                                 VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
-                                ANV_PIPE_RENDER_TARGET_CACHE_FLUSH_BIT,
+                                ANV_PIPE_RT_BTI_CHANGE,
                                 "after blorp BTI change");
    }
 #endif

@@ -1721,6 +1721,12 @@ genX(emit_apply_pipe_flushes)(struct anv_batch *batch,
    if (needs_cs_stall)
       bits |= ANV_PIPE_CS_STALL_BIT;
 
+   if (bits & ANV_PIPE_RT_BTI_CHANGE) {
+      bits &= ~ANV_PIPE_RT_BTI_CHANGE;
+      bits |= ANV_PIPE_STALL_AT_SCOREBOARD_BIT |
+              ANV_PIPE_RENDER_TARGET_CACHE_FLUSH_BIT;
+   }
+
 #if GFX_VER >= 12 && GFX_VER < 20
    /* From the TGL PRM, Volume 2a, "PIPE_CONTROL":
     *
@@ -3074,8 +3080,7 @@ genX(cmd_buffer_update_color_aux_op)(struct anv_cmd_buffer *cmd_buffer,
        *    clear pass, to ensure correct ordering between pixels.
        */
       add_pending_pipe_bits_for_color_aux_op(
-            cmd_buffer, next_aux_op,
-            ANV_PIPE_RENDER_TARGET_CACHE_FLUSH_BIT);
+            cmd_buffer, next_aux_op, ANV_PIPE_RT_BTI_CHANGE);
 
 #elif GFX_VERx10 == 125
       /* From the ACM Bspec 47704 (r52663), "Render Target Fast Clear":
@@ -3166,8 +3171,7 @@ genX(cmd_buffer_update_color_aux_op)(struct anv_cmd_buffer *cmd_buffer,
        *    RT flush = 1
        */
       add_pending_pipe_bits_for_color_aux_op(
-            cmd_buffer, next_aux_op,
-            ANV_PIPE_RENDER_TARGET_CACHE_FLUSH_BIT);
+            cmd_buffer, next_aux_op, ANV_PIPE_RT_BTI_CHANGE);
 
 #elif GFX_VERx10 == 120
       /* From the TGL PRM Vol. 9, "Color Fast Clear Synchronization":
@@ -6038,7 +6042,7 @@ void genX(CmdBeginRendering)(
       anv_add_pending_pipe_bits(cmd_buffer,
                                 VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
                                 VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
-                                ANV_PIPE_RENDER_TARGET_CACHE_FLUSH_BIT,
+                                ANV_PIPE_RT_BTI_CHANGE,
                                 "change RT");
    }
 #endif

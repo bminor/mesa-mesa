@@ -4026,6 +4026,19 @@ enum anv_pipe_bits {
     * L3.
     */
    ANV_PIPE_END_OF_PIPE_SYNC_FORCE_FLUSH_L3_BIT = (1 << 25),
+
+   /* This bit does not exist directly in PIPE_CONTROL. It helps to track post
+    * fast clear flushes. BSpec 57340 says in relation to fast clear flushes
+    * that "RESOURCE_BARRIER allows hardware to opportunistically combine this
+    * operation with previous RESOURCE_BARRIER commands potentially reducing
+    * overall synchronization cost", that appears to be untrue as experienced
+    * with
+    * dEQP-VK.synchronization.op.single_queue.barrier.write_clear_color_image_read_copy_image_to_buffer.image_128x128_r8_unorm
+    *
+    * If a PIPE_CONTROL is emitted this should be converted to
+    * ANV_PIPE_RENDER_TARGET_CACHE_FLUSH_BIT.
+    */
+   ANV_PIPE_RT_BTI_CHANGE                    = (1 << 26),
 };
 
 /* These bits track the state of buffer writes for queries. They get cleared

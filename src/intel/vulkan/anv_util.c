@@ -147,6 +147,8 @@ anv_dump_pipe_bits(enum anv_pipe_bits bits, struct log_stream *stream)
       mesa_log_stream_printf(stream, "+utdp_flush ");
    if (bits & ANV_PIPE_CCS_CACHE_FLUSH_BIT)
       mesa_log_stream_printf(stream, "+ccs_flush ");
+   if (bits & ANV_PIPE_RT_BTI_CHANGE)
+      mesa_log_stream_printf(stream, "+rt-bti-change ");
 }
 
 const char *
