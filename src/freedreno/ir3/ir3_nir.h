@@ -51,7 +51,6 @@ uint8_t ir3_nir_vectorize_filter(const nir_instr *instr, const void *data);
 /*
  * 64b related lowering:
  */
-bool ir3_nir_lower_64b_intrinsics(nir_shader *shader);
 bool ir3_nir_lower_64b_undef(nir_shader *shader);
 bool ir3_nir_lower_64b_global(nir_shader *shader);
 bool ir3_nir_lower_64b_regs(nir_shader *shader);
