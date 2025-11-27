@@ -222,7 +222,7 @@ GfxStreamVulkanMapper* GfxStreamVulkanMapper::getInstance(std::optional<DeviceId
 
 #if DETECT_OS_LINUX
         if (driver) {
-            setenv(VK_DRIVER_FILES, driver, 1);
+            os_set_option(VK_DRIVER_FILES, driver, true);
         }
 #endif
         free(driver);

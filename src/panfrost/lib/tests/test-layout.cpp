@@ -734,7 +734,7 @@ TEST(WSI, Import)
 {
    /* We don't want to spam stderr with failure messages caused by our
     * EXPECT_FALSE() cases. */
-   setenv("MESA_LOG", "null", 0);
+   os_set_option("MESA_LOG", "null", false);
 
    struct pan_image_layout layout;
    for (unsigned i = 0; i < ARRAY_SIZE(archs); i++) {

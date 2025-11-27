@@ -158,10 +158,10 @@ static void addenv(const char *name, const char *value)
     if (orig) {
         char *newval;
         (void)!asprintf(&newval, "%s,%s", orig, value);
-        setenv(name, newval, 1);
+        os_set_option(name, newval, true);
         free(newval);
     } else {
-        setenv(name, value, 1);
+        os_set_option(name, value, true);
     }
 }
 
@@ -172,7 +172,7 @@ main(int argc, char **argv)
 
     for (int i = 1; i < argc; i++) {
         if (strstr(argv[i], "-mcpu=") == argv[i]) {
-            setenv("AMD_FORCE_FAMILY", argv[i] + 6, 1);
+            os_set_option("AMD_FORCE_FAMILY", argv[i] + 6, true);
         } else if (filename == NULL) {
             filename = argv[i];
         } else {

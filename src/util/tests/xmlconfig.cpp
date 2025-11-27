@@ -119,7 +119,7 @@ TEST_F(xmlconfig_test, enums_from_env)
       DRI_CONF_VBLANK_MODE(DRI_CONF_VBLANK_DEF_INTERVAL_1)
    };
 
-   setenv("vblank_mode", "0", 1);
+   os_set_option("vblank_mode", "0", true);
    driParseOptionInfo(&options, driconf, ARRAY_SIZE(driconf));
 
    EXPECT_EQ(0, driQueryOptioni(&options, "vblank_mode"));
@@ -244,7 +244,7 @@ TEST_F(xmlconfig_test, drirc_user_app)
 
 TEST_F(xmlconfig_test, drirc_env_override)
 {
-   setenv("mesa_drirc_option", "7", 1);
+   os_set_option("mesa_drirc_option", "7", true);
    driOptionCache cache = drirc_init("driver", "drm",
                                      "app1",
                                      NULL, 0,

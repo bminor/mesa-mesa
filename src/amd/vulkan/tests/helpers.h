@@ -57,7 +57,7 @@ public:
 
    void add_envvar(std::string name, std::string value)
    {
-      setenv(name.c_str(), value.c_str(), 1);
+      os_set_option(name.c_str(), value.c_str(), true);
 
       envvars.insert(std::make_pair<std::string, std::string>(std::move(name), std::move(value)));
    }
