@@ -1207,7 +1207,8 @@ static bool use_tile_swizzle(const struct ac_surf_config *config, const struct r
                              bool fmask)
 {
    if (fmask) {
-      return !(surf->flags & RADEON_SURF_SHAREABLE);
+      return !(surf->flags & (RADEON_SURF_SHAREABLE | RADEON_SURF_ALIASED |
+                              RADEON_SURF_REPLAYABLE));
    } else {
       return surf->modifier == DRM_FORMAT_MOD_INVALID &&
              !(surf->flags & (RADEON_SURF_Z_OR_SBUFFER | RADEON_SURF_SHAREABLE |
