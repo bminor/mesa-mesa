@@ -212,7 +212,7 @@ GfxStreamVulkanMapper* GfxStreamVulkanMapper::getInstance(std::optional<DeviceId
 
 	// HACK: Need equivalents on Windows
 #if DETECT_OS_LINUX
-        unsetenv(VK_DRIVER_FILES);
+        os_unset_option(VK_DRIVER_FILES);
 #endif
         sVkMapper = std::make_unique<GfxStreamVulkanMapper>();
         if (!sVkMapper->initialize(*deviceIdOpt)) {

@@ -65,7 +65,7 @@ public:
    void unset_envvars()
    {
       for (auto &envvar : envvars)
-         unsetenv(envvar.first.c_str());
+         os_unset_option(envvar.first.c_str());
       envvars.clear();
    }
 

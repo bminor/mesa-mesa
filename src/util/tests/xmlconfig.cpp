@@ -45,15 +45,15 @@ xmlconfig_test::xmlconfig_test()
    /* Unset variables from the envrionment to prevent user settings from
     * impacting the tests.
     */
-   unsetenv("glsl_zero_init");
-   unsetenv("always_have_depth_buffer");
-   unsetenv("opt");
-   unsetenv("vblank_mode");
-   unsetenv("not_present");
-   unsetenv("mesa_b_option");
-   unsetenv("mesa_s_option");
-   unsetenv("mest_test_unknown_option");
-   unsetenv("mest_drirc_option");
+   os_unset_option("glsl_zero_init");
+   os_unset_option("always_have_depth_buffer");
+   os_unset_option("opt");
+   os_unset_option("vblank_mode");
+   os_unset_option("not_present");
+   os_unset_option("mesa_b_option");
+   os_unset_option("mesa_s_option");
+   os_unset_option("mest_test_unknown_option");
+   os_unset_option("mest_drirc_option");
 
    options = {};
 }
@@ -251,7 +251,7 @@ TEST_F(xmlconfig_test, drirc_env_override)
                                      NULL, 0);
    /* env var takes precedence over config files */
    EXPECT_EQ(driQueryOptioni(&cache, "mesa_drirc_option"), 7);
-   unsetenv("mesa_drirc_option");
+   os_unset_option("mesa_drirc_option");
    driDestroyOptionCache(&cache);
 }
 

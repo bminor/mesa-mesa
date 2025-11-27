@@ -192,13 +192,13 @@ test_disk_cache_create(void *mem_ctx, const char *cache_dir_name,
    EXPECT_EQ(cache->type, DISK_CACHE_NONE) << "disk_cache_create with MESA_SHADER_CACHE_DISABLE set";
    disk_cache_destroy(cache);
 
-   unsetenv("MESA_SHADER_CACHE_DISABLE");
+   os_unset_option("MESA_SHADER_CACHE_DISABLE");
 
 #ifdef SHADER_CACHE_DISABLE_BY_DEFAULT
    /* With SHADER_CACHE_DISABLE_BY_DEFAULT, ensure that with
     * MESA_SHADER_CACHE_DISABLE set to nothing, disk_cache_create returns NO-OP cache.
     */
-   unsetenv("MESA_SHADER_CACHE_DISABLE");
+   os_unset_option("MESA_SHADER_CACHE_DISABLE");
    cache = disk_cache_create("test", driver_id, 0);
    EXPECT_EQ(cache->type, DISK_CACHE_NONE)
       << "disk_cache_create with MESA_SHADER_CACHE_DISABLE unset "
@@ -212,8 +212,8 @@ test_disk_cache_create(void *mem_ctx, const char *cache_dir_name,
    /* For the first real disk_cache_create() clear these environment
     * variables to test creation of cache in home directory.
     */
-   unsetenv("MESA_SHADER_CACHE_DIR");
-   unsetenv("XDG_CACHE_HOME");
+   os_unset_option("MESA_SHADER_CACHE_DIR");
+   os_unset_option("XDG_CACHE_HOME");
 
    cache = disk_cache_create("test", driver_id, 0);
    EXPECT_NE(cache, nullptr) << "disk_cache_create with no environment variables";
@@ -849,7 +849,7 @@ TEST_F(Cache, Database)
    test_put_big_sized_entry_to_empty_cache(driver_id);
 
    setenv("MESA_DISK_CACHE_DATABASE", "false", 1);
-   unsetenv("MESA_DISK_CACHE_DATABASE_NUM_PARTS");
+   os_unset_option("MESA_DISK_CACHE_DATABASE_NUM_PARTS");
 
    err = rmrf_local(CACHE_TEST_TMP);
    EXPECT_EQ(err, 0) << "Removing " CACHE_TEST_TMP " again";
@@ -1054,7 +1054,7 @@ TEST_F(Cache, Combined)
 
    /* Disable read-only cache. */
    setenv("MESA_DISK_CACHE_COMBINE_RW_WITH_RO_FOZ", "false", 1);
-   unsetenv("MESA_DISK_CACHE_READ_ONLY_FOZ_DBS");
+   os_unset_option("MESA_DISK_CACHE_READ_ONLY_FOZ_DBS");
 
    /* Create multi-file cache with disabled retrieval from the
     * read-only cache. */
@@ -1075,9 +1075,9 @@ TEST_F(Cache, Combined)
 
    disk_cache_destroy(cache_multifile);
 
-   unsetenv("MESA_DISK_CACHE_SINGLE_FILE");
-   unsetenv("MESA_DISK_CACHE_MULTI_FILE");
-   unsetenv("MESA_DISK_CACHE_DATABASE");
+   os_unset_option("MESA_DISK_CACHE_SINGLE_FILE");
+   os_unset_option("MESA_DISK_CACHE_MULTI_FILE");
+   os_unset_option("MESA_DISK_CACHE_DATABASE");
 
    int err = rmrf_local(CACHE_TEST_TMP);
    EXPECT_EQ(err, 0) << "Removing " CACHE_TEST_TMP " again";
@@ -1241,8 +1241,8 @@ TEST_F(Cache, List)
    int err = rmrf_local(CACHE_TEST_TMP);
    EXPECT_EQ(err, 0) << "Removing " CACHE_TEST_TMP " again";
 
-   unsetenv("MESA_DISK_CACHE_SINGLE_FILE");
-   unsetenv("MESA_DISK_CACHE_READ_ONLY_FOZ_DBS_DYNAMIC_LIST");
+   os_unset_option("MESA_DISK_CACHE_SINGLE_FILE");
+   os_unset_option("MESA_DISK_CACHE_READ_ONLY_FOZ_DBS_DYNAMIC_LIST");
 #endif /* FOZ_DB_UTIL_DYNAMIC_LIST */
 #endif /* ENABLE_SHADER_CACHE */
 }
@@ -1342,8 +1342,8 @@ TEST_F(Cache, DatabaseMultipartEviction)
 
    test_multipart_eviction(driver_id);
 
-   unsetenv("MESA_DISK_CACHE_DATABASE_NUM_PARTS");
-   unsetenv("MESA_DISK_CACHE_DATABASE");
+   os_unset_option("MESA_DISK_CACHE_DATABASE_NUM_PARTS");
+   os_unset_option("MESA_DISK_CACHE_DATABASE");
 
    int err = rmrf_local(CACHE_TEST_TMP);
    EXPECT_EQ(err, 0) << "Removing " CACHE_TEST_TMP " again";
@@ -1435,7 +1435,7 @@ TEST_F(Cache, DoNotDeleteNewCache)
    struct stat st;
    EXPECT_EQ(stat(cache_dir_name, &st), 0);
 
-   unsetenv("MESA_SHADER_CACHE_DIR");
+   os_unset_option("MESA_SHADER_CACHE_DIR");
    rmdir(cache_dir_name);
    rmdir(dir_name);
 #endif
@@ -1472,7 +1472,7 @@ TEST_F(Cache, DoNotDeleteCacheWithNewMarker)
    struct stat st;
    EXPECT_EQ(stat(cache_dir_name, &st), 0);
 
-   unsetenv("MESA_SHADER_CACHE_DIR");
+   os_unset_option("MESA_SHADER_CACHE_DIR");
    unlink(file_name);
    rmdir(cache_dir_name);
    rmdir(dir_name);
@@ -1515,7 +1515,7 @@ TEST_F(Cache, DeleteOldCache)
    EXPECT_NE(stat(cache_dir_name, &st), 0);
    EXPECT_EQ(errno, ENOENT);
 
-   unsetenv("MESA_SHADER_CACHE_DIR");
+   os_unset_option("MESA_SHADER_CACHE_DIR");
    unlink(file_name);
    rmdir(cache_dir_name);
    rmdir(dir_name);
