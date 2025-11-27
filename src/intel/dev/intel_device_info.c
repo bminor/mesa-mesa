@@ -1698,37 +1698,10 @@ intel_device_info_adjust_memory(struct intel_device_info *devinfo)
 static void
 init_max_scratch_ids(struct intel_device_info *devinfo)
 {
-   /* Determine the max number of subslices that potentially might be used in
+   /* Determine the max subslice that potentially might be used in
     * scratch space ids.
-    *
-    * For, Gfx11+, scratch space allocation is based on the number of threads
-    * in the base configuration.
-    *
-    * For Gfx9, devinfo->subslice_total is the TOTAL number of subslices and
-    * we wish to view that there are 4 subslices per slice instead of the
-    * actual number of subslices per slice. The documentation for 3DSTATE_PS
-    * "Scratch Space Base Pointer" says:
-    *
-    *    "Scratch Space per slice is computed based on 4 sub-slices.  SW
-    *     must allocate scratch space enough so that each slice has 4
-    *     slices allowed."
-    *
-    * According to the other driver team, this applies to compute shaders
-    * as well.  This is not currently documented at all.
-    *
-    * For Gfx8 and older we user devinfo->subslice_total.
     */
-   unsigned subslices;
-   if (devinfo->verx10 == 125)
-      subslices = 32;
-   else if (devinfo->ver == 12)
-      subslices = (devinfo->platform == INTEL_PLATFORM_DG1 || devinfo->gt == 2 ? 6 : 2);
-   else if (devinfo->ver == 11)
-      subslices = 8;
-   else if (devinfo->ver >= 9 && devinfo->ver < 11)
-      subslices = 4 * devinfo->num_slices;
-   else
-      subslices = devinfo->subslice_total;
+   unsigned subslices = intel_device_info_dual_subslice_id_bound(devinfo);
    assert(subslices >= devinfo->subslice_total);
 
    unsigned scratch_ids_per_subslice;
