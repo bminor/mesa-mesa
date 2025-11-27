@@ -1372,10 +1372,14 @@ run_fs(brw_shader &s, bool allow_spilling, bool do_rep_send)
       }
 
       /* We handle discards by keeping track of the still-live pixels in f0.1.
-       * On Xe2+, we also predicate stores with this mask. Initialize it with
-       * the dispatched pixels if we use discard or (on Xe2) memory stores.
+       * On Xe2+, we also predicate stores and test helper invocations with
+       * this mask. Initialize it with the dispatched pixels if we use discard
+       * or (on Xe2) memory stores or helper invocation testing.
        */
-      if ((devinfo->ver >= 20 && nir->info.writes_memory) ||
+      if ((devinfo->ver >= 20 &&
+           (BITSET_TEST(nir->info.system_values_read,
+                        SYSTEM_VALUE_HELPER_INVOCATION) ||
+            nir->info.writes_memory)) ||
           wm_prog_data->uses_kill) {
 
          const unsigned lower_width = MIN2(s.dispatch_width, 16);
