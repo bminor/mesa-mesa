@@ -436,6 +436,7 @@ vn_MapMemory2(VkDevice device,
    const VkDeviceSize size = pMemoryMapInfo->size;
    const struct vk_device_memory *mem_vk = &mem->base.vk;
    const bool need_bo = !mem->base_bo;
+   void *placed_addr = NULL;
    void *ptr = NULL;
    VkResult result;
 
@@ -457,7 +458,14 @@ vn_MapMemory2(VkDevice device,
          return vn_error(dev->instance, result);
    }
 
-   ptr = vn_renderer_bo_map(dev->renderer, mem->base_bo, NULL);
+   if (pMemoryMapInfo->flags & VK_MEMORY_MAP_PLACED_BIT_EXT) {
+      const VkMemoryMapPlacedInfoEXT *placed_info = vk_find_struct_const(
+         pMemoryMapInfo->pNext, MEMORY_MAP_PLACED_INFO_EXT);
+      assert(placed_info != NULL);
+      placed_addr = placed_info->pPlacedAddress;
+   }
+
+   ptr = vn_renderer_bo_map(dev->renderer, mem->base_bo, placed_addr);
    if (!ptr) {
       /* vn_renderer_bo_map implies a roundtrip on success, but not here. */
       if (need_bo) {

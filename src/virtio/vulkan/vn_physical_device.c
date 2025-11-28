@@ -14,6 +14,7 @@
 
 #include "git_sha1.h"
 #include "util/mesa-sha1.h"
+#include "util/os_misc.h"
 #include "venus-protocol/vn_protocol_driver_device.h"
 #include "vk_android.h"
 #include "vk_common_entrypoints.h"
@@ -410,6 +411,11 @@ vn_physical_device_init_features(struct vn_physical_device *physical_dev)
     * See vn_physical_device_get_native_extensions.
     */
    feats->deviceMemoryReport = true;
+
+   /* VK_EXT_map_memory_placed */
+   feats->memoryMapPlaced = true;
+   feats->memoryMapRangePlaced = false;
+   feats->memoryUnmapReserve = true;
 
 #ifdef VN_USE_WSI_PLATFORM
    feats->presentId = true;
@@ -838,6 +844,11 @@ vn_physical_device_init_properties(struct vn_physical_device *physical_dev)
 
    /* initialize native properties */
 
+   /* VK_EXT_map_memory_placed */
+   uint64_t os_page_size = 4096;
+   os_get_page_size(&os_page_size);
+   props->minPlacedMemoryMapAlignment = os_page_size;
+
    /* VK_EXT_physical_device_drm */
    VN_SET_VK_PROPS(props, &renderer_info->drm.props);
 
@@ -1180,6 +1191,7 @@ vn_physical_device_get_native_extensions(
    exts->KHR_deferred_host_operations =
       physical_dev->ray_tracing && renderer_exts->KHR_acceleration_structure;
    exts->KHR_map_memory2 = true;
+   exts->EXT_map_memory_placed = true;
    exts->EXT_physical_device_drm = true;
    /* use common implementation */
    exts->EXT_tooling_info = true;

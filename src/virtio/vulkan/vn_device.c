@@ -328,6 +328,11 @@ vn_device_fix_create_info(const struct vn_device *dev,
       block_exts[block_count++] = VK_KHR_MAP_MEMORY_2_EXTENSION_NAME;
    }
 
+   if (app_exts->EXT_map_memory_placed) {
+      /* see vn_physical_device_get_native_extensions */
+      block_exts[block_count++] = VK_EXT_MAP_MEMORY_PLACED_EXTENSION_NAME;
+   }
+
    if (app_exts->EXT_device_memory_report) {
       /* see vn_physical_device_get_native_extensions */
       block_exts[block_count++] = VK_EXT_DEVICE_MEMORY_REPORT_EXTENSION_NAME;
