@@ -233,7 +233,7 @@ static void init_gfx12(struct radeon_info *info)
 {
    info->family = CHIP_GFX1200;
    info->gfx_level = GFX12;
-   info->family_id = FAMILY_GFX12;
+   info->family_id = FAMILY_NV4;
    info->chip_external_rev = 0x01;
    info->has_graphics = true;
    info->tcc_cache_line_size = 256;

@@ -824,7 +824,7 @@ radv_emit_graphics(struct radv_device *device, struct radv_cmd_stream *cs)
       ac_pm4_set_reg(pm4, R_028000_DB_RENDER_CONTROL, 0);
    }
 
-   if (pdev->info.family >= CHIP_NAVI31 && pdev->info.family <= CHIP_GFX1150) {
+   if (pdev->info.family >= CHIP_NAVI31 && pdev->info.family <= CHIP_STRIX1) {
       /* Disable SINGLE clear codes on GFX11 (including first GFX11.5 rev) to workaround a hw bug
        * with DCC. */
       ac_pm4_set_reg(pm4, R_028424_CB_FDCC_CONTROL, S_028424_DISABLE_CONSTANT_ENCODE_SINGLE(1));

@@ -341,7 +341,7 @@ BEGIN_TEST(insert_waitcnt.waw.vmem_types)
 END_TEST
 
 BEGIN_TEST(insert_waitcnt.waw.point_sample_accel)
-   for (radeon_family family : {CHIP_GFX1150, CHIP_GFX1153}) {
+   for (radeon_family family : {CHIP_STRIX1, CHIP_GFX1153}) {
       if (!setup_cs(NULL, GFX11_5, family, family == CHIP_GFX1153 ? "_3" : "_0"))
          continue;
 

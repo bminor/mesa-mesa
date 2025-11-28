@@ -545,13 +545,13 @@ ac_query_gpu_info(int fd, void *dev_p, struct radeon_info *info,
          identify_chip2(HAWK_POINT1, PHOENIX);
          identify_chip2(HAWK_POINT2, PHOENIX2);
          break;
-      case FAMILY_GFX1150:
-         identify_chip(GFX1150);
-         identify_chip(GFX1151);
-         identify_chip(GFX1152);
+      case FAMILY_STX:
+         identify_chip(STRIX1);
+         identify_chip(STRIX_HALO);
+         identify_chip(KRACKAN1);
          identify_chip(GFX1153);
          break;
-      case FAMILY_GFX12:
+      case FAMILY_NV4:
          identify_chip(GFX1200);
          identify_chip(GFX1201);
          break;

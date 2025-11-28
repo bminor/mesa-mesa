@@ -3797,7 +3797,7 @@ int ac_compute_surface(struct ac_addrlib *addrlib, const struct radeon_info *inf
    /* 0 offsets mean disabled. */
    surf->meta_offset = surf->fmask_offset = surf->cmask_offset = surf->display_dcc_offset = 0;
 
-   if (info->family_id >= FAMILY_GFX12) {
+   if (info->family_id >= FAMILY_NV4) {
       if (!gfx12_compute_surface(addrlib, info, config, mode, surf))
          return ADDR_ERROR;
 

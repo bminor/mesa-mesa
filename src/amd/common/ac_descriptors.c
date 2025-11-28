@@ -1163,7 +1163,7 @@ ac_get_dcc_min_compressed_block_size(const struct radeon_info *info)
     * 32B minimum request size. Sometimes a different size is used depending on the data fabric,
     * etc.
     */
-   return info->has_dedicated_vram || info->family == CHIP_GFX1151 ?
+   return info->has_dedicated_vram || info->family == CHIP_STRIX_HALO ?
             V_028C78_MIN_BLOCK_SIZE_32B : V_028C78_MIN_BLOCK_SIZE_64B;
 }
 

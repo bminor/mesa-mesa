@@ -2056,8 +2056,8 @@ const struct amdgpu_device amdgpu_devices[] = {
       },
    },
    {
-      .name = "gfx1150",
-      .radeon_family = CHIP_GFX1150,
+      .name = "strix1",
+      .radeon_family = CHIP_STRIX1,
       .hw_ip_gfx = {
          .hw_ip_version_major = 11,
          .hw_ip_version_minor = 0,
