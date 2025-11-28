@@ -194,21 +194,12 @@ radv_process_depth_image_layer(struct radv_cmd_buffer *cmd_buffer, struct radv_i
       .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
    };
 
-   const VkRenderingAttachmentInfo stencil_att = {
-      .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
-      .imageView = radv_image_view_to_handle(&iview),
-      .imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-      .loadOp = VK_ATTACHMENT_LOAD_OP_LOAD,
-      .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
-   };
-
    const VkRenderingInfo rendering_info = {
       .sType = VK_STRUCTURE_TYPE_RENDERING_INFO,
       .flags = VK_RENDERING_LOCAL_READ_CONCURRENT_ACCESS_CONTROL_BIT_KHR,
       .renderArea = {.offset = {0, 0}, .extent = {width, height}},
       .layerCount = 1,
       .pDepthAttachment = &depth_att,
-      .pStencilAttachment = &stencil_att,
    };
 
    radv_CmdBeginRendering(radv_cmd_buffer_to_handle(cmd_buffer), &rendering_info);
