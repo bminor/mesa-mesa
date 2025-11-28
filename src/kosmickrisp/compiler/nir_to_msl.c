@@ -614,12 +614,12 @@ round_src_component_to_uint(struct nir_to_msl_ctx *ctx, nir_src *src,
 {
    bool is_float = msl_src_is_float(ctx, src);
    if (is_float) {
-      P(ctx, "uint(rint(");
+      P(ctx, "uint(max(int(rint(");
    }
    src_to_msl(ctx, src);
    P(ctx, ".%c", component);
    if (is_float) {
-      P(ctx, "))");
+      P(ctx, ")), int(0)))");
    }
 }
 
