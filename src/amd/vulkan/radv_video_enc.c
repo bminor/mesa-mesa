@@ -840,12 +840,11 @@ radv_enc_spec_misc_av1(struct radv_cmd_buffer *cmd_buffer, const struct VkVideoE
    tile_config->tile_groups[0].end = tile_config->num_tile_cols * tile_config->num_tile_rows - 1;
    tile_config->tile_size_bytes_minus_1 = 3;
 
-   uint32_t precision = RENCODE_AV1_MV_PRECISION_ALLOW_HIGH_PRECISION;
-
-   if (!pic->flags.allow_high_precision_mv)
-      precision = RENCODE_AV1_MV_PRECISION_DISALLOW_HIGH_PRECISION;
-   if (pic->flags.force_integer_mv)
+   uint32_t precision = RENCODE_AV1_MV_PRECISION_DISALLOW_HIGH_PRECISION;
+   if (pic->flags.allow_screen_content_tools && pic->flags.force_integer_mv)
       precision = RENCODE_AV1_MV_PRECISION_FORCE_INTEGER_MV;
+   else if (pic->flags.allow_high_precision_mv)
+      precision = RENCODE_AV1_MV_PRECISION_ALLOW_HIGH_PRECISION;
 
    av1_state->skip_mode_allowed =
       seq->flags.enable_order_hint &&
