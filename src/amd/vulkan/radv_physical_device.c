@@ -71,12 +71,6 @@ radv_taskmesh_enabled(const struct radv_physical_device *pdev)
    if (instance->debug_flags & RADV_DEBUG_NO_MESH_SHADER)
       return false;
 
-   /* Only GFX10.3 with very old MEC firmwares. */
-   if (pdev->info.has_taskmesh_indirect0_bug) {
-      fprintf(stderr, "radv: WARNING: Mesh shaders are disabled due to very old firmwares, please update!\n");
-      return false;
-   }
-
    return pdev->use_ngg && !pdev->use_llvm && pdev->info.gfx_level >= GFX10_3 && radv_compute_queue_enabled(pdev) &&
           pdev->info.has_gang_submit;
 }
