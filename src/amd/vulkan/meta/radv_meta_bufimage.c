@@ -559,16 +559,22 @@ get_cleari_r32g32b32_pipeline(struct radv_device *device, VkPipeline *pipeline_o
 
 static void
 create_iview(struct radv_cmd_buffer *cmd_buffer, struct radv_meta_blit2d_surf *surf, struct radv_image_view *iview,
-             VkFormat format, VkImageAspectFlagBits aspects)
+             VkFormat format, VkImageAspectFlagBits aspects, VkImageUsageFlags usage)
 {
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
 
    if (format == VK_FORMAT_UNDEFINED)
       format = surf->format;
 
+   const VkImageViewUsageCreateInfo iview_usage_info = {
+      .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_USAGE_CREATE_INFO,
+      .usage = usage,
+   };
+
    radv_image_view_init(iview, device,
                         &(VkImageViewCreateInfo){
                            .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+                           .pNext = &iview_usage_info,
                            .flags = VK_IMAGE_VIEW_CREATE_DRIVER_INTERNAL_BIT_MESA,
                            .image = radv_image_to_handle(surf->image),
                            .viewType = radv_meta_get_view_type(surf->image),
@@ -705,7 +711,7 @@ radv_meta_image_to_buffer(struct radv_cmd_buffer *cmd_buffer, struct radv_meta_b
       return;
    }
 
-   create_iview(cmd_buffer, src, &src_view, VK_FORMAT_UNDEFINED, src->aspect_mask);
+   create_iview(cmd_buffer, src, &src_view, VK_FORMAT_UNDEFINED, src->aspect_mask, VK_IMAGE_USAGE_SAMPLED_BIT);
 
    radv_meta_bind_descriptors(
       cmd_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, layout, 2,
@@ -840,7 +846,7 @@ radv_meta_buffer_to_image_cs(struct radv_cmd_buffer *cmd_buffer, struct radv_met
       return;
    }
 
-   create_iview(cmd_buffer, dst, &dst_view, VK_FORMAT_UNDEFINED, dst->aspect_mask);
+   create_iview(cmd_buffer, dst, &dst_view, VK_FORMAT_UNDEFINED, dst->aspect_mask, VK_IMAGE_USAGE_STORAGE_BIT);
 
    radv_meta_bind_descriptors(
       cmd_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, layout, 2,
@@ -1016,10 +1022,10 @@ radv_meta_image_to_image_cs(struct radv_cmd_buffer *cmd_buffer, struct radv_meta
 
       create_iview(cmd_buffer, src, &src_view,
                    (src_aspect_mask & (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT)) ? depth_format : 0,
-                   src_aspect_mask);
+                   src_aspect_mask, VK_IMAGE_USAGE_SAMPLED_BIT);
       create_iview(cmd_buffer, dst, &dst_view,
                    dst_aspect_mask & (VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT) ? depth_format : 0,
-                   dst_aspect_mask);
+                   dst_aspect_mask, VK_IMAGE_USAGE_STORAGE_BIT);
 
       radv_meta_bind_descriptors(cmd_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, layout, 2,
                                  (VkDescriptorGetInfoEXT[]){{.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_GET_INFO_EXT,
@@ -1144,7 +1150,7 @@ radv_meta_clear_image_cs(struct radv_cmd_buffer *cmd_buffer, struct radv_meta_bl
       return;
    }
 
-   create_iview(cmd_buffer, dst, &dst_iview, VK_FORMAT_UNDEFINED, dst->aspect_mask);
+   create_iview(cmd_buffer, dst, &dst_iview, VK_FORMAT_UNDEFINED, dst->aspect_mask, VK_IMAGE_USAGE_STORAGE_BIT);
 
    radv_meta_bind_descriptors(cmd_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, layout, 1,
                               (VkDescriptorGetInfoEXT[]){

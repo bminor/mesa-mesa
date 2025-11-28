@@ -179,9 +179,15 @@ radv_fmask_copy(struct radv_cmd_buffer *cmd_buffer, struct radv_meta_blit2d_surf
 
    radv_CmdBindPipeline(radv_cmd_buffer_to_handle(cmd_buffer), VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
 
+   const VkImageViewUsageCreateInfo src_iview_usage_info = {
+      .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_USAGE_CREATE_INFO,
+      .usage = VK_IMAGE_USAGE_SAMPLED_BIT,
+   };
+
    radv_image_view_init(&src_iview, device,
                         &(VkImageViewCreateInfo){
                            .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+                           .pNext = &src_iview_usage_info,
                            .flags = VK_IMAGE_VIEW_CREATE_DRIVER_INTERNAL_BIT_MESA,
                            .image = radv_image_to_handle(src->image),
                            .viewType = radv_meta_get_view_type(src->image),
@@ -197,9 +203,15 @@ radv_fmask_copy(struct radv_cmd_buffer *cmd_buffer, struct radv_meta_blit2d_surf
                         },
                         NULL);
 
+   const VkImageViewUsageCreateInfo dst_iview_usage_info = {
+      .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_USAGE_CREATE_INFO,
+      .usage = VK_IMAGE_USAGE_STORAGE_BIT,
+   };
+
    radv_image_view_init(&dst_iview, device,
                         &(VkImageViewCreateInfo){
                            .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+                           .pNext = &dst_iview_usage_info,
                            .flags = VK_IMAGE_VIEW_CREATE_DRIVER_INTERNAL_BIT_MESA,
                            .image = radv_image_to_handle(dst->image),
                            .viewType = radv_meta_get_view_type(dst->image),

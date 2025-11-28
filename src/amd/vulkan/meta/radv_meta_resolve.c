@@ -297,10 +297,16 @@ radv_meta_resolve_hardware_image(struct radv_cmd_buffer *cmd_buffer, struct radv
 
    radv_CmdSetScissor(radv_cmd_buffer_to_handle(cmd_buffer), 0, 1, &resolve_area);
 
+   const VkImageViewUsageCreateInfo src_iview_usage_info = {
+      .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_USAGE_CREATE_INFO,
+      .usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+   };
+
    struct radv_image_view src_iview;
    radv_image_view_init(&src_iview, device,
                         &(VkImageViewCreateInfo){
                            .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+                           .pNext = &src_iview_usage_info,
                            .flags = VK_IMAGE_VIEW_CREATE_DRIVER_INTERNAL_BIT_MESA,
                            .image = radv_image_to_handle(src_image),
                            .viewType = VK_IMAGE_VIEW_TYPE_2D,
@@ -316,10 +322,16 @@ radv_meta_resolve_hardware_image(struct radv_cmd_buffer *cmd_buffer, struct radv
                         },
                         NULL);
 
+   const VkImageViewUsageCreateInfo dst_iview_usage_info = {
+      .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_USAGE_CREATE_INFO,
+      .usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+   };
+
    struct radv_image_view dst_iview;
    radv_image_view_init(&dst_iview, device,
                         &(VkImageViewCreateInfo){
                            .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+                           .pNext = &dst_iview_usage_info,
                            .flags = VK_IMAGE_VIEW_CREATE_DRIVER_INTERNAL_BIT_MESA,
                            .image = radv_image_to_handle(dst_image),
                            .viewType = radv_meta_get_view_type(dst_image),

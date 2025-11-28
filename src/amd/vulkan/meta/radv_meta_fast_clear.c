@@ -252,10 +252,16 @@ radv_process_color_image_layer(struct radv_cmd_buffer *cmd_buffer, struct radv_i
     */
    const bool disable_tc_compat_cmask_mrt = op == FMASK_DECOMPRESS || op == DCC_DECOMPRESS;
 
+   const VkImageViewUsageCreateInfo iview_usage_info = {
+      .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_USAGE_CREATE_INFO,
+      .usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+   };
+
    radv_image_view_init(
       &iview, device,
       &(VkImageViewCreateInfo){
          .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+         .pNext = &iview_usage_info,
          .flags = VK_IMAGE_VIEW_CREATE_DRIVER_INTERNAL_BIT_MESA,
          .image = radv_image_to_handle(image),
          .viewType = radv_meta_get_view_type(image),
@@ -488,9 +494,16 @@ radv_decompress_dcc_compute(struct radv_cmd_buffer *cmd_buffer, struct radv_imag
       height = u_minify(image->vk.extent.height, subresourceRange->baseMipLevel + l);
 
       for (uint32_t s = 0; s < vk_image_subresource_layer_count(&image->vk, subresourceRange); s++) {
+
+         const VkImageViewUsageCreateInfo load_iview_usage_info = {
+            .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_USAGE_CREATE_INFO,
+            .usage = VK_IMAGE_USAGE_STORAGE_BIT,
+         };
+
          radv_image_view_init(&load_iview, device,
                               &(VkImageViewCreateInfo){
                                  .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+                                 .pNext = &load_iview_usage_info,
                                  .flags = VK_IMAGE_VIEW_CREATE_DRIVER_INTERNAL_BIT_MESA,
                                  .image = radv_image_to_handle(image),
                                  .viewType = VK_IMAGE_VIEW_TYPE_2D,
@@ -502,9 +515,16 @@ radv_decompress_dcc_compute(struct radv_cmd_buffer *cmd_buffer, struct radv_imag
                                                       .layerCount = 1},
                               },
                               &(struct radv_image_view_extra_create_info){.enable_compression = true});
+
+         const VkImageViewUsageCreateInfo store_iview_usage_info = {
+            .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_USAGE_CREATE_INFO,
+            .usage = VK_IMAGE_USAGE_STORAGE_BIT,
+         };
+
          radv_image_view_init(&store_iview, device,
                               &(VkImageViewCreateInfo){
                                  .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+                                 .pNext = &store_iview_usage_info,
                                  .flags = VK_IMAGE_VIEW_CREATE_DRIVER_INTERNAL_BIT_MESA,
                                  .image = radv_image_to_handle(image),
                                  .viewType = VK_IMAGE_VIEW_TYPE_2D,

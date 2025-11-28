@@ -73,10 +73,17 @@ get_view_type(const struct radv_image *image)
 
 static void
 image_view_init(struct radv_device *device, struct radv_image *image, VkFormat format, VkImageAspectFlags aspectMask,
-                uint32_t baseMipLevel, uint32_t baseArrayLayer, uint32_t layerCount, struct radv_image_view *iview)
+                VkImageUsageFlags usage, uint32_t baseMipLevel, uint32_t baseArrayLayer, uint32_t layerCount,
+                struct radv_image_view *iview)
 {
+   const VkImageViewUsageCreateInfo iview_usage_info = {
+      .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_USAGE_CREATE_INFO,
+      .usage = usage,
+   };
+
    VkImageViewCreateInfo iview_create_info = {
       .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+      .pNext = &iview_usage_info,
       .flags = VK_IMAGE_VIEW_CREATE_DRIVER_INTERNAL_BIT_MESA,
       .image = radv_image_to_handle(image),
       .viewType = get_view_type(image),
@@ -111,10 +118,12 @@ radv_meta_decode_astc(struct radv_cmd_buffer *cmd_buffer, struct radv_image *ima
    offset = vk_image_sanitize_offset(&image->vk, offset);
 
    struct radv_image_view src_iview, dst_iview;
-   image_view_init(device, image, VK_FORMAT_R32G32B32A32_UINT, VK_IMAGE_ASPECT_COLOR_BIT, subresource->mipLevel,
-                   subresource->baseArrayLayer, vk_image_subresource_layer_count(&image->vk, subresource), &src_iview);
-   image_view_init(device, image, VK_FORMAT_R8G8B8A8_UINT, VK_IMAGE_ASPECT_PLANE_1_BIT, subresource->mipLevel,
-                   subresource->baseArrayLayer, vk_image_subresource_layer_count(&image->vk, subresource), &dst_iview);
+   image_view_init(device, image, VK_FORMAT_R32G32B32A32_UINT, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_USAGE_SAMPLED_BIT,
+                   subresource->mipLevel, subresource->baseArrayLayer,
+                   vk_image_subresource_layer_count(&image->vk, subresource), &src_iview);
+   image_view_init(device, image, VK_FORMAT_R8G8B8A8_UINT, VK_IMAGE_ASPECT_PLANE_1_BIT, VK_IMAGE_USAGE_STORAGE_BIT,
+                   subresource->mipLevel, subresource->baseArrayLayer,
+                   vk_image_subresource_layer_count(&image->vk, subresource), &dst_iview);
 
    VkExtent3D extent_copy = {
       .width = extent.width,

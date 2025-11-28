@@ -488,9 +488,16 @@ blit_image(struct radv_cmd_buffer *cmd_buffer, struct radv_image *src_image, VkI
       /* 3D images have just 1 layer */
       const uint32_t src_array_slice = src_image->vk.image_type == VK_IMAGE_TYPE_3D ? 0 : src_start + i;
 
+      const VkImageViewUsageCreateInfo dst_iview_usage_info = {
+         .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_USAGE_CREATE_INFO,
+         .usage = vk_format_is_color(dst_image->vk.format) ? VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT
+                                                           : VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+      };
+
       radv_image_view_init(&dst_iview, device,
                            &(VkImageViewCreateInfo){
                               .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+                              .pNext = &dst_iview_usage_info,
                               .flags = VK_IMAGE_VIEW_CREATE_DRIVER_INTERNAL_BIT_MESA,
                               .image = radv_image_to_handle(dst_image),
                               .viewType = radv_meta_get_view_type(dst_image),
@@ -502,9 +509,16 @@ blit_image(struct radv_cmd_buffer *cmd_buffer, struct radv_image *src_image, VkI
                                                    .layerCount = 1},
                            },
                            NULL);
+
+      const VkImageViewUsageCreateInfo src_iview_usage_info = {
+         .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_USAGE_CREATE_INFO,
+         .usage = VK_IMAGE_USAGE_SAMPLED_BIT,
+      };
+
       radv_image_view_init(&src_iview, device,
                            &(VkImageViewCreateInfo){
                               .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+                              .pNext = &src_iview_usage_info,
                               .flags = VK_IMAGE_VIEW_CREATE_DRIVER_INTERNAL_BIT_MESA,
                               .image = radv_image_to_handle(src_image),
                               .viewType = radv_meta_get_view_type(src_image),

@@ -92,11 +92,18 @@ radv_meta_decode_etc(struct radv_cmd_buffer *cmd_buffer, struct radv_image *imag
    offset = vk_image_sanitize_offset(&image->vk, offset);
 
    VkFormat load_format = vk_texcompress_etc2_load_format(image->vk.format);
+
+   const VkImageViewUsageCreateInfo src_iview_usage_info = {
+      .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_USAGE_CREATE_INFO,
+      .usage = VK_IMAGE_USAGE_SAMPLED_BIT,
+   };
+
    struct radv_image_view src_iview;
    radv_image_view_init(
       &src_iview, device,
       &(VkImageViewCreateInfo){
          .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+         .pNext = &src_iview_usage_info,
          .flags = VK_IMAGE_VIEW_CREATE_DRIVER_INTERNAL_BIT_MESA,
          .image = radv_image_to_handle(image),
          .viewType = vk_texcompress_etc2_image_view_type(image->vk.image_type),
@@ -113,11 +120,18 @@ radv_meta_decode_etc(struct radv_cmd_buffer *cmd_buffer, struct radv_image *imag
       NULL);
 
    VkFormat store_format = vk_texcompress_etc2_store_format(image->vk.format);
+
+   const VkImageViewUsageCreateInfo dst_iview_usage_info = {
+      .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_USAGE_CREATE_INFO,
+      .usage = VK_IMAGE_USAGE_STORAGE_BIT,
+   };
+
    struct radv_image_view dst_iview;
    radv_image_view_init(
       &dst_iview, device,
       &(VkImageViewCreateInfo){
          .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+         .pNext = &dst_iview_usage_info,
          .flags = VK_IMAGE_VIEW_CREATE_DRIVER_INTERNAL_BIT_MESA,
          .image = radv_image_to_handle(image),
          .viewType = vk_texcompress_etc2_image_view_type(image->vk.image_type),

@@ -36,9 +36,10 @@ static VkResult get_depth_stencil_pipeline(struct radv_device *device, enum blit
 
 static void
 create_iview(struct radv_cmd_buffer *cmd_buffer, struct radv_meta_blit2d_surf *surf, struct radv_image_view *iview,
-             VkFormat depth_format, VkImageAspectFlagBits aspects)
+             VkFormat depth_format, VkImageAspectFlagBits aspects, bool is_dst)
 {
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
+   VkImageUsageFlags usage;
    VkFormat format;
 
    if (depth_format)
@@ -46,9 +47,22 @@ create_iview(struct radv_cmd_buffer *cmd_buffer, struct radv_meta_blit2d_surf *s
    else
       format = surf->format;
 
+   if (is_dst) {
+      usage = (vk_format_is_color(format) ? VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT
+                                          : VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+   } else {
+      usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+   }
+
+   const VkImageViewUsageCreateInfo iview_usage_info = {
+      .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_USAGE_CREATE_INFO,
+      .usage = usage,
+   };
+
    radv_image_view_init(iview, device,
                         &(VkImageViewCreateInfo){
                            .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+                           .pNext = &iview_usage_info,
                            .flags = VK_IMAGE_VIEW_CREATE_DRIVER_INTERNAL_BIT_MESA,
                            .image = radv_image_to_handle(surf->image),
                            .viewType = radv_meta_get_view_type(surf->image),
@@ -96,7 +110,7 @@ radv_gfx_copy_memory_to_image(struct radv_cmd_buffer *cmd_buffer, struct radv_me
    }
 
    struct radv_image_view dst_iview;
-   create_iview(cmd_buffer, dst, &dst_iview, format, dst->aspect_mask);
+   create_iview(cmd_buffer, dst, &dst_iview, format, dst->aspect_mask, true);
 
    const VkRenderingAttachmentInfo att_info = {
       .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
@@ -268,7 +282,7 @@ radv_gfx_copy_image(struct radv_cmd_buffer *cmd_buffer, struct radv_meta_blit2d_
    }
 
    struct radv_image_view dst_iview;
-   create_iview(cmd_buffer, dst, &dst_iview, dst_format, dst->aspect_mask);
+   create_iview(cmd_buffer, dst, &dst_iview, dst_format, dst->aspect_mask, true);
 
    const VkRenderingAttachmentInfo att_info = {
       .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
@@ -375,8 +389,8 @@ radv_gfx_copy_image(struct radv_cmd_buffer *cmd_buffer, struct radv_meta_blit2d_
       VkFormat depth_format = vk_format_depth_only(dst->image->vk.format);
       VkFormat stencil_format = vk_format_stencil_only(dst->image->vk.format);
 
-      create_iview(cmd_buffer, src, &src_iview_depth, depth_format, VK_IMAGE_ASPECT_DEPTH_BIT);
-      create_iview(cmd_buffer, src, &src_iview_stencil, stencil_format, VK_IMAGE_ASPECT_STENCIL_BIT);
+      create_iview(cmd_buffer, src, &src_iview_depth, depth_format, VK_IMAGE_ASPECT_DEPTH_BIT, false);
+      create_iview(cmd_buffer, src, &src_iview_stencil, stencil_format, VK_IMAGE_ASPECT_STENCIL_BIT, false);
 
       radv_meta_bind_descriptors(
          cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 2,
@@ -396,7 +410,7 @@ radv_gfx_copy_image(struct radv_cmd_buffer *cmd_buffer, struct radv_meta_blit2d_
                                          .imageLayout = VK_IMAGE_LAYOUT_GENERAL},
                                      }}});
    } else {
-      create_iview(cmd_buffer, src, &src_iview, src_format, src->aspect_mask);
+      create_iview(cmd_buffer, src, &src_iview, src_format, src->aspect_mask, false);
 
       radv_meta_bind_descriptors(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 1,
                                  (VkDescriptorGetInfoEXT[]){{.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_GET_INFO_EXT,
