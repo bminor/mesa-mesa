@@ -461,6 +461,7 @@ typedef enum VkCommandTypeEXT {
     VK_COMMAND_TYPE_vkCmdSetDepthBias2EXT_EXT = 328,
     VK_COMMAND_TYPE_vkCmdSetAttachmentFeedbackLoopEnableEXT_EXT = 329,
     VK_COMMAND_TYPE_vkCmdSetDepthClampRangeEXT_EXT = 330,
+    VK_COMMAND_TYPE_vkGetPhysicalDeviceCooperativeMatrixPropertiesKHR_EXT = 331,
 } VkCommandTypeEXT;
 
 typedef enum VkCommandFlagBitsEXT {

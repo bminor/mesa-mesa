@@ -3619,6 +3619,48 @@ vn_decode_VkDepthBiasRepresentationEXT(struct vn_cs_decoder *dec, VkDepthBiasRep
     vn_decode_int32_t(dec, (int32_t *)val);
 }
 
+/* enum VkScopeKHR */
+
+static inline size_t
+vn_sizeof_VkScopeKHR(const VkScopeKHR *val)
+{
+    assert(sizeof(*val) == sizeof(int32_t));
+    return vn_sizeof_int32_t((const int32_t *)val);
+}
+
+static inline void
+vn_encode_VkScopeKHR(struct vn_cs_encoder *enc, const VkScopeKHR *val)
+{
+    vn_encode_int32_t(enc, (const int32_t *)val);
+}
+
+static inline void
+vn_decode_VkScopeKHR(struct vn_cs_decoder *dec, VkScopeKHR *val)
+{
+    vn_decode_int32_t(dec, (int32_t *)val);
+}
+
+/* enum VkComponentTypeKHR */
+
+static inline size_t
+vn_sizeof_VkComponentTypeKHR(const VkComponentTypeKHR *val)
+{
+    assert(sizeof(*val) == sizeof(int32_t));
+    return vn_sizeof_int32_t((const int32_t *)val);
+}
+
+static inline void
+vn_encode_VkComponentTypeKHR(struct vn_cs_encoder *enc, const VkComponentTypeKHR *val)
+{
+    vn_encode_int32_t(enc, (const int32_t *)val);
+}
+
+static inline void
+vn_decode_VkComponentTypeKHR(struct vn_cs_decoder *dec, VkComponentTypeKHR *val)
+{
+    vn_decode_int32_t(dec, (int32_t *)val);
+}
+
 /* enum VkDepthClampModeEXT */
 
 static inline size_t

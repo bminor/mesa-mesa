@@ -10,7 +10,7 @@
 
 #include "vn_protocol_driver_defines.h"
 
-#define VN_INFO_EXTENSION_MAX_NUMBER (613)
+#define VN_INFO_EXTENSION_MAX_NUMBER (643)
 
 struct vn_info_extension {
    const char *name;
@@ -19,8 +19,8 @@ struct vn_info_extension {
 };
 
 /* sorted by extension names for bsearch */
-static const uint32_t _vn_info_extension_count = 179;
-static const struct vn_info_extension _vn_info_extensions[179] = {
+static const uint32_t _vn_info_extension_count = 184;
+static const struct vn_info_extension _vn_info_extensions[184] = {
    { "VK_ARM_rasterization_order_attachment_access", 343, 1 },
    { "VK_EXT_4444_formats", 341, 1 },
    { "VK_EXT_attachment_feedback_loop_dynamic_state", 525, 1 },
@@ -92,11 +92,13 @@ static const struct vn_info_extension _vn_info_extensions[179] = {
    { "VK_EXT_shader_atomic_float", 261, 1 },
    { "VK_EXT_shader_atomic_float2", 274, 1 },
    { "VK_EXT_shader_demote_to_helper_invocation", 277, 1 },
+   { "VK_EXT_shader_float8", 568, 1 },
    { "VK_EXT_shader_image_atomic_int64", 235, 1 },
    { "VK_EXT_shader_replicated_composites", 565, 1 },
    { "VK_EXT_shader_stencil_export", 141, 1 },
    { "VK_EXT_shader_subgroup_ballot", 65, 1 },
    { "VK_EXT_shader_subgroup_vote", 66, 1 },
+   { "VK_EXT_shader_uniform_buffer_unsized_array", 643, 1 },
    { "VK_EXT_shader_viewport_index_layer", 163, 1 },
    { "VK_EXT_subgroup_size_control", 226, 2 },
    { "VK_EXT_texel_buffer_alignment", 282, 1 },
@@ -118,6 +120,7 @@ static const struct vn_info_extension _vn_info_extensions[179] = {
    { "VK_KHR_buffer_device_address", 258, 1 },
    { "VK_KHR_calibrated_timestamps", 544, 1 },
    { "VK_KHR_compute_shader_derivatives", 512, 1 },
+   { "VK_KHR_cooperative_matrix", 507, 2 },
    { "VK_KHR_copy_commands2", 338, 1 },
    { "VK_KHR_create_renderpass2", 110, 1 },
    { "VK_KHR_dedicated_allocation", 128, 3 },
@@ -172,6 +175,7 @@ static const struct vn_info_extension _vn_info_extensions[179] = {
    { "VK_KHR_sampler_ycbcr_conversion", 157, 14 },
    { "VK_KHR_separate_depth_stencil_layouts", 242, 1 },
    { "VK_KHR_shader_atomic_int64", 181, 1 },
+   { "VK_KHR_shader_bfloat16", 142, 1 },
    { "VK_KHR_shader_clock", 182, 1 },
    { "VK_KHR_shader_draw_parameters", 64, 1 },
    { "VK_KHR_shader_expect_assume", 545, 1 },
@@ -187,6 +191,7 @@ static const struct vn_info_extension _vn_info_extensions[179] = {
    { "VK_KHR_shader_subgroup_rotate", 417, 2 },
    { "VK_KHR_shader_subgroup_uniform_control_flow", 324, 1 },
    { "VK_KHR_shader_terminate_invocation", 216, 1 },
+   { "VK_KHR_shader_untyped_pointers", 388, 1 },
    { "VK_KHR_spirv_1_4", 237, 1 },
    { "VK_KHR_storage_buffer_storage_class", 132, 1 },
    { "VK_KHR_synchronization2", 315, 1 },
