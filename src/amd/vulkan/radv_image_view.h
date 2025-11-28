@@ -47,6 +47,16 @@ struct radv_image_view {
 
    /* Block-compressed image views on GFX10+. */
    struct ac_surf_nbc_view nbc_view;
+
+   union {
+      struct radv_color_buffer_info color_desc;
+
+      struct {
+         struct radv_ds_buffer_info depth_stencil_desc;
+         struct radv_ds_buffer_info depth_only_desc;
+         struct radv_ds_buffer_info stencil_only_desc;
+      };
+   };
 };
 
 VK_DEFINE_NONDISP_HANDLE_CASTS(radv_image_view, vk.base, VkImageView, VK_OBJECT_TYPE_IMAGE_VIEW);

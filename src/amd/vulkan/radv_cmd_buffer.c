@@ -10037,7 +10037,7 @@ radv_CmdBeginRendering(VkCommandBuffer commandBuffer, const VkRenderingInfo *pRe
       color_att[i].iview = iview;
       color_att[i].flags = get_rendering_attachment_flags(pRenderingInfo, att_info);
       color_att[i].layout = get_image_layout(att_info);
-      radv_initialise_color_surface(device, &color_att[i].cb, iview);
+      color_att[i].cb = iview->color_desc;
 
       if (att_info->resolveMode != VK_RESOLVE_MODE_NONE && att_info->resolveImageView != VK_NULL_HANDLE) {
          color_att[i].resolve_mode = att_info->resolveMode;
@@ -10113,12 +10113,15 @@ radv_CmdBeginRendering(VkCommandBuffer commandBuffer, const VkRenderingInfo *pRe
          ds_att_aspects = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
          ds_att.flags = get_rendering_attachment_flags(pRenderingInfo, d_att_info) |
                         get_rendering_attachment_flags(pRenderingInfo, s_att_info);
+         ds_att.ds = ds_att.iview->depth_stencil_desc;
       } else if (d_iview) {
          ds_att_aspects = VK_IMAGE_ASPECT_DEPTH_BIT;
          ds_att.flags = get_rendering_attachment_flags(pRenderingInfo, d_att_info);
+         ds_att.ds = ds_att.iview->depth_only_desc;
       } else {
          ds_att_aspects = VK_IMAGE_ASPECT_STENCIL_BIT;
          ds_att.flags = get_rendering_attachment_flags(pRenderingInfo, s_att_info);
+         ds_att.ds = ds_att.iview->stencil_only_desc;
       }
 
       if (pdev->info.gfx_level >= GFX12) {
@@ -10126,8 +10129,6 @@ radv_CmdBeginRendering(VkCommandBuffer commandBuffer, const VkRenderingInfo *pRe
 
          has_hiz_his = surf->u.gfx9.zs.hiz.offset || surf->u.gfx9.zs.his.offset;
       }
-
-      radv_initialise_ds_surface(device, &ds_att.ds, ds_att.iview, ds_att_aspects);
 
       assert(d_res_iview == NULL || s_res_iview == NULL || d_res_iview == s_res_iview);
       ds_att.resolve_iview = d_res_iview ? d_res_iview : s_res_iview;

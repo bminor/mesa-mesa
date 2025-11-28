@@ -641,6 +641,19 @@ radv_image_view_init(struct radv_image_view *iview, struct radv_device *device,
       radv_image_view_make_descriptor(iview, device, format, &pCreateInfo->components, true, disable_compression,
                                       enable_compression, iview->plane_id + i, i, sliced_3d);
    }
+
+   if (iview->vk.usage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT)
+      radv_initialise_color_surface(device, &iview->color_desc, iview);
+
+   if (iview->vk.usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) {
+      if (vk_format_has_depth(image->vk.format) && vk_format_has_stencil(image->vk.format))
+         radv_initialise_ds_surface(device, &iview->depth_stencil_desc, iview,
+                                    VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+      if (vk_format_has_depth(image->vk.format))
+         radv_initialise_ds_surface(device, &iview->depth_only_desc, iview, VK_IMAGE_ASPECT_DEPTH_BIT);
+      if (vk_format_has_stencil(image->vk.format))
+         radv_initialise_ds_surface(device, &iview->stencil_only_desc, iview, VK_IMAGE_ASPECT_STENCIL_BIT);
+   }
 }
 
 void
