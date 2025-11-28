@@ -147,7 +147,7 @@
     - igalia-rpi5
 
 
-# 1 device (2025-05-12)
+# 4 device (2025-11-28)
 .igalia-bcm2835-vc4:
   variables:
     RPI_MODEL: bcm2835-vc4
@@ -160,7 +160,7 @@
     GPU_VERSION: "broadcom-rpi3"
 
 
-# 1 device (2025-05-12)
+# 7 device (2025-11-28)
 .igalia-bcm2711-vc5:
   variables:
     RPI_MODEL: bcm2711-vc5
@@ -173,7 +173,7 @@
     GPU_VERSION: "broadcom-rpi4"
 
 
-# 1 device (2025-05-12)
+# 5 device (2025-11-28)
 .igalia-bcm2712-vc6:
   variables:
     RPI_MODEL: bcm2712-vc6
