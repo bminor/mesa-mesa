@@ -96,7 +96,7 @@
 #define LINE_WIDTH_GRANULARITY 0.1
 
 /** Number of texture mipmap levels */
-#define MAX_TEXTURE_LEVELS 15
+#define MAX_TEXTURE_LEVELS 17
 
 /** Maximum rectangular texture size - GL_NV_texture_rectangle */
 #define MAX_TEXTURE_RECT_SIZE 65536
