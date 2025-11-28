@@ -656,7 +656,6 @@ GENX(pan_blend_create_shader)(const struct pan_blend_state *state,
       options.rt[rt].alpha.dst_factor = rt_state->equation.alpha_dst_factor;
    }
 
-   nir_def *pixel = nir_load_barycentric_pixel(&b, 32, .interp_mode = 1);
    nir_def *zero = nir_imm_int(&b, 0);
 
    for (unsigned i = 0; i < 2; ++i) {
@@ -667,8 +666,8 @@ GENX(pan_blend_create_shader)(const struct pan_blend_state *state,
       src_type = nir_alu_type_get_base_type(nir_type) |
                  nir_alu_type_get_type_size(src_type);
 
-      nir_def *src = nir_load_interpolated_input(
-         &b, 4, nir_alu_type_get_type_size(src_type), pixel, zero,
+      nir_def *src = nir_load_input(
+         &b, 4, nir_alu_type_get_type_size(src_type), zero,
          .io_semantics.location = i ? VARYING_SLOT_VAR0 : VARYING_SLOT_COL0,
          .io_semantics.num_slots = 1, .base = i, .dest_type = src_type);
 
