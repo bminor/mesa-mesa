@@ -252,7 +252,7 @@ impl ShaderBin {
         let c_info = nak_shader_info {
             stage: match info.stage {
                 ShaderStageInfo::Compute(_) => MESA_SHADER_COMPUTE,
-                ShaderStageInfo::Vertex => MESA_SHADER_VERTEX,
+                ShaderStageInfo::Vertex(_) => MESA_SHADER_VERTEX,
                 ShaderStageInfo::Fragment(_) => MESA_SHADER_FRAGMENT,
                 ShaderStageInfo::Geometry(_) => MESA_SHADER_GEOMETRY,
                 ShaderStageInfo::TessellationInit(_) => MESA_SHADER_TESS_CTRL,
