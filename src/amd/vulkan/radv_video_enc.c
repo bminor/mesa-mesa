@@ -681,12 +681,11 @@ radv_enc_spec_misc_av1(struct radv_cmd_buffer *cmd_buffer, const struct VkVideoE
    const StdVideoEncodeAV1PictureInfo *pic = av1_picture_info->pStdPictureInfo;
    const StdVideoAV1SequenceHeader *seq = &params->av1_enc.seq_hdr.base;
 
-   uint32_t precision = 0;
-
-   if (!pic->flags.allow_high_precision_mv)
-      precision = RENCODE_AV1_MV_PRECISION_DISALLOW_HIGH_PRECISION;
-   if (pic->flags.force_integer_mv)
+   uint32_t precision = RENCODE_AV1_MV_PRECISION_DISALLOW_HIGH_PRECISION;
+   if (pic->flags.allow_screen_content_tools && pic->flags.force_integer_mv)
       precision = RENCODE_AV1_MV_PRECISION_FORCE_INTEGER_MV;
+   else if (pic->flags.allow_high_precision_mv)
+      precision = RENCODE_AV1_MV_PRECISION_ALLOW_HIGH_PRECISION;
 
    vid->skip_mode_allowed =
       seq->flags.enable_order_hint &&
