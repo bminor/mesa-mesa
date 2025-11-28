@@ -158,11 +158,6 @@
       # Enable the KMS driver
       dtoverlay=vc4-kms-v3d
     GPU_VERSION: "broadcom-rpi3"
-    # FIXME: hack to mask the problem in https://gitlab.freedesktop.org/gfx-ci/ci-tron/-/issues/303
-    # To be reverted once the cause is identified and fixed.
-    CI_TRON_PATTERN__SESSION_REBOOT__REGEX: "VFS: Cannot open root device"
-    CI_TRON_TIMEOUT__BOOT_CYCLE__RETRIES: 2
-    CI_TRON_TIMEOUT__BOOT_CYCLE__MINUTES: 1440  # 24h, but really it's just some huge value that will never actually trigger; the OVERALL timeout continues to apply
 
 
 # 1 device (2025-05-12)
@@ -225,6 +220,11 @@
     CI_TRON_INITRAMFS_CATEGORY__50_KERNEL_MODULES__0__FORMAT__0__ARCHIVE__KEEP__0__REWRITE: 'usr/lib/\1'
     VK_DRIVER: broadcom
     FLAKES_CHANNEL: "#videocore-ci"
+    # FIXME: hack to mask the problem in https://gitlab.freedesktop.org/gfx-ci/ci-tron/-/issues/303
+    # To be reverted once the cause is identified and fixed.
+    CI_TRON_PATTERN__SESSION_REBOOT__REGEX: "VFS: Cannot open root device"
+    CI_TRON_TIMEOUT__BOOT_CYCLE__RETRIES: 2
+    CI_TRON_TIMEOUT__BOOT_CYCLE__MINUTES: 1440  # 24h, but really it's just some huge value that will never actually trigger; the OVERALL timeout continues to apply
   tags:
     - farm:igalia
     - dt_gpu:model:$RPI_MODEL
