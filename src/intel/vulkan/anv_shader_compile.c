@@ -43,6 +43,51 @@ wa_forbidden_west(nir_shader *nir)
    NIR_PASS(_, nir, brw_nir_apply_sqrt_workarounds);
 }
 
+/* Try to detect shaders relying on 32-wide subgroups. Usually they have a
+ * pattern like this:
+ *
+ * div 32    %1096 = @load_subgroup_invocation
+ * div 32    %1245 = iand %1096, %1228 (0x1f)
+ * div 32    %1246 = ixor %1245, %13 (0x1)
+ * div 32    %1247 = @shuffle (%1244, %1246)
+ */
+static bool is_alu1_iand_0x1f(nir_alu_instr *alu)
+{
+   if (!alu || alu->op != nir_op_iand)
+      return false;
+
+   for (uint32_t i = 0; i < 2; i++) {
+       if (nir_src_is_const(alu->src[i].src) &&
+           nir_alu_src_as_uint(alu->src[i]) == 0x1f)
+          return true;
+   }
+
+   return false;
+}
+
+static bool
+detect_simd32_shuffle(nir_builder *b,
+                      nir_intrinsic_instr *intrin,
+                      void *data)
+{
+   if (intrin->intrinsic != nir_intrinsic_shuffle)
+      return false;
+
+   nir_alu_instr *alu1 = nir_src_as_alu_instr(intrin->src[1]);
+   if (alu1 == NULL)
+      return false;
+
+   if (is_alu1_iand_0x1f(alu1))
+      return true;
+
+   for (uint32_t i = 0; i < nir_op_infos[alu1->op].num_inputs; i++) {
+      if (is_alu1_iand_0x1f(nir_src_as_alu_instr(alu1->src[i].src)))
+         return true;
+   }
+
+   return false;
+}
+
 /* List of game-specific workarounds identified by BLAKE3 hash of the shader.
  * Add new workarounds here as needed.
  */
@@ -699,8 +744,9 @@ lookup_ycbcr_conversion(const void *_stage, uint32_t set,
 }
 
 static void
-anv_fixup_subgroup_size(struct anv_device *device, struct shader_info *info)
+anv_fixup_subgroup_size(struct anv_device *device, nir_shader *shader)
 {
+   struct shader_info *info = &shader->info;
    const struct anv_instance *instance = device->physical->instance;
 
    if (!mesa_shader_stage_uses_workgroup(info->stage))
@@ -754,6 +800,18 @@ anv_fixup_subgroup_size(struct anv_device *device, struct shader_info *info)
        info->max_subgroup_size > info->min_subgroup_size) {
       info->api_subgroup_size = info->max_subgroup_size;
       info->min_subgroup_size = info->max_subgroup_size;
+   }
+
+   /* Only promote to SIMD32 if the max allows it. */
+   if (info->max_subgroup_size >= BRW_SUBGROUP_SIZE &&
+       info->min_subgroup_size != info->max_subgroup_size &&
+       info->uses_wide_subgroup_intrinsics &&
+       nir_shader_intrinsics_pass(shader,
+                                  detect_simd32_shuffle,
+                                  nir_metadata_all,
+                                  NULL)) {
+      info->max_subgroup_size = BRW_SUBGROUP_SIZE;
+      info->min_subgroup_size = BRW_SUBGROUP_SIZE;
    }
 }
 
@@ -1332,7 +1390,7 @@ anv_shader_lower_nir(struct anv_device *device,
 
    if (nir->info.stage == MESA_SHADER_COMPUTE &&
        nir->info.cs.has_cooperative_matrix) {
-      anv_fixup_subgroup_size(device, &nir->info);
+      anv_fixup_subgroup_size(device, nir);
       NIR_PASS(_, nir, brw_nir_lower_cmat, nir->info.api_subgroup_size);
       NIR_PASS(_, nir, nir_lower_indirect_derefs, nir_var_function_temp, 16);
    }
@@ -1914,8 +1972,7 @@ anv_shader_compile(struct vk_device *vk_device,
 
       anv_shader_lower_nir(device, mem_ctx, state, shader_data);
 
-      anv_fixup_subgroup_size(device,
-                              &shader_data->info->nir->info);
+      anv_fixup_subgroup_size(device, shader_data->info->nir);
 
       anv_nir_apply_shader_workarounds(shader_data->info->nir);
    }
