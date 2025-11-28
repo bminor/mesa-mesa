@@ -2716,7 +2716,7 @@ radv_emit_rbplus_state(struct radv_cmd_buffer *cmd_buffer)
          continue;
       }
 
-      struct radv_color_buffer_info *cb = &render->color_att[i].cb;
+      const struct radv_color_buffer_info *cb = &render->color_att[i].cb;
 
       format = pdev->info.gfx_level >= GFX11 ? G_028C70_FORMAT_GFX11(cb->ac.cb_color_info)
                                              : G_028C70_FORMAT_GFX6(cb->ac.cb_color_info);
@@ -4493,7 +4493,7 @@ radv_emit_rast_samples_state(struct radv_cmd_buffer *cmd_buffer)
 }
 
 static void
-radv_gfx12_emit_fb_color_state(struct radv_cmd_buffer *cmd_buffer, int index, struct radv_color_buffer_info *cb)
+radv_gfx12_emit_fb_color_state(struct radv_cmd_buffer *cmd_buffer, int index, const struct radv_color_buffer_info *cb)
 {
    struct radv_cmd_stream *cs = cmd_buffer->cs;
 
@@ -4513,7 +4513,7 @@ radv_gfx12_emit_fb_color_state(struct radv_cmd_buffer *cmd_buffer, int index, st
 }
 
 static void
-radv_gfx11_emit_fb_color_state(struct radv_cmd_buffer *cmd_buffer, int index, struct radv_color_buffer_info *cb,
+radv_gfx11_emit_fb_color_state(struct radv_cmd_buffer *cmd_buffer, int index, const struct radv_color_buffer_info *cb,
                                struct radv_image_view *iview, VkImageLayout layout)
 {
    const struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
@@ -4565,7 +4565,7 @@ radv_gfx11_emit_fb_color_state(struct radv_cmd_buffer *cmd_buffer, int index, st
 }
 
 static void
-radv_gfx6_emit_fb_color_state(struct radv_cmd_buffer *cmd_buffer, int index, struct radv_color_buffer_info *cb,
+radv_gfx6_emit_fb_color_state(struct radv_cmd_buffer *cmd_buffer, int index, const struct radv_color_buffer_info *cb,
                               struct radv_image_view *iview, VkImageLayout layout)
 {
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
@@ -4667,7 +4667,7 @@ radv_gfx6_emit_fb_color_state(struct radv_cmd_buffer *cmd_buffer, int index, str
 }
 
 static void
-radv_update_zrange_precision(struct radv_cmd_buffer *cmd_buffer, struct radv_ds_buffer_info *ds,
+radv_update_zrange_precision(struct radv_cmd_buffer *cmd_buffer, const struct radv_ds_buffer_info *ds,
                              const struct radv_image_view *iview, bool requires_cond_exec)
 {
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
@@ -4723,7 +4723,7 @@ radv_cmd_buffer_get_vrs_image(struct radv_cmd_buffer *cmd_buffer)
 }
 
 static void
-radv_gfx12_emit_fb_ds_state(struct radv_cmd_buffer *cmd_buffer, struct radv_ds_buffer_info *ds)
+radv_gfx12_emit_fb_ds_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_ds_buffer_info *ds)
 {
    struct radv_cmd_stream *cs = cmd_buffer->cs;
 
@@ -4762,8 +4762,8 @@ radv_gfx12_emit_fb_ds_state(struct radv_cmd_buffer *cmd_buffer, struct radv_ds_b
 }
 
 static void
-radv_gfx11_emit_fb_ds_state(struct radv_cmd_buffer *cmd_buffer, struct radv_ds_buffer_info *ds, bool depth_compressed,
-                            bool stencil_compressed)
+radv_gfx11_emit_fb_ds_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_ds_buffer_info *ds,
+                            bool depth_compressed, bool stencil_compressed)
 {
    const struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    const struct radv_physical_device *pdev = radv_device_physical(device);
@@ -4821,7 +4821,7 @@ radv_gfx11_emit_fb_ds_state(struct radv_cmd_buffer *cmd_buffer, struct radv_ds_b
 }
 
 static void
-radv_gfx6_emit_fb_ds_state(struct radv_cmd_buffer *cmd_buffer, struct radv_ds_buffer_info *ds,
+radv_gfx6_emit_fb_ds_state(struct radv_cmd_buffer *cmd_buffer, const struct radv_ds_buffer_info *ds,
                            struct radv_image_view *iview, bool depth_compressed, bool stencil_compressed)
 {
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
