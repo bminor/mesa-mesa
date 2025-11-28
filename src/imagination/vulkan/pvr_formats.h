@@ -39,8 +39,6 @@
  */
 #define PVR_CLEAR_COLOR_ARRAY_SIZE 4
 
-#define PVR_TEX_FORMAT_COUNT (ROGUE_TEXSTATE_IMAGE_WORD0_TEXFORMAT_MAX_SIZE + 1)
-
 enum pvr_pbe_accum_format {
    PVR_PBE_ACCUM_FORMAT_INVALID = 0, /* Explicitly treat 0 as invalid. */
    PVR_PBE_ACCUM_FORMAT_U8,
