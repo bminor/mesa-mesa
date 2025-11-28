@@ -2345,16 +2345,15 @@ VkResult pvr_cmd_buffer_end_sub_cmd(struct pvr_cmd_buffer *cmd_buffer)
    switch (sub_cmd->type) {
    case PVR_SUB_CMD_TYPE_GRAPHICS: {
       struct pvr_sub_cmd_gfx *const gfx_sub_cmd = &sub_cmd->gfx;
+      const bool secondary_cont =
+         cmd_buffer->vk.level == VK_COMMAND_BUFFER_LEVEL_SECONDARY &&
+         cmd_buffer->usage_flags &
+         VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
 
       query_indices_size =
          util_dynarray_num_elements(&state->query_indices, char);
 
       if (query_indices_size > 0) {
-         const bool secondary_cont =
-            cmd_buffer->vk.level == VK_COMMAND_BUFFER_LEVEL_SECONDARY &&
-            cmd_buffer->usage_flags &
-               VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
-
          assert(gfx_sub_cmd->query_pool);
 
          if (secondary_cont) {
@@ -2378,7 +2377,7 @@ VkResult pvr_cmd_buffer_end_sub_cmd(struct pvr_cmd_buffer *cmd_buffer)
          util_dynarray_clear(&state->query_indices);
       }
 
-      if (cmd_buffer->vk.level == VK_COMMAND_BUFFER_LEVEL_SECONDARY) {
+      if (secondary_cont) {
          result = pvr_csb_emit_return(&gfx_sub_cmd->control_stream);
          if (result != VK_SUCCESS)
             return pvr_cmd_buffer_set_error_unwarned(cmd_buffer, result);
