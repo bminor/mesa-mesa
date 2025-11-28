@@ -760,8 +760,9 @@ pandecode_run_tiling(struct pandecode_context *ctx, FILE *fp,
       GENX(pandecode_fau)(ctx, lo, hi, "Fragment FAU");
    }
 
+   uint64_t fs_bin_addr = 0;
    if (spd) {
-      GENX(pandecode_shader)
+      fs_bin_addr = GENX(pandecode_shader)
       (ctx, spd, "Fragment shader", qctx->gpu_id);
    }
 
@@ -791,7 +792,8 @@ pandecode_run_tiling(struct pandecode_context *ctx, FILE *fp,
                  cs_get_u64(qctx, 48));
 
    uint64_t blend = cs_get_u64(qctx, 50);
-   GENX(pandecode_blend_descs)(ctx, blend & ~15, blend & 15, 0, qctx->gpu_id);
+   GENX(pandecode_blend_descs)(ctx, blend & ~15, blend & 15,
+                               fs_bin_addr, qctx->gpu_id);
 
    DUMP_ADDR(ctx, DEPTH_STENCIL, cs_get_u64(qctx, 52), "Depth/stencil");
 
@@ -872,8 +874,9 @@ pandecode_run_idvs2(struct pandecode_context *ctx, FILE *fp,
       (ctx, vertex_spd, "Vertex shader", qctx->gpu_id);
    }
 
+   uint64_t fs_bin_addr = 0;
    if (fragment_spd) {
-      GENX(pandecode_shader)
+      fs_bin_addr = GENX(pandecode_shader)
       (ctx, fragment_spd, "Fragment shader", qctx->gpu_id);
    }
 
@@ -912,7 +915,8 @@ pandecode_run_idvs2(struct pandecode_context *ctx, FILE *fp,
 
    DUMP_ADDR(ctx, DEPTH_STENCIL, zsd_pointer, "Depth/stencil");
 
-   GENX(pandecode_blend_descs)(ctx, blend & ~15, blend & 15, 0, qctx->gpu_id);
+   GENX(pandecode_blend_descs)(ctx, blend & ~15, blend & 15,
+                               fs_bin_addr, qctx->gpu_id);
 
    if (tiler_flags.index_type) {
       pandecode_log(ctx, "Indices: %" PRIx64 "\n", vertex_index_array_pointer);
@@ -1012,8 +1016,9 @@ pandecode_run_idvs(struct pandecode_context *ctx, FILE *fp,
       GENX(pandecode_shader)(ctx, ptr, "Varying shader", qctx->gpu_id);
    }
 
+   uint64_t fs_bin_addr = 0;
    if (cs_get_u64(qctx, MALI_IDVS_SR_FRAGMENT_SPD)) {
-      GENX(pandecode_shader)
+      fs_bin_addr = GENX(pandecode_shader)
       (ctx, cs_get_u64(qctx, MALI_IDVS_SR_FRAGMENT_SPD), "Fragment shader",
        qctx->gpu_id);
    }
@@ -1066,7 +1071,8 @@ pandecode_run_idvs(struct pandecode_context *ctx, FILE *fp,
                     cs_get_u32(qctx, MALI_IDVS_SR_VARY_SIZE));
 
    uint64_t blend = cs_get_u64(qctx, MALI_IDVS_SR_BLEND_DESC);
-   GENX(pandecode_blend_descs)(ctx, blend & ~15, blend & 15, 0, qctx->gpu_id);
+   GENX(pandecode_blend_descs)(ctx, blend & ~15, blend & 15,
+                               fs_bin_addr, qctx->gpu_id);
 
    DUMP_ADDR(ctx, DEPTH_STENCIL, cs_get_u64(qctx, MALI_IDVS_SR_ZSD),
              "Depth/stencil");
