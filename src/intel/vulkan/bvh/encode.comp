@@ -398,14 +398,17 @@ encode_internal_node(uint32_t child, uint32_t child_block_offset_from_internal_n
     * If not set properly, gpu could hang.
     */
    uint32_t type = ir_id_to_type(child);
-   uint8_t block_incr_and_start_prim = type == vk_ir_node_instance ? uint8_t(2) : uint8_t(1);
+   uint8_t block_incr_and_start_prim = valid_leaf ?
+                                       (type == vk_ir_node_instance ? uint8_t(2) : uint8_t(1)) :
+                                       uint8_t(0);
    /* for a mixed node, encode type of each children in startPrim in childdata */
    if (node_type == uint8_t(ANV_NODE_TYPE_MIXED))
       block_incr_and_start_prim |=
          (type == vk_ir_node_triangle) ? (uint8_t(ANV_NODE_TYPE_QUAD) << 2) :
          (type == vk_ir_node_aabb) ? (uint8_t(ANV_NODE_TYPE_PROCEDURAL) << 2) :
          (type == vk_ir_node_instance) ? (uint8_t(ANV_NODE_TYPE_INSTANCE) << 2) :
-         (type == vk_ir_node_internal) ? (uint8_t(ANV_NODE_TYPE_MIXED) << 2) : uint8_t(0);
+         (type == vk_ir_node_internal) ? (uint8_t(ANV_NODE_TYPE_MIXED) << 2) :
+         (uint8_t(ANV_NODE_TYPE_INVALID) << 2);
    DEREF(dst_node).data[cluster.idx].block_incr_and_start_prim = block_incr_and_start_prim;
 }
 
