@@ -1369,7 +1369,7 @@ _mesa_test_proxy_teximage(struct gl_context *ctx, GLenum target,
    /* We just check if the image size is less than MaxTextureMbytes.
     * Some drivers may do more specific checks.
     */
-   return mbytes <= (uint64_t) ctx->Const.MaxTextureMbytes;
+   return mbytes <= (uint64_t) ctx->screen->caps.max_texture_mb;
 }
 
 

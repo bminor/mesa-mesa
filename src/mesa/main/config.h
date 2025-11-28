@@ -95,9 +95,6 @@
 /** Line width granularity */
 #define LINE_WIDTH_GRANULARITY 0.1
 
-/** Max memory to allow for a single texture image (in megabytes) */
-#define MAX_TEXTURE_MBYTES 1024
-
 /** Number of texture mipmap levels */
 #define MAX_TEXTURE_LEVELS 15
 
