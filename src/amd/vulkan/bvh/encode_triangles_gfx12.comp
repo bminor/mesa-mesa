@@ -225,7 +225,10 @@ main()
       uint32_t geometry_id_payload_bit_size;
       uint32_t trailing_zero_bits;
       uvec3 vertex_payload_bit_size;
-      for (uint32_t i = 0; i <= first_assigned_invocation; i++) {
+      bool has_assigned = first_assigned_invocation != 0xffffffff;
+      uint32_t size_loop_start = has_assigned ? 0 : cluster.invocation_index;
+      uint32_t size_loop_end = has_assigned ? first_assigned_invocation : cluster.invocation_index;
+      for (uint32_t i = size_loop_start; i <= size_loop_end; i++) {
          uvec3 vertex_prefix = radv_read_invocation(cluster, i, floatBitsToUint(vertices[0]));
          uvec3 vertex_payload_mask = uvec3(0);
          uint32_t vertex_non_zero_mask = 0;
