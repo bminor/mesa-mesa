@@ -1711,6 +1711,30 @@ pseudo_propagate_temp(opt_ctx& ctx, aco_ptr<Instruction>& instr, Temp temp, unsi
    return true;
 }
 
+bool
+pseudo_propagate_reg(opt_ctx& ctx, aco_ptr<Instruction>& instr, PhysReg reg, unsigned index)
+{
+   RegType type = reg < 256 ? RegType::sgpr : RegType::vgpr;
+
+   switch (instr->opcode) {
+   case aco_opcode::p_extract:
+      if (instr->definitions[0].regClass().is_subdword() && ctx.program->gfx_level < GFX9 &&
+          type == RegType::sgpr)
+         return false;
+      break;
+   case aco_opcode::p_insert:
+   case aco_opcode::p_parallelcopy:
+      if (instr->definitions[index].bytes() % 4)
+         return false;
+      break;
+   default: return false;
+   }
+
+   RegClass rc = RegClass::get(type, instr->operands[index].size() * 4);
+   instr->operands[index] = Operand(reg, rc);
+   return true;
+}
+
 /* only covers special cases */
 bool
 pseudo_can_accept_constant(const aco_ptr<Instruction>& instr, unsigned operand)
@@ -2123,6 +2147,9 @@ parse_operand(opt_ctx& ctx, Temp tmp, unsigned exec_id, alu_opt_op& op_info, aco
    if (info.is_extract()) {
       op_info.extract[0] = parse_extract(info.parent_instr);
       op_info.op = info.parent_instr->operands[0];
+      if (exec_id != info.parent_instr->pass_flags && op_info.op.isFixed() &&
+          (op_info.op.physReg() == exec || op_info.op.physReg() == exec_hi))
+         return false;
       return true;
    }
 
@@ -2392,7 +2419,7 @@ alu_propagate_temp_const(opt_ctx& ctx, aco_ptr<Instruction>& instr, bool uses_va
 void
 extract_apply_extract(opt_ctx& ctx, aco_ptr<Instruction>& instr)
 {
-   if (!ctx.info[instr->operands[0].tempId()].is_extract())
+   if (!instr->operands[0].isTemp() || !ctx.info[instr->operands[0].tempId()].is_extract())
       return;
 
    alu_opt_op outer;
@@ -2420,9 +2447,10 @@ extract_apply_extract(opt_ctx& ctx, aco_ptr<Instruction>& instr)
 
    assert(inner.extract[0].size() <= 2);
 
-   aco_opcode new_opcode = inner.extract[0].size() == instr->definitions[0].bytes()
-                              ? aco_opcode::p_extract_vector
-                              : aco_opcode::p_extract;
+   aco_opcode new_opcode =
+      inner.extract[0].size() == instr->definitions[0].bytes() && inner.op.isTemp()
+         ? aco_opcode::p_extract_vector
+         : aco_opcode::p_extract;
 
    if (new_opcode != instr->opcode) {
       assert(instr->definitions[0].regClass().type() == RegType::vgpr);
@@ -2470,6 +2498,9 @@ label_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
          unsigned bits = instr->operands[i].bytes() * 8u;
          if (info.is_constant() && pseudo_can_accept_constant(instr, i)) {
             instr->operands[i] = get_constant_op(ctx, info, bits);
+            continue;
+         } else if (info.is_phys_reg(instr->pass_flags) &&
+                    pseudo_propagate_reg(ctx, instr, info.phys_reg, i)) {
             continue;
          }
       }
@@ -2985,13 +3016,11 @@ label_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
       }
       break;
    case aco_opcode::p_extract: {
-      if (instr->operands[0].isTemp()) {
-         ctx.info[instr->definitions[0].tempId()].set_extract();
-      }
+      ctx.info[instr->definitions[0].tempId()].set_extract();
       break;
    }
    case aco_opcode::p_insert: {
-      if (instr->operands[0].isTemp() && parse_extract(instr.get()))
+      if (parse_extract(instr.get()))
          ctx.info[instr->definitions[0].tempId()].set_extract();
       break;
    }
