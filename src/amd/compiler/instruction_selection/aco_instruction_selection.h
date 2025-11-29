@@ -141,8 +141,6 @@ struct isel_context {
    struct hash_table* numlsb_ht;
 
    Temp arg_temps[AC_MAX_ARGS];
-   Operand workgroup_id[3];
-   Temp ttmp8;
 
    /* tessellation information */
    bool any_tcs_inputs_via_lds = false;
