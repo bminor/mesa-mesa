@@ -74,7 +74,7 @@ TEST_P(DisasmTest, basicOpCodes)
    if (as.flags & FLAG_FAILING_PARSE)
       EXPECT_FALSE(result->success);
    else
-      EXPECT_TRUE(result->success);
+      EXPECT_TRUE(result->success) << "Parser error: " << result->error;
 
    if (result->success && !(as.flags & FLAG_FAILING_ASM)) {
       uint32_t encoded[4] = {0};
