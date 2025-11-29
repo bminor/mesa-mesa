@@ -223,7 +223,24 @@ main()
       uint32_t triangle_id_payload_bit_size;
       uint32_t geometry_id_base_bit_size;
       uint32_t geometry_id_payload_bit_size;
+      uint32_t trailing_zero_bits;
+      uvec3 vertex_payload_bit_size;
       for (uint32_t i = 0; i <= first_assigned_invocation; i++) {
+         uvec3 vertex_prefix = radv_read_invocation(cluster, i, floatBitsToUint(vertices[0]));
+         uvec3 vertex_payload_mask = uvec3(0);
+         uint32_t vertex_non_zero_mask = 0;
+         for (uint32_t i = 0; i < invocation_vertex_count; i++) {
+            vertex_payload_mask |= vertex_prefix ^ floatBitsToUint(vertices[i]);
+            vertex_non_zero_mask |=
+               floatBitsToUint(vertices[i].x) | floatBitsToUint(vertices[i].y) | floatBitsToUint(vertices[i].z);
+         }
+         uint32_t invoc_trailing_zero_bits = min(findLSB(vertex_non_zero_mask), 32u);
+         uvec3 invoc_vertex_payload_bit_size = min(findMSB(vertex_payload_mask), 31u) + 1;
+         trailing_zero_bits =
+            subgroupClusteredMin(assigned ? invoc_trailing_zero_bits : 32, RADV_TRIANGLE_ENCODE_TASK_INVOCATION_COUNT);
+         vertex_payload_bit_size =
+            subgroupClusteredMax(assigned ? invoc_vertex_payload_bit_size : uvec3(0), RADV_TRIANGLE_ENCODE_TASK_INVOCATION_COUNT);
+
          /* Determine the number of bits required to represent the node ids in the hw's encoding format.
           * Base and "offset" are masked and OR'd together, so look at the highest-ordered differing bit.
           */
@@ -242,6 +259,8 @@ main()
                                                              RADV_TRIANGLE_ENCODE_TASK_INVOCATION_COUNT);
 
          if (!assigned) {
+            trailing_zero_bits = min(trailing_zero_bits, invoc_trailing_zero_bits);
+            vertex_payload_bit_size = max(vertex_payload_bit_size, invoc_vertex_payload_bit_size);
             triangle_id_payload_bit_size = max(triangle_id_payload_bit_size, invoc_triangle_id_payload_bit_size);
             geometry_id_payload_bit_size = max(geometry_id_payload_bit_size, invoc_geometry_id_payload_bit_size);
          }
@@ -251,35 +270,6 @@ main()
       }
 
       geometry_id_payload_bit_size = align(geometry_id_payload_bit_size, 2);
-
-      /* vertex_used[0] is guaranteed to be true for at least one invocation. */
-      uvec3 vertex_prefix = first_assigned_invocation == 0xffffffff
-                               ? floatBitsToUint(vertices[0])
-                               : radv_read_invocation(cluster, first_assigned_invocation, floatBitsToUint(vertices[0]));
-      uvec3 vertex_payload_mask = uvec3(0);
-      uint32_t vertex_non_zero_mask = 0;
-      for (uint32_t i = 0; i < invocation_vertex_count; i++) {
-         vertex_payload_mask |= vertex_prefix ^ floatBitsToUint(vertices[i]);
-         vertex_non_zero_mask |=
-            floatBitsToUint(vertices[i].x) | floatBitsToUint(vertices[i].y) | floatBitsToUint(vertices[i].z);
-      }
-
-      uint32_t trailing_zero_bits = min(findLSB(vertex_non_zero_mask), 32u);
-      uvec3 vertex_payload_bit_size = min(findMSB(vertex_payload_mask), 31u) + 1;
-
-      if (!assigned) {
-         trailing_zero_bits = 32;
-         vertex_payload_bit_size = uvec3(0);
-      }
-
-      trailing_zero_bits = subgroupClusteredMin(trailing_zero_bits, RADV_TRIANGLE_ENCODE_TASK_INVOCATION_COUNT);
-      vertex_payload_bit_size =
-         subgroupClusteredMax(vertex_payload_bit_size, RADV_TRIANGLE_ENCODE_TASK_INVOCATION_COUNT);
-
-      if (!assigned) {
-         trailing_zero_bits = min(trailing_zero_bits, min(findLSB(vertex_non_zero_mask), 32u));
-         vertex_payload_bit_size = max(vertex_payload_bit_size, min(findMSB(vertex_payload_mask), 31u) + 1);
-      }
 
       vertex_payload_bit_size.x =
          vertex_payload_bit_size.x > trailing_zero_bits ? vertex_payload_bit_size.x - trailing_zero_bits : 1;
