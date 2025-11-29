@@ -2838,6 +2838,30 @@ label_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
       }
       break;
    case aco_opcode::s_and_b32:
+      for (unsigned i = 0; i < 2; i++) {
+         if (!instr->operands[!i].isTemp())
+            continue;
+         Temp tmp = instr->operands[!i].getTemp();
+         const Operand& op = instr->operands[i];
+         uint32_t constant;
+         if (op.isConstant())
+            constant = op.constantValue();
+         else if (op.isTemp() && ctx.info[op.tempId()].is_constant())
+            constant = ctx.info[op.tempId()].val;
+         else
+            continue;
+
+         if (constant == 0x7fffffff) {
+            if (ctx.info[tmp.id()].is_canonicalized(32))
+               ctx.info[instr->definitions[0].tempId()].set_canonicalized(32);
+            ctx.info[instr->definitions[0].tempId()].set_abs(tmp, 32);
+         } else if (constant == 0x7fff) {
+            if (ctx.info[tmp.id()].is_canonicalized(16))
+               ctx.info[instr->definitions[0].tempId()].set_canonicalized(16);
+            ctx.info[instr->definitions[0].tempId()].set_abs(tmp, 16);
+         }
+      }
+      FALLTHROUGH;
    case aco_opcode::s_and_b64:
       if (fixed_to_exec(instr->operands[1]) && instr->operands[0].isTemp()) {
          if (ctx.info[instr->operands[0].tempId()].is_uniform_bool()) {
