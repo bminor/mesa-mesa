@@ -198,6 +198,7 @@ vn_physical_device_init_features(struct vn_physical_device *physical_dev)
          shader_relaxed_extended_instruction;
       VkPhysicalDeviceShaderSubgroupUniformControlFlowFeaturesKHR
          shader_subgroup_uniform_control_flow;
+      VkPhysicalDeviceShaderUntypedPointersFeaturesKHR shader_untyped_pointers;
       VkPhysicalDeviceWorkgroupMemoryExplicitLayoutFeaturesKHR
          workgroup_memory_explicit_layout;
 
@@ -361,6 +362,7 @@ vn_physical_device_init_features(struct vn_physical_device *physical_dev)
    VN_ADD_PNEXT_EXT(feats2, SHADER_RELAXED_EXTENDED_INSTRUCTION_FEATURES_KHR, local_feats.shader_relaxed_extended_instruction, exts->KHR_shader_relaxed_extended_instruction);
    VN_ADD_PNEXT_EXT(feats2, SHADER_SUBGROUP_UNIFORM_CONTROL_FLOW_FEATURES_KHR, local_feats.shader_subgroup_uniform_control_flow, exts->KHR_shader_subgroup_uniform_control_flow);
    VN_ADD_PNEXT_EXT(feats2, SHADER_QUAD_CONTROL_FEATURES_KHR, local_feats.shader_quad_control, exts->KHR_shader_quad_control);
+   VN_ADD_PNEXT_EXT(feats2, SHADER_UNTYPED_POINTERS_FEATURES_KHR, local_feats.shader_untyped_pointers, exts->KHR_shader_untyped_pointers);
    VN_ADD_PNEXT_EXT(feats2, WORKGROUP_MEMORY_EXPLICIT_LAYOUT_FEATURES_KHR, local_feats.workgroup_memory_explicit_layout, exts->KHR_workgroup_memory_explicit_layout);
 
    /* EXT */
@@ -1337,6 +1339,7 @@ vn_physical_device_get_passthrough_extensions(
       .KHR_shader_quad_control = true,
       .KHR_shader_relaxed_extended_instruction = true,
       .KHR_shader_subgroup_uniform_control_flow = true,
+      .KHR_shader_untyped_pointers = true,
       .KHR_workgroup_memory_explicit_layout = true,
 
       /* EXT */
