@@ -189,6 +189,7 @@ vn_physical_device_init_features(struct vn_physical_device *physical_dev)
       VkPhysicalDeviceRayTracingPositionFetchFeaturesKHR
          ray_tracing_position_fetch;
       VkPhysicalDeviceRobustness2FeaturesKHR robustness_2;
+      VkPhysicalDeviceShaderBfloat16FeaturesKHR shader_bfloat16;
       VkPhysicalDeviceShaderClockFeaturesKHR shader_clock;
       VkPhysicalDeviceShaderMaximalReconvergenceFeaturesKHR
          shader_maximal_reconvergence;
@@ -354,6 +355,7 @@ vn_physical_device_init_features(struct vn_physical_device *physical_dev)
    VN_ADD_PNEXT_EXT(feats2, RAY_TRACING_PIPELINE_FEATURES_KHR, local_feats.ray_tracing_pipeline, exts->KHR_ray_tracing_pipeline);
    VN_ADD_PNEXT_EXT(feats2, RAY_TRACING_POSITION_FETCH_FEATURES_KHR, local_feats.ray_tracing_position_fetch, exts->KHR_ray_tracing_position_fetch);
    VN_ADD_PNEXT_EXT(feats2, ROBUSTNESS_2_FEATURES_KHR, local_feats.robustness_2, exts->KHR_robustness2 || exts->EXT_robustness2);
+   VN_ADD_PNEXT_EXT(feats2, SHADER_BFLOAT16_FEATURES_KHR, local_feats.shader_bfloat16, exts->KHR_shader_bfloat16);
    VN_ADD_PNEXT_EXT(feats2, SHADER_CLOCK_FEATURES_KHR, local_feats.shader_clock, exts->KHR_shader_clock);
    VN_ADD_PNEXT_EXT(feats2, SHADER_MAXIMAL_RECONVERGENCE_FEATURES_KHR, local_feats.shader_maximal_reconvergence, exts->KHR_shader_maximal_reconvergence);
    VN_ADD_PNEXT_EXT(feats2, SHADER_RELAXED_EXTENDED_INSTRUCTION_FEATURES_KHR, local_feats.shader_relaxed_extended_instruction, exts->KHR_shader_relaxed_extended_instruction);
@@ -1329,6 +1331,7 @@ vn_physical_device_get_passthrough_extensions(
       .KHR_ray_tracing_pipeline = physical_dev->ray_tracing,
       .KHR_ray_tracing_position_fetch = physical_dev->ray_tracing,
       .KHR_robustness2 = true,
+      .KHR_shader_bfloat16 = true,
       .KHR_shader_clock = true,
       .KHR_shader_maximal_reconvergence = true,
       .KHR_shader_quad_control = true,
