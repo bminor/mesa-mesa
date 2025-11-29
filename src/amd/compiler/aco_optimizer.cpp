@@ -46,6 +46,7 @@ enum Label {
    label_scc_invert = 1ull << 5,
    label_scc_needed = 1ull << 6,
    label_extract = 1ull << 7,
+   label_phys_reg = 1ull << 8,
 
    /* These have one label for fp16 and one for fp32/64.
     * 32bit vs 64bit type mismatches are impossible because
@@ -89,12 +90,15 @@ canonicalized_label(unsigned bit_size)
 }
 
 static_assert((temp_labels & val_labels) == 0, "labels cannot intersect");
+static_assert((temp_labels & label_phys_reg) == 0, "labels cannot intersect");
+static_assert((val_labels & label_phys_reg) == 0, "labels cannot intersect");
 
 struct ssa_info {
    uint64_t label;
    union {
       uint64_t val;
       Temp temp;
+      PhysReg phys_reg;
    };
    Instruction* parent_instr;
 
@@ -105,11 +109,18 @@ struct ssa_info {
       if (new_label & temp_labels) {
          label &= ~temp_labels;
          label &= ~val_labels; /* temp and val alias */
+         label &= ~label_phys_reg; /* temp and phys_reg alias */
       }
 
       if (new_label & val_labels) {
          label &= ~val_labels;
          label &= ~temp_labels; /* temp and val alias */
+         label &= ~label_phys_reg; /* phys_reg and val alias */
+      }
+
+      if (new_label & label_phys_reg) {
+         label &= ~temp_labels; /* temp and phys_reg alias */
+         label &= ~val_labels;  /* val and phys_reg alias */
       }
 
       label |= new_label;
@@ -220,6 +231,22 @@ struct ssa_info {
    void set_extract() { add_label(label_extract); }
 
    bool is_extract() { return label & label_extract; }
+
+   void set_phys_reg(PhysReg reg)
+   {
+      assert(reg.byte() == 0);
+      add_label(label_phys_reg);
+      phys_reg = reg;
+   }
+
+   bool is_phys_reg(uint32_t exec_id)
+   {
+      if (!(label & label_phys_reg))
+         return false;
+      if (phys_reg != exec && phys_reg != exec_hi)
+         return true;
+      return exec_id == parent_instr->pass_flags;
+   }
 };
 
 struct opt_ctx {
@@ -1011,6 +1038,8 @@ alu_opt_info_is_valid(opt_ctx& ctx, alu_opt_info& info)
             return false;
          if (is_dpp || format_is(info.format, Format::SDWA))
             return false;
+         if (!info.operands[2].op.isTemp())
+            return false;
          break;
       case aco_opcode::v_permlane16_b32:
       case aco_opcode::v_permlanex16_b32:
@@ -1123,9 +1152,11 @@ alu_opt_info_is_valid(opt_ctx& ctx, alu_opt_info& info)
             lmask[2] = true;
             info.opcode = aco_opcode::s_fmaak_f32;
          }
-      } else if (info.opcode == aco_opcode::s_fmac_f16 && !smask[2]) {
-         return false;
       }
+
+      if ((info.opcode == aco_opcode::s_fmac_f16 || info.opcode == aco_opcode::s_fmac_f32) &&
+          !info.operands[2].op.isTemp())
+         return false;
    }
 
    return true;
@@ -2022,7 +2053,7 @@ detect_clamp(Instruction* instr, unsigned* clamped_idx)
 }
 
 bool
-parse_operand(opt_ctx& ctx, Temp tmp, alu_opt_op& op_info, aco_type& type)
+parse_operand(opt_ctx& ctx, Temp tmp, unsigned exec_id, alu_opt_op& op_info, aco_type& type)
 {
    ssa_info info = ctx.info[tmp.id()];
    op_info = {};
@@ -2126,6 +2157,13 @@ parse_operand(opt_ctx& ctx, Temp tmp, alu_opt_op& op_info, aco_type& type)
       return true;
    }
 
+   if (info.is_phys_reg(exec_id)) {
+      RegType rtype = info.phys_reg < 256 ? RegType::sgpr : RegType::vgpr;
+      RegClass rc = RegClass::get(rtype, tmp.size() * 4);
+      op_info.op = Operand(info.phys_reg, rc);
+      return true;
+   }
+
    return false;
 }
 
@@ -2192,12 +2230,20 @@ combine_operand(opt_ctx& ctx, alu_opt_op& inner, const aco_type& inner_type,
       }
    }
 
-   if (outer.op.isTemp())
+   if (outer.op.isTemp()) {
       inner.op.setTemp(outer.op.getTemp());
-   else if (inner.op.isFixed())
+   } else if (inner.op.isFixed()) {
       return false;
-   else
+   } else {
+      bool range16 = inner.op.is16bit();
+      bool range24 = inner.op.is24bit();
       inner.op = outer.op;
+
+      if (range16)
+         inner.op.set16bit(true);
+      else if (range24)
+         inner.op.set24bit(true);
+   }
    return true;
 }
 
@@ -2274,7 +2320,7 @@ alu_propagate_temp_const(opt_ctx& ctx, aco_ptr<Instruction>& instr, bool uses_va
 
       alu_opt_op outer;
       aco_type outer_type;
-      if (!parse_operand(ctx, info.operands[i].op.getTemp(), outer, outer_type) ||
+      if (!parse_operand(ctx, info.operands[i].op.getTemp(), info.pass_flags, outer, outer_type) ||
           (!uses_valid && outer.f16_to_f32)) {
          operand_mask &= ~BITFIELD_BIT(i);
          continue;
@@ -2351,7 +2397,7 @@ extract_apply_extract(opt_ctx& ctx, aco_ptr<Instruction>& instr)
 
    alu_opt_op outer;
    aco_type outer_type;
-   if (!parse_operand(ctx, instr->operands[0].getTemp(), outer, outer_type))
+   if (!parse_operand(ctx, instr->operands[0].getTemp(), instr->pass_flags, outer, outer_type))
       return;
 
    if (instr->definitions[0].bytes() < 4 && outer.op.isOfType(RegType::sgpr) &&
@@ -2657,8 +2703,15 @@ label_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
          }
          break;
       } else if (info.parent_instr->opcode != aco_opcode::p_create_vector) {
-         if (instr->definitions.size() == 2 && instr->operands[0].isTemp() &&
-             instr->definitions[0].bytes() == instr->definitions[1].bytes()) {
+         if (info.is_phys_reg(instr->pass_flags)) {
+            PhysReg reg = ctx.info[instr->operands[0].tempId()].phys_reg;
+            for (const Definition& def : instr->definitions) {
+               if (reg.byte() == 0)
+                  ctx.info[def.tempId()].set_phys_reg(reg);
+               reg = reg.advance(def.bytes());
+            }
+         } else if (instr->definitions.size() == 2 && instr->operands[0].isTemp() &&
+                    instr->definitions[0].bytes() == instr->definitions[1].bytes()) {
             if (instr->operands[0].bytes() == 4) {
                /* D16 subdword split */
                ctx.info[instr->definitions[0].tempId()].set_temp(instr->operands[0].getTemp());
@@ -2722,6 +2775,13 @@ label_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
       }
 
       if (instr->operands[0].bytes() != instr->definitions[0].bytes()) {
+         if (ctx.info[instr->operands[0].tempId()].is_phys_reg(instr->pass_flags) &&
+             (instr->definitions[0].bytes() * index % 4 == 0)) {
+            PhysReg reg = ctx.info[instr->operands[0].tempId()].phys_reg;
+            reg = reg.advance(instr->definitions[0].bytes() * index);
+            ctx.info[instr->definitions[0].tempId()].set_phys_reg(reg);
+         }
+
          if (instr->operands[0].size() != 1 || !instr->operands[0].isTemp())
             break;
 
@@ -2772,6 +2832,7 @@ label_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
          ctx.info[instr->definitions[0].tempId()].set_temp(instr->operands[0].getTemp());
       } else {
          assert(instr->operands[0].isFixed());
+         ctx.info[instr->definitions[0].tempId()].set_phys_reg(instr->operands[0].physReg());
       }
       break;
    case aco_opcode::p_is_helper:
