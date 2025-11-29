@@ -4210,6 +4210,8 @@ visit_intrinsic(isel_context* ctx, nir_intrinsic_instr* instr)
       Definition def = dst.size() == bld.lm.size() ? Definition(dst) : bld.def(bld.lm);
       if (instr->intrinsic == nir_intrinsic_ballot_relaxed)
          src = bld.copy(def, src);
+      else if (nir_src_is_const(instr->src[0]) && nir_src_as_uint(instr->src[0]))
+         src = bld.copy(def, Operand(exec, bld.lm));
       else
          src = bld.sop2(Builder::s_and, def, bld.def(s1, scc), src, Operand(exec, bld.lm));
       if (dst.size() != bld.lm.size()) {
