@@ -215,7 +215,6 @@ spec@ext_transform_feedback@tessellation triangle_strip flat_last,Fail
 spec@ext_transform_feedback@tessellation triangle_strip monochrome,Fail
 spec@ext_transform_feedback@tessellation triangle_strip smooth,Fail
 spec@ext_transform_feedback@tessellation triangle_strip wireframe,Fail
-spec@glsl-1.10@execution@variable-indexing@fs-input-array-vec4-index-rd,Fail
 spec@glsl-1.20@execution@fs-underflow-mul-compare-zero,Fail
 spec@glsl-1.30@execution@clipping@fs-clip-distance-interpolated,Crash
 spec@glsl-1.30@execution@interpolation@interpolation-noperspective-gl_backcolor-flat-distance,Fail

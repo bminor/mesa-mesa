@@ -694,7 +694,7 @@ bi_emit_load_vary(bi_builder *b, nir_intrinsic_instr *instr)
          unsigned vbase = bi_varying_base_bytes(b->shader, instr);
 
          if (vbase != 0)
-            idx_bytes = bi_iadd_u32(b, idx, bi_imm_u32(vbase), false);
+            idx_bytes = bi_iadd_u32(b, idx_bytes, bi_imm_u32(vbase), false);
 
          bi_ld_var_buf_to(b, sz, dest, src0, idx_bytes, regfmt, sample,
                           source_format, update, vecsize);
