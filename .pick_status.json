@@ -244,7 +244,7 @@
         "description": "pan/bi: Fix LD_VAR_BUF indirect offset calculations",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "0fcddd4d2c401a7678139456702cbe15288eebf1",
         "notes": null
