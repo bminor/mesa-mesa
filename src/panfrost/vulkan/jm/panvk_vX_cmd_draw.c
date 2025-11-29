@@ -411,36 +411,6 @@ panvk_draw_prepare_tiler_context(struct panvk_cmd_buffer *cmdbuf,
    return VK_SUCCESS;
 }
 
-static mali_pixel_format
-panvk_varying_hw_format(mesa_shader_stage stage, gl_varying_slot loc,
-                        enum pipe_format pfmt)
-{
-   switch (loc) {
-   case VARYING_SLOT_PNTC:
-   case VARYING_SLOT_PSIZ:
-#if PAN_ARCH <= 6
-      return (MALI_R16F << 12) | pan_get_default_swizzle(1);
-#else
-      return (MALI_R16F << 12) | MALI_RGB_COMPONENT_ORDER_R000;
-#endif
-   case VARYING_SLOT_POS:
-#if PAN_ARCH <= 6
-      return (MALI_SNAP_4 << 12) | pan_get_default_swizzle(4);
-#else
-      return (MALI_SNAP_4 << 12) | MALI_RGB_COMPONENT_ORDER_RGBA;
-#endif
-   default:
-      if (pfmt != PIPE_FORMAT_NONE)
-         return GENX(pan_format_from_pipe_format)(pfmt)->hw;
-
-#if PAN_ARCH >= 7
-      return (MALI_CONSTANT << 12) | MALI_RGB_COMPONENT_ORDER_0000;
-#else
-      return (MALI_CONSTANT << 12) | PAN_V6_SWIZZLE(0, 0, 0, 0);
-#endif
-   }
-}
-
 static VkResult
 panvk_draw_prepare_varyings(struct panvk_cmd_buffer *cmdbuf,
                             struct panvk_draw_data *draw)
