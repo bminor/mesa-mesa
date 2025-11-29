@@ -534,6 +534,9 @@ main()
    bit_writer_init(writer, dst_leaf_addr);
 
    if (cluster.invocation_index == first_active_in_node) {
+      assert(encode_indices_midpoint >= 54, "radv: encode_triangles_gfx12: encode_indices_midpoint < 54.\n");
+      assert(encode_indices_midpoint < 1024, "radv: encode_triangles_gfx12: encode_indices_midpoint >= 1024.\n");
+
       bit_writer_write(writer, encode_vertex_payload_bit_size.x - 1, 5);    /* x_vertex_bits_minus_one */
       bit_writer_write(writer, encode_vertex_payload_bit_size.y - 1, 5);    /* y_vertex_bits_minus_one */
       bit_writer_write(writer, encode_vertex_payload_bit_size.z - 1, 5);    /* z_vertex_bits_minus_one */
