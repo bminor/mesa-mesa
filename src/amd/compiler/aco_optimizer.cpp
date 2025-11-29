@@ -1796,12 +1796,21 @@ skip_smem_offset_align(opt_ctx& ctx, SMEM_instruction* smem, uint32_t align)
       return;
 
    uint32_t mask = ~(align - 1u);
-   if (bitwise_instr->operands[0].constantEquals(mask) &&
-       bitwise_instr->operands[1].isOfType(op.regClass().type()))
-      op.setTemp(bitwise_instr->operands[1].getTemp());
-   else if (bitwise_instr->operands[1].constantEquals(mask) &&
-            bitwise_instr->operands[0].isOfType(op.regClass().type()))
-      op.setTemp(bitwise_instr->operands[0].getTemp());
+   for (unsigned i = 0; i < 2; i++) {
+      Operand new_op = bitwise_instr->operands[!i];
+      if (!bitwise_instr->operands[i].constantEquals(mask) ||
+          !new_op.isOfType(op.regClass().type()))
+         continue;
+
+      if (new_op.isTemp()) {
+         op.setTemp(op.getTemp());
+      } else {
+         assert(new_op.isFixed());
+         op = new_op;
+      }
+
+      return;
+   }
 }
 
 void
