@@ -4829,6 +4829,16 @@ d3d12_video_encoder_get_feedback(struct pipe_video_codec *codec,
          opt_metadata.codec_unit_metadata[i].size);
    }
 
+   if ((pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].SubregionNotificationMode == D3D12_VIDEO_ENCODER_COMPRESSED_BITSTREAM_NOTIFICATION_MODE_FULL_FRAME) &&
+       (*output_buffer_size >= pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].comp_bit_destinations[0/*first slice*/]->width0))
+   {
+      debug_printf("[d3d12_video_encoder_get_feedback] Warning: Encoded bitstream size %d exceeds the allocated output buffer size %d\n",
+         *output_buffer_size,
+         pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].comp_bit_destinations[0/*first slice*/]->width0);
+      opt_metadata.encode_result |= PIPE_VIDEO_FEEDBACK_METADATA_ENCODE_FLAG_MAX_FRAME_SIZE_OVERFLOW;
+      assert(false);
+   }
+
    pD3D12Enc->m_spEncodedFrameMetadata[current_metadata_slot].bRead = true;
 }
 
