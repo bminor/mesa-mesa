@@ -53,6 +53,12 @@ struct vn_renderer_info {
       VkPhysicalDevicePCIBusInfoPropertiesEXT props;
    } pci;
 
+   struct {
+      bool has_luid;
+      uint32_t node_mask;
+      uint8_t luid[VK_LUID_SIZE];
+   } id;
+
    bool has_dma_buf_import;
    bool has_external_sync;
    bool has_implicit_fencing;

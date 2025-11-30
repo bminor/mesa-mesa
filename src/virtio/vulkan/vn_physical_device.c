@@ -494,9 +494,16 @@ vn_physical_device_init_uuids(struct vn_physical_device *physical_dev)
 
    memcpy(props->driverUUID, sha1, VK_UUID_SIZE);
 
-   memset(props->deviceLUID, 0, VK_LUID_SIZE);
-   props->deviceNodeMask = 0;
-   props->deviceLUIDValid = false;
+   const struct vn_renderer *renderer = physical_dev->instance->renderer;
+   if (renderer->info.id.has_luid) {
+      props->deviceLUIDValid = true;
+      props->deviceNodeMask = renderer->info.id.node_mask;
+      memcpy(props->deviceLUID, renderer->info.id.luid, VK_LUID_SIZE);
+   } else {
+      memset(props->deviceLUID, 0, VK_LUID_SIZE);
+      props->deviceNodeMask = 0;
+      props->deviceLUIDValid = false;
+   }
 }
 
 static void
