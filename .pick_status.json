@@ -664,7 +664,7 @@
         "description": "rust: build `equivalent` dependency with the correct edition",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "9e3e12e6a97a5412ab12d64b41045f040f4c4bbd",
         "notes": null
