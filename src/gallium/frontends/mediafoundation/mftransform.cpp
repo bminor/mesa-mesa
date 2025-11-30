@@ -1333,6 +1333,78 @@ CDX12EncHMFT::FinalizeAndEmitOutputSample( LPDX12EncodeContext pDX12EncodeContex
                                            BOOL bIsLastSlice,
                                            uint64_t ResolveStatsCompletionFenceValue )
 {
+   // Check if codec units are non-contiguous in memory
+   // If they are not contiguous, we need to copy them to a contiguous buffer
+   // to match the reported nalu length information
+   assert (CodecUnitMetadataCount > 0);
+   bool bNonContiguousNALs = false;
+   for( unsigned i = 0; i < CodecUnitMetadataCount - 1; i++ )
+   {
+      if( pCodecUnitMetadata[i].offset + pCodecUnitMetadata[i].size != pCodecUnitMetadata[i + 1].offset )
+      {
+         bNonContiguousNALs = true;
+         debug_printf( "[dx12 hmft 0x%p] FinalizeAndEmitOutputSample - Non-contiguous codec unit %i detected, "
+                        "performing copy into a contiguous buffer for MFT output\n",
+                        this,
+                        i );
+      }
+   }
+
+   if( bNonContiguousNALs )
+   {
+      HMFT_ETW_EVENT_START( "FinalizeAndEmitOutputSampleNonContiguousCopy", this );
+      ComPtr<IMFMediaBuffer> spMemoryBuffer;
+      LPBYTE lpSourceBuffer = nullptr;
+      LPBYTE lpDestBuffer = nullptr;
+      DWORD dwSourceMaxLen = 0, dwSourceCurLen = 0;
+
+      if( SUCCEEDED( MFCreateMemoryBuffer( m_uiMaxOutputBitstreamSize, &spMemoryBuffer ) ) )
+      {
+         if( SUCCEEDED( spMemoryBuffer->Lock( &lpDestBuffer, NULL, NULL ) ) )
+         {
+            if( SUCCEEDED( spMediaBuffer->Lock( &lpSourceBuffer, &dwSourceMaxLen, &dwSourceCurLen ) ) )
+            {
+               size_t copied_bytes = 0;
+               for( unsigned i = 0; i < CodecUnitMetadataCount; i++ )
+               {
+                  memcpy( lpDestBuffer + copied_bytes,
+                          lpSourceBuffer + pCodecUnitMetadata[i].offset,
+                          static_cast<size_t>( pCodecUnitMetadata[i].size ) );
+                  copied_bytes += static_cast<size_t>( pCodecUnitMetadata[i].size );
+               }
+
+               spMediaBuffer->Unlock();
+               spMemoryBuffer->Unlock();
+               spMemoryBuffer->SetCurrentLength( static_cast<DWORD>( copied_bytes ) );
+
+               // Replace the original buffer with the memory buffer
+               spMediaBuffer = spMemoryBuffer;
+            }
+            else
+            {
+               spMemoryBuffer->Unlock();
+               MFE_ERROR( "[dx12 hmft 0x%p] FinalizeAndEmitOutputSample - spMediaBuffer->Lock failed", this );
+               assert( false );
+            }
+         }
+         else
+         {
+            MFE_ERROR( "[dx12 hmft 0x%p] FinalizeAndEmitOutputSample - spMemoryBuffer->Lock failed", this );
+            assert( false );
+         }
+      }
+      else
+      {
+         MFE_ERROR( "[dx12 hmft 0x%p] FinalizeAndEmitOutputSample - MFCreateMemoryBuffer failed", this );
+         assert( false );
+      }
+      HMFT_ETW_EVENT_STOP( "FinalizeAndEmitOutputSampleNonContiguousCopy", this );
+   }
+   else
+   {
+      debug_printf( "[dx12 hmft 0x%p] FinalizeAndEmitOutputSample - Contiguous codec units, no copy needed\n", this );
+   }
+
    // Add buffer to the sample
    spOutputSample->AddBuffer( spMediaBuffer.Get() );
 
