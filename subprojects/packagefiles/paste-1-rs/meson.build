@@ -9,7 +9,8 @@ rust = import('rust')
 
 lib = rust.proc_macro(
   'paste',
-  files('src/lib.rs')
+  files('src/lib.rs'),
+  override_options : ['rust_std=2018', 'build.rust_std=2018']
 )
 
 dep_paste = declare_dependency(

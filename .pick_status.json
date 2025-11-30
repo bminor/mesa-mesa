@@ -654,7 +654,7 @@
         "description": "rust: build `paste` dependency with the correct edition",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "dde95fc039da8bc31563d6d85bfacd97be4ba98c",
         "notes": null
