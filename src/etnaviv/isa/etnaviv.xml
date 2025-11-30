@@ -251,7 +251,7 @@ SPDX-License-Identifier: MIT
 		</expr>
 
 		<display>
-			{IMMED}
+			{IMMED}:f20
 		</display>
 
 		<derived name="IMMED" type="float" width="32">
@@ -271,7 +271,7 @@ SPDX-License-Identifier: MIT
 		</expr>
 
 		<display>
-			{IMMED}
+			{IMMED}:s20
 		</display>
 
 		<derived name="IMMED" type="int" width="20">
@@ -291,7 +291,7 @@ SPDX-License-Identifier: MIT
 		</expr>
 
 		<display>
-			{IMMED}
+			{IMMED}:u20
 		</display>
 
 		<derived name="IMMED" type="uint" width="20">
@@ -311,7 +311,7 @@ SPDX-License-Identifier: MIT
 		</expr>
 
 		<display>
-			{IMMED}
+			{IMMED}:f16
 		</display>
 
 		<derived name="IMMED" type="float" width="16">

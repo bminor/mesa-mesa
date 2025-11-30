@@ -26,6 +26,20 @@ where
     item.as_str().parse::<T>().unwrap()
 }
 
+fn parse_numeric<T: FromStr>(item: Pair<Rule>) -> T
+where
+    T::Err: std::fmt::Debug,
+{
+    let cleaned = item.as_str();
+    // strip suffixes like :s20, :u20, :f16, :f20
+    let cleaned = if let Some((number, _type)) = cleaned.split_once(':') {
+        number
+    } else {
+        cleaned
+    };
+    cleaned.parse::<T>().unwrap()
+}
+
 fn fill_swizzle(item: Pair<Rule>) -> u32 {
     assert!(item.as_rule() == Rule::SrcSwizzle);
 
@@ -134,8 +148,8 @@ fn fill_source(pair: Pair<Rule>, src: &mut etna_inst_src, dual_16_mode: bool) {
                 imm_struct.set_imm_type(0);
                 imm_struct.set_imm_val(0xfffff);
             }
-            Rule::Immediate_float => {
-                let value: f32 = parse_pair(item);
+            Rule::Immediate_float | Rule::Immediate_half_float => {
+                let value: f32 = parse_numeric(item);
                 let bits = value.to_bits();
 
                 assert!((bits & 0xfff) == 0); /* 12 lsb cut off */
@@ -147,17 +161,32 @@ fn fill_source(pair: Pair<Rule>, src: &mut etna_inst_src, dual_16_mode: bool) {
                 imm_struct.set_imm_type(imm_type);
                 imm_struct.set_imm_val(bits >> 12);
             }
-            i_type @ (Rule::Immediate_int | Rule::Immediate_uint) => {
-                let value = if i_type == Rule::Immediate_int {
-                    parse_pair::<i32>(item) as u32
-                } else {
-                    parse_pair::<u32>(item)
-                };
+            Rule::Immediate_int => {
+                let value: i32 = parse_numeric(item);
+                assert!(
+                    (-0x80000..=0x7ffff).contains(&value),
+                    "Immediate_int out of 20-bit signed range: {value}"
+                );
 
                 src.set_rgroup(isa_reg_group::ISA_REG_GROUP_IMMED);
 
                 let imm_struct = unsafe { &mut src.__bindgen_anon_1.__bindgen_anon_2 };
+
+                // 20-bit two's-complement
+                let imm_val = (value as u32) & 0xfffff;
+
                 imm_struct.set_imm_type(1);
+                imm_struct.set_imm_val(imm_val);
+            }
+            Rule::Immediate_uint => {
+                let value: u32 = parse_numeric(item);
+                assert!(value <= 0xfffff, "Immediate_uint out of range: {value}");
+
+                src.set_rgroup(isa_reg_group::ISA_REG_GROUP_IMMED);
+
+                let imm_struct = unsafe { &mut src.__bindgen_anon_1.__bindgen_anon_2 };
+
+                imm_struct.set_imm_type(2);
                 imm_struct.set_imm_val(value);
             }
             Rule::SrcSwizzle => {

@@ -23,12 +23,13 @@ Negate = { "-" }
 Absolute = { "|" }
 
 Immediate_Minus_Nan = @{ Negate ~ "nan" }
-Immediate_float = @{ Negate? ~ ASCII_DIGIT* ~ "." ~ ASCII_DIGIT* }
-Immediate_int = @{ Negate ~ ASCII_DIGIT* }
-Immediate_uint = @{ ASCII_DIGIT* }
-Immediate = _{ Immediate_Minus_Nan | Immediate_float | Immediate_int | Immediate_uint }
+Immediate_float = @{ Negate? ~ ASCII_DIGIT+ ~ "." ~ ASCII_DIGIT+ ~ ":f20" }
+Immediate_half_float = @{ Negate? ~ ASCII_DIGIT+ ~ "." ~ ASCII_DIGIT+ ~ ":f16" }
+Immediate_uint = @{ ASCII_DIGIT+ ~ ":u20" }
+Immediate_int = @{ Negate? ~ ASCII_DIGIT+ ~ ":s20"  }
+Immediate = _{ Immediate_Minus_Nan | Immediate_float | Immediate_half_float | Immediate_uint | Immediate_int }
 
-Register = { ASCII_DIGIT* }
+Register = @{ ASCII_DIGIT+ }
 DstRegister = ${ "t" ~ Register ~ RegAddressingMode? ~ Wrmask? }
 DstMemAddr = ${ "mem" ~ Wrmask? }
 SrcSwizzle = ${ "." ~ Swiz ~ Swiz ~ Swiz ~ Swiz }
