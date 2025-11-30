@@ -19,6 +19,10 @@
 #include "vn_physical_device.h"
 #include "vn_queue.h"
 
+#ifndef DRM_FORMAT_MOD_LINEAR
+#define DRM_FORMAT_MOD_LINEAR 0
+#endif
+
 /* The common WSI support makes some assumptions about the driver.
  *
  * In wsi_device_init, it assumes VK_EXT_pci_bus_info is available.  In
