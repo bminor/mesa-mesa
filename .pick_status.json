@@ -644,7 +644,7 @@
         "description": "rust: build `ucd-trie` dependency with the correct edition",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "e28ff818695ca953b31ec15d1f371b64a4ff9e3d",
         "notes": null
