@@ -462,6 +462,9 @@ typedef enum VkCommandTypeEXT {
     VK_COMMAND_TYPE_vkCmdSetAttachmentFeedbackLoopEnableEXT_EXT = 329,
     VK_COMMAND_TYPE_vkCmdSetDepthClampRangeEXT_EXT = 330,
     VK_COMMAND_TYPE_vkGetPhysicalDeviceCooperativeMatrixPropertiesKHR_EXT = 331,
+    VK_COMMAND_TYPE_vkCmdDrawMeshTasksEXT_EXT = 332,
+    VK_COMMAND_TYPE_vkCmdDrawMeshTasksIndirectEXT_EXT = 333,
+    VK_COMMAND_TYPE_vkCmdDrawMeshTasksIndirectCountEXT_EXT = 334,
 } VkCommandTypeEXT;
 
 typedef enum VkCommandFlagBitsEXT {

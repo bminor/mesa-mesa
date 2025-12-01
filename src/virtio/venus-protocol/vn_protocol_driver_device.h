@@ -5601,6 +5601,157 @@ vn_encode_VkPhysicalDeviceFragmentShaderBarycentricFeaturesKHR_partial(struct vn
     vn_encode_VkPhysicalDeviceFragmentShaderBarycentricFeaturesKHR_self_partial(enc, val);
 }
 
+/* struct VkPhysicalDeviceMeshShaderFeaturesEXT chain */
+
+static inline size_t
+vn_sizeof_VkPhysicalDeviceMeshShaderFeaturesEXT_pnext(const void *val)
+{
+    /* no known/supported struct */
+    return vn_sizeof_simple_pointer(NULL);
+}
+
+static inline size_t
+vn_sizeof_VkPhysicalDeviceMeshShaderFeaturesEXT_self(const VkPhysicalDeviceMeshShaderFeaturesEXT *val)
+{
+    size_t size = 0;
+    /* skip val->{sType,pNext} */
+    size += vn_sizeof_VkBool32(&val->taskShader);
+    size += vn_sizeof_VkBool32(&val->meshShader);
+    size += vn_sizeof_VkBool32(&val->multiviewMeshShader);
+    size += vn_sizeof_VkBool32(&val->primitiveFragmentShadingRateMeshShader);
+    size += vn_sizeof_VkBool32(&val->meshShaderQueries);
+    return size;
+}
+
+static inline size_t
+vn_sizeof_VkPhysicalDeviceMeshShaderFeaturesEXT(const VkPhysicalDeviceMeshShaderFeaturesEXT *val)
+{
+    size_t size = 0;
+
+    size += vn_sizeof_VkStructureType(&val->sType);
+    size += vn_sizeof_VkPhysicalDeviceMeshShaderFeaturesEXT_pnext(val->pNext);
+    size += vn_sizeof_VkPhysicalDeviceMeshShaderFeaturesEXT_self(val);
+
+    return size;
+}
+
+static inline void
+vn_encode_VkPhysicalDeviceMeshShaderFeaturesEXT_pnext(struct vn_cs_encoder *enc, const void *val)
+{
+    /* no known/supported struct */
+    vn_encode_simple_pointer(enc, NULL);
+}
+
+static inline void
+vn_encode_VkPhysicalDeviceMeshShaderFeaturesEXT_self(struct vn_cs_encoder *enc, const VkPhysicalDeviceMeshShaderFeaturesEXT *val)
+{
+    /* skip val->{sType,pNext} */
+    vn_encode_VkBool32(enc, &val->taskShader);
+    vn_encode_VkBool32(enc, &val->meshShader);
+    vn_encode_VkBool32(enc, &val->multiviewMeshShader);
+    vn_encode_VkBool32(enc, &val->primitiveFragmentShadingRateMeshShader);
+    vn_encode_VkBool32(enc, &val->meshShaderQueries);
+}
+
+static inline void
+vn_encode_VkPhysicalDeviceMeshShaderFeaturesEXT(struct vn_cs_encoder *enc, const VkPhysicalDeviceMeshShaderFeaturesEXT *val)
+{
+    assert(val->sType == VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_EXT);
+    vn_encode_VkStructureType(enc, &(VkStructureType){ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_EXT });
+    vn_encode_VkPhysicalDeviceMeshShaderFeaturesEXT_pnext(enc, val->pNext);
+    vn_encode_VkPhysicalDeviceMeshShaderFeaturesEXT_self(enc, val);
+}
+
+static inline void
+vn_decode_VkPhysicalDeviceMeshShaderFeaturesEXT_pnext(struct vn_cs_decoder *dec, const void *val)
+{
+    /* no known/supported struct */
+    if (vn_decode_simple_pointer(dec))
+        assert(false);
+}
+
+static inline void
+vn_decode_VkPhysicalDeviceMeshShaderFeaturesEXT_self(struct vn_cs_decoder *dec, VkPhysicalDeviceMeshShaderFeaturesEXT *val)
+{
+    /* skip val->{sType,pNext} */
+    vn_decode_VkBool32(dec, &val->taskShader);
+    vn_decode_VkBool32(dec, &val->meshShader);
+    vn_decode_VkBool32(dec, &val->multiviewMeshShader);
+    vn_decode_VkBool32(dec, &val->primitiveFragmentShadingRateMeshShader);
+    vn_decode_VkBool32(dec, &val->meshShaderQueries);
+}
+
+static inline void
+vn_decode_VkPhysicalDeviceMeshShaderFeaturesEXT(struct vn_cs_decoder *dec, VkPhysicalDeviceMeshShaderFeaturesEXT *val)
+{
+    VkStructureType stype;
+    vn_decode_VkStructureType(dec, &stype);
+    assert(stype == VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_EXT);
+
+    assert(val->sType == stype);
+    vn_decode_VkPhysicalDeviceMeshShaderFeaturesEXT_pnext(dec, val->pNext);
+    vn_decode_VkPhysicalDeviceMeshShaderFeaturesEXT_self(dec, val);
+}
+
+static inline size_t
+vn_sizeof_VkPhysicalDeviceMeshShaderFeaturesEXT_pnext_partial(const void *val)
+{
+    /* no known/supported struct */
+    return vn_sizeof_simple_pointer(NULL);
+}
+
+static inline size_t
+vn_sizeof_VkPhysicalDeviceMeshShaderFeaturesEXT_self_partial(const VkPhysicalDeviceMeshShaderFeaturesEXT *val)
+{
+    size_t size = 0;
+    /* skip val->{sType,pNext} */
+    /* skip val->taskShader */
+    /* skip val->meshShader */
+    /* skip val->multiviewMeshShader */
+    /* skip val->primitiveFragmentShadingRateMeshShader */
+    /* skip val->meshShaderQueries */
+    return size;
+}
+
+static inline size_t
+vn_sizeof_VkPhysicalDeviceMeshShaderFeaturesEXT_partial(const VkPhysicalDeviceMeshShaderFeaturesEXT *val)
+{
+    size_t size = 0;
+
+    size += vn_sizeof_VkStructureType(&val->sType);
+    size += vn_sizeof_VkPhysicalDeviceMeshShaderFeaturesEXT_pnext_partial(val->pNext);
+    size += vn_sizeof_VkPhysicalDeviceMeshShaderFeaturesEXT_self_partial(val);
+
+    return size;
+}
+
+static inline void
+vn_encode_VkPhysicalDeviceMeshShaderFeaturesEXT_pnext_partial(struct vn_cs_encoder *enc, const void *val)
+{
+    /* no known/supported struct */
+    vn_encode_simple_pointer(enc, NULL);
+}
+
+static inline void
+vn_encode_VkPhysicalDeviceMeshShaderFeaturesEXT_self_partial(struct vn_cs_encoder *enc, const VkPhysicalDeviceMeshShaderFeaturesEXT *val)
+{
+    /* skip val->{sType,pNext} */
+    /* skip val->taskShader */
+    /* skip val->meshShader */
+    /* skip val->multiviewMeshShader */
+    /* skip val->primitiveFragmentShadingRateMeshShader */
+    /* skip val->meshShaderQueries */
+}
+
+static inline void
+vn_encode_VkPhysicalDeviceMeshShaderFeaturesEXT_partial(struct vn_cs_encoder *enc, const VkPhysicalDeviceMeshShaderFeaturesEXT *val)
+{
+    assert(val->sType == VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_EXT);
+    vn_encode_VkStructureType(enc, &(VkStructureType){ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_EXT });
+    vn_encode_VkPhysicalDeviceMeshShaderFeaturesEXT_pnext_partial(enc, val->pNext);
+    vn_encode_VkPhysicalDeviceMeshShaderFeaturesEXT_self_partial(enc, val);
+}
+
 /* struct VkPhysicalDeviceAccelerationStructureFeaturesKHR chain */
 
 static inline size_t
@@ -17692,6 +17843,14 @@ vn_sizeof_VkPhysicalDeviceFeatures2_pnext(const void *val)
             size += vn_sizeof_VkPhysicalDeviceFeatures2_pnext(pnext->pNext);
             size += vn_sizeof_VkPhysicalDeviceFragmentShaderBarycentricFeaturesKHR_self((const VkPhysicalDeviceFragmentShaderBarycentricFeaturesKHR *)pnext);
             return size;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_EXT:
+            if (!vn_cs_renderer_protocol_has_extension(329 /* VK_EXT_mesh_shader */))
+                break;
+            size += vn_sizeof_simple_pointer(pnext);
+            size += vn_sizeof_VkStructureType(&pnext->sType);
+            size += vn_sizeof_VkPhysicalDeviceFeatures2_pnext(pnext->pNext);
+            size += vn_sizeof_VkPhysicalDeviceMeshShaderFeaturesEXT_self((const VkPhysicalDeviceMeshShaderFeaturesEXT *)pnext);
+            return size;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR:
             if (!vn_cs_renderer_protocol_has_extension(151 /* VK_KHR_acceleration_structure */))
                 break;
@@ -18600,6 +18759,14 @@ vn_encode_VkPhysicalDeviceFeatures2_pnext(struct vn_cs_encoder *enc, const void 
             vn_encode_VkPhysicalDeviceFeatures2_pnext(enc, pnext->pNext);
             vn_encode_VkPhysicalDeviceFragmentShaderBarycentricFeaturesKHR_self(enc, (const VkPhysicalDeviceFragmentShaderBarycentricFeaturesKHR *)pnext);
             return;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_EXT:
+            if (!vn_cs_renderer_protocol_has_extension(329 /* VK_EXT_mesh_shader */))
+                break;
+            vn_encode_simple_pointer(enc, pnext);
+            vn_encode_VkStructureType(enc, &pnext->sType);
+            vn_encode_VkPhysicalDeviceFeatures2_pnext(enc, pnext->pNext);
+            vn_encode_VkPhysicalDeviceMeshShaderFeaturesEXT_self(enc, (const VkPhysicalDeviceMeshShaderFeaturesEXT *)pnext);
+            return;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR:
             if (!vn_cs_renderer_protocol_has_extension(151 /* VK_KHR_acceleration_structure */))
                 break;
@@ -19423,6 +19590,10 @@ vn_decode_VkPhysicalDeviceFeatures2_pnext(struct vn_cs_decoder *dec, const void 
         vn_decode_VkPhysicalDeviceFeatures2_pnext(dec, pnext->pNext);
         vn_decode_VkPhysicalDeviceFragmentShaderBarycentricFeaturesKHR_self(dec, (VkPhysicalDeviceFragmentShaderBarycentricFeaturesKHR *)pnext);
         break;
+    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_EXT:
+        vn_decode_VkPhysicalDeviceFeatures2_pnext(dec, pnext->pNext);
+        vn_decode_VkPhysicalDeviceMeshShaderFeaturesEXT_self(dec, (VkPhysicalDeviceMeshShaderFeaturesEXT *)pnext);
+        break;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR:
         vn_decode_VkPhysicalDeviceFeatures2_pnext(dec, pnext->pNext);
         vn_decode_VkPhysicalDeviceAccelerationStructureFeaturesKHR_self(dec, (VkPhysicalDeviceAccelerationStructureFeaturesKHR *)pnext);
@@ -20003,6 +20174,14 @@ vn_sizeof_VkPhysicalDeviceFeatures2_pnext_partial(const void *val)
             size += vn_sizeof_VkStructureType(&pnext->sType);
             size += vn_sizeof_VkPhysicalDeviceFeatures2_pnext_partial(pnext->pNext);
             size += vn_sizeof_VkPhysicalDeviceFragmentShaderBarycentricFeaturesKHR_self_partial((const VkPhysicalDeviceFragmentShaderBarycentricFeaturesKHR *)pnext);
+            return size;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_EXT:
+            if (!vn_cs_renderer_protocol_has_extension(329 /* VK_EXT_mesh_shader */))
+                break;
+            size += vn_sizeof_simple_pointer(pnext);
+            size += vn_sizeof_VkStructureType(&pnext->sType);
+            size += vn_sizeof_VkPhysicalDeviceFeatures2_pnext_partial(pnext->pNext);
+            size += vn_sizeof_VkPhysicalDeviceMeshShaderFeaturesEXT_self_partial((const VkPhysicalDeviceMeshShaderFeaturesEXT *)pnext);
             return size;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR:
             if (!vn_cs_renderer_protocol_has_extension(151 /* VK_KHR_acceleration_structure */))
@@ -20911,6 +21090,14 @@ vn_encode_VkPhysicalDeviceFeatures2_pnext_partial(struct vn_cs_encoder *enc, con
             vn_encode_VkStructureType(enc, &pnext->sType);
             vn_encode_VkPhysicalDeviceFeatures2_pnext_partial(enc, pnext->pNext);
             vn_encode_VkPhysicalDeviceFragmentShaderBarycentricFeaturesKHR_self_partial(enc, (const VkPhysicalDeviceFragmentShaderBarycentricFeaturesKHR *)pnext);
+            return;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_EXT:
+            if (!vn_cs_renderer_protocol_has_extension(329 /* VK_EXT_mesh_shader */))
+                break;
+            vn_encode_simple_pointer(enc, pnext);
+            vn_encode_VkStructureType(enc, &pnext->sType);
+            vn_encode_VkPhysicalDeviceFeatures2_pnext_partial(enc, pnext->pNext);
+            vn_encode_VkPhysicalDeviceMeshShaderFeaturesEXT_self_partial(enc, (const VkPhysicalDeviceMeshShaderFeaturesEXT *)pnext);
             return;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR:
             if (!vn_cs_renderer_protocol_has_extension(151 /* VK_KHR_acceleration_structure */))
@@ -21905,6 +22092,14 @@ vn_sizeof_VkDeviceCreateInfo_pnext(const void *val)
             size += vn_sizeof_VkDeviceCreateInfo_pnext(pnext->pNext);
             size += vn_sizeof_VkPhysicalDeviceFragmentShaderBarycentricFeaturesKHR_self((const VkPhysicalDeviceFragmentShaderBarycentricFeaturesKHR *)pnext);
             return size;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_EXT:
+            if (!vn_cs_renderer_protocol_has_extension(329 /* VK_EXT_mesh_shader */))
+                break;
+            size += vn_sizeof_simple_pointer(pnext);
+            size += vn_sizeof_VkStructureType(&pnext->sType);
+            size += vn_sizeof_VkDeviceCreateInfo_pnext(pnext->pNext);
+            size += vn_sizeof_VkPhysicalDeviceMeshShaderFeaturesEXT_self((const VkPhysicalDeviceMeshShaderFeaturesEXT *)pnext);
+            return size;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR:
             if (!vn_cs_renderer_protocol_has_extension(151 /* VK_KHR_acceleration_structure */))
                 break;
@@ -22865,6 +23060,14 @@ vn_encode_VkDeviceCreateInfo_pnext(struct vn_cs_encoder *enc, const void *val)
             vn_encode_VkStructureType(enc, &pnext->sType);
             vn_encode_VkDeviceCreateInfo_pnext(enc, pnext->pNext);
             vn_encode_VkPhysicalDeviceFragmentShaderBarycentricFeaturesKHR_self(enc, (const VkPhysicalDeviceFragmentShaderBarycentricFeaturesKHR *)pnext);
+            return;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_EXT:
+            if (!vn_cs_renderer_protocol_has_extension(329 /* VK_EXT_mesh_shader */))
+                break;
+            vn_encode_simple_pointer(enc, pnext);
+            vn_encode_VkStructureType(enc, &pnext->sType);
+            vn_encode_VkDeviceCreateInfo_pnext(enc, pnext->pNext);
+            vn_encode_VkPhysicalDeviceMeshShaderFeaturesEXT_self(enc, (const VkPhysicalDeviceMeshShaderFeaturesEXT *)pnext);
             return;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR:
             if (!vn_cs_renderer_protocol_has_extension(151 /* VK_KHR_acceleration_structure */))
@@ -26972,6 +27175,238 @@ vn_encode_VkPhysicalDeviceComputeShaderDerivativesPropertiesKHR_partial(struct v
     vn_encode_VkPhysicalDeviceComputeShaderDerivativesPropertiesKHR_self_partial(enc, val);
 }
 
+/* struct VkPhysicalDeviceMeshShaderPropertiesEXT chain */
+
+static inline size_t
+vn_sizeof_VkPhysicalDeviceMeshShaderPropertiesEXT_pnext(const void *val)
+{
+    /* no known/supported struct */
+    return vn_sizeof_simple_pointer(NULL);
+}
+
+static inline size_t
+vn_sizeof_VkPhysicalDeviceMeshShaderPropertiesEXT_self(const VkPhysicalDeviceMeshShaderPropertiesEXT *val)
+{
+    size_t size = 0;
+    /* skip val->{sType,pNext} */
+    size += vn_sizeof_uint32_t(&val->maxTaskWorkGroupTotalCount);
+    size += vn_sizeof_array_size(3);
+    size += vn_sizeof_uint32_t_array(val->maxTaskWorkGroupCount, 3);
+    size += vn_sizeof_uint32_t(&val->maxTaskWorkGroupInvocations);
+    size += vn_sizeof_array_size(3);
+    size += vn_sizeof_uint32_t_array(val->maxTaskWorkGroupSize, 3);
+    size += vn_sizeof_uint32_t(&val->maxTaskPayloadSize);
+    size += vn_sizeof_uint32_t(&val->maxTaskSharedMemorySize);
+    size += vn_sizeof_uint32_t(&val->maxTaskPayloadAndSharedMemorySize);
+    size += vn_sizeof_uint32_t(&val->maxMeshWorkGroupTotalCount);
+    size += vn_sizeof_array_size(3);
+    size += vn_sizeof_uint32_t_array(val->maxMeshWorkGroupCount, 3);
+    size += vn_sizeof_uint32_t(&val->maxMeshWorkGroupInvocations);
+    size += vn_sizeof_array_size(3);
+    size += vn_sizeof_uint32_t_array(val->maxMeshWorkGroupSize, 3);
+    size += vn_sizeof_uint32_t(&val->maxMeshSharedMemorySize);
+    size += vn_sizeof_uint32_t(&val->maxMeshPayloadAndSharedMemorySize);
+    size += vn_sizeof_uint32_t(&val->maxMeshOutputMemorySize);
+    size += vn_sizeof_uint32_t(&val->maxMeshPayloadAndOutputMemorySize);
+    size += vn_sizeof_uint32_t(&val->maxMeshOutputComponents);
+    size += vn_sizeof_uint32_t(&val->maxMeshOutputVertices);
+    size += vn_sizeof_uint32_t(&val->maxMeshOutputPrimitives);
+    size += vn_sizeof_uint32_t(&val->maxMeshOutputLayers);
+    size += vn_sizeof_uint32_t(&val->maxMeshMultiviewViewCount);
+    size += vn_sizeof_uint32_t(&val->meshOutputPerVertexGranularity);
+    size += vn_sizeof_uint32_t(&val->meshOutputPerPrimitiveGranularity);
+    size += vn_sizeof_uint32_t(&val->maxPreferredTaskWorkGroupInvocations);
+    size += vn_sizeof_uint32_t(&val->maxPreferredMeshWorkGroupInvocations);
+    size += vn_sizeof_VkBool32(&val->prefersLocalInvocationVertexOutput);
+    size += vn_sizeof_VkBool32(&val->prefersLocalInvocationPrimitiveOutput);
+    size += vn_sizeof_VkBool32(&val->prefersCompactVertexOutput);
+    size += vn_sizeof_VkBool32(&val->prefersCompactPrimitiveOutput);
+    return size;
+}
+
+static inline size_t
+vn_sizeof_VkPhysicalDeviceMeshShaderPropertiesEXT(const VkPhysicalDeviceMeshShaderPropertiesEXT *val)
+{
+    size_t size = 0;
+
+    size += vn_sizeof_VkStructureType(&val->sType);
+    size += vn_sizeof_VkPhysicalDeviceMeshShaderPropertiesEXT_pnext(val->pNext);
+    size += vn_sizeof_VkPhysicalDeviceMeshShaderPropertiesEXT_self(val);
+
+    return size;
+}
+
+static inline void
+vn_decode_VkPhysicalDeviceMeshShaderPropertiesEXT_pnext(struct vn_cs_decoder *dec, const void *val)
+{
+    /* no known/supported struct */
+    if (vn_decode_simple_pointer(dec))
+        assert(false);
+}
+
+static inline void
+vn_decode_VkPhysicalDeviceMeshShaderPropertiesEXT_self(struct vn_cs_decoder *dec, VkPhysicalDeviceMeshShaderPropertiesEXT *val)
+{
+    /* skip val->{sType,pNext} */
+    vn_decode_uint32_t(dec, &val->maxTaskWorkGroupTotalCount);
+    {
+        const size_t array_size = vn_decode_array_size(dec, 3);
+        vn_decode_uint32_t_array(dec, val->maxTaskWorkGroupCount, array_size);
+    }
+    vn_decode_uint32_t(dec, &val->maxTaskWorkGroupInvocations);
+    {
+        const size_t array_size = vn_decode_array_size(dec, 3);
+        vn_decode_uint32_t_array(dec, val->maxTaskWorkGroupSize, array_size);
+    }
+    vn_decode_uint32_t(dec, &val->maxTaskPayloadSize);
+    vn_decode_uint32_t(dec, &val->maxTaskSharedMemorySize);
+    vn_decode_uint32_t(dec, &val->maxTaskPayloadAndSharedMemorySize);
+    vn_decode_uint32_t(dec, &val->maxMeshWorkGroupTotalCount);
+    {
+        const size_t array_size = vn_decode_array_size(dec, 3);
+        vn_decode_uint32_t_array(dec, val->maxMeshWorkGroupCount, array_size);
+    }
+    vn_decode_uint32_t(dec, &val->maxMeshWorkGroupInvocations);
+    {
+        const size_t array_size = vn_decode_array_size(dec, 3);
+        vn_decode_uint32_t_array(dec, val->maxMeshWorkGroupSize, array_size);
+    }
+    vn_decode_uint32_t(dec, &val->maxMeshSharedMemorySize);
+    vn_decode_uint32_t(dec, &val->maxMeshPayloadAndSharedMemorySize);
+    vn_decode_uint32_t(dec, &val->maxMeshOutputMemorySize);
+    vn_decode_uint32_t(dec, &val->maxMeshPayloadAndOutputMemorySize);
+    vn_decode_uint32_t(dec, &val->maxMeshOutputComponents);
+    vn_decode_uint32_t(dec, &val->maxMeshOutputVertices);
+    vn_decode_uint32_t(dec, &val->maxMeshOutputPrimitives);
+    vn_decode_uint32_t(dec, &val->maxMeshOutputLayers);
+    vn_decode_uint32_t(dec, &val->maxMeshMultiviewViewCount);
+    vn_decode_uint32_t(dec, &val->meshOutputPerVertexGranularity);
+    vn_decode_uint32_t(dec, &val->meshOutputPerPrimitiveGranularity);
+    vn_decode_uint32_t(dec, &val->maxPreferredTaskWorkGroupInvocations);
+    vn_decode_uint32_t(dec, &val->maxPreferredMeshWorkGroupInvocations);
+    vn_decode_VkBool32(dec, &val->prefersLocalInvocationVertexOutput);
+    vn_decode_VkBool32(dec, &val->prefersLocalInvocationPrimitiveOutput);
+    vn_decode_VkBool32(dec, &val->prefersCompactVertexOutput);
+    vn_decode_VkBool32(dec, &val->prefersCompactPrimitiveOutput);
+}
+
+static inline void
+vn_decode_VkPhysicalDeviceMeshShaderPropertiesEXT(struct vn_cs_decoder *dec, VkPhysicalDeviceMeshShaderPropertiesEXT *val)
+{
+    VkStructureType stype;
+    vn_decode_VkStructureType(dec, &stype);
+    assert(stype == VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_PROPERTIES_EXT);
+
+    assert(val->sType == stype);
+    vn_decode_VkPhysicalDeviceMeshShaderPropertiesEXT_pnext(dec, val->pNext);
+    vn_decode_VkPhysicalDeviceMeshShaderPropertiesEXT_self(dec, val);
+}
+
+static inline size_t
+vn_sizeof_VkPhysicalDeviceMeshShaderPropertiesEXT_pnext_partial(const void *val)
+{
+    /* no known/supported struct */
+    return vn_sizeof_simple_pointer(NULL);
+}
+
+static inline size_t
+vn_sizeof_VkPhysicalDeviceMeshShaderPropertiesEXT_self_partial(const VkPhysicalDeviceMeshShaderPropertiesEXT *val)
+{
+    size_t size = 0;
+    /* skip val->{sType,pNext} */
+    /* skip val->maxTaskWorkGroupTotalCount */
+    /* skip val->maxTaskWorkGroupCount */
+    /* skip val->maxTaskWorkGroupInvocations */
+    /* skip val->maxTaskWorkGroupSize */
+    /* skip val->maxTaskPayloadSize */
+    /* skip val->maxTaskSharedMemorySize */
+    /* skip val->maxTaskPayloadAndSharedMemorySize */
+    /* skip val->maxMeshWorkGroupTotalCount */
+    /* skip val->maxMeshWorkGroupCount */
+    /* skip val->maxMeshWorkGroupInvocations */
+    /* skip val->maxMeshWorkGroupSize */
+    /* skip val->maxMeshSharedMemorySize */
+    /* skip val->maxMeshPayloadAndSharedMemorySize */
+    /* skip val->maxMeshOutputMemorySize */
+    /* skip val->maxMeshPayloadAndOutputMemorySize */
+    /* skip val->maxMeshOutputComponents */
+    /* skip val->maxMeshOutputVertices */
+    /* skip val->maxMeshOutputPrimitives */
+    /* skip val->maxMeshOutputLayers */
+    /* skip val->maxMeshMultiviewViewCount */
+    /* skip val->meshOutputPerVertexGranularity */
+    /* skip val->meshOutputPerPrimitiveGranularity */
+    /* skip val->maxPreferredTaskWorkGroupInvocations */
+    /* skip val->maxPreferredMeshWorkGroupInvocations */
+    /* skip val->prefersLocalInvocationVertexOutput */
+    /* skip val->prefersLocalInvocationPrimitiveOutput */
+    /* skip val->prefersCompactVertexOutput */
+    /* skip val->prefersCompactPrimitiveOutput */
+    return size;
+}
+
+static inline size_t
+vn_sizeof_VkPhysicalDeviceMeshShaderPropertiesEXT_partial(const VkPhysicalDeviceMeshShaderPropertiesEXT *val)
+{
+    size_t size = 0;
+
+    size += vn_sizeof_VkStructureType(&val->sType);
+    size += vn_sizeof_VkPhysicalDeviceMeshShaderPropertiesEXT_pnext_partial(val->pNext);
+    size += vn_sizeof_VkPhysicalDeviceMeshShaderPropertiesEXT_self_partial(val);
+
+    return size;
+}
+
+static inline void
+vn_encode_VkPhysicalDeviceMeshShaderPropertiesEXT_pnext_partial(struct vn_cs_encoder *enc, const void *val)
+{
+    /* no known/supported struct */
+    vn_encode_simple_pointer(enc, NULL);
+}
+
+static inline void
+vn_encode_VkPhysicalDeviceMeshShaderPropertiesEXT_self_partial(struct vn_cs_encoder *enc, const VkPhysicalDeviceMeshShaderPropertiesEXT *val)
+{
+    /* skip val->{sType,pNext} */
+    /* skip val->maxTaskWorkGroupTotalCount */
+    /* skip val->maxTaskWorkGroupCount */
+    /* skip val->maxTaskWorkGroupInvocations */
+    /* skip val->maxTaskWorkGroupSize */
+    /* skip val->maxTaskPayloadSize */
+    /* skip val->maxTaskSharedMemorySize */
+    /* skip val->maxTaskPayloadAndSharedMemorySize */
+    /* skip val->maxMeshWorkGroupTotalCount */
+    /* skip val->maxMeshWorkGroupCount */
+    /* skip val->maxMeshWorkGroupInvocations */
+    /* skip val->maxMeshWorkGroupSize */
+    /* skip val->maxMeshSharedMemorySize */
+    /* skip val->maxMeshPayloadAndSharedMemorySize */
+    /* skip val->maxMeshOutputMemorySize */
+    /* skip val->maxMeshPayloadAndOutputMemorySize */
+    /* skip val->maxMeshOutputComponents */
+    /* skip val->maxMeshOutputVertices */
+    /* skip val->maxMeshOutputPrimitives */
+    /* skip val->maxMeshOutputLayers */
+    /* skip val->maxMeshMultiviewViewCount */
+    /* skip val->meshOutputPerVertexGranularity */
+    /* skip val->meshOutputPerPrimitiveGranularity */
+    /* skip val->maxPreferredTaskWorkGroupInvocations */
+    /* skip val->maxPreferredMeshWorkGroupInvocations */
+    /* skip val->prefersLocalInvocationVertexOutput */
+    /* skip val->prefersLocalInvocationPrimitiveOutput */
+    /* skip val->prefersCompactVertexOutput */
+    /* skip val->prefersCompactPrimitiveOutput */
+}
+
+static inline void
+vn_encode_VkPhysicalDeviceMeshShaderPropertiesEXT_partial(struct vn_cs_encoder *enc, const VkPhysicalDeviceMeshShaderPropertiesEXT *val)
+{
+    assert(val->sType == VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_PROPERTIES_EXT);
+    vn_encode_VkStructureType(enc, &(VkStructureType){ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_PROPERTIES_EXT });
+    vn_encode_VkPhysicalDeviceMeshShaderPropertiesEXT_pnext_partial(enc, val->pNext);
+    vn_encode_VkPhysicalDeviceMeshShaderPropertiesEXT_self_partial(enc, val);
+}
+
 /* struct VkPhysicalDeviceAccelerationStructurePropertiesKHR chain */
 
 static inline size_t
@@ -30458,6 +30893,14 @@ vn_sizeof_VkPhysicalDeviceProperties2_pnext(const void *val)
             size += vn_sizeof_VkPhysicalDeviceProperties2_pnext(pnext->pNext);
             size += vn_sizeof_VkPhysicalDeviceComputeShaderDerivativesPropertiesKHR_self((const VkPhysicalDeviceComputeShaderDerivativesPropertiesKHR *)pnext);
             return size;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_PROPERTIES_EXT:
+            if (!vn_cs_renderer_protocol_has_extension(329 /* VK_EXT_mesh_shader */))
+                break;
+            size += vn_sizeof_simple_pointer(pnext);
+            size += vn_sizeof_VkStructureType(&pnext->sType);
+            size += vn_sizeof_VkPhysicalDeviceProperties2_pnext(pnext->pNext);
+            size += vn_sizeof_VkPhysicalDeviceMeshShaderPropertiesEXT_self((const VkPhysicalDeviceMeshShaderPropertiesEXT *)pnext);
+            return size;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_PROPERTIES_KHR:
             if (!vn_cs_renderer_protocol_has_extension(151 /* VK_KHR_acceleration_structure */))
                 break;
@@ -30788,6 +31231,10 @@ vn_decode_VkPhysicalDeviceProperties2_pnext(struct vn_cs_decoder *dec, const voi
         vn_decode_VkPhysicalDeviceProperties2_pnext(dec, pnext->pNext);
         vn_decode_VkPhysicalDeviceComputeShaderDerivativesPropertiesKHR_self(dec, (VkPhysicalDeviceComputeShaderDerivativesPropertiesKHR *)pnext);
         break;
+    case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_PROPERTIES_EXT:
+        vn_decode_VkPhysicalDeviceProperties2_pnext(dec, pnext->pNext);
+        vn_decode_VkPhysicalDeviceMeshShaderPropertiesEXT_self(dec, (VkPhysicalDeviceMeshShaderPropertiesEXT *)pnext);
+        break;
     case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_PROPERTIES_KHR:
         vn_decode_VkPhysicalDeviceProperties2_pnext(dec, pnext->pNext);
         vn_decode_VkPhysicalDeviceAccelerationStructurePropertiesKHR_self(dec, (VkPhysicalDeviceAccelerationStructurePropertiesKHR *)pnext);
@@ -31100,6 +31547,14 @@ vn_sizeof_VkPhysicalDeviceProperties2_pnext_partial(const void *val)
             size += vn_sizeof_VkStructureType(&pnext->sType);
             size += vn_sizeof_VkPhysicalDeviceProperties2_pnext_partial(pnext->pNext);
             size += vn_sizeof_VkPhysicalDeviceComputeShaderDerivativesPropertiesKHR_self_partial((const VkPhysicalDeviceComputeShaderDerivativesPropertiesKHR *)pnext);
+            return size;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_PROPERTIES_EXT:
+            if (!vn_cs_renderer_protocol_has_extension(329 /* VK_EXT_mesh_shader */))
+                break;
+            size += vn_sizeof_simple_pointer(pnext);
+            size += vn_sizeof_VkStructureType(&pnext->sType);
+            size += vn_sizeof_VkPhysicalDeviceProperties2_pnext_partial(pnext->pNext);
+            size += vn_sizeof_VkPhysicalDeviceMeshShaderPropertiesEXT_self_partial((const VkPhysicalDeviceMeshShaderPropertiesEXT *)pnext);
             return size;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_PROPERTIES_KHR:
             if (!vn_cs_renderer_protocol_has_extension(151 /* VK_KHR_acceleration_structure */))
@@ -31502,6 +31957,14 @@ vn_encode_VkPhysicalDeviceProperties2_pnext_partial(struct vn_cs_encoder *enc, c
             vn_encode_VkStructureType(enc, &pnext->sType);
             vn_encode_VkPhysicalDeviceProperties2_pnext_partial(enc, pnext->pNext);
             vn_encode_VkPhysicalDeviceComputeShaderDerivativesPropertiesKHR_self_partial(enc, (const VkPhysicalDeviceComputeShaderDerivativesPropertiesKHR *)pnext);
+            return;
+        case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_PROPERTIES_EXT:
+            if (!vn_cs_renderer_protocol_has_extension(329 /* VK_EXT_mesh_shader */))
+                break;
+            vn_encode_simple_pointer(enc, pnext);
+            vn_encode_VkStructureType(enc, &pnext->sType);
+            vn_encode_VkPhysicalDeviceProperties2_pnext_partial(enc, pnext->pNext);
+            vn_encode_VkPhysicalDeviceMeshShaderPropertiesEXT_self_partial(enc, (const VkPhysicalDeviceMeshShaderPropertiesEXT *)pnext);
             return;
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_PROPERTIES_KHR:
             if (!vn_cs_renderer_protocol_has_extension(151 /* VK_KHR_acceleration_structure */))
