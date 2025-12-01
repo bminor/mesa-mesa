@@ -323,6 +323,8 @@ struct radeon_winsys {
                                   uint32_t signal_count,
                                   const struct vk_sync_signal *signals);
 
+   int (*reserve_vmid)(struct radeon_winsys *ws);
+   void (*unreserve_vmid)(struct radeon_winsys *ws);
 };
 
 static inline uint64_t

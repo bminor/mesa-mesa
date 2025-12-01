@@ -143,9 +143,6 @@ radv_amdgpu_winsys_destroy(struct radeon_winsys *rws)
    ac_drm_cs_destroy_syncobj(ws->dev, ws->vm_timeline_syncobj);
    simple_mtx_destroy(&ws->vm_ioctl_lock);
 
-   if (ws->reserve_vmid)
-      ac_drm_vm_unreserve_vmid(ws->dev, 0);
-
    if (ws->bo_history_logfile)
       fclose(ws->bo_history_logfile);
 
@@ -177,6 +174,20 @@ radv_amdgpu_winsys_get_sync_provider(struct radeon_winsys *rws)
    return p->clone(p);
 }
 
+static int
+radv_amdgpu_winsys_reserve_vmid(struct radeon_winsys *rws)
+{
+   struct radv_amdgpu_winsys *ws = (struct radv_amdgpu_winsys *)rws;
+   return ac_drm_vm_reserve_vmid(ws->dev, 0);
+}
+
+static void
+radv_amdgpu_winsys_unreserve_vmid(struct radeon_winsys *rws)
+{
+   struct radv_amdgpu_winsys *ws = (struct radv_amdgpu_winsys *)rws;
+   ac_drm_vm_unreserve_vmid(ws->dev, 0);
+}
+
 static uint64_t
 radv_amdgpu_winsys_filter_perftest_flags(uint64_t perftest_flags)
 {
@@ -185,7 +196,7 @@ radv_amdgpu_winsys_filter_perftest_flags(uint64_t perftest_flags)
 }
 
 VkResult
-radv_amdgpu_winsys_create(int fd, uint64_t debug_flags, uint64_t perftest_flags, bool reserve_vmid, bool is_virtio,
+radv_amdgpu_winsys_create(int fd, uint64_t debug_flags, uint64_t perftest_flags, bool is_virtio,
                           struct radeon_winsys **winsys)
 {
    VkResult result = VK_SUCCESS;
@@ -289,15 +300,6 @@ radv_amdgpu_winsys_create(int fd, uint64_t debug_flags, uint64_t perftest_flags,
          fprintf(stderr, "radv/amdgpu: Failed to create /tmp/radv_bo_history.log.\n");
    }
 
-   ws->reserve_vmid = reserve_vmid;
-   if (ws->reserve_vmid) {
-      r = ac_drm_vm_reserve_vmid(ws->dev, 0);
-      if (r) {
-         fprintf(stderr, "radv/amdgpu: failed to reserve vmid.\n");
-         result = VK_ERROR_INITIALIZATION_FAILED;
-         goto winsys_fail;
-      }
-   }
    int num_sync_types = 0;
 
    ws->syncobj_sync_type = vk_drm_syncobj_get_type_from_provider(ac_drm_device_get_sync_provider(dev));
@@ -338,6 +340,8 @@ radv_amdgpu_winsys_create(int fd, uint64_t debug_flags, uint64_t perftest_flags,
    ws->base.get_sync_types = radv_amdgpu_winsys_get_sync_types;
    ws->base.get_sync_provider = radv_amdgpu_winsys_get_sync_provider;
    ws->base.copy_sync_payloads = vk_drm_syncobj_copy_payloads;
+   ws->base.reserve_vmid = radv_amdgpu_winsys_reserve_vmid;
+   ws->base.unreserve_vmid = radv_amdgpu_winsys_unreserve_vmid;
    radv_amdgpu_bo_init_functions(ws);
    radv_amdgpu_cs_init_functions(ws);
 

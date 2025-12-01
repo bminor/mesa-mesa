@@ -392,6 +392,11 @@ radv_sqtt_init(struct radv_device *device)
    device->sqtt.buffer_size = (uint32_t)debug_get_num_option("RADV_THREAD_TRACE_BUFFER_SIZE", 32 * 1024 * 1024);
    device->sqtt.instruction_timing_enabled = radv_is_instruction_timing_enabled();
 
+   if (device->ws->reserve_vmid(device->ws) < 0) {
+      fprintf(stderr, "radv: Failed to reserve VMID for SQTT tracing.\n");
+      return false;
+   }
+
    if (!radv_sqtt_init_bo(device))
       return false;
 
@@ -427,6 +432,9 @@ radv_sqtt_finish(struct radv_device *device)
    radv_unregister_queues(device, sqtt);
 
    ac_sqtt_finish(sqtt);
+
+   if (device->ws)
+      device->ws->unreserve_vmid(device->ws);
 }
 
 static bool
