@@ -2766,3 +2766,38 @@ vn_CmdSetAttachmentFeedbackLoopEnableEXT(VkCommandBuffer commandBuffer,
    VN_CMD_ENQUEUE(vkCmdSetAttachmentFeedbackLoopEnableEXT, commandBuffer,
                   aspectMask);
 }
+
+void
+vn_CmdDrawMeshTasksEXT(VkCommandBuffer commandBuffer,
+                       uint32_t groupCountX,
+                       uint32_t groupCountY,
+                       uint32_t groupCountZ)
+{
+   VN_CMD_ENQUEUE(vkCmdDrawMeshTasksEXT, commandBuffer, groupCountX,
+                  groupCountY, groupCountZ);
+}
+
+void
+vn_CmdDrawMeshTasksIndirectEXT(VkCommandBuffer commandBuffer,
+                               VkBuffer buffer,
+                               VkDeviceSize offset,
+                               uint32_t drawCount,
+                               uint32_t stride)
+{
+   VN_CMD_ENQUEUE(vkCmdDrawMeshTasksIndirectEXT, commandBuffer, buffer,
+                  offset, drawCount, stride);
+}
+
+void
+vn_CmdDrawMeshTasksIndirectCountEXT(VkCommandBuffer commandBuffer,
+                                    VkBuffer buffer,
+                                    VkDeviceSize offset,
+                                    VkBuffer countBuffer,
+                                    VkDeviceSize countBufferOffset,
+                                    uint32_t maxDrawCount,
+                                    uint32_t stride)
+{
+   VN_CMD_ENQUEUE(vkCmdDrawMeshTasksIndirectCountEXT, commandBuffer, buffer,
+                  offset, countBuffer, countBufferOffset, maxDrawCount,
+                  stride);
+}

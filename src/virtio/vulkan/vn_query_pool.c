@@ -84,6 +84,13 @@ vn_CreateQueryPool(VkDevice device,
        */
       pool->result_array_size = 1;
       break;
+   case VK_QUERY_TYPE_MESH_PRIMITIVES_GENERATED_EXT:
+      /*
+       * Similar to primitives generated query, the mesh primitives generated
+       * query also writes one integer value.
+       */
+      pool->result_array_size = 1;
+      break;
    case VK_QUERY_TYPE_ACCELERATION_STRUCTURE_COMPACTED_SIZE_KHR:
    case VK_QUERY_TYPE_ACCELERATION_STRUCTURE_SERIALIZATION_SIZE_KHR:
       /*

@@ -232,6 +232,7 @@ vn_physical_device_init_features(struct vn_physical_device *physical_dev)
       VkPhysicalDeviceLegacyDitheringFeaturesEXT legacy_dithering;
       VkPhysicalDeviceLegacyVertexAttributesFeaturesEXT
          legacy_vertex_attributes;
+      VkPhysicalDeviceMeshShaderFeaturesEXT mesh_shader;
       VkPhysicalDeviceMultiDrawFeaturesEXT multi_draw;
       VkPhysicalDeviceMultisampledRenderToSingleSampledFeaturesEXT
          multisampled_render_to_single_sampled;
@@ -390,6 +391,7 @@ vn_physical_device_init_features(struct vn_physical_device *physical_dev)
    VN_ADD_PNEXT_EXT(feats2, IMAGE_VIEW_MIN_LOD_FEATURES_EXT, local_feats.image_view_min_lod, exts->EXT_image_view_min_lod);
    VN_ADD_PNEXT_EXT(feats2, LEGACY_DITHERING_FEATURES_EXT, local_feats.legacy_dithering, exts->EXT_legacy_dithering);
    VN_ADD_PNEXT_EXT(feats2, LEGACY_VERTEX_ATTRIBUTES_FEATURES_EXT, local_feats.legacy_vertex_attributes, exts->EXT_legacy_vertex_attributes);
+   VN_ADD_PNEXT_EXT(feats2, MESH_SHADER_FEATURES_EXT, local_feats.mesh_shader, exts->EXT_mesh_shader);
    VN_ADD_PNEXT_EXT(feats2, MULTI_DRAW_FEATURES_EXT, local_feats.multi_draw, exts->EXT_multi_draw);
    VN_ADD_PNEXT_EXT(feats2, MULTISAMPLED_RENDER_TO_SINGLE_SAMPLED_FEATURES_EXT, local_feats.multisampled_render_to_single_sampled, exts->EXT_multisampled_render_to_single_sampled);
    VN_ADD_PNEXT_EXT(feats2, MUTABLE_DESCRIPTOR_TYPE_FEATURES_EXT, local_feats.mutable_descriptor_type, exts->EXT_mutable_descriptor_type || exts->VALVE_mutable_descriptor_type);
@@ -639,6 +641,7 @@ vn_physical_device_init_properties(struct vn_physical_device *physical_dev)
          graphics_pipeline_library;
       VkPhysicalDeviceLegacyVertexAttributesPropertiesEXT
          legacy_vertex_attributes;
+      VkPhysicalDeviceMeshShaderPropertiesEXT mesh_shader;
       VkPhysicalDeviceMultiDrawPropertiesEXT multi_draw;
       VkPhysicalDeviceNestedCommandBufferPropertiesEXT nested_command_buffer;
       VkPhysicalDevicePCIBusInfoPropertiesEXT pci_bus_info;
@@ -729,6 +732,7 @@ vn_physical_device_init_properties(struct vn_physical_device *physical_dev)
    VN_ADD_PNEXT_EXT(props2, EXTENDED_DYNAMIC_STATE_3_PROPERTIES_EXT, local_props.extended_dynamic_state_3, exts->EXT_extended_dynamic_state3);
    VN_ADD_PNEXT_EXT(props2, GRAPHICS_PIPELINE_LIBRARY_PROPERTIES_EXT, local_props.graphics_pipeline_library, exts->EXT_graphics_pipeline_library);
    VN_ADD_PNEXT_EXT(props2, LEGACY_VERTEX_ATTRIBUTES_PROPERTIES_EXT, local_props.legacy_vertex_attributes, exts->EXT_legacy_vertex_attributes);
+   VN_ADD_PNEXT_EXT(props2, MESH_SHADER_PROPERTIES_EXT, local_props.mesh_shader, exts->EXT_mesh_shader);
    VN_ADD_PNEXT_EXT(props2, MULTI_DRAW_PROPERTIES_EXT, local_props.multi_draw, exts->EXT_multi_draw);
    VN_ADD_PNEXT_EXT(props2, NESTED_COMMAND_BUFFER_PROPERTIES_EXT, local_props.nested_command_buffer, exts->EXT_nested_command_buffer);
    VN_ADD_PNEXT_EXT(props2, PCI_BUS_INFO_PROPERTIES_EXT, local_props.pci_bus_info, exts->EXT_pci_bus_info);
@@ -811,6 +815,7 @@ vn_physical_device_init_properties(struct vn_physical_device *physical_dev)
    VN_SET_VK_PROPS_EXT(props, &local_props.extended_dynamic_state_3, exts->EXT_extended_dynamic_state3);
    VN_SET_VK_PROPS_EXT(props, &local_props.graphics_pipeline_library, exts->EXT_graphics_pipeline_library);
    VN_SET_VK_PROPS_EXT(props, &local_props.legacy_vertex_attributes, exts->EXT_legacy_vertex_attributes);
+   VN_SET_VK_PROPS_EXT(props, &local_props.mesh_shader, exts->EXT_mesh_shader);
    VN_SET_VK_PROPS_EXT(props, &local_props.multi_draw, exts->EXT_multi_draw);
    VN_SET_VK_PROPS_EXT(props, &local_props.nested_command_buffer, exts->EXT_nested_command_buffer);
    VN_SET_VK_PROPS_EXT(props, &local_props.pci_bus_info, exts->EXT_pci_bus_info);
@@ -1383,6 +1388,7 @@ vn_physical_device_get_passthrough_extensions(
       .EXT_line_rasterization = true,
       .EXT_load_store_op_none = true,
       .EXT_memory_budget = VN_DEBUG(MEM_BUDGET),
+      .EXT_mesh_shader = true,
       .EXT_multi_draw = true,
       .EXT_multisampled_render_to_single_sampled = true,
       .EXT_mutable_descriptor_type = true,
