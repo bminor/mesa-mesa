@@ -55,6 +55,7 @@
 #include "vk_ycbcr_conversion.h"
 
 #include "compiler/bifrost/bifrost_nir.h"
+#include "compiler/pan_compiler.h"
 #include "pan_shader.h"
 
 #include "vk_log.h"
@@ -995,8 +996,8 @@ panvk_compile_nir(struct panvk_device *dev, nir_shader *nir,
          struct u_memstream mem;
          if (u_memstream_open(&mem, &data, &disasm_size)) {
             FILE *const stream = u_memstream_get(&mem);
-            pan_shader_disassemble(stream, shader->bin_ptr, shader->bin_size,
-                                   compile_input->gpu_id, false);
+            pan_disassemble(stream, shader->bin_ptr, shader->bin_size,
+                            compile_input->gpu_id, false);
             u_memstream_close(&mem);
          }
       }

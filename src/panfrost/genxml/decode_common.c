@@ -38,9 +38,7 @@
 #include "util/u_process.h"
 #include "decode.h"
 
-#include "compiler/bifrost/bifrost/disassemble.h"
-#include "compiler/bifrost/valhall/disassemble.h"
-#include "midgard/disassemble.h"
+#include "compiler/pan_compiler.h"
 
 /* Used to distiguish dumped files, otherwise we would have to print the ctx
  * pointer, which is annoying for the user since it changes with every run */
@@ -513,12 +511,8 @@ pandecode_shader_disassemble(struct pandecode_context *ctx, uint64_t shader_ptr,
    pandecode_log_cont(ctx, "\nShader %p (GPU VA %" PRIx64 ") sz %" PRId64 "\n",
                       code, shader_ptr, sz);
 
-   if (pan_arch(gpu_id) >= 9) {
-      disassemble_valhall(ctx->dump_stream, (const uint64_t *)code, sz, true);
-   } else if (pan_arch(gpu_id) >= 6)
-      disassemble_bifrost(ctx->dump_stream, code, sz, false);
-   else
-      disassemble_midgard(ctx->dump_stream, code, sz, gpu_id, true);
+   bool verbose = pan_arch(gpu_id) >= 6 && pan_arch(gpu_id) < 9;
+   pan_disassemble(ctx->dump_stream, code, sz, gpu_id, verbose);
 
    pandecode_log_cont(ctx, "\n\n");
 }

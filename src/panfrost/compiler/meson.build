@@ -2,6 +2,8 @@
 # SPDX-License-Identifier: MIT
 
 libpanfrost_compiler_files = files(
+  'pan_compiler.c',
+  'pan_compiler.h',
   'pan_ir.c',
   'pan_ir.h',
   'pan_nir_collect_varyings.c',

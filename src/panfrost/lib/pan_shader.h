@@ -27,9 +27,6 @@
 
 #include "compiler/nir/nir.h"
 #include "genxml/gen_macros.h"
-#include "panfrost/compiler/bifrost/bifrost/disassemble.h"
-#include "panfrost/compiler/bifrost/valhall/disassemble.h"
-#include "panfrost/compiler/midgard/disassemble.h"
 #include "panfrost/lib/pan_props.h"
 #include "panfrost/compiler/pan_ir.h"
 #include "panfrost/compiler/pan_nir_lower_framebuffer.h"
@@ -99,18 +96,6 @@ pan_shader_lower_texture_late(nir_shader *nir, unsigned gpu_id)
     * (panfrost_nir_lower_res_indices / panvk_per_arch(nir_lower_descriptors)) */
    if (pan_arch(gpu_id) >= 6)
       bifrost_lower_texture_late_nir(nir, gpu_id);
-}
-
-static inline void
-pan_shader_disassemble(FILE *fp, const void *code, size_t size, unsigned gpu_id,
-                       bool verbose)
-{
-   if (pan_arch(gpu_id) >= 9)
-      disassemble_valhall(fp, (const uint64_t *)code, size, verbose);
-   else if (pan_arch(gpu_id) >= 6)
-      disassemble_bifrost(fp, code, size, verbose);
-   else
-      disassemble_midgard(fp, code, size, gpu_id, verbose);
 }
 
 void pan_shader_compile(nir_shader *nir, struct pan_compile_inputs *inputs,
