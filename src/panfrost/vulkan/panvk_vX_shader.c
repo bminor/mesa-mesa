@@ -54,7 +54,7 @@
 #include "vk_shader_module.h"
 #include "vk_ycbcr_conversion.h"
 
-#include "compiler/bifrost_nir.h"
+#include "compiler/bifrost/bifrost_nir.h"
 #include "pan_shader.h"
 
 #include "vk_log.h"

@@ -4,7 +4,7 @@
  */
 #include "pan_precomp.h"
 #include "util/u_memory.h"
-#include "bifrost_compile.h"
+#include "bifrost/bifrost_compile.h"
 #include "pan_context.h"
 #include "pan_desc.h"
 #include "pan_pool.h"

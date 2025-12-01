@@ -27,8 +27,8 @@
 
 #include "compiler/nir/nir.h"
 #include "genxml/gen_macros.h"
-#include "panfrost/compiler/bifrost/disassemble.h"
-#include "panfrost/compiler/valhall/disassemble.h"
+#include "panfrost/compiler/bifrost/bifrost/disassemble.h"
+#include "panfrost/compiler/bifrost/valhall/disassemble.h"
 #include "panfrost/lib/pan_props.h"
 #include "panfrost/midgard/disassemble.h"
 #include "panfrost/util/pan_ir.h"

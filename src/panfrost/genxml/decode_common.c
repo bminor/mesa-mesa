@@ -38,8 +38,8 @@
 #include "util/u_process.h"
 #include "decode.h"
 
-#include "compiler/bifrost/disassemble.h"
-#include "compiler/valhall/disassemble.h"
+#include "compiler/bifrost/bifrost/disassemble.h"
+#include "compiler/bifrost/valhall/disassemble.h"
 #include "midgard/disassemble.h"
 
 /* Used to distiguish dumped files, otherwise we would have to print the ctx

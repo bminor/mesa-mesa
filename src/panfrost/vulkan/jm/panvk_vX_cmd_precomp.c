@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-#include "bifrost_compile.h"
+#include "bifrost/bifrost_compile.h"
 #include "pan_desc.h"
 #include "pan_encoder.h"
 #include "panvk_cmd_alloc.h"

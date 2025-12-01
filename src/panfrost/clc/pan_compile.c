@@ -8,7 +8,7 @@
 #include "pan_compile.h"
 #include "compiler/glsl_types.h"
 #include "compiler/spirv/nir_spirv.h"
-#include "panfrost/compiler/bifrost_compile.h"
+#include "panfrost/compiler/bifrost/bifrost_compile.h"
 #include "nir.h"
 #include "nir_builder.h"
 #include "nir_builder_opcodes.h"

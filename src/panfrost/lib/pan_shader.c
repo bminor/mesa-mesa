@@ -27,7 +27,7 @@
 #include "pan_blend.h"
 #include "pan_format.h"
 
-#include "panfrost/compiler/bifrost_compile.h"
+#include "panfrost/compiler/bifrost/bifrost_compile.h"
 #include "panfrost/midgard/midgard_compile.h"
 
 const nir_shader_compiler_options *

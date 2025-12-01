@@ -28,7 +28,7 @@ if with_gallium_panfrost or with_panfrost_vk
 endif
 
 files_bifrost = files(
-  'compiler/cmdline.c',
+  'compiler/bifrost/cmdline.c',
 )
 
 bifrost_compiler = executable(

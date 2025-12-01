@@ -56,7 +56,7 @@
         *panfrost_gallium_file_list
       when: on_success
     - changes: &panfrost_bifrost_file_list
-        - src/panfrost/compiler/**/*
+        - src/panfrost/compiler/bifrost/**/*
       when: on_success
 
 .panfrost-bifrost-gl-manual-rules:
@@ -121,7 +121,7 @@
         *panfrost_gallium_file_list
       when: on_success
     - changes: &panfrost_valhall_file_list
-        - src/panfrost/compiler/**/*
+        - src/panfrost/compiler/bifrost/**/*
       when: on_success
 
 .panfrost-valhall-gl-manual-rules:
