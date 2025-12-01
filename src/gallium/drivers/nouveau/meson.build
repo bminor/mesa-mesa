@@ -110,7 +110,6 @@ files_libnouveau = files(
   'nvc0/cla0c0qmd.h',
   'nvc0/clc0c0qmd.h',
   'nvc0/clc3c0qmd.h',
-  'nvc0/drf.h',
   'nvc0/qmd.h',
   'nvc0/qmda0c0.c',
   'nvc0/qmdc0c0.c',
