@@ -4410,29 +4410,6 @@ brw_from_nir_emit_cs_intrinsic(nir_to_brw_state &ntb,
       break;
    }
 
-   case nir_intrinsic_load_num_workgroups: {
-      assert(instr->def.bit_size == 32);
-
-      cs_prog_data->uses_num_work_groups = true;
-
-      brw_reg srcs[MEMORY_LOGICAL_NUM_SRCS];
-      srcs[MEMORY_LOGICAL_BINDING] = brw_imm_ud(0);
-      srcs[MEMORY_LOGICAL_ADDRESS] = brw_imm_ud(0);
-
-      brw_mem_inst *mem =
-         bld.emit(SHADER_OPCODE_MEMORY_LOAD_LOGICAL,
-                  dest, srcs, MEMORY_LOGICAL_NUM_SRCS)->as_mem();
-      mem->size_written = 3 * s.dispatch_width * 4;
-      mem->lsc_op = LSC_OP_LOAD;
-      mem->mode = MEMORY_MODE_UNTYPED;
-      mem->binding_type = LSC_ADDR_SURFTYPE_BTI;
-      mem->data_size = LSC_DATA_SIZE_D32;
-      mem->coord_components = 1;
-      mem->components = 3;
-      mem->alignment = 4;
-      break;
-   }
-
    case nir_intrinsic_load_workgroup_size: {
       /* Should have been lowered by brw_nir_lower_cs_intrinsics() or
        * iris_setup_uniforms() for the variable group size case.

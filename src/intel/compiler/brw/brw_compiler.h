@@ -988,7 +988,6 @@ struct brw_cs_prog_data {
    unsigned prog_spilled;
 
    bool uses_barrier;
-   bool uses_num_work_groups;
    bool uses_inline_data;
    /** Whether inline push data is used to provide a 64bit pointer to push
     * constants
