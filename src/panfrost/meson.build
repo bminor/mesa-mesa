@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 inc_panfrost = include_directories([
-   '.', 'shared', 'midgard', 'compiler', 'lib', 'libpan', 'model',
+   '.', 'shared', 'compiler', 'lib', 'libpan', 'model',
 ])
 
 compile_args_panfrost = [
@@ -12,7 +12,6 @@ compile_args_panfrost = [
 
 subdir('shared')
 subdir('util')
-subdir('midgard')
 subdir('model')
 subdir('compiler')
 

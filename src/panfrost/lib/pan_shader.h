@@ -29,8 +29,8 @@
 #include "genxml/gen_macros.h"
 #include "panfrost/compiler/bifrost/bifrost/disassemble.h"
 #include "panfrost/compiler/bifrost/valhall/disassemble.h"
+#include "panfrost/compiler/midgard/disassemble.h"
 #include "panfrost/lib/pan_props.h"
-#include "panfrost/midgard/disassemble.h"
 #include "panfrost/util/pan_ir.h"
 #include "panfrost/util/pan_lower_framebuffer.h"
 

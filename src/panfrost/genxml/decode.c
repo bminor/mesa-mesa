@@ -34,7 +34,6 @@
 #include <genxml/gen_macros.h>
 #include <sys/mman.h>
 
-#include "midgard/disassemble.h"
 #include "util/set.h"
 #include "pan_format.h"
 

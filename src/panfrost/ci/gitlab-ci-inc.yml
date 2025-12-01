@@ -25,7 +25,7 @@
         - src/panfrost/util/*
       when: on_success
     - changes:
-        - src/panfrost/midgard/**/*
+        - src/panfrost/compiler/midgard/**/*
       when: on_success
 
 .panfrost-midgard-manual-rules:
@@ -40,7 +40,7 @@
     - changes: *panfrost_common_file_list
       when: manual
     - changes:
-        - src/panfrost/midgard/**/*
+        - src/panfrost/compiler/midgard/**/*
       when: manual
 
 .panfrost-bifrost-gl-rules:
