@@ -42,7 +42,7 @@ std::unique_ptr<GfxStreamVulkanMapper> sVkMapper;
 GfxStreamVulkanMapper::GfxStreamVulkanMapper() {}
 GfxStreamVulkanMapper::~GfxStreamVulkanMapper() {}
 
-uint32_t chooseGfxQueueFamily(vk_uncompacted_dispatch_table* vk, VkPhysicalDevice phys_dev) {
+static uint32_t chooseGfxQueueFamily(vk_uncompacted_dispatch_table* vk, VkPhysicalDevice phys_dev) {
     uint32_t family_idx = UINT32_MAX;
     uint32_t nProps = 0;
 

@@ -2331,7 +2331,7 @@ void ResourceTracker::on_vkDestroyDevice_pre(void* context, VkDevice device,
 }
 
 #if defined(VK_USE_PLATFORM_ANDROID_KHR) || DETECT_OS_LINUX
-void updateMemoryTypeBits(uint32_t* memoryTypeBits, uint32_t memoryIndex) {
+static void updateMemoryTypeBits(uint32_t* memoryTypeBits, uint32_t memoryIndex) {
     *memoryTypeBits = 1u << memoryIndex;
 }
 #endif
