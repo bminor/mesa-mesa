@@ -54,7 +54,7 @@
         "description": "vulkan/wsi: Fix double destroy of present_id_timeline at swapchain create",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "c888da3d48a55ad7be4fedf783369fb12163b03e",
         "notes": null
