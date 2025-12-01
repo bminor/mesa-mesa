@@ -30,17 +30,6 @@
 #include "panfrost/lib/pan_props.h"
 #include "panfrost/compiler/pan_compiler.h"
 
-static unsigned
-pan_get_fixed_varying_mask(unsigned varyings_used)
-{
-   return (varyings_used & BITFIELD_MASK(VARYING_SLOT_VAR0)) &
-      ~VARYING_BIT_POS & ~VARYING_BIT_PSIZ;
-}
-
-void pan_shader_compile(nir_shader *nir, struct pan_compile_inputs *inputs,
-                        struct util_dynarray *binary,
-                        struct pan_shader_info *info);
-
 #ifdef PAN_ARCH
 
 #if PAN_ARCH >= 9

@@ -167,6 +167,13 @@ struct pan_shader_varying {
    enum pipe_format format;
 };
 
+static inline unsigned
+pan_get_fixed_varying_mask(unsigned varyings_used)
+{
+   return (varyings_used & BITFIELD_MASK(VARYING_SLOT_VAR0)) &
+      ~VARYING_BIT_POS & ~VARYING_BIT_PSIZ;
+}
+
 struct bifrost_shader_blend_info {
    nir_alu_type type;
    uint32_t return_offset;
@@ -359,6 +366,10 @@ struct pan_shader_info {
       struct midgard_shader_info midgard;
    };
 };
+
+void pan_shader_compile(nir_shader *nir, struct pan_compile_inputs *inputs,
+                        struct util_dynarray *binary,
+                        struct pan_shader_info *info);
 
 uint16_t pan_to_bytemask(unsigned bytes, unsigned mask);
 
