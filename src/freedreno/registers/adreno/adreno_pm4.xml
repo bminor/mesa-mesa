@@ -2053,28 +2053,20 @@ opcode: CP_LOAD_STATE4 (30) (4 dwords)
 
 <domain name="CP_COND_EXEC" width="32">
 	<doc>
-                Executes the following DWORDs of commands if the dword at ADDR0
-                is not equal to 0 and the dword at ADDR1 is less than REF
-                (signed comparison).
+		Executes the following DWORDs of commands if the dword
+		at BOOL_ADDR is not equal to 0 and the the timestamp
+		value ACTIVE_TIMESTAMP is ahead of the value fetched
+		from TIMESTAMP_ADDR.
+
+		The timestamp comparision is an unsigned compare with
+		wraparound, ie:
+
+			(ACTIVE_TIMESTAMP - *TIMESTAMP_ADDR) &lt; 0x80000000
 	</doc>
-	<reg32 offset="0" name="0">
-		<bitfield name="ADDR0_LO" low="0" high="31"/>
-	</reg32>
-	<reg32 offset="1" name="1">
-		<bitfield name="ADDR0_HI" low="0" high="31"/>
-	</reg32>
-	<reg32 offset="2" name="2">
-		<bitfield name="ADDR1_LO" low="0" high="31"/>
-	</reg32>
-	<reg32 offset="3" name="3">
-		<bitfield name="ADDR1_HI" low="0" high="31"/>
-	</reg32>
-	<reg32 offset="4" name="4">
-		<bitfield name="REF" low="0" high="31"/>
-	</reg32>
-	<reg32 offset="5" name="5">
-		<bitfield name="DWORDS" low="0" high="31" type="uint"/>
-	</reg32>
+	<reg64 offset="0" name="BOOL_ADDR" type="address"/>
+	<reg64 offset="2" name="TIMESTAMP_ADDR" type="address"/>
+	<reg32 offset="4" name="ACTIVE_TIMESTAMP"/>
+	<reg32 offset="5" name="DWORDS"/>
 </domain>
 
 <domain name="CP_SET_AMBLE" width="32">
