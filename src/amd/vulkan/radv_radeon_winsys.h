@@ -319,6 +319,9 @@ struct radeon_winsys {
    const struct vk_sync_type *const *(*get_sync_types)(struct radeon_winsys *ws);
 
    struct util_sync_provider *(*get_sync_provider)(struct radeon_winsys *ws);
+
+   int (*reserve_vmid)(struct radeon_winsys *ws);
+   void (*unreserve_vmid)(struct radeon_winsys *ws);
 };
 
 static inline uint64_t
