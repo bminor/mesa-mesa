@@ -1056,7 +1056,6 @@ wsi_CreateSwapchainKHR(VkDevice _device,
                                          sizeof (*swapchain->blit.semaphores),
                                          VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
       if (!swapchain->blit.semaphores) {
-         wsi_device->DestroySemaphore(_device, swapchain->present_id_timeline, alloc);
          swapchain->destroy(swapchain, alloc);
          return VK_ERROR_OUT_OF_HOST_MEMORY;
       }
