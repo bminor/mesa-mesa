@@ -1350,7 +1350,6 @@ run_fs(brw_shader &s, bool allow_spilling, bool do_rep_send)
 {
    const struct intel_device_info *devinfo = s.devinfo;
    struct brw_wm_prog_data *wm_prog_data = brw_wm_prog_data(s.prog_data);
-   brw_wm_prog_key *wm_key = (brw_wm_prog_key *) s.key;
    const brw_builder bld = brw_builder(&s);
    const nir_shader *nir = s.nir;
 
@@ -1367,7 +1366,7 @@ run_fs(brw_shader &s, bool allow_spilling, bool do_rep_send)
    } else {
       if (nir->info.inputs_read > 0 ||
           BITSET_TEST(nir->info.system_values_read, SYSTEM_VALUE_FRAG_COORD) ||
-          (nir->info.outputs_read > 0 && !wm_key->coherent_fb_fetch)) {
+          (nir->info.outputs_read > 0 && !brw_can_coherent_fb_fetch(devinfo))) {
          brw_emit_interpolation_setup(s);
       }
 
@@ -1509,7 +1508,7 @@ brw_compile_fs(const struct brw_compiler *compiler,
    brw_nir_lower_fs_inputs(nir, devinfo, key);
    brw_nir_lower_fs_outputs(nir);
 
-   if (!key->coherent_fb_fetch)
+   if (!brw_can_coherent_fb_fetch(devinfo))
       NIR_PASS(_, nir, brw_nir_lower_fs_load_output, key);
 
    NIR_PASS(_, nir, nir_opt_frag_coord_to_pixel_coord);

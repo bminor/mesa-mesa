@@ -3931,7 +3931,8 @@ brw_from_nir_emit_fs_intrinsic(nir_to_brw_state &ntb,
       const unsigned target = l - FRAG_RESULT_DATA0 + load_offset;
       const brw_reg tmp = bld.vgrf(dest.type, 4);
 
-      assert(reinterpret_cast<const brw_wm_prog_key *>(s.key)->coherent_fb_fetch);
+      /* Not functional after Gfx20 */
+      assert(brw_can_coherent_fb_fetch(devinfo));
       emit_coherent_fb_read(bld, tmp, target);
 
       brw_combine_with_vec(bld, dest,

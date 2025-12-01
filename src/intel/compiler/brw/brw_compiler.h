@@ -431,12 +431,11 @@ struct brw_wm_prog_key {
    /* Is provoking vertex last? */
    enum intel_sometimes provoking_vertex_last:2;
 
-   bool coherent_fb_fetch:1;
    bool ignore_sample_mask_out:1;
    bool coarse_pixel:1;
    bool null_push_constant_tbimr_workaround:1;
    bool api_sample_shading:1;
-   unsigned pad:2;
+   unsigned pad:3;
 };
 
 static inline bool
