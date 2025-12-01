@@ -1004,7 +1004,6 @@ elk_backend_instruction::can_do_cmod() const
    case ELK_OPCODE_LRP:
    case ELK_OPCODE_LZD:
    case ELK_OPCODE_MAC:
-   case ELK_OPCODE_MACH:
    case ELK_OPCODE_MAD:
    case ELK_OPCODE_MOV:
    case ELK_OPCODE_MUL:
@@ -1023,6 +1022,13 @@ elk_backend_instruction::can_do_cmod() const
    case ELK_OPCODE_XOR:
    case ELK_FS_OPCODE_LINTERP:
       return true;
+
+   /* PRMs for Gfx4 through Gfx7 all say that conditional modifiers are
+    * allowed for MACH. Starting with Gfx7.5 (Haswell), this seems to be
+    * removed. This function doesn't have any way to know the platform, so
+    * false is returned for all platforms.
+    */
+   case ELK_OPCODE_MACH:
    default:
       return false;
    }

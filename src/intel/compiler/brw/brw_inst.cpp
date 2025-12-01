@@ -403,7 +403,6 @@ brw_inst::can_do_cmod(enum brw_conditional_mod cmod) const
    case BRW_OPCODE_LRP:
    case BRW_OPCODE_LZD:
    case BRW_OPCODE_MAC:
-   case BRW_OPCODE_MACH:
    case BRW_OPCODE_MAD:
    case BRW_OPCODE_MOV:
    case BRW_OPCODE_MUL:
