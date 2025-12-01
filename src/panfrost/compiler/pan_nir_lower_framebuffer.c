@@ -47,7 +47,7 @@
  * smallest precision necessary to store the pixel losslessly.
  */
 
-#include "pan_lower_framebuffer.h"
+#include "pan_nir_lower_framebuffer.h"
 #include "compiler/nir/nir.h"
 #include "compiler/nir/nir_builder.h"
 #include "compiler/nir/nir_format_convert.h"

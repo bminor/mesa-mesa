@@ -26,7 +26,7 @@
 #define __MIDGARD_H_
 
 #include "compiler/nir/nir.h"
-#include "panfrost/util/pan_ir.h"
+#include "panfrost/compiler/pan_ir.h"
 #include "util/u_dynarray.h"
 
 void midgard_preprocess_nir(nir_shader *nir, unsigned gpu_id);

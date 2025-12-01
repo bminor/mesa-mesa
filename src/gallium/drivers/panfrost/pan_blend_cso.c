@@ -9,7 +9,7 @@
 #include "compiler/nir/nir.h"
 #include "compiler/nir/nir_builder.h"
 #include "pan_shader.h"
-#include "panfrost/util/pan_lower_framebuffer.h"
+#include "panfrost/compiler/pan_nir_lower_framebuffer.h"
 #include "pan_context.h"
 
 #ifndef PAN_ARCH

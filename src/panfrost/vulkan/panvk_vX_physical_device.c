@@ -27,7 +27,6 @@
 
 #include "pan_format.h"
 #include "pan_props.h"
-#include "util/pan_ir.h"
 
 /* We reserve one ubo for push constant, one for sysvals and one per-set for the
  * descriptor metadata  */

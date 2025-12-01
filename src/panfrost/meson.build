@@ -11,7 +11,6 @@ compile_args_panfrost = [
 ]
 
 subdir('shared')
-subdir('util')
 subdir('model')
 subdir('compiler')
 

@@ -27,7 +27,6 @@
 #include "util/macros.h"
 
 #include "kmod/pan_kmod.h"
-#include "panfrost/util/pan_ir.h"
 #include "pan_props.h"
 
 #include <genxml/gen_macros.h>

@@ -30,7 +30,7 @@
 #include "compiler/glsl_types.h"
 #include "compiler/nir/nir_builder.h"
 #include "compiler/nir/nir_deref.h"
-#include "panfrost/util/pan_ir.h"
+#include "panfrost/compiler/pan_ir.h"
 #include "util/perf/cpu_trace.h"
 #include "util/u_debug.h"
 #include "util/u_qsort.h"

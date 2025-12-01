@@ -20,7 +20,6 @@
 #include "panvk_utrace_perfetto.h"
 
 #include "kmod/pan_kmod.h"
-#include "util/pan_ir.h"
 #include "util/perf/u_trace.h"
 
 #include "util/simple_mtx.h"

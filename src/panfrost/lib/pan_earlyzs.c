@@ -24,7 +24,7 @@
 #include "genxml/gen_macros.h"
 
 #include "pan_earlyzs.h"
-#include "panfrost/util/pan_ir.h"
+#include "panfrost/compiler/pan_ir.h"
 
 
 /*

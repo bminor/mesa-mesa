@@ -28,7 +28,6 @@
 
 #include "compiler/nir/nir.h"
 #include "compiler/nir/nir_builder.h"
-#include "panfrost/util/pan_ir.h"
 
 bool nir_fuse_io_16(nir_shader *shader);
 

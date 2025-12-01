@@ -22,7 +22,6 @@
  * SOFTWARE.
  */
 
-#include "panfrost/util/pan_ir.h"
 #include "compiler.h"
 
 /* Routines for liveness analysis. Liveness is tracked per byte per node. Per

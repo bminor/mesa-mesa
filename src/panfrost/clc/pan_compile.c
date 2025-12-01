@@ -24,7 +24,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include "panfrost/util/pan_ir.h"
+#include "panfrost/compiler/pan_ir.h"
 #include "util/macros.h"
 #include "util/u_dynarray.h"
 #include "util/u_printf.h"

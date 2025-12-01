@@ -31,8 +31,8 @@
 #include "panfrost/compiler/bifrost/valhall/disassemble.h"
 #include "panfrost/compiler/midgard/disassemble.h"
 #include "panfrost/lib/pan_props.h"
-#include "panfrost/util/pan_ir.h"
-#include "panfrost/util/pan_lower_framebuffer.h"
+#include "panfrost/compiler/pan_ir.h"
+#include "panfrost/compiler/pan_nir_lower_framebuffer.h"
 
 void bifrost_preprocess_nir(nir_shader *nir, unsigned gpu_id);
 void bifrost_optimize_nir(nir_shader *nir, unsigned gpu_id);

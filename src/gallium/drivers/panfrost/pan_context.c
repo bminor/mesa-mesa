@@ -51,7 +51,6 @@
 
 #include "clc/pan_compile.h"
 #include "compiler/nir/nir_serialize.h"
-#include "util/pan_lower_framebuffer.h"
 #include "decode.h"
 #include "pan_device.h"
 #include "pan_fence.h"
