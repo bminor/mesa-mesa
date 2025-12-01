@@ -1,4 +1,3 @@
-
 U-interleaved tiling
 ====================
 

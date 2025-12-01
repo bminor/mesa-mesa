@@ -94,7 +94,7 @@
         "description": "docs/panfrost: remove some stray newlines",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "8248cc0bf45d0d7558cc3d77a63dcd078a96aa66",
         "notes": null
