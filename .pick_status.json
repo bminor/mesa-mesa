@@ -14,7 +14,7 @@
         "description": "r600: improve cayman scissor 1x1 workaround",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "87a5b07f9013536d5a0de66ffc2d9141b02190c5",
         "notes": null
