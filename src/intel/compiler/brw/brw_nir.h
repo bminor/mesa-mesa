@@ -206,6 +206,24 @@ struct brw_lower_urb_cb_data {
    /** Static offsets and sizes (in slots) for TES inputs */
    int tes_builtins_slot_offset;
    int tes_per_patch_slots;
+
+   /* Offset in bytes to the start of the per-vertex section */
+   uint32_t per_vertex_offset;
+
+   /* Offset in bytes to the start of the per-primitive section */
+   uint32_t per_primitive_offset;
+
+   /* Stride in bytes between successive primitives */
+   uint32_t per_primitive_stride;
+
+   /** Stride in bytes between PrimitiveIndices[] array elements */
+   uint32_t per_primitive_indices_stride;
+
+   /**
+    * Map from VARYING_SLOT_* to the offset in bytes within the
+    * per-primitive section of the MUE.
+    */
+   const int *per_primitive_byte_offsets;
 };
 
 bool brw_nir_lower_inputs_to_urb_intrinsics(nir_shader *, const struct brw_lower_urb_cb_data *);

@@ -66,6 +66,14 @@ is_output(nir_intrinsic_instr *intrin)
           intrin->intrinsic == nir_intrinsic_store_per_view_output;
 }
 
+static bool
+is_per_primitive(nir_intrinsic_instr *intrin)
+{
+   return intrin->intrinsic == nir_intrinsic_load_per_primitive_input ||
+          intrin->intrinsic == nir_intrinsic_load_per_primitive_output ||
+          intrin->intrinsic == nir_intrinsic_store_per_primitive_output;
+}
+
 /**
  * Given an URB offset in 32-bit units, determine whether (offset % 4)
  * is statically known.  If so, add this to the value of first_component.
@@ -84,13 +92,20 @@ io_vec4_static_mod(nir_def *offset_32b, unsigned *first_component)
 }
 
 static unsigned
-io_component(nir_intrinsic_instr *io)
+io_component(nir_intrinsic_instr *io,
+             const struct brw_lower_urb_cb_data *cb_data)
 {
    unsigned c = nir_intrinsic_has_component(io) ?
                 nir_intrinsic_component(io) : 0;
 
-   if (nir_intrinsic_has_io_semantics(io) &&
-       nir_intrinsic_io_semantics(io).location == VARYING_SLOT_PSIZ) {
+   if (is_per_primitive(io)) {
+      /* Extract the 32-bit component index from the byte offset */
+      const nir_io_semantics sem = nir_intrinsic_io_semantics(io);
+      const int offset = cb_data->per_primitive_byte_offsets[sem.location];
+      assert(offset != -1);
+      c += (offset % 16) / 4;
+   } else if (nir_intrinsic_has_io_semantics(io) &&
+              nir_intrinsic_io_semantics(io).location == VARYING_SLOT_PSIZ) {
       /* Point Size lives in component .w of the VUE header */
       c += 3;
    }
@@ -103,9 +118,22 @@ io_base_slot(nir_intrinsic_instr *io,
              const struct brw_lower_urb_cb_data *cb_data)
 {
    const nir_io_semantics io_sem = nir_intrinsic_io_semantics(io);
-   const int slot = cb_data->varying_to_slot[io_sem.location];
-   assert(slot != -1);
-   return slot;
+
+   if (is_per_primitive(io)) {
+      if (io_sem.location == VARYING_SLOT_PRIMITIVE_INDICES)
+         return 0;
+
+      const int offset = cb_data->per_primitive_byte_offsets[io_sem.location];
+      assert(offset != -1);
+      return (cb_data->per_primitive_offset + offset) / 16;
+   } else if (cb_data->per_primitive_byte_offsets &&
+              io_sem.location == VARYING_SLOT_PRIMITIVE_COUNT) {
+      return 0;
+   } else {
+      const int slot = cb_data->varying_to_slot[io_sem.location];
+      assert(slot != -1);
+      return slot + cb_data->per_vertex_offset / 16;
+   }
 }
 
 static nir_def *
@@ -113,6 +141,7 @@ urb_offset(nir_builder *b,
            const struct brw_lower_urb_cb_data *cb_data,
            nir_intrinsic_instr *io)
 {
+   const nir_io_semantics io_sem = nir_intrinsic_io_semantics(io);
    nir_def *offset = nir_get_io_offset_src(io)->ssa;
 
    /* Convert vec4 slot offset to 32-bit dwords */
@@ -120,10 +149,19 @@ urb_offset(nir_builder *b,
       offset = nir_ishl_imm(b, offset, 2);
 
    nir_src *index = nir_get_io_arrayed_index_src(io);
-   if (index) {
+
+   if (is_per_primitive(io)) {
+      const unsigned stride =
+         io_sem.location == VARYING_SLOT_PRIMITIVE_INDICES
+            ? cb_data->per_primitive_indices_stride / 4
+            : cb_data->per_primitive_stride / 4;
+
+      offset = nir_iadd(b, offset, nir_imul_imm(b, index->ssa, stride));
+   } else if (index) {
       nir_def *stride = cb_data->dynamic_tes
          ? intel_nir_tess_field(b, PER_VERTEX_SLOTS)
-         : nir_imm_int(b, cb_data->per_vertex_stride / 16);
+         : nir_imm_int(b, cb_data->per_vertex_stride /
+                          (cb_data->vec4_access ? 16 : 4));
 
       offset = nir_iadd(b, offset, nir_imul(b, index->ssa, stride));
 
@@ -158,17 +196,17 @@ load_urb(nir_builder *b,
    const struct intel_device_info *devinfo = cb_data->devinfo;
    const unsigned bits = intrin->def.bit_size;
    const unsigned base = io_base_slot(intrin, cb_data);
+   unsigned first_component = io_component(intrin, cb_data);
 
    if (devinfo->ver >= 20) {
       offset = nir_ishl_imm(b, offset, cb_data->vec4_access ? 4 : 2);
       return nir_load_urb_lsc_intel(b, intrin->def.num_components, bits,
                                     nir_iadd(b, handle, offset),
-                                    16 * base + 4 * io_component(intrin),
+                                    16 * base + 4 * first_component,
                                     .access = access);
    }
 
    /* Load a whole vec4 or vec8 and return the desired portion */
-   unsigned first_component = io_component(intrin);
    nir_component_mask_t mask = nir_component_mask(intrin->def.num_components);
 
    /* If the offset is in vec4 units, do a straightforward load */
@@ -216,11 +254,10 @@ store_urb(nir_builder *b,
 {
    const struct intel_device_info *devinfo = cb_data->devinfo;
    const unsigned base = io_base_slot(intrin, cb_data);
-   unsigned first_component = io_component(intrin);
+   unsigned first_component = io_component(intrin, cb_data);
+   unsigned mask = nir_intrinsic_write_mask(intrin);
 
    nir_def *src = intrin->src[0].ssa;
-
-   unsigned mask = nir_intrinsic_write_mask(intrin);
 
    if (devinfo->ver >= 20) {
       offset = nir_ishl_imm(b, offset, cb_data->vec4_access ? 4 : 2);
@@ -230,8 +267,7 @@ store_urb(nir_builder *b,
          u_bit_scan_consecutive_range(&mask, &start, &count);
 
          const unsigned cur_mask = BITFIELD_MASK(count) << start;
-         const unsigned cur_base =
-            16 * base + 4 * (start + io_component(intrin));
+         const unsigned cur_base = 16 * base + 4 * (start + first_component);
 
          nir_store_urb_lsc_intel(b, nir_channels(b, src, cur_mask), addr,
                                  .base = cur_base);
@@ -310,7 +346,7 @@ try_load_push_input(nir_builder *b,
 
    const unsigned base = io_base_slot(io, cb_data) +
                          nir_src_as_uint(nir_src_for_ssa(offset));
-   const uint32_t byte_offset = 16 * base + 4 * io_component(io);
+   const uint32_t byte_offset = 16 * base + 4 * io_component(io, cb_data);
    assert((byte_offset % 4) == 0);
 
    const enum mesa_shader_stage stage = b->shader->info.stage;
@@ -360,11 +396,13 @@ lower_urb_outputs(nir_builder *b, nir_intrinsic_instr *intrin, void *data)
    switch (intrin->intrinsic) {
    case nir_intrinsic_load_output:
    case nir_intrinsic_load_per_vertex_output:
+   case nir_intrinsic_load_per_primitive_output:
       load = load_urb(b, cb_data, intrin, output_handle(b),
                       urb_offset(b, cb_data, intrin), 0);
       break;
    case nir_intrinsic_store_output:
    case nir_intrinsic_store_per_vertex_output:
+   case nir_intrinsic_store_per_primitive_output:
       store_urb(b, cb_data, intrin, output_handle(b),
                 urb_offset(b, cb_data, intrin));
       break;
