@@ -44,7 +44,7 @@ bifrost_compiler = executable(
     dep_libdrm,
   ],
   link_with : [
-    libpanfrost_bifrost,
+    libpanfrost_compiler,
   ],
   build_by_default : with_tools.contains('panfrost')
 )

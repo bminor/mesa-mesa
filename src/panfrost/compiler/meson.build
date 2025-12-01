@@ -1,7 +1,7 @@
 # Copyright © 2025 Collabora, Ltd.
 # SPDX-License-Identifier: MIT
 
-libpanfrost_util_files = files(
+libpanfrost_compiler_files = files(
   'pan_ir.c',
   'pan_ir.h',
   'pan_nir_collect_varyings.c',
@@ -18,15 +18,21 @@ libpanfrost_util_files = files(
   'pan_nir_lower_xfb.c',
 )
 
-libpanfrost_util = static_library(
-  'panfrost_util',
-  [libpanfrost_util_files],
+subdir('bifrost')
+subdir('midgard')
+
+libpanfrost_compiler = static_library(
+  'panfrost_compiler',
+  [libpanfrost_compiler_files],
   include_directories : [inc_include, inc_src],
   dependencies: [idep_nir, idep_mesautil],
+  link_with: [libpanfrost_midgard, libpanfrost_bifrost],
   c_args : [no_override_init_args],
   gnu_symbol_visibility : 'hidden',
   build_by_default : false,
 )
 
-subdir('bifrost')
-subdir('midgard')
+if with_tests
+  subdir('bifrost/test')
+  subdir('bifrost/valhall/test')
+endif

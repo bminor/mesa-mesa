@@ -135,7 +135,6 @@ libpanfrost_bifrost_disasm = static_library(
   ['bifrost/disassemble.c', 'bi_print_common.c', bifrost_gen_disasm_c],
   include_directories : [inc_include, inc_src],
   dependencies: [idep_nir],
-  link_with: [libpanfrost_util],
   c_args : [no_override_init_args],
   gnu_symbol_visibility : 'hidden',
   build_by_default : false,
@@ -151,8 +150,3 @@ libpanfrost_bifrost = static_library(
   gnu_symbol_visibility : 'hidden',
   build_by_default : false,
 )
-
-if with_tests
-  subdir('test')
-  subdir('valhall/test')
-endif

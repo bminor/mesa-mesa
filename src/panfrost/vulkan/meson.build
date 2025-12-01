@@ -196,11 +196,9 @@ libvulkan_panfrost = shared_library(
   link_whole : [panvk_per_arch_libs],
   link_with : [
     libpanfrost_shared,
-    libpanfrost_midgard,
-    libpanfrost_bifrost,
     libpanfrost_decode,
     libpanfrost_lib,
-    libpanfrost_util,
+    libpanfrost_compiler,
   ],
   dependencies : [
     dep_dl,

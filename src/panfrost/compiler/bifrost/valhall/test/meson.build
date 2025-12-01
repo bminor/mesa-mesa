@@ -19,7 +19,7 @@ test(
     gnu_symbol_visibility : 'hidden',
     include_directories : [inc_include, inc_src, inc_valhall],
     dependencies: [idep_gtest, idep_nir, idep_bi_opcodes_h, idep_bi_builder_h, idep_valhall_enums_h],
-    link_with : [libpanfrost_bifrost],
+    link_with : [libpanfrost_compiler],
   ),
   suite : ['panfrost'],
   protocol : 'gtest',
