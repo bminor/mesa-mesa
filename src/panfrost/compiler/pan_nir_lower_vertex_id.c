@@ -4,7 +4,7 @@
  */
 
 #include "compiler/nir/nir_builder.h"
-#include "pan_ir.h"
+#include "pan_nir.h"
 
 /*
  * load_vertex_id_zero_base() is supposed to return the zero-based

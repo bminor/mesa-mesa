@@ -4,7 +4,7 @@
  */
 
 #include "compiler/nir/nir_builder.h"
-#include "pan_ir.h"
+#include "pan_nir.h"
 
 /* Mali only provides instructions to fetch varyings with either flat or
  * perspective-correct interpolation. This pass lowers noperspective varyings

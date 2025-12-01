@@ -47,7 +47,7 @@
  * smallest precision necessary to store the pixel losslessly.
  */
 
-#include "pan_nir_lower_framebuffer.h"
+#include "pan_nir.h"
 #include "compiler/nir/nir.h"
 #include "compiler/nir/nir_builder.h"
 #include "compiler/nir/nir_format_convert.h"
@@ -618,9 +618,11 @@ lower(nir_builder *b, nir_instr *instr, void *data)
 }
 
 bool
-pan_lower_framebuffer(nir_shader *shader, const enum pipe_format *rt_fmts,
-                      uint8_t raw_fmt_mask, unsigned blend_shader_nr_samples,
-                      bool broken_ld_special)
+pan_nir_lower_framebuffer(nir_shader *shader,
+                          const enum pipe_format *rt_fmts,
+                          uint8_t raw_fmt_mask,
+                          unsigned blend_shader_nr_samples,
+                          bool broken_ld_special)
 {
    assert(shader->info.stage == MESA_SHADER_FRAGMENT);
 

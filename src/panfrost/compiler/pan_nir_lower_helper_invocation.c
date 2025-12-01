@@ -22,7 +22,7 @@
  */
 
 #include "compiler/nir/nir_builder.h"
-#include "pan_ir.h"
+#include "pan_nir.h"
 
 /* Lower gl_HelperInvocation to (gl_SampleMaskIn == 0), this depends on
  * architectural details but is more efficient than NIR's lowering.
@@ -42,7 +42,7 @@ pan_lower_helper_invocation_instr(nir_builder *b, nir_intrinsic_instr *intr,
 }
 
 bool
-pan_lower_helper_invocation(nir_shader *shader)
+pan_nir_lower_helper_invocation(nir_shader *shader)
 {
    return nir_shader_intrinsics_pass(shader, pan_lower_helper_invocation_instr,
                                      nir_metadata_control_flow, NULL);

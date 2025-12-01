@@ -30,7 +30,9 @@
 #include "compiler/glsl_types.h"
 #include "compiler/nir/nir_builder.h"
 #include "compiler/nir/nir_deref.h"
+#include "panfrost/compiler/pan_compiler.h"
 #include "panfrost/compiler/pan_ir.h"
+#include "panfrost/compiler/pan_nir.h"
 #include "util/perf/cpu_trace.h"
 #include "util/u_debug.h"
 #include "util/u_qsort.h"
@@ -6372,8 +6374,8 @@ void bifrost_lower_texture_nir(nir_shader *nir, unsigned gpu_id)
 
    if (nir->info.stage == MESA_SHADER_FRAGMENT) {
       NIR_PASS(_, nir, nir_lower_is_helper_invocation);
-      NIR_PASS(_, nir, pan_lower_helper_invocation);
-      NIR_PASS(_, nir, pan_lower_sample_pos);
+      NIR_PASS(_, nir, pan_nir_lower_helper_invocation);
+      NIR_PASS(_, nir, pan_nir_lower_sample_pos);
    }
 }
 

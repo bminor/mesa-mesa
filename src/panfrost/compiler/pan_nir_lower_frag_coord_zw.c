@@ -4,7 +4,7 @@
  */
 
 #include "compiler/nir/nir_builder.h"
-#include "pan_ir.h"
+#include "pan_nir.h"
 
 /* Lowers nir_load_frag_coord_zw to nir_load_frag_coord_zw_pan. */
 

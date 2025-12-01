@@ -24,7 +24,7 @@
 
 #include "compiler/nir/nir.h"
 #include "compiler/nir/nir_builder.h"
-#include "pan_ir.h"
+#include "pan_nir.h"
 
 static enum pipe_format
 varying_format(nir_alu_type t, unsigned ncomps)

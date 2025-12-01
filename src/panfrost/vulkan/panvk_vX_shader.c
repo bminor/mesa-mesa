@@ -56,6 +56,7 @@
 
 #include "compiler/bifrost/bifrost_nir.h"
 #include "compiler/pan_compiler.h"
+#include "compiler/pan_nir.h"
 #include "pan_shader.h"
 
 #include "vk_log.h"
@@ -789,7 +790,7 @@ panvk_lower_nir(struct panvk_device *dev, nir_shader *nir,
       assert(nir_can_lower_multiview(nir, options));
       NIR_PASS(_, nir, nir_lower_multiview, options);
       /* Pull output writes out of the loop and give them constant offsets for
-       * pan_lower_store_components */
+       * pan_nir_lower_store_components */
       NIR_PASS(_, nir, nir_lower_io_vars_to_temporaries,
                nir_shader_get_entrypoint(nir), nir_var_shader_out);
    }
@@ -929,10 +930,10 @@ panvk_lower_nir(struct panvk_device *dev, nir_shader *nir,
                nir_metadata_control_flow, NULL);
 
    /* since valhall, panvk_per_arch(nir_lower_descriptors) separates the
-    * driver set and the user sets, and does not need pan_lower_image_index
+    * driver set and the user sets, and does not need pan_nir_lower_image_index
     */
    if (PAN_ARCH < 9 && stage == MESA_SHADER_VERTEX)
-      NIR_PASS(_, nir, pan_lower_image_index, MAX_VS_ATTRIBS);
+      NIR_PASS(_, nir, pan_nir_lower_image_index, MAX_VS_ATTRIBS);
 
    if (noperspective_varyings && stage == MESA_SHADER_VERTEX) {
       NIR_PASS(_, nir, nir_inline_sysval,

@@ -34,7 +34,7 @@
 #include "compiler/nir/nir_conversion_builder.h"
 #include "compiler/nir/nir_lower_blend.h"
 #include "compiler/pan_compiler.h"
-#include "compiler/pan_nir_lower_framebuffer.h"
+#include "compiler/pan_nir.h"
 #include "util/format/u_format.h"
 
 #ifndef PAN_ARCH

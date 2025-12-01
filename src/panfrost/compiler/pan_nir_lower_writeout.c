@@ -23,7 +23,7 @@
  */
 
 #include "compiler/nir/nir_builder.h"
-#include "pan_ir.h"
+#include "pan_nir.h"
 
 /* Midgard can write all of color, depth and stencil in a single writeout
  * operation, so we merge depth/stencil stores with color stores.

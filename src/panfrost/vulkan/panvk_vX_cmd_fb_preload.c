@@ -12,6 +12,7 @@
 #include "nir_builder.h"
 
 #include "pan_shader.h"
+#include "pan_nir.h"
 
 struct panvk_fb_preload_shader_key {
    enum panvk_meta_object_key_type type;

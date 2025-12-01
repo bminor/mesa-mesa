@@ -22,7 +22,7 @@
  */
 
 #include "compiler/nir/nir_builder.h"
-#include "pan_ir.h"
+#include "pan_nir.h"
 
 /* Sample positions are supplied in a packed 8:8 fixed-point vec2 format in GPU
  * memory indexed by the sample. We lower in NIR to take advantage of possible
@@ -85,7 +85,7 @@ pan_lower_sample_pos_impl(struct nir_builder *b, nir_intrinsic_instr *intr,
 }
 
 bool
-pan_lower_sample_pos(nir_shader *shader)
+pan_nir_lower_sample_pos(nir_shader *shader)
 {
    if (shader->info.stage != MESA_SHADER_FRAGMENT)
       return false;

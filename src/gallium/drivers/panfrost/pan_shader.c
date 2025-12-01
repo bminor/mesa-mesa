@@ -39,6 +39,7 @@
 #include "pan_bo.h"
 #include "pan_context.h"
 #include "pan_compiler.h"
+#include "pan_nir.h"
 #include "shader_enums.h"
 
 static struct panfrost_uncompiled_shader *
@@ -162,7 +163,7 @@ panfrost_shader_compile(struct panfrost_screen *screen, const nir_shader *ir,
       if (s->info.has_transform_feedback_varyings) {
          NIR_PASS(_, s, nir_opt_constant_folding);
          NIR_PASS(_, s, nir_io_add_intrinsic_xfb_info);
-         NIR_PASS(_, s, pan_lower_xfb);
+         NIR_PASS(_, s, pan_nir_lower_xfb);
       }
    }
 
@@ -200,7 +201,7 @@ panfrost_shader_compile(struct panfrost_screen *screen, const nir_shader *ir,
    }
 
    if (dev->arch <= 5 && s->info.stage == MESA_SHADER_FRAGMENT) {
-      NIR_PASS(_, s, pan_lower_framebuffer, key->fs.rt_formats,
+      NIR_PASS(_, s, pan_nir_lower_framebuffer, key->fs.rt_formats,
                pan_raw_format_mask_midgard(key->fs.rt_formats), 0,
                panfrost_device_gpu_prod_id(dev) < 0x700);
    }
@@ -567,7 +568,7 @@ panfrost_create_shader_state(struct pipe_context *pctx,
     * to the right attribute.
     */
    if (nir->info.stage == MESA_SHADER_VERTEX && dev->arch <= 7) {
-      NIR_PASS(_, nir, pan_lower_image_index,
+      NIR_PASS(_, nir, pan_nir_lower_image_index,
                util_bitcount64(nir->info.inputs_read));
    }
 

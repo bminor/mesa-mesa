@@ -22,7 +22,7 @@
  */
 
 #include "compiler/nir/nir_builder.h"
-#include "pan_ir.h"
+#include "pan_nir.h"
 
 static void
 lower_xfb_output(nir_builder *b, nir_intrinsic_instr *intr,
@@ -98,7 +98,7 @@ lower_xfb(nir_builder *b, nir_intrinsic_instr *intr, UNUSED void *data)
 }
 
 bool
-pan_lower_xfb(nir_shader *nir)
+pan_nir_lower_xfb(nir_shader *nir)
 {
    return nir_shader_intrinsics_pass(
       nir, lower_xfb, nir_metadata_control_flow, NULL);

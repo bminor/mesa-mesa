@@ -356,36 +356,6 @@ uint16_t pan_to_bytemask(unsigned bytes, unsigned mask);
 #define PAN_WRITEOUT_S 4
 #define PAN_WRITEOUT_2 8
 
-/* Specify the mediump lowering behavior for pan_nir_collect_varyings */
-enum pan_mediump_vary {
-   /* Always assign a 32-bit format to mediump varyings */
-   PAN_MEDIUMP_VARY_32BIT,
-   /* Assign a 16-bit format to varyings with smooth interpolation, and a
-    * 32-bit format to varyings with flat interpolation */
-   PAN_MEDIUMP_VARY_SMOOTH_16BIT,
-};
-
-bool pan_nir_lower_zs_store(nir_shader *nir);
-bool pan_nir_lower_store_component(nir_shader *shader);
-
-bool pan_nir_lower_vertex_id(nir_shader *shader);
-
-bool pan_nir_lower_image_ms(nir_shader *shader);
-
-bool pan_nir_lower_frag_coord_zw(nir_shader *shader);
-bool pan_nir_lower_noperspective_vs(nir_shader *shader);
-bool pan_nir_lower_noperspective_fs(nir_shader *shader);
-
-bool pan_lower_helper_invocation(nir_shader *shader);
-bool pan_lower_sample_pos(nir_shader *shader);
-bool pan_lower_xfb(nir_shader *nir);
-
-bool pan_lower_image_index(nir_shader *shader, unsigned vs_img_attrib_offset);
-
-uint32_t pan_nir_collect_noperspective_varyings_fs(nir_shader *s);
-void pan_nir_collect_varyings(nir_shader *s, struct pan_shader_info *info,
-                              enum pan_mediump_vary mediump);
-
 /*
  * Helper returning the subgroup size. Generally, this is equal to the number of
  * threads in a warp. For Midgard (including warping models), this returns 1, as

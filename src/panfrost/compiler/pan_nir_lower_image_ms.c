@@ -26,7 +26,7 @@
 
 #include "compiler/nir/nir.h"
 #include "compiler/nir/nir_builder.h"
-#include "pan_ir.h"
+#include "pan_nir.h"
 
 static bool
 nir_lower_image_ms(nir_builder *b, nir_intrinsic_instr *intr,

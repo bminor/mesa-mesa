@@ -25,7 +25,7 @@
  */
 
 #include "compiler/nir/nir_builder.h"
-#include "pan_ir.h"
+#include "pan_nir.h"
 
 /*
  * If the shader packs multiple varyings into the same location with different

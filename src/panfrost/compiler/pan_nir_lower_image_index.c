@@ -4,7 +4,7 @@
  */
 
 #include "compiler/nir/nir_builder.h"
-#include "pan_ir.h"
+#include "pan_nir.h"
 
 /* Vertex shader gets passed image attribute descriptors through the
  * vertex attribute descriptor array. This forces us to apply an offset
@@ -44,7 +44,7 @@ lower_image_intr(struct nir_builder *b, nir_intrinsic_instr *intr, void *data)
 }
 
 bool
-pan_lower_image_index(nir_shader *shader, unsigned vs_img_attrib_offset)
+pan_nir_lower_image_index(nir_shader *shader, unsigned vs_img_attrib_offset)
 {
    if (shader->info.stage != MESA_SHADER_VERTEX)
       return false;

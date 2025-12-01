@@ -49,6 +49,8 @@
 #include "midgard_ops.h"
 #include "midgard_quirks.h"
 
+#include "panfrost/compiler/pan_nir.h"
+
 #include "disassemble.h"
 #include "shader_enums.h"
 
@@ -459,8 +461,8 @@ void midgard_lower_texture_nir(nir_shader *nir, unsigned gpu_id)
    if (nir->info.stage == MESA_SHADER_FRAGMENT) {
       NIR_PASS(_, nir, nir_lower_helper_writes, true);
       NIR_PASS(_, nir, nir_lower_is_helper_invocation);
-      NIR_PASS(_, nir, pan_lower_helper_invocation);
-      NIR_PASS(_, nir, pan_lower_sample_pos);
+      NIR_PASS(_, nir, pan_nir_lower_helper_invocation);
+      NIR_PASS(_, nir, pan_nir_lower_sample_pos);
    }
 }
 

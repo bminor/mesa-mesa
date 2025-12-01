@@ -39,6 +39,7 @@
 #include "pan_shader.h"
 #include "pan_texture.h"
 #include "compiler/pan_compiler.h"
+#include "compiler/pan_nir.h"
 
 #if PAN_ARCH >= 6
 /* On Midgard, the native preload infrastructure (via MFBD preloads) is broken

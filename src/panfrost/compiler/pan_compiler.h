@@ -30,6 +30,7 @@
 
 typedef struct nir_shader nir_shader;
 struct nir_shader_compiler_options;
+struct pan_shader_info;
 
 const struct nir_shader_compiler_options *
 pan_get_nir_shader_compiler_options(unsigned arch);
@@ -37,9 +38,6 @@ pan_get_nir_shader_compiler_options(unsigned arch);
 void pan_preprocess_nir(nir_shader *nir, unsigned gpu_id);
 void pan_optimize_nir(nir_shader *nir, unsigned gpu_id);
 void pan_postprocess_nir(nir_shader *nir, unsigned gpu_id);
-
-void pan_nir_lower_texture_early(nir_shader *nir, unsigned gpu_id);
-void pan_nir_lower_texture_late(nir_shader *nir, unsigned gpu_id);
 
 void pan_disassemble(FILE *fp, const void *code, size_t size,
                      unsigned gpu_id, bool verbose);

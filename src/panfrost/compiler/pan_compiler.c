@@ -23,6 +23,7 @@
  */
 
 #include "pan_compiler.h"
+#include "pan_nir.h"
 
 #include "bifrost/bifrost_compile.h"
 #include "bifrost/bifrost/disassemble.h"
