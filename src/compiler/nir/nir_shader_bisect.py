@@ -68,7 +68,7 @@ def bisect(args):
             for shader in bad:
                 print(f"Bisected to source_blake3 {shader}")
                 print(
-                    f"You can now replace nir_shader_bisect_select() with _mesa_printed_blake3_equal(s->info.source_blake3, (uint32_t[]){shader})")
+                    f"You can now replace nir_shader_bisect_select() with _mesa_printed_blake3_equal(s->info.source_blake3, (uint32_t[]){shader[0]})")
             exit(0)
         else:
             num = len(bad)
