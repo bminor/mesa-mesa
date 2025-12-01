@@ -146,42 +146,13 @@ libpanfrost_bifrost = static_library(
   [libpanfrost_bifrost_files, bi_opcodes_c, bi_swizzles_c, bi_printer_c, bi_packer_c, bifrost_nir_algebraic_c, valhall_c ],
   include_directories : [inc_include, inc_src, inc_valhall],
   dependencies: [idep_nir, idep_bi_opcodes_h, idep_bi_builder_h, idep_valhall_enums_h, libpanfrost_model_dep],
-  link_with: [libpanfrost_util, libpanfrost_bifrost_disasm, libpanfrost_valhall_disasm],
+  link_with: [libpanfrost_bifrost_disasm, libpanfrost_valhall_disasm],
   c_args : [no_override_init_args],
   gnu_symbol_visibility : 'hidden',
   build_by_default : false,
 )
 
 if with_tests
-  test(
-    'bifrost_tests',
-    executable(
-      'bifrost_tests',
-      files(
-        'test/test-constant-fold.cpp',
-        'test/test-dual-texture.cpp',
-        'test/test-lower-swizzle.cpp',
-        'test/test-message-preload.cpp',
-	'test/test-optimizer.cpp',
-	'test/test-pack-formats.cpp',
-	'test/test-packing.cpp',
-	'test/test-scheduler-predicates.cpp',
-        'valhall/test/test-add-imm.cpp',
-        'valhall/test/test-validate-fau.cpp',
-        'valhall/test/test-insert-flow.cpp',
-        'valhall/test/test-lower-isel.cpp',
-        'valhall/test/test-lower-constants.cpp',
-        'valhall/test/test-mark-last.cpp',
-        'valhall/test/test-merge-flow.cpp',
-        'valhall/test/test-packing.cpp',
-      ),
-      cpp_args : [cpp_msvc_compat_args],
-      gnu_symbol_visibility : 'hidden',
-      include_directories : [inc_include, inc_src, inc_valhall],
-      dependencies: [idep_gtest, idep_nir, idep_bi_opcodes_h, idep_bi_builder_h, idep_valhall_enums_h],
-      link_with : [libpanfrost_bifrost],
-    ),
-    suite : ['panfrost'],
-    protocol : 'gtest',
-  )
+  subdir('test')
+  subdir('valhall/test')
 endif
