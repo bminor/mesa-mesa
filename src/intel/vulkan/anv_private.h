@@ -1157,13 +1157,19 @@ struct anv_push_range {
    uint8_t length;
 };
 
+enum anv_pipeline_bind_mask {
+   ANV_PIPELINE_BIND_MASK_USES_NUM_WORKGROUP = BITFIELD_BIT(0),
+};
+
 struct anv_pipeline_bind_map {
    unsigned char                                surface_sha1[20];
    unsigned char                                sampler_sha1[20];
    unsigned char                                push_sha1[20];
 
    /* enum anv_descriptor_set_layout_type */
-   uint32_t layout_type;
+   uint16_t layout_type;
+   /* enum anv_pipeline_bind_mask */
+   uint16_t binding_mask;
 
    uint32_t surface_count;
    uint32_t sampler_count;
