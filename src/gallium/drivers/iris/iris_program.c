@@ -1520,7 +1520,7 @@ iris_setup_binding_table(const struct intel_device_info *devinfo,
    nir_builder b = nir_builder_create(impl);
 
    nir_foreach_block (block, impl) {
-      nir_foreach_instr (instr, block) {
+      nir_foreach_instr_safe (instr, block) {
          if (instr->type == nir_instr_type_tex) {
             nir_tex_instr *tex = nir_instr_as_tex(instr);
             if (tex->texture_index < 64) {
@@ -1581,6 +1581,21 @@ iris_setup_binding_table(const struct intel_device_info *devinfo,
          case nir_intrinsic_load_ssbo:
             rewrite_src_with_bti(&b, bt, instr, &intrin->src[0],
                                  IRIS_SURFACE_GROUP_SSBO);
+            break;
+
+         case nir_intrinsic_load_num_workgroups:
+            b.cursor = nir_before_instr(instr);
+            nir_def_replace(
+               &intrin->def,
+               nir_load_ubo(&b,
+                            intrin->def.num_components,
+                            intrin->def.bit_size,
+                            nir_imm_int(&b, bt->offsets[
+                                           IRIS_SURFACE_GROUP_CS_WORK_GROUPS]),
+                            nir_imm_int(&b, 0),
+                            .range_base = 0,
+                            .range = intrin->def.num_components *
+                                     intrin->def.bit_size / 8));
             break;
 
          default:
