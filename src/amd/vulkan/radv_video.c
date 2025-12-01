@@ -1149,7 +1149,7 @@ radv_GetPhysicalDeviceVideoCapabilitiesKHR(VkPhysicalDevice physicalDevice, cons
 
       if (qp_map_caps) {
          qp_map_caps->minQIndexDelta = -255;
-         qp_map_caps->minQIndexDelta = 255;
+         qp_map_caps->maxQIndexDelta = 255;
       }
       break;
    }
