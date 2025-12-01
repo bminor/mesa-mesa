@@ -341,11 +341,6 @@ CDX12EncHMFT::PrepareForEncodeHelper( LPDX12EncodeContext pDX12EncodeContext, bo
 
    if( m_uiDirtyRectEnabled )
    {
-      if( m_EncoderCapabilities.m_HWSupportDirtyRects.bits.supports_require_auto_slice_mode )
-      {
-         pPicInfo->slice_mode = PIPE_VIDEO_SLICE_MODE_AUTO;
-      }
-
       if( dirtyRectFrameNumSet )
       {
          DIRTYRECT_INFO *pDirtyRectInfo = (DIRTYRECT_INFO *) m_pDirtyRectBlob.data();
@@ -356,6 +351,11 @@ CDX12EncHMFT::PrepareForEncodeHelper( LPDX12EncodeContext pDX12EncodeContext, bo
             bool foundSurfaceIndex = false;
             uint8_t surfaceIndex = UINT8_MAX;
             uint32_t search = dirtyRectFrameNum - 1;
+
+            if( m_EncoderCapabilities.m_HWSupportDirtyRects.bits.supports_require_auto_slice_mode )
+            {
+               pPicInfo->slice_mode = PIPE_VIDEO_SLICE_MODE_AUTO;
+            }
 
             CHECKHR_GOTO( ValidateDirtyRects( pDX12EncodeContext, pDirtyRectInfo ), done );
 
