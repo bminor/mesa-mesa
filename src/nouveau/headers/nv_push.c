@@ -5,6 +5,7 @@
 #include <inttypes.h>
 #include "util/os_misc.h"
 
+#include "cl906f.h"
 #include "nv_push_class_dump.h"
 
 #ifndef NDEBUG
@@ -25,12 +26,11 @@ nv_push_validate(struct nv_push *push)
       uint32_t mthd = hdr >> 29;
 
       switch (mthd) {
-      /* immd */
-      case 4:
+      case NV906F_DMA_SEC_OP_IMMD_DATA_METHOD:
          break;
-      case 1:
-      case 3:
-      case 5: {
+      case NV906F_DMA_SEC_OP_INC_METHOD:
+      case NV906F_DMA_SEC_OP_NON_INC_METHOD:
+      case NV906F_DMA_SEC_OP_ONE_INC: {
          uint32_t count = (hdr >> 16) & 0x1fff;
          assert(count);
          cur += count;
@@ -63,7 +63,8 @@ vk_push_print(FILE *fp, const struct nv_push *push,
    while (cur < push->end) {
       uint32_t hdr = *cur;
       uint32_t type = hdr >> 29;
-      bool is_tert = type == 0 || type == 2;
+      bool is_tert = type == NV906F_DMA_SEC_OP_GRP0_USE_TERT ||
+                     type == NV906F_DMA_SEC_OP_GRP2_USE_TERT;
       uint32_t inc = 0;
       uint32_t count = is_tert ? (hdr >> 18) & 0x3ff : (hdr >> 16) & 0x1fff;
       uint32_t tert_op = (hdr >> 16) & 0x3;
@@ -86,33 +87,33 @@ vk_push_print(FILE *fp, const struct nv_push *push,
       const char *mthd_name = "";
 
       switch (type) {
-      case 4:
+      case NV906F_DMA_SEC_OP_IMMD_DATA_METHOD:
          fprintf(fp, " IMMD\n");
          inc = 0;
          is_immd = true;
          value = count;
          count = 1;
          break;
-      case 1:
+      case NV906F_DMA_SEC_OP_INC_METHOD:
          fprintf(fp, " NINC\n");
          inc = count;
          break;
-      case 2:
-      case 3:
+      case NV906F_DMA_SEC_OP_GRP2_USE_TERT:
+      case NV906F_DMA_SEC_OP_NON_INC_METHOD:
          fprintf(fp, " 0INC\n");
          inc = 0;
          break;
-      case 5:
+      case NV906F_DMA_SEC_OP_ONE_INC:
          fprintf(fp, " 1INC\n");
          inc = 1;
          break;
-      case 0:
+      case NV906F_DMA_SEC_OP_GRP0_USE_TERT:
          switch (tert_op) {
-         case 0:
+         case NV906F_DMA_TERT_OP_GRP0_INC_METHOD:
             fprintf(fp, " NINC\n");
             inc = count;
             break;
-         case 1:
+         case NV906F_DMA_TERT_OP_GRP0_SET_SUB_DEV_MASK:
             fprintf(fp, " SUB_DEVICE_OP\n");
             mthd_name = "SET_SUBDEVICE_MASK";
             mthd = tert_op;
@@ -120,7 +121,7 @@ vk_push_print(FILE *fp, const struct nv_push *push,
             count = 1;
             is_immd = true;
             break;
-         case 2:
+         case NV906F_DMA_TERT_OP_GRP0_STORE_SUB_DEV_MASK:
             fprintf(fp, " SUB_DEVICE_OP\n");
             mthd_name = "STORE_SUBDEVICE_MASK";
             mthd = tert_op;
@@ -128,7 +129,7 @@ vk_push_print(FILE *fp, const struct nv_push *push,
             count = 1;
             is_immd = true;
             break;
-         case 3:
+         case NV906F_DMA_TERT_OP_GRP0_USE_SUB_DEV_MASK:
             fprintf(fp, " SUB_DEVICE_OP\n");
             mthd_name = "USE_SUBDEVICE_MASK";
             mthd = tert_op;
