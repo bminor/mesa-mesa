@@ -28,7 +28,7 @@
 #include "compiler/nir/nir.h"
 #include "genxml/gen_macros.h"
 #include "panfrost/lib/pan_props.h"
-#include "panfrost/compiler/pan_ir.h"
+#include "panfrost/compiler/pan_compiler.h"
 
 static unsigned
 pan_get_fixed_varying_mask(unsigned varyings_used)

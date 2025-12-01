@@ -31,7 +31,6 @@
 #include "compiler/nir/nir_builder.h"
 #include "compiler/nir/nir_deref.h"
 #include "panfrost/compiler/pan_compiler.h"
-#include "panfrost/compiler/pan_ir.h"
 #include "panfrost/compiler/pan_nir.h"
 #include "util/perf/cpu_trace.h"
 #include "util/u_debug.h"

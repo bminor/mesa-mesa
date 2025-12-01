@@ -4,8 +4,6 @@
 libpanfrost_compiler_files = files(
   'pan_compiler.c',
   'pan_compiler.h',
-  'pan_ir.c',
-  'pan_ir.h',
   'pan_nir_collect_varyings.c',
   'pan_nir_lower_frag_coord_zw.c',
   'pan_nir_lower_framebuffer.c',

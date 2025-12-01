@@ -21,7 +21,7 @@
  * SOFTWARE.
  */
 
-#include "compiler/pan_ir.h"
+#include "compiler/pan_compiler.h"
 #include "pan_earlyzs.h"
 #include "genxml/gen_macros.h"
 

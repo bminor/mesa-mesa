@@ -38,7 +38,7 @@
 #include "util/timespec.h"
 #include "util/u_dynarray.h"
 
-#include "panfrost/compiler/pan_ir.h"
+#include "panfrost/compiler/pan_compiler.h"
 #include "pan_blend_cso.h"
 #include "pan_fb_preload.h"
 #include "pan_pool.h"

@@ -108,6 +108,60 @@ pan_nir_lower_texture_late(nir_shader *nir, unsigned gpu_id)
       bifrost_lower_texture_late_nir(nir, gpu_id);
 }
 
+/** Converts a per-component mask to a byte mask */
+uint16_t
+pan_to_bytemask(unsigned bytes, unsigned mask)
+{
+   switch (bytes) {
+   case 0:
+      assert(mask == 0);
+      return 0;
+
+   case 8:
+      return mask;
+
+   case 16: {
+      unsigned space =
+         (mask & 0x1) | ((mask & 0x2) << (2 - 1)) | ((mask & 0x4) << (4 - 2)) |
+         ((mask & 0x8) << (6 - 3)) | ((mask & 0x10) << (8 - 4)) |
+         ((mask & 0x20) << (10 - 5)) | ((mask & 0x40) << (12 - 6)) |
+         ((mask & 0x80) << (14 - 7));
+
+      return space | (space << 1);
+   }
+
+   case 32: {
+      unsigned space = (mask & 0x1) | ((mask & 0x2) << (4 - 1)) |
+                       ((mask & 0x4) << (8 - 2)) | ((mask & 0x8) << (12 - 3));
+
+      return space | (space << 1) | (space << 2) | (space << 3);
+   }
+
+   case 64: {
+      unsigned A = (mask & 0x1) ? 0xFF : 0x00;
+      unsigned B = (mask & 0x2) ? 0xFF : 0x00;
+      return A | (B << 8);
+   }
+
+   default:
+      UNREACHABLE("Invalid register mode");
+   }
+}
+
+/* Could optimize with a better data structure if anyone cares, TODO: profile */
+unsigned
+pan_lookup_pushed_ubo(struct pan_ubo_push *push, unsigned ubo, unsigned offs)
+{
+   struct pan_ubo_word word = {.ubo = ubo, .offset = offs};
+
+   for (unsigned i = 0; i < push->count; ++i) {
+      if (memcmp(push->words + i, &word, sizeof(word)) == 0)
+         return i;
+   }
+
+   UNREACHABLE("UBO not pushed");
+}
+
 void
 pan_disassemble(FILE *fp, const void *code, size_t size,
                 unsigned gpu_id, bool verbose)

@@ -28,7 +28,7 @@
 #define __BIFROST_COMPILER_H
 
 #include "compiler/nir/nir.h"
-#include "panfrost/compiler/pan_ir.h"
+#include "panfrost/compiler/pan_compiler.h"
 #include "util/half_float.h"
 #include "util/shader_stats.h"
 #include "util/u_math.h"

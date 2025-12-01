@@ -38,7 +38,7 @@
 
 #include "compiler/glsl_types.h"
 #include "compiler/nir/nir.h"
-#include "panfrost/compiler/pan_ir.h"
+#include "panfrost/compiler/pan_compiler.h"
 
 /* Forward declare */
 struct midgard_block;

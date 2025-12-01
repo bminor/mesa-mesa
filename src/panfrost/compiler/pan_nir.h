@@ -27,7 +27,6 @@
 
 #include "nir.h"
 #include "pan_compiler.h"
-#include "pan_ir.h"
 
 struct util_format_description;
 

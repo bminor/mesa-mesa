@@ -27,7 +27,7 @@
 #include <stdint.h>
 #include <string.h>
 #include "compiler/nir/nir.h"
-#include "panfrost/compiler/pan_ir.h"
+#include "panfrost/compiler/pan_compiler.h"
 #include "util/u_dynarray.h"
 
 struct bifrost_precompiled_kernel_sysvals {

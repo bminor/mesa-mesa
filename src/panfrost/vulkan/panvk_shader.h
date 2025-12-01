@@ -11,7 +11,6 @@
 #endif
 
 #include "compiler/pan_compiler.h"
-#include "compiler/pan_ir.h"
 
 #include "pan_desc.h"
 #include "pan_earlyzs.h"
