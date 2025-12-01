@@ -288,39 +288,13 @@
 
 /* GFX11 generic packet building helpers for buffered SH registers. Don't use these directly. */
 #define gfx11_opt_push_reg(reg, reg_enum, value, prefix_name, buffer, reg_count) do { \
-   unsigned __value = value; \
-   if (!BITSET_TEST(sctx->tracked_regs.reg_saved_mask, (reg_enum)) || \
-       sctx->tracked_regs.reg_value[reg_enum] != __value) { \
-      ac_gfx11_push_reg(reg, __value, prefix_name, buffer, reg_count); \
-      BITSET_SET(sctx->tracked_regs.reg_saved_mask, (reg_enum)); \
-      sctx->tracked_regs.reg_value[reg_enum] = __value; \
-   } \
+   struct ac_tracked_regs *__tracked_regs = &sctx->tracked_regs; \
+   ac_gfx11_opt_push_reg(__tracked_regs, reg, reg_enum, value, prefix_name, buffer, reg_count); \
 } while (0)
 
 #define gfx11_opt_push_reg4(reg, reg_enum, v1, v2, v3, v4, prefix_name, buffer, reg_count) do { \
-   static_assert(BITSET_BITWORD((reg_enum)) == BITSET_BITWORD((reg_enum) + 3), \
-                 "bit range crosses dword boundary"); \
-   unsigned __v1 = (v1); \
-   unsigned __v2 = (v2); \
-   unsigned __v3 = (v3); \
-   unsigned __v4 = (v4); \
-   if (!BITSET_TEST_RANGE_INSIDE_WORD(sctx->tracked_regs.reg_saved_mask, \
-                                      (reg_enum), (reg_enum) + 3, 0xf) || \
-       sctx->tracked_regs.reg_value[(reg_enum)] != __v1 || \
-       sctx->tracked_regs.reg_value[(reg_enum) + 1] != __v2 || \
-       sctx->tracked_regs.reg_value[(reg_enum) + 2] != __v3 || \
-       sctx->tracked_regs.reg_value[(reg_enum) + 3] != __v4) { \
-      ac_gfx11_push_reg((reg), __v1, prefix_name, buffer, reg_count); \
-      ac_gfx11_push_reg((reg) + 4, __v2, prefix_name, buffer, reg_count); \
-      ac_gfx11_push_reg((reg) + 8, __v3, prefix_name, buffer, reg_count); \
-      ac_gfx11_push_reg((reg) + 12, __v4, prefix_name, buffer, reg_count); \
-      BITSET_SET_RANGE_INSIDE_WORD(sctx->tracked_regs.reg_saved_mask, \
-                                   (reg_enum), (reg_enum) + 3); \
-      sctx->tracked_regs.reg_value[(reg_enum)] = __v1; \
-      sctx->tracked_regs.reg_value[(reg_enum) + 1] = __v2; \
-      sctx->tracked_regs.reg_value[(reg_enum) + 2] = __v3; \
-      sctx->tracked_regs.reg_value[(reg_enum) + 3] = __v4; \
-   } \
+   struct ac_tracked_regs *__tracked_regs = &sctx->tracked_regs; \
+   ac_gfx11_opt_push_reg4(__tracked_regs, reg, reg_enum, v1, v2, v3, v4, prefix_name, buffer, reg_count); \
 } while (0)
 
 /* GFX11 packet building helpers for buffered SH registers. */
@@ -362,39 +336,6 @@
 
 /* GFX12 generic packet building helpers for PAIRS packets. Don't use these directly. */
 
-#define gfx12_opt_set_reg(reg, reg_enum, value, base_offset) do { \
-   unsigned __value = value; \
-   if (!BITSET_TEST(sctx->tracked_regs.reg_saved_mask, (reg_enum)) || \
-       sctx->tracked_regs.reg_value[reg_enum] != __value) { \
-      ac_gfx12_set_reg(reg, __value, base_offset); \
-      BITSET_SET(sctx->tracked_regs.reg_saved_mask, (reg_enum)); \
-      sctx->tracked_regs.reg_value[reg_enum] = __value; \
-   } \
-} while (0)
-
-#define gfx12_opt_set_reg4(reg, reg_enum, v1, v2, v3, v4, base_offset) do { \
-   static_assert(BITSET_BITWORD((reg_enum)) == BITSET_BITWORD((reg_enum) + 3), \
-                 "bit range crosses dword boundary"); \
-   unsigned __v1 = (v1), __v2 = (v2), __v3 = (v3), __v4 = (v4); \
-   if (!BITSET_TEST_RANGE_INSIDE_WORD(sctx->tracked_regs.reg_saved_mask, \
-                                      (reg_enum), (reg_enum) + 3, 0xf) || \
-       sctx->tracked_regs.reg_value[(reg_enum)] != __v1 || \
-       sctx->tracked_regs.reg_value[(reg_enum) + 1] != __v2 || \
-       sctx->tracked_regs.reg_value[(reg_enum) + 2] != __v3 || \
-       sctx->tracked_regs.reg_value[(reg_enum) + 3] != __v4) { \
-      ac_gfx12_set_reg((reg), __v1, (base_offset)); \
-      ac_gfx12_set_reg((reg) + 4, __v2, (base_offset)); \
-      ac_gfx12_set_reg((reg) + 8, __v3, (base_offset)); \
-      ac_gfx12_set_reg((reg) + 12, __v4, (base_offset)); \
-      BITSET_SET_RANGE_INSIDE_WORD(sctx->tracked_regs.reg_saved_mask, \
-                                   (reg_enum), (reg_enum) + 3); \
-      sctx->tracked_regs.reg_value[(reg_enum)] = __v1; \
-      sctx->tracked_regs.reg_value[(reg_enum) + 1] = __v2; \
-      sctx->tracked_regs.reg_value[(reg_enum) + 2] = __v3; \
-      sctx->tracked_regs.reg_value[(reg_enum) + 3] = __v4; \
-   } \
-} while (0)
-
 #define gfx12_opt_push_reg(reg, reg_enum, value, type) do { \
    unsigned __value = value; \
    unsigned __reg_enum = reg_enum; \
@@ -413,11 +354,15 @@
 #define gfx12_set_context_reg(reg, value) \
    ac_gfx12_set_context_reg(reg, value)
 
-#define gfx12_opt_set_context_reg(reg, reg_enum, value) \
-   gfx12_opt_set_reg(reg, reg_enum, value, SI_CONTEXT_REG_OFFSET)
+#define gfx12_opt_set_context_reg(reg, reg_enum, value) do { \
+   struct ac_tracked_regs *__tracked_regs = &sctx->tracked_regs; \
+   ac_gfx12_opt_set_reg(__tracked_regs, reg, reg_enum, value, SI_CONTEXT_REG_OFFSET); \
+} while (0)
 
-#define gfx12_opt_set_context_reg4(reg, reg_enum, v1, v2, v3, v4) \
-   gfx12_opt_set_reg4(reg, reg_enum, v1, v2, v3, v4, SI_CONTEXT_REG_OFFSET)
+#define gfx12_opt_set_context_reg4(reg, reg_enum, v1, v2, v3, v4) do { \
+   struct ac_tracked_regs *__tracked_regs = &sctx->tracked_regs; \
+   ac_gfx12_opt_set_reg4(__tracked_regs, reg, reg_enum, v1, v2, v3, v4, SI_CONTEXT_REG_OFFSET); \
+} while (0)
 
 #define gfx12_end_context_regs() \
    ac_gfx12_end_context_regs()

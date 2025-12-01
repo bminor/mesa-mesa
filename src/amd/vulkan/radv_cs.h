@@ -55,81 +55,29 @@ radeon_check_space(struct radeon_winsys *ws, struct ac_cmdbuf *cs, unsigned need
 #define radeon_opt_set_context_reg(reg, reg_enum, value)                                                               \
    do {                                                                                                                \
       struct ac_tracked_regs *__tracked_regs = &__rcs->tracked_regs;                                                   \
-      const uint32_t __value = (value);                                                                                \
-      if (!BITSET_TEST(__tracked_regs->reg_saved_mask, (reg_enum)) ||                                                  \
-          __tracked_regs->reg_value[(reg_enum)] != __value) {                                                          \
-         radeon_set_context_reg(reg, __value);                                                                         \
-         BITSET_SET(__tracked_regs->reg_saved_mask, (reg_enum));                                                       \
-         __tracked_regs->reg_value[(reg_enum)] = __value;                                                              \
-         __cs->context_roll = true;                                                                                    \
-      }                                                                                                                \
+      ac_cmdbuf_opt_set_context_reg(__tracked_regs, reg, reg_enum, value);                                             \
    } while (0)
 
 #define radeon_opt_set_context_reg2(reg, reg_enum, v1, v2)                                                             \
    do {                                                                                                                \
       struct ac_tracked_regs *__tracked_regs = &__rcs->tracked_regs;                                                   \
-      const uint32_t __v1 = (v1), __v2 = (v2);                                                                         \
-      if (!BITSET_TEST_RANGE_INSIDE_WORD(__tracked_regs->reg_saved_mask, (reg_enum), (reg_enum) + 1, 0x3) ||           \
-          __tracked_regs->reg_value[(reg_enum)] != __v1 || __tracked_regs->reg_value[(reg_enum) + 1] != __v2) {        \
-         radeon_set_context_reg_seq(reg, 2);                                                                           \
-         radeon_emit(__v1);                                                                                            \
-         radeon_emit(__v2);                                                                                            \
-         BITSET_SET_RANGE_INSIDE_WORD(__tracked_regs->reg_saved_mask, (reg_enum), (reg_enum) + 1);                     \
-         __tracked_regs->reg_value[(reg_enum)] = __v1;                                                                 \
-         __tracked_regs->reg_value[(reg_enum) + 1] = __v2;                                                             \
-         __cs->context_roll = true;                                                                                    \
-      }                                                                                                                \
+      ac_cmdbuf_opt_set_context_reg2(__tracked_regs, reg, reg_enum, v1, v2);                                           \
    } while (0)
 
 #define radeon_opt_set_context_reg3(reg, reg_enum, v1, v2, v3)                                                         \
    do {                                                                                                                \
       struct ac_tracked_regs *__tracked_regs = &__rcs->tracked_regs;                                                   \
-      const uint32_t __v1 = (v1), __v2 = (v2), __v3 = (v3);                                                            \
-      if (!BITSET_TEST_RANGE_INSIDE_WORD(__tracked_regs->reg_saved_mask, (reg_enum), (reg_enum) + 2, 0x7) ||           \
-          __tracked_regs->reg_value[(reg_enum)] != __v1 || __tracked_regs->reg_value[(reg_enum) + 1] != __v2 ||        \
-          __tracked_regs->reg_value[(reg_enum) + 2] != __v3) {                                                         \
-         radeon_set_context_reg_seq(reg, 3);                                                                           \
-         radeon_emit(__v1);                                                                                            \
-         radeon_emit(__v2);                                                                                            \
-         radeon_emit(__v3);                                                                                            \
-         BITSET_SET_RANGE_INSIDE_WORD(__tracked_regs->reg_saved_mask, (reg_enum), (reg_enum) + 2);                     \
-         __tracked_regs->reg_value[(reg_enum)] = __v1;                                                                 \
-         __tracked_regs->reg_value[(reg_enum) + 1] = __v2;                                                             \
-         __tracked_regs->reg_value[(reg_enum) + 2] = __v3;                                                             \
-         __cs->context_roll = true;                                                                                    \
-      }                                                                                                                \
+      ac_cmdbuf_opt_set_context_reg3(__tracked_regs, reg, reg_enum, v1, v2, v3);                                       \
    } while (0)
 
 #define radeon_opt_set_context_reg4(reg, reg_enum, v1, v2, v3, v4)                                                     \
    do {                                                                                                                \
       struct ac_tracked_regs *__tracked_regs = &__rcs->tracked_regs;                                                   \
-      const uint32_t __v1 = (v1), __v2 = (v2), __v3 = (v3), __v4 = (v4);                                               \
-      if (!BITSET_TEST_RANGE_INSIDE_WORD(__tracked_regs->reg_saved_mask, (reg_enum), (reg_enum) + 3, 0xf) ||           \
-          __tracked_regs->reg_value[(reg_enum)] != __v1 || __tracked_regs->reg_value[(reg_enum) + 1] != __v2 ||        \
-          __tracked_regs->reg_value[(reg_enum) + 2] != __v3 || __tracked_regs->reg_value[(reg_enum) + 3] != __v4) {    \
-         radeon_set_context_reg_seq(reg, 4);                                                                           \
-         radeon_emit(__v1);                                                                                            \
-         radeon_emit(__v2);                                                                                            \
-         radeon_emit(__v3);                                                                                            \
-         radeon_emit(__v4);                                                                                            \
-         BITSET_SET_RANGE_INSIDE_WORD(__tracked_regs->reg_saved_mask, (reg_enum), (reg_enum) + 3);                     \
-         __tracked_regs->reg_value[(reg_enum)] = __v1;                                                                 \
-         __tracked_regs->reg_value[(reg_enum) + 1] = __v2;                                                             \
-         __tracked_regs->reg_value[(reg_enum) + 2] = __v3;                                                             \
-         __tracked_regs->reg_value[(reg_enum) + 3] = __v4;                                                             \
-         __cs->context_roll = true;                                                                                    \
-      }                                                                                                                \
+      ac_cmdbuf_opt_set_context_reg4(__tracked_regs, reg, reg_enum, v1, v2, v3, v4);                                   \
    } while (0)
 
 #define radeon_opt_set_context_regn(reg, values, saved_values, num)                                                    \
-   do {                                                                                                                \
-      if (memcmp(values, saved_values, sizeof(uint32_t) * (num))) {                                                    \
-         radeon_set_context_reg_seq(reg, num);                                                                         \
-         radeon_emit_array(values, num);                                                                               \
-         memcpy(saved_values, values, sizeof(uint32_t) * (num));                                                       \
-         __cs->context_roll = true;                                                                                    \
-      }                                                                                                                \
-   } while (0)
+   ac_cmdbuf_opt_set_context_regn(reg, values, saved_values, num)
 
 /* Packet building helpers for SH registers. */
 #define radeon_set_sh_reg_seq(reg, num) ac_cmdbuf_set_sh_reg_seq(reg, num)
@@ -161,45 +109,22 @@ radeon_check_space(struct radeon_winsys *ws, struct ac_cmdbuf *cs, unsigned need
 
 #define radeon_emit_64bit_pointer(sh_offset, va) ac_cmdbuf_emit_64bit_pointer(sh_offset, va)
 
-/* GFX12 generic packet building helpers for PAIRS packets. Don't use these directly. */
-
-/* Set 1 context register optimally. */
-#define __gfx12_opt_set_reg(reg, reg_enum, value, base_offset)                                                         \
-   do {                                                                                                                \
-      struct ac_tracked_regs *__tracked_regs = &__rcs->tracked_regs;                                                   \
-      const uint32_t __value = (value);                                                                                \
-      if (!BITSET_TEST(__tracked_regs->reg_saved_mask, (reg_enum)) ||                                                  \
-          __tracked_regs->reg_value[(reg_enum)] != __value) {                                                          \
-         ac_gfx12_set_reg((reg), __value, base_offset);                                                                \
-         BITSET_SET(__tracked_regs->reg_saved_mask, (reg_enum));                                                       \
-         __tracked_regs->reg_value[(reg_enum)] = __value;                                                              \
-      }                                                                                                                \
-   } while (0)
-
-/* Set 2 context registers optimally. */
-#define __gfx12_opt_set_reg2(reg, reg_enum, v1, v2, base_offset)                                                       \
-   do {                                                                                                                \
-      struct ac_tracked_regs *__tracked_regs = &__rcs->tracked_regs;                                                   \
-      const uint32_t __v1 = (v1), __v2 = (v2);                                                                         \
-      if (!BITSET_TEST_RANGE_INSIDE_WORD(__tracked_regs->reg_saved_mask, (reg_enum), (reg_enum) + 1, 0x3) ||           \
-          __tracked_regs->reg_value[(reg_enum)] != __v1 || __tracked_regs->reg_value[(reg_enum) + 1] != __v2) {        \
-         ac_gfx12_set_reg((reg), __v1, base_offset);                                                                   \
-         ac_gfx12_set_reg((reg) + 4, __v2, base_offset);                                                               \
-         BITSET_SET_RANGE_INSIDE_WORD(__tracked_regs->reg_saved_mask, (reg_enum), (reg_enum) + 1);                     \
-         __tracked_regs->reg_value[(reg_enum)] = __v1;                                                                 \
-         __tracked_regs->reg_value[(reg_enum) + 1] = __v2;                                                             \
-      }                                                                                                                \
-   } while (0)
-
 /* GFX12 packet building helpers for PAIRS packets. */
 #define gfx12_begin_context_regs() ac_gfx12_begin_context_regs()
 
 #define gfx12_set_context_reg(reg, value) ac_gfx12_set_context_reg(reg, value)
 
-#define gfx12_opt_set_context_reg(reg, reg_enum, value) __gfx12_opt_set_reg(reg, reg_enum, value, SI_CONTEXT_REG_OFFSET)
+#define gfx12_opt_set_context_reg(reg, reg_enum, value)                                                                \
+   do {                                                                                                                \
+      struct ac_tracked_regs *__tracked_regs = &__rcs->tracked_regs;                                                   \
+      ac_gfx12_opt_set_reg(__tracked_regs, reg, reg_enum, value, SI_CONTEXT_REG_OFFSET);                               \
+   } while (0)
 
 #define gfx12_opt_set_context_reg2(reg, reg_enum, v1, v2)                                                              \
-   __gfx12_opt_set_reg2(reg, reg_enum, v1, v2, SI_CONTEXT_REG_OFFSET)
+   do {                                                                                                                \
+      struct ac_tracked_regs *__tracked_regs = &__rcs->tracked_regs;                                                   \
+      ac_gfx12_opt_set_reg2(__tracked_regs, reg, reg_enum, v1, v2, SI_CONTEXT_REG_OFFSET);                             \
+   } while (0)
 
 #define gfx12_end_context_regs() ac_gfx12_end_context_regs()
 
@@ -216,37 +141,17 @@ radeon_check_space(struct radeon_winsys *ws, struct ac_cmdbuf *cs, unsigned need
 #define gfx11_set_context_reg(reg, value) ac_gfx11_set_context_reg(reg, value)
 #define gfx11_end_packed_context_regs() ac_gfx11_end_packed_context_regs()
 
-#define gfx11_opt_push_reg(reg, reg_enum, value, prefix_name, buffer, reg_count)                                       \
-   do {                                                                                                                \
-      struct ac_tracked_regs *__tracked_regs = &__rcs->tracked_regs;                                                   \
-      const uint32_t __value = (value);                                                                                \
-      if (!BITSET_TEST(__tracked_regs->reg_saved_mask, (reg_enum)) ||                                                  \
-          __tracked_regs->reg_value[(reg_enum)] != __value) {                                                          \
-         ac_gfx11_push_reg((reg), __value, prefix_name, buffer, reg_count);                                            \
-         BITSET_SET(__tracked_regs->reg_saved_mask, (reg_enum));                                                       \
-         __tracked_regs->reg_value[(reg_enum)] = __value;                                                              \
-      }                                                                                                                \
-   } while (0)
-
-#define gfx11_opt_push_reg2(reg, reg_enum, v1, v2, prefix_name, buffer, reg_count)                                     \
-   do {                                                                                                                \
-      struct ac_tracked_regs *__tracked_regs = &__rcs->tracked_regs;                                                   \
-      const uint32_t __v1 = (v1), __v2 = (v2);                                                                         \
-      if (!BITSET_TEST_RANGE_INSIDE_WORD(__tracked_regs->reg_saved_mask, (reg_enum), (reg_enum) + 1, 0x3) ||           \
-          __tracked_regs->reg_value[(reg_enum)] != __v1 || __tracked_regs->reg_value[(reg_enum) + 1] != __v2) {        \
-         ac_gfx11_push_reg((reg), __v1, prefix_name, buffer, reg_count);                                               \
-         ac_gfx11_push_reg((reg) + 4, __v2, prefix_name, buffer, reg_count);                                           \
-         BITSET_SET_RANGE_INSIDE_WORD(__tracked_regs->reg_saved_mask, (reg_enum), (reg_enum) + 1);                     \
-         __tracked_regs->reg_value[(reg_enum)] = __v1;                                                                 \
-         __tracked_regs->reg_value[(reg_enum) + 1] = __v2;                                                             \
-      }                                                                                                                \
-   } while (0)
-
 #define gfx11_opt_set_context_reg(reg, reg_enum, value)                                                                \
-   gfx11_opt_push_reg(reg, reg_enum, value, SI_CONTEXT, __cs_context_regs, __cs_context_reg_count)
+   do {                                                                                                                \
+      struct ac_tracked_regs *__tracked_regs = &__rcs->tracked_regs;                                                   \
+      ac_gfx11_opt_set_context_reg(__tracked_regs, reg, reg_enum, value);                                              \
+   } while (0)
 
 #define gfx11_opt_set_context_reg2(reg, reg_enum, v1, v2)                                                              \
-   gfx11_opt_push_reg2(reg, reg_enum, v1, v2, SI_CONTEXT, __cs_context_regs, __cs_context_reg_count)
+   do {                                                                                                                \
+      struct ac_tracked_regs *__tracked_regs = &__rcs->tracked_regs;                                                   \
+      ac_gfx11_opt_set_context_reg2(__tracked_regs, reg, reg_enum, v1, v2);                                            \
+   } while (0)
 
 ALWAYS_INLINE static void
 radv_gfx12_emit_buffered_regs(const struct radv_device *device, struct radv_cmd_stream *cs)

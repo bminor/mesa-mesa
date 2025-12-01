@@ -500,6 +500,209 @@ struct ac_tracked_regs {
       ac_gfx12_push_sh_reg(buf_regs, sh_offset + 4, va >> 32);       \
    } while (0)
 
+/* Tracked registers. */
+#define ac_cmdbuf_opt_set_context_reg(tracked_regs, reg, reg_enum, value)  \
+   do {                                                                    \
+      const uint32_t __value = (value);                                    \
+      if (!BITSET_TEST(tracked_regs->reg_saved_mask, (reg_enum)) ||        \
+          tracked_regs->reg_value[(reg_enum)] != __value) {                \
+         ac_cmdbuf_set_context_reg(reg, __value);                          \
+         BITSET_SET(tracked_regs->reg_saved_mask, (reg_enum));             \
+         tracked_regs->reg_value[(reg_enum)] = __value;                    \
+         __cs->context_roll = true;                                        \
+      }                                                                    \
+   } while (0)
+
+#define ac_cmdbuf_opt_set_context_reg2(tracked_regs, reg, reg_enum, v1, v2)                                 \
+   do {                                                                                                     \
+      static_assert(BITSET_BITWORD(reg_enum) == BITSET_BITWORD(reg_enum + 1),                               \
+                    "bit range crosses dword boundary");                                                    \
+      const uint32_t __v1 = (v1);                                                                           \
+      const uint32_t __v2 = (v2);                                                                           \
+      if (!BITSET_TEST_RANGE_INSIDE_WORD(tracked_regs->reg_saved_mask, (reg_enum), (reg_enum) + 1, 0x3) ||  \
+          tracked_regs->reg_value[(reg_enum)] != __v1 || tracked_regs->reg_value[(reg_enum) + 1] != __v2) { \
+         ac_cmdbuf_set_context_reg_seq(reg, 2);                                                             \
+         ac_cmdbuf_emit(__v1);                                                                              \
+         ac_cmdbuf_emit(__v2);                                                                              \
+         BITSET_SET_RANGE_INSIDE_WORD(tracked_regs->reg_saved_mask, (reg_enum), (reg_enum) + 1);            \
+         tracked_regs->reg_value[(reg_enum)] = __v1;                                                        \
+         tracked_regs->reg_value[(reg_enum) + 1] = __v2;                                                    \
+         __cs->context_roll = true;                                                                         \
+      }                                                                                                     \
+   } while (0)
+
+#define ac_cmdbuf_opt_set_context_reg3(tracked_regs, reg, reg_enum, v1, v2, v3)                             \
+   do {                                                                                                     \
+      static_assert(BITSET_BITWORD(reg_enum) == BITSET_BITWORD(reg_enum + 2),                               \
+                    "bit range crosses dword boundary");                                                    \
+      const uint32_t __v1 = (v1);                                                                           \
+      const uint32_t __v2 = (v2);                                                                           \
+      const uint32_t __v3 = (v3);                                                                           \
+      if (!BITSET_TEST_RANGE_INSIDE_WORD(tracked_regs->reg_saved_mask, (reg_enum), (reg_enum) + 2, 0x7) ||  \
+          tracked_regs->reg_value[(reg_enum)] != __v1 || tracked_regs->reg_value[(reg_enum) + 1] != __v2 || \
+          tracked_regs->reg_value[(reg_enum) + 2] != __v3) {                                                \
+         ac_cmdbuf_set_context_reg_seq(reg, 3);                                                             \
+         ac_cmdbuf_emit(__v1);                                                                              \
+         ac_cmdbuf_emit(__v2);                                                                              \
+         ac_cmdbuf_emit(__v3);                                                                              \
+         BITSET_SET_RANGE_INSIDE_WORD(__tracked_regs->reg_saved_mask, (reg_enum), (reg_enum) + 2);          \
+         tracked_regs->reg_value[(reg_enum)] = __v1;                                                        \
+         tracked_regs->reg_value[(reg_enum) + 1] = __v2;                                                    \
+         tracked_regs->reg_value[(reg_enum) + 2] = __v3;                                                    \
+         __cs->context_roll = true;                                                                         \
+      }                                                                                                     \
+   } while (0)
+
+#define ac_cmdbuf_opt_set_context_reg4(tracked_regs, reg, reg_enum, v1, v2, v3, v4)                               \
+   do {                                                                                                           \
+      static_assert(BITSET_BITWORD((reg_enum)) == BITSET_BITWORD((reg_enum) + 3),                                 \
+                    "bit range crosses dword boundary");                                                          \
+      const uint32_t __v1 = (v1);                                                                                 \
+      const uint32_t __v2 = (v2);                                                                                 \
+      const uint32_t __v3 = (v3);                                                                                 \
+      const uint32_t __v4 = (v4);                                                                                 \
+      if (!BITSET_TEST_RANGE_INSIDE_WORD(tracked_regs->reg_saved_mask, (reg_enum), (reg_enum) + 3, 0xf) ||        \
+          tracked_regs->reg_value[(reg_enum)] != __v1 || tracked_regs->reg_value[(reg_enum) + 1] != __v2 ||       \
+          tracked_regs->reg_value[(reg_enum) + 2] != __v3 || tracked_regs->reg_value[(reg_enum) + 3] != __v4) {   \
+         ac_cmdbuf_set_context_reg_seq(reg, 4);                                                                   \
+         ac_cmdbuf_emit(__v1);                                                                                    \
+         ac_cmdbuf_emit(__v2);                                                                                    \
+         ac_cmdbuf_emit(__v3);                                                                                    \
+         ac_cmdbuf_emit(__v4);                                                                                    \
+         BITSET_SET_RANGE_INSIDE_WORD(tracked_regs->reg_saved_mask, (reg_enum), (reg_enum) + 3);                  \
+         tracked_regs->reg_value[(reg_enum)] = __v1;                                                              \
+         tracked_regs->reg_value[(reg_enum) + 1] = __v2;                                                          \
+         tracked_regs->reg_value[(reg_enum) + 2] = __v3;                                                          \
+         tracked_regs->reg_value[(reg_enum) + 3] = __v4;                                                          \
+         __cs->context_roll = true;                                                                               \
+      }                                                                                                           \
+   } while (0)
+
+#define ac_cmdbuf_opt_set_context_regn(reg, values, saved_values, num)  \
+   do {                                                                 \
+      if (memcmp(values, saved_values, sizeof(uint32_t) * (num))) {     \
+         ac_cmdbuf_set_context_reg_seq(reg, num);                       \
+         ac_cmdbuf_emit_array(values, num);                             \
+         memcpy(saved_values, values, sizeof(uint32_t) * (num));        \
+         __cs->context_roll = true;                                     \
+      }                                                                 \
+   } while (0)
+
+/* GFX11 */
+#define ac_gfx11_opt_push_reg(tracked_regs, reg, reg_enum, value, prefix_name, buffer, reg_count)           \
+   do {                                                                                                     \
+      const uint32_t __value = (value);                                                                     \
+      if (!BITSET_TEST(tracked_regs->reg_saved_mask, (reg_enum)) ||                                         \
+          tracked_regs->reg_value[(reg_enum)] != __value) {                                                 \
+         ac_gfx11_push_reg((reg), __value, prefix_name, buffer, reg_count);                                 \
+         BITSET_SET(tracked_regs->reg_saved_mask, (reg_enum));                                              \
+         tracked_regs->reg_value[(reg_enum)] = __value;                                                     \
+      }                                                                                                     \
+   } while (0)
+
+#define ac_gfx11_opt_push_reg2(tracked_regs, reg, reg_enum, v1, v2, prefix_name, buffer, reg_count)         \
+   do {                                                                                                     \
+      static_assert(BITSET_BITWORD(reg_enum) == BITSET_BITWORD(reg_enum + 1),                               \
+                    "bit range crosses dword boundary");                                                    \
+      const uint32_t __v1 = (v1);                                                                           \
+      const uint32_t __v2 = (v2);                                                                           \
+      if (!BITSET_TEST_RANGE_INSIDE_WORD(tracked_regs->reg_saved_mask, (reg_enum), (reg_enum) + 1, 0x3) ||  \
+          tracked_regs->reg_value[(reg_enum)] != __v1 || tracked_regs->reg_value[(reg_enum) + 1] != __v2) { \
+         ac_gfx11_push_reg((reg), __v1, prefix_name, buffer, reg_count);                                    \
+         ac_gfx11_push_reg((reg) + 4, __v2, prefix_name, buffer, reg_count);                                \
+         BITSET_SET_RANGE_INSIDE_WORD(tracked_regs->reg_saved_mask, (reg_enum), (reg_enum) + 1);            \
+         tracked_regs->reg_value[(reg_enum)] = __v1;                                                        \
+         tracked_regs->reg_value[(reg_enum) + 1] = __v2;                                                    \
+      }                                                                                                     \
+   } while (0)
+
+#define ac_gfx11_opt_push_reg4(tracked_regs, reg, reg_enum, v1, v2, v3, v4, prefix_name, buffer, reg_count)       \
+   do {                                                                                                           \
+      static_assert(BITSET_BITWORD((reg_enum)) == BITSET_BITWORD((reg_enum) + 3),                                 \
+                    "bit range crosses dword boundary");                                                          \
+      const uint32_t __v1 = (v1);                                                                                 \
+      const uint32_t __v2 = (v2);                                                                                 \
+      const uint32_t __v3 = (v3);                                                                                 \
+      const uint32_t __v4 = (v4);                                                                                 \
+      if (!BITSET_TEST_RANGE_INSIDE_WORD(tracked_regs->reg_saved_mask, (reg_enum), (reg_enum) + 3, 0xf) ||        \
+          tracked_regs->reg_value[(reg_enum)] != __v1 ||                                                          \
+          tracked_regs->reg_value[(reg_enum) + 1] != __v2 ||                                                      \
+          tracked_regs->reg_value[(reg_enum) + 2] != __v3 ||                                                      \
+          tracked_regs->reg_value[(reg_enum) + 3] != __v4) {                                                      \
+         ac_gfx11_push_reg((reg), __v1, prefix_name, buffer, reg_count);                                          \
+         ac_gfx11_push_reg((reg) + 4, __v2, prefix_name, buffer, reg_count);                                      \
+         ac_gfx11_push_reg((reg) + 8, __v3, prefix_name, buffer, reg_count);                                      \
+         ac_gfx11_push_reg((reg) + 12, __v4, prefix_name, buffer, reg_count);                                     \
+         BITSET_SET_RANGE_INSIDE_WORD(tracked_regs->reg_saved_mask,                                               \
+                                      (reg_enum), (reg_enum) + 3);                                                \
+         tracked_regs->reg_value[(reg_enum)] = __v1;                                                              \
+         tracked_regs->reg_value[(reg_enum) + 1] = __v2;                                                          \
+         tracked_regs->reg_value[(reg_enum) + 2] = __v3;                                                          \
+         tracked_regs->reg_value[(reg_enum) + 3] = __v4;                                                          \
+      }                                                                                                           \
+   } while (0)
+
+#define ac_gfx11_opt_set_context_reg(tracked_regs, reg, reg_enum, value)                                             \
+   ac_gfx11_opt_push_reg(tracked_regs, reg, reg_enum, value, SI_CONTEXT, __cs_context_regs, __cs_context_reg_count)
+
+#define ac_gfx11_opt_set_context_reg2(tracked_regs, reg, reg_enum, v1, v2)                                           \
+   ac_gfx11_opt_push_reg2(tracked_regs, reg, reg_enum, v1, v2, SI_CONTEXT, __cs_context_regs, __cs_context_reg_count)
+
+/* GFX12 */
+#define ac_gfx12_opt_set_reg(tracked_regs, reg, reg_enum, value, base_offset)                                     \
+   do {                                                                                                           \
+      const uint32_t __value = (value);                                                                           \
+      if (!BITSET_TEST(tracked_regs->reg_saved_mask, (reg_enum)) ||                                               \
+          tracked_regs->reg_value[(reg_enum)] != __value) {                                                       \
+         ac_gfx12_set_reg((reg), __value, base_offset);                                                           \
+         BITSET_SET(tracked_regs->reg_saved_mask, (reg_enum));                                                    \
+         tracked_regs->reg_value[(reg_enum)] = __value;                                                           \
+      }                                                                                                           \
+   } while (0)
+
+#define ac_gfx12_opt_set_reg2(tracked_regs, reg, reg_enum, v1, v2, base_offset)                                   \
+   do {                                                                                                           \
+      static_assert(BITSET_BITWORD(reg_enum) == BITSET_BITWORD(reg_enum + 1),                                     \
+                    "bit range crosses dword boundary");                                                          \
+      const uint32_t __v1 = (v1);                                                                                 \
+      const uint32_t __v2 = (v2);                                                                                 \
+      if (!BITSET_TEST_RANGE_INSIDE_WORD(tracked_regs->reg_saved_mask, (reg_enum), (reg_enum) + 1, 0x3) ||        \
+          tracked_regs->reg_value[(reg_enum)] != __v1 || tracked_regs->reg_value[(reg_enum) + 1] != __v2) {       \
+         ac_gfx12_set_reg((reg), __v1, base_offset);                                                              \
+         ac_gfx12_set_reg((reg) + 4, __v2, base_offset);                                                          \
+         BITSET_SET_RANGE_INSIDE_WORD(tracked_regs->reg_saved_mask, (reg_enum), (reg_enum) + 1);                  \
+         tracked_regs->reg_value[(reg_enum)] = __v1;                                                              \
+         tracked_regs->reg_value[(reg_enum) + 1] = __v2;                                                          \
+      }                                                                                                           \
+   } while (0)
+
+#define ac_gfx12_opt_set_reg4(tracked_regs, reg, reg_enum, v1, v2, v3, v4, base_offset)                           \
+   do {                                                                                                           \
+      static_assert(BITSET_BITWORD((reg_enum)) == BITSET_BITWORD((reg_enum) + 3),                                 \
+                    "bit range crosses dword boundary");                                                          \
+      const uint32_t __v1 = (v1);                                                                                 \
+      const uint32_t __v2 = (v2);                                                                                 \
+      const uint32_t __v3 = (v3);                                                                                 \
+      const uint32_t __v4 = (v4);                                                                                 \
+      if (!BITSET_TEST_RANGE_INSIDE_WORD(tracked_regs->reg_saved_mask,                                            \
+                                         (reg_enum), (reg_enum) + 3, 0xf) ||                                      \
+          tracked_regs->reg_value[(reg_enum)] != __v1 ||                                                          \
+          tracked_regs->reg_value[(reg_enum) + 1] != __v2 ||                                                      \
+          tracked_regs->reg_value[(reg_enum) + 2] != __v3 ||                                                      \
+          tracked_regs->reg_value[(reg_enum) + 3] != __v4) {                                                      \
+         ac_gfx12_set_reg((reg), __v1, (base_offset));                                                            \
+         ac_gfx12_set_reg((reg) + 4, __v2, (base_offset));                                                        \
+         ac_gfx12_set_reg((reg) + 8, __v3, (base_offset));                                                        \
+         ac_gfx12_set_reg((reg) + 12, __v4, (base_offset));                                                       \
+         BITSET_SET_RANGE_INSIDE_WORD(tracked_regs->reg_saved_mask,                                               \
+                                      (reg_enum), (reg_enum) + 3);                                                \
+         tracked_regs->reg_value[(reg_enum)] = __v1;                                                              \
+         tracked_regs->reg_value[(reg_enum) + 1] = __v2;                                                          \
+         tracked_regs->reg_value[(reg_enum) + 2] = __v3;                                                          \
+         tracked_regs->reg_value[(reg_enum) + 3] = __v4;                                                          \
+      }                                                                                                           \
+   } while (0)
+
 struct ac_preamble_state {
    uint64_t border_color_va;
 
