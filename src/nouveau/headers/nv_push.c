@@ -5,6 +5,7 @@
 #include <inttypes.h>
 #include "util/os_misc.h"
 
+#include "drf.h"
 #include "cl906f.h"
 #include "nv_push_class_dump.h"
 
@@ -23,7 +24,7 @@ nv_push_validate(struct nv_push *push)
    /* parse all the headers to see if we get to buf->map */
    while (cur < push->end) {
       uint32_t hdr = *cur;
-      uint32_t mthd = hdr >> 29;
+      uint32_t mthd = NVVAL_GET(hdr, NV906F, DMA, SEC_OP);
 
       switch (mthd) {
       case NV906F_DMA_SEC_OP_IMMD_DATA_METHOD:
@@ -31,7 +32,7 @@ nv_push_validate(struct nv_push *push)
       case NV906F_DMA_SEC_OP_INC_METHOD:
       case NV906F_DMA_SEC_OP_NON_INC_METHOD:
       case NV906F_DMA_SEC_OP_ONE_INC: {
-         uint32_t count = (hdr >> 16) & 0x1fff;
+         uint32_t count = NVVAL_GET(hdr, NV906F, DMA, METHOD_COUNT);
          assert(count);
          cur += count;
          break;
@@ -62,14 +63,15 @@ vk_push_print(FILE *fp, const struct nv_push *push,
 
    while (cur < push->end) {
       uint32_t hdr = *cur;
-      uint32_t type = hdr >> 29;
+      uint32_t type = NVVAL_GET(hdr, NV906F, DMA, SEC_OP);
       bool is_tert = type == NV906F_DMA_SEC_OP_GRP0_USE_TERT ||
                      type == NV906F_DMA_SEC_OP_GRP2_USE_TERT;
       uint32_t inc = 0;
-      uint32_t count = is_tert ? (hdr >> 18) & 0x3ff : (hdr >> 16) & 0x1fff;
-      uint32_t tert_op = (hdr >> 16) & 0x3;
-      uint32_t subchan = (hdr >> 13) & 0x7;
-      uint32_t mthd = (hdr & 0xfff) << 2;
+      uint32_t count = is_tert ? (hdr >> 18) & 0x3ff
+                               : NVVAL_GET(hdr, NV906F, DMA, METHOD_COUNT);
+      uint32_t tert_op = NVVAL_GET(hdr, NV906F, DMA, TERT_OP);
+      uint32_t subchan = NVVAL_GET(hdr, NV906F, DMA, METHOD_SUBCHANNEL);
+      uint32_t mthd = NVVAL_GET(hdr, NV906F, DMA, METHOD_ADDRESS) << 2;
       uint32_t value = 0;
       bool is_immd = false;
 
@@ -91,7 +93,7 @@ vk_push_print(FILE *fp, const struct nv_push *push,
          fprintf(fp, " IMMD\n");
          inc = 0;
          is_immd = true;
-         value = count;
+         value = NVVAL_GET(hdr, NV906F, DMA, IMMD_DATA);
          count = 1;
          break;
       case NV906F_DMA_SEC_OP_INC_METHOD:
