@@ -2248,10 +2248,7 @@ radv_physical_device_try_create(struct radv_instance *instance, drmDevicePtr drm
       result = VK_ERROR_OUT_OF_HOST_MEMORY;
 #else
    if (drm_device) {
-      bool reserve_vmid = instance->vk.trace_mode & RADV_TRACE_MODE_RGP;
-
-      result = radv_amdgpu_winsys_create(fd, instance->debug_flags, instance->perftest_flags, reserve_vmid, is_virtio,
-                                         &pdev->ws);
+      result = radv_amdgpu_winsys_create(fd, instance->debug_flags, instance->perftest_flags, is_virtio, &pdev->ws);
    } else {
       pdev->ws = radv_null_winsys_create();
       if (!pdev->ws)
