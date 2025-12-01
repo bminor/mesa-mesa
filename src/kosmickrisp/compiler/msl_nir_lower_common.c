@@ -284,6 +284,32 @@ msl_nir_vs_io_types(nir_shader *nir)
 }
 
 static bool
+fake_guard_for_discards(nir_builder *b, nir_intrinsic_instr *intrin, void *data)
+{
+   if (intrin->intrinsic != nir_intrinsic_demote)
+      return false;
+
+   b->cursor = nir_before_instr(&intrin->instr);
+   nir_def *helper = nir_is_helper_invocation(b, 1);
+   nir_demote_if(b, nir_inot(b, helper));
+   nir_instr_remove(&intrin->instr);
+   return true;
+}
+
+bool
+msl_nir_fake_guard_for_discards(struct nir_shader *nir)
+{
+   assert(nir->info.stage == MESA_SHADER_FRAGMENT);
+
+   /* No side effects, no lowering needed */
+   if (!nir->info.writes_memory)
+      return false;
+
+   return nir_shader_intrinsics_pass(nir, fake_guard_for_discards,
+                                     nir_metadata_control_flow, NULL);
+}
+
+static bool
 lower_clip_distance(nir_builder *b, nir_intrinsic_instr *intr, void *data)
 {
    if (intr->intrinsic != nir_intrinsic_store_output)

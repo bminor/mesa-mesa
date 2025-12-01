@@ -49,6 +49,24 @@ info on what was updated.
 Workarounds
 ===========
 
+KK_WORKAROUND_5
+---------------
+| macOS version: 26.0.1
+| Metal ticket: Not reported
+| Metal ticket status:
+| CTS test failure: ``dEQP-VK.fragment_operations.early_fragment.discard_no_early_fragment_tests_depth``
+| Comments:
+
+Fragment shaders that have side effects (like writing to a buffer) will be
+prematurely discarded if there is a ``discard_fragment`` that will always
+execute. To work around this, we just make the discard "optional" by moving
+it inside a run time conditional that will always be true (such as is the
+fragment a helper?). This tricks the MSL compiler into not optimizing it into
+a premature discard.
+
+| Log:
+| 2025-12-01: Workaround implemented
+
 KK_WORKAROUND_4
 ---------------
 | macOS version: 26.0.1
@@ -98,8 +116,8 @@ The way to fix this is by changing the conditional to:
 KK_WORKAROUND_2
 ---------------
 | macOS version: 15.4.x
-| Metal ticket: Not reported
-| Metal ticket status:
+| Metal ticket: FB21065475 (@aitor)
+| Metal ticket status: Waiting resolution
 | CTS test crash: ``dEQP-VK.graphicsfuzz.cov-nested-loops-never-change-array-element-one`` and ``dEQP-VK.graphicsfuzz.disc-and-add-in-func-in-loop``
 | Comments:
 

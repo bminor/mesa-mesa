@@ -66,6 +66,7 @@ kk_get_nir_options(struct vk_physical_device *vk_pdev, mesa_shader_stage stage,
       .lower_doubles_options = (nir_lower_doubles_options)(~0),
       .lower_int64_options =
          nir_lower_ufind_msb64 | nir_lower_subgroup_shuffle64,
+      .io_options = nir_io_mediump_is_32bit,
    };
    return &options;
 }
@@ -417,6 +418,9 @@ kk_lower_fs(struct kk_device *dev, nir_shader *nir,
             nir->info.fs.needs_coarse_quad_helper_invocations)
       NIR_PASS(_, nir, msl_lower_static_sample_mask, 0xFFFFFFFF);
 
+   /* KK_WORKAROUND_5 */
+   if (!(dev->disabled_workarounds & BITFIELD64_BIT(5)))
+      NIR_PASS(_, nir, msl_nir_fake_guard_for_discards);
    /* KK_WORKAROUND_4 */
    if (!(dev->disabled_workarounds & BITFIELD64_BIT(4))) {
       NIR_PASS(_, nir, nir_lower_helper_writes, true);

@@ -155,13 +155,7 @@ kk_get_device_features(
       .depthClamp = true,
       .drawIndirectFirstInstance = true,
       .dualSrcBlend = true,
-      /* TODO_KOSMICKRISP
-       * Enabling fragmentStoresAndAtomics fails the following CTS tests, need
-       * to investigate:
-       * dEQP-VK.fragment_operations.early_fragment.discard_no_early_fragment_tests_depth
-       * dEQP-VK.robustness.image_robustness.bind.notemplate.*i.unroll.nonvolatile.sampled_image.no_fmt_qual.img.samples_1.*d_array.frag
-       */
-      .fragmentStoresAndAtomics = false,
+      .fragmentStoresAndAtomics = true,
       .fullDrawIndexUint32 = true,
       .imageCubeArray = true,
       .independentBlend = true,
