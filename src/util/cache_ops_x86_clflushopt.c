@@ -21,6 +21,7 @@
  * IN THE SOFTWARE.
  */
 
+#include <stdint.h>
 #include "util/u_cpu_detect.h"
 
 #ifndef HAVE___BUILTIN_IA32_CLFLUSHOPT
@@ -35,9 +36,9 @@ util_clflushopt_range(void *start, size_t size)
    const struct util_cpu_caps_t *cpu_caps = util_get_cpu_caps();
    assert(cpu_caps->has_clflushopt);
    assert(cpu_caps->cacheline > 0);
-   void *p = (void *) (((uintptr_t) start) &
-                       ~((uintptr_t)cpu_caps->cacheline - 1));
-   void *end = start + size;
+   uint8_t *p = (uint8_t *) (((uintptr_t) start) &
+                            ~((uintptr_t)cpu_caps->cacheline - 1));
+   uint8_t *end = (uint8_t *)start + size;
 
    while (p < end) {
       __builtin_ia32_clflushopt(p);
