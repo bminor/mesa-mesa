@@ -30,29 +30,6 @@
 #include "panfrost/compiler/bifrost/bifrost_compile.h"
 #include "panfrost/compiler/midgard/midgard_compile.h"
 
-const nir_shader_compiler_options *
-pan_shader_get_compiler_options(unsigned arch)
-{
-   switch (arch) {
-   case 4:
-   case 5:
-      return &midgard_nir_options;
-   case 6:
-   case 7:
-      return &bifrost_nir_options_v6;
-   case 9:
-   case 10:
-      return &bifrost_nir_options_v9;
-   case 11:
-   case 12:
-   case 13:
-      return &bifrost_nir_options_v11;
-   default:
-      assert(!"Unsupported arch");
-      return NULL;
-   }
-}
-
 void
 pan_shader_compile(nir_shader *s, struct pan_compile_inputs *inputs,
                    struct util_dynarray *binary, struct pan_shader_info *info)

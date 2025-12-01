@@ -10,6 +10,7 @@
 #error "PAN_ARCH must be defined"
 #endif
 
+#include "compiler/pan_compiler.h"
 #include "compiler/pan_ir.h"
 
 #include "pan_desc.h"

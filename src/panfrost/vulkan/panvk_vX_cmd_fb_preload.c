@@ -71,7 +71,7 @@ static nir_shader *
 get_preload_nir_shader(const struct panvk_fb_preload_shader_key *key)
 {
    nir_builder builder = nir_builder_init_simple_shader(
-      MESA_SHADER_FRAGMENT, pan_shader_get_compiler_options(PAN_ARCH),
+      MESA_SHADER_FRAGMENT, pan_get_nir_shader_compiler_options(PAN_ARCH),
       "panvk-meta-preload");
    nir_builder *b = &builder;
    nir_def *sample_id =
@@ -153,10 +153,10 @@ get_preload_shader(struct panvk_device *dev,
       .is_blit = true,
    };
 
-   pan_shader_preprocess(nir, inputs.gpu_id);
-   pan_shader_lower_texture_early(nir, inputs.gpu_id);
-   pan_shader_postprocess(nir, inputs.gpu_id);
-   pan_shader_lower_texture_late(nir, inputs.gpu_id);
+   pan_preprocess_nir(nir, inputs.gpu_id);
+   pan_nir_lower_texture_early(nir, inputs.gpu_id);
+   pan_postprocess_nir(nir, inputs.gpu_id);
+   pan_nir_lower_texture_late(nir, inputs.gpu_id);
 
    VkResult result = panvk_per_arch(create_internal_shader)(
       dev, nir, &inputs, &shader);

@@ -38,6 +38,7 @@
 #include "nir_serialize.h"
 #include "pan_bo.h"
 #include "pan_context.h"
+#include "pan_compiler.h"
 #include "shader_enums.h"
 
 static struct panfrost_uncompiled_shader *
@@ -137,9 +138,9 @@ panfrost_shader_compile(struct panfrost_screen *screen, const nir_shader *ir,
     * happens at CSO create time regardless.
     */
    if (mesa_shader_stage_is_compute(s->info.stage)) {
-      pan_shader_preprocess(s, panfrost_device_gpu_id(dev));
-      pan_shader_lower_texture_early(s, panfrost_device_gpu_id(dev));
-      pan_shader_postprocess(s, panfrost_device_gpu_id(dev));
+      pan_preprocess_nir(s, panfrost_device_gpu_id(dev));
+      pan_nir_lower_texture_early(s, panfrost_device_gpu_id(dev));
+      pan_postprocess_nir(s, panfrost_device_gpu_id(dev));
    }
 
    struct pan_compile_inputs inputs = {
@@ -225,7 +226,7 @@ panfrost_shader_compile(struct panfrost_screen *screen, const nir_shader *ir,
 
    /* Lower resource indices */
    NIR_PASS(_, s, panfrost_nir_lower_res_indices, &inputs);
-   pan_shader_lower_texture_late(s, inputs.gpu_id);
+   pan_nir_lower_texture_late(s, inputs.gpu_id);
 
    if (dev->arch >= 9) {
       inputs.valhall.use_ld_var_buf = panfrost_use_ld_var_buf(s);
@@ -549,13 +550,13 @@ panfrost_create_shader_state(struct pipe_context *pctx,
 
    /* Then run the suite of lowering and optimization, including I/O lowering */
    struct panfrost_device *dev = pan_device(pctx->screen);
-   pan_shader_preprocess(nir, panfrost_device_gpu_id(dev));
-   pan_shader_lower_texture_early(nir, panfrost_device_gpu_id(dev));
+   pan_preprocess_nir(nir, panfrost_device_gpu_id(dev));
+   pan_nir_lower_texture_early(nir, panfrost_device_gpu_id(dev));
 
    NIR_PASS(_, nir, nir_lower_io, nir_var_shader_in | nir_var_shader_out,
             glsl_type_size, nir_lower_io_use_interpolated_input_intrinsics);
 
-   pan_shader_postprocess(nir, panfrost_device_gpu_id(dev));
+   pan_postprocess_nir(nir, panfrost_device_gpu_id(dev));
 
    if (nir->info.stage == MESA_SHADER_FRAGMENT)
       so->noperspective_varyings =

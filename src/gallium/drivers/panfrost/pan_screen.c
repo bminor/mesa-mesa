@@ -53,7 +53,7 @@
 #include "pan_public.h"
 #include "pan_resource.h"
 #include "pan_screen.h"
-#include "pan_shader.h"
+#include "pan_compiler.h"
 #include "pan_util.h"
 
 #include "pan_context.h"
@@ -1147,7 +1147,8 @@ panfrost_create_screen(int fd, const struct pipe_screen_config *config,
    }
 
    for (unsigned i = 0; i <= MESA_SHADER_COMPUTE; i++)
-      screen->base.nir_options[i] = pan_shader_get_compiler_options(pan_screen(&screen->base)->dev.arch);
+      screen->base.nir_options[i] =
+         pan_get_nir_shader_compiler_options(dev->arch);
 
    switch (dev->arch) {
    case 4:

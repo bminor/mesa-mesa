@@ -287,7 +287,7 @@ panvk_meta_desc_copy_rsd(struct panvk_device *dev)
 
    nir_builder b = nir_builder_init_simple_shader(
       MESA_SHADER_COMPUTE,
-      pan_shader_get_compiler_options(
+      pan_get_nir_shader_compiler_options(
          pan_arch(phys_dev->kmod.props.gpu_id)),
       "%s", "desc_copy");
 
@@ -306,8 +306,8 @@ panvk_meta_desc_copy_rsd(struct panvk_device *dev)
       .gpu_variant = phys_dev->kmod.props.gpu_variant,
    };
 
-   pan_shader_preprocess(b.shader, inputs.gpu_id);
-   pan_shader_postprocess(b.shader, inputs.gpu_id);
+   pan_preprocess_nir(b.shader, inputs.gpu_id);
+   pan_postprocess_nir(b.shader, inputs.gpu_id);
 
    VkResult result = panvk_per_arch(create_internal_shader)(
       dev, b.shader, &inputs, &shader);

@@ -369,7 +369,7 @@ panvk_get_nir_options(UNUSED struct vk_physical_device *vk_pdev,
                       UNUSED const struct vk_pipeline_robustness_state *rs)
 {
    struct panvk_physical_device *phys_dev = to_panvk_physical_device(vk_pdev);
-   return pan_shader_get_compiler_options(pan_arch(phys_dev->kmod.props.gpu_id));
+   return pan_get_nir_shader_compiler_options(pan_arch(phys_dev->kmod.props.gpu_id));
 }
 
 static struct spirv_to_nir_options
@@ -428,17 +428,17 @@ panvk_preprocess_nir(struct vk_physical_device *vk_pdev,
     *  1. Compile SPIR-V to NIR and maybe do a tiny bit of lowering that needs
     *     to be done really early.
     *
-    *  2. pan_shader_preprocess: Does common lowering and runs the optimization
+    *  2. pan_preprocess_nir: Does common lowering and runs the optimization
     *     loop.  Nothing here should be API-specific.
     *
     *  3. Do additional lowering in panvk
     *
-    *  4. pan_shader_postprocess: Does final lowering and runs the optimization
+    *  4. pan_postprocess_nir: Does final lowering and runs the optimization
     *     loop again.  This can happen as part of the final compile.
     *
     * This would give us a better place to do panvk-specific lowering.
     */
-   pan_shader_lower_texture_early(nir, pdev->kmod.props.gpu_id);
+   pan_nir_lower_texture_early(nir, pdev->kmod.props.gpu_id);
    NIR_PASS(_, nir, nir_lower_system_values);
 
    nir_lower_compute_system_values_options options = {
@@ -450,7 +450,7 @@ panvk_preprocess_nir(struct vk_physical_device *vk_pdev,
    if (nir->info.stage == MESA_SHADER_FRAGMENT)
       NIR_PASS(_, nir, nir_lower_wpos_center);
 
-   pan_shader_optimize(nir, pdev->kmod.props.gpu_id);
+   pan_optimize_nir(nir, pdev->kmod.props.gpu_id);
 
    NIR_PASS(_, nir, nir_split_var_copies);
    NIR_PASS(_, nir, nir_lower_var_copies);
@@ -909,7 +909,7 @@ panvk_lower_nir(struct panvk_device *dev, nir_shader *nir,
       nir_log_shaderi(nir);
    }
 
-   pan_shader_preprocess(nir, compile_input->gpu_id);
+   pan_preprocess_nir(nir, compile_input->gpu_id);
 
    /* Postprocess can add copies back in and lower_io can't handle them */
    NIR_PASS(_, nir, nir_lower_var_copies);
@@ -918,8 +918,8 @@ panvk_lower_nir(struct panvk_device *dev, nir_shader *nir,
    NIR_PASS(_, nir, nir_lower_io, nir_var_shader_in | nir_var_shader_out,
             glsl_type_size, nir_lower_io_use_interpolated_input_intrinsics);
 
-   pan_shader_postprocess(nir, compile_input->gpu_id);
-   pan_shader_lower_texture_late(nir, compile_input->gpu_id);
+   pan_postprocess_nir(nir, compile_input->gpu_id);
+   pan_nir_lower_texture_late(nir, compile_input->gpu_id);
 
    if (stage == MESA_SHADER_VERTEX)
       NIR_PASS(_, nir, nir_shader_intrinsics_pass, panvk_lower_load_vs_input,
