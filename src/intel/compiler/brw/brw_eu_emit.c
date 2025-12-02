@@ -921,6 +921,7 @@ ALU1(MOV)
 ALU2(MUL)
 ALU2(AVG)
 ALU2(ADD)
+ALU2(SRND)
 
 brw_eu_inst *
 brw_LINE(struct brw_codegen *p, struct brw_reg dest,
@@ -952,15 +953,6 @@ brw_DPAS(struct brw_codegen *p, enum gfx12_systolic_depth sdepth,
 {
    return brw_dpas_three_src(p, BRW_OPCODE_DPAS, sdepth, rcount, dest, src0,
                              src1, src2);
-}
-
-brw_eu_inst *
-brw_SRND(struct brw_codegen *p, struct brw_reg dest,
-         struct brw_reg src0, struct brw_reg src1)
-{
-   assert(dest.type == BRW_TYPE_HF);
-   assert(src0.type == BRW_TYPE_F);
-   return brw_alu2(p, BRW_OPCODE_SRND, dest, src0, src1);
 }
 
 void brw_NOP(struct brw_codegen *p)
