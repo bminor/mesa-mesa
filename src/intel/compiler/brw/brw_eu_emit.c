@@ -919,6 +919,7 @@ ALU2(SUBB)
 ALU3(ADD3)
 ALU1(MOV)
 ALU2(MUL)
+ALU2(AVG)
 
 brw_eu_inst *
 brw_ADD(struct brw_codegen *p, struct brw_reg dest,
@@ -940,27 +941,6 @@ brw_ADD(struct brw_codegen *p, struct brw_reg dest,
    }
 
    return brw_alu2(p, BRW_OPCODE_ADD, dest, src0, src1);
-}
-
-brw_eu_inst *
-brw_AVG(struct brw_codegen *p, struct brw_reg dest,
-        struct brw_reg src0, struct brw_reg src1)
-{
-   assert(dest.type == src0.type);
-   assert(src0.type == src1.type);
-   switch (src0.type) {
-   case BRW_TYPE_B:
-   case BRW_TYPE_UB:
-   case BRW_TYPE_W:
-   case BRW_TYPE_UW:
-   case BRW_TYPE_D:
-   case BRW_TYPE_UD:
-      break;
-   default:
-      UNREACHABLE("Bad type for brw_AVG");
-   }
-
-   return brw_alu2(p, BRW_OPCODE_AVG, dest, src0, src1);
 }
 
 brw_eu_inst *

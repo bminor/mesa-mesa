@@ -2258,6 +2258,17 @@ instruction_restrictions(const struct brw_isa_info *isa,
        *      instructions, the boundaries of a register should not be crossed.
        */
    }
+
+   if (inst->opcode == BRW_OPCODE_AVG) {
+      ERROR_IF(!brw_type_is_int(inst->dst.type) ||
+               !brw_type_is_int(inst->src[0].type) ||
+               !brw_type_is_int(inst->src[1].type),
+               "AVG performs integer average. Float types not supported.");
+      ERROR_IF(brw_type_size_bytes(inst->dst.type) > 4 ||
+               brw_type_size_bytes(inst->src[0].type) > 4 ||
+               brw_type_size_bytes(inst->src[1].type) > 4,
+               "AVG does not support 64-bit types.");
+   }
 }
 
 static void
