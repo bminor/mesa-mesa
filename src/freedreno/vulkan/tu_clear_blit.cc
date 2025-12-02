@@ -142,6 +142,7 @@ blit_base_format(enum pipe_format format, bool ubwc, bool gmem)
    return blit_format_color(format, TILE6_LINEAR).fmt;
 }
 
+template <chip CHIP>
 static void
 r2d_coords(struct tu_cmd_buffer *cmd,
            struct tu_cs *cs,
@@ -150,17 +151,17 @@ r2d_coords(struct tu_cmd_buffer *cmd,
            const VkExtent2D extent)
 {
    tu_cs_emit_regs(cs,
-      A6XX_GRAS_A2D_DEST_TL(.x = dst.x,                    .y = dst.y),
-      A6XX_GRAS_A2D_DEST_BR(.x = dst.x + extent.width - 1, .y = dst.y + extent.height - 1));
+      GRAS_A2D_DEST_TL(CHIP, .x = dst.x,                    .y = dst.y),
+      GRAS_A2D_DEST_BR(CHIP, .x = dst.x + extent.width - 1, .y = dst.y + extent.height - 1));
 
    if (src.x == blt_no_coord.x)
       return;
 
    tu_cs_emit_regs(cs,
-                   A6XX_GRAS_A2D_SRC_XMIN(src.x),
-                   A6XX_GRAS_A2D_SRC_XMAX(src.x + extent.width - 1),
-                   A6XX_GRAS_A2D_SRC_YMIN(src.y),
-                   A6XX_GRAS_A2D_SRC_YMAX(src.y + extent.height - 1));
+                   GRAS_A2D_SRC_XMIN(CHIP, src.x),
+                   GRAS_A2D_SRC_XMAX(CHIP, src.x + extent.width - 1),
+                   GRAS_A2D_SRC_YMIN(CHIP, src.y),
+                   GRAS_A2D_SRC_YMAX(CHIP, src.y + extent.height - 1));
 }
 
 static void
@@ -1764,7 +1765,7 @@ struct blit_ops {
 
 template <chip CHIP>
 static const struct blit_ops r2d_ops = {
-   .coords = r2d_coords,
+   .coords = r2d_coords<CHIP>,
    .clear_value = r2d_clear_value,
    .src = r2d_src<CHIP>,
    .src_buffer = r2d_src_buffer<CHIP>,
@@ -5586,8 +5587,8 @@ tu_store_gmem_attachment(struct tu_cmd_buffer *cmd,
       }
    } else {
       if (!cmd->state.pass->has_fdm) {
-         r2d_coords(cmd, cs, render_area->offset, render_area->offset,
-                    render_area->extent);
+         r2d_coords<CHIP>(cmd, cs, render_area->offset, render_area->offset,
+                          render_area->extent);
       } else {
          /* Usually GRAS_2D_RESOLVE_CNTL_* clips the destination to the bin
           * area and the coordinates span the entire render area, but for
