@@ -2102,13 +2102,12 @@ tu6_init_static_regs(struct tu_device *dev, struct tu_cs *cs)
 }
 
 /* Set always-identical registers used specifically for GMEM */
+template <chip CHIP>
 static void
 tu7_emit_tile_render_begin_regs(struct tu_cs *cs)
 {
-   tu_cs_emit_regs(cs,
-                  A7XX_RB_BUFFER_CNTL(0x0));
-
-   tu_cs_emit_regs(cs, A7XX_RB_CLEAR_TARGET(.clear_mode = CLEAR_MODE_GMEM));
+   tu_cs_emit_regs(cs, RB_BUFFER_CNTL(CHIP, 0x0));
+   tu_cs_emit_regs(cs, RB_CLEAR_TARGET(CHIP, .clear_mode = CLEAR_MODE_GMEM));
 }
 
 /* Emit the bin restore preamble, which runs in between bins when L1
@@ -2129,7 +2128,7 @@ tu_emit_bin_preamble(struct tu_device *dev, struct tu_cs *cs, bool bv)
    emit_vpc_attr_buf<CHIP>(cs, dev, true);
 
    if (CHIP == A7XX && !bv) {
-      tu7_emit_tile_render_begin_regs(cs);
+      tu7_emit_tile_render_begin_regs<CHIP>(cs);
    }
 
    if (CHIP == A6XX) {
@@ -3212,7 +3211,7 @@ tu6_tile_render_begin(struct tu_cmd_buffer *cmd, struct tu_cs *cs,
    bool use_cb = false;
 
    if (CHIP >= A7XX) {
-      tu7_emit_tile_render_begin_regs(cs);
+      tu7_emit_tile_render_begin_regs<CHIP>(cs);
       use_cb = tu7_emit_concurrent_binning_gmem(cmd, cs, use_binning);
    }
 
