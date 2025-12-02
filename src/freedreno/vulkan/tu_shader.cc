@@ -1769,29 +1769,29 @@ tu6_emit_cs_config(struct tu_cs *cs,
 {
    bool shared_consts_enable =
       ir3_const_state(v)->push_consts_type == IR3_PUSH_CONSTS_SHARED;
-   tu6_emit_shared_consts_enable<CHIP>(cs, shared_consts_enable);
 
-   tu_cs_emit_regs(cs, SP_UPDATE_CNTL(CHIP,
-         .cs_state = true,
-         .cs_uav = true,
-         .cs_shared_const = shared_consts_enable));
+   with_crb (cs) {
+      tu6_emit_shared_consts_enable<CHIP>(crb, shared_consts_enable);
 
-   tu6_emit_xs_config<CHIP>(cs, MESA_SHADER_COMPUTE, v);
+      crb.add(SP_UPDATE_CNTL(CHIP, .cs_state = true, .cs_uav = true,
+                             .cs_shared_const = shared_consts_enable));
+      tu6_emit_xs_config<CHIP>(crb, MESA_SHADER_COMPUTE, v);
+   }
    tu6_emit_xs(cs, MESA_SHADER_COMPUTE, v, pvtmem, binary_iova);
 
-   uint32_t shared_size = MAX2(((int)v->shared_size - 1) / 1024, 1);
+   tu_crb crb = cs->crb(0);
+
+   uint32_t shared_size = MAX2(((int) v->shared_size - 1) / 1024, 1);
    enum a6xx_const_ram_mode mode =
       v->constlen > 256 ? CONSTLEN_512 :
       (v->constlen > 192 ? CONSTLEN_256 :
       (v->constlen > 128 ? CONSTLEN_192 : CONSTLEN_128));
-   tu_cs_emit_pkt4(cs, REG_A6XX_SP_CS_CNTL_1, 1);
-   tu_cs_emit(cs, A6XX_SP_CS_CNTL_1_SHARED_SIZE(shared_size) |
-                  A6XX_SP_CS_CNTL_1_CONSTANTRAMMODE(mode));
+   crb.add(
+      A6XX_SP_CS_CNTL_1(.shared_size = shared_size, .constantrammode = mode));
 
    if (CHIP == A6XX && cs->device->physical_device->info->props.has_lpac) {
-      tu_cs_emit_pkt4(cs, REG_A6XX_HLSQ_CS_CTRL_REG1, 1);
-      tu_cs_emit(cs, A6XX_HLSQ_CS_CTRL_REG1_SHARED_SIZE(shared_size) |
-                     A6XX_HLSQ_CS_CTRL_REG1_CONSTANTRAMMODE(mode));
+      crb.add(HLSQ_CS_CTRL_REG1(CHIP, .shared_size = shared_size,
+                                .constantrammode = mode));
    }
 
    uint32_t local_invocation_id =
@@ -1808,58 +1808,49 @@ tu6_emit_cs_config(struct tu_cs *cs,
    enum a6xx_threadsize thrsz_cs = cs->device->physical_device->info->props
       .supports_double_threadsize ? thrsz : THREAD128;
    if (CHIP == A6XX) {
-      tu_cs_emit_pkt4(cs, REG_A6XX_SP_CS_CONST_CONFIG_0, 2);
-      tu_cs_emit(cs,
-                 A6XX_SP_CS_CONST_CONFIG_0_WGIDCONSTID(work_group_id) |
-                 A6XX_SP_CS_CONST_CONFIG_0_WGSIZECONSTID(regid(63, 0)) |
-                 A6XX_SP_CS_CONST_CONFIG_0_WGOFFSETCONSTID(regid(63, 0)) |
-                 A6XX_SP_CS_CONST_CONFIG_0_LOCALIDREGID(local_invocation_id));
-      tu_cs_emit(cs, A6XX_SP_CS_WGE_CNTL_LINEARLOCALIDREGID(regid(63, 0)) |
-                     A6XX_SP_CS_WGE_CNTL_THREADSIZE(thrsz_cs));
+      crb.add(SP_CS_CONST_CONFIG_0(CHIP, .wgidconstid = work_group_id,
+                                        .wgsizeconstid = regid(63, 0),
+                                        .wgoffsetconstid = regid(63, 0),
+                                        .localidregid = local_invocation_id));
+      crb.add(SP_CS_WGE_CNTL(CHIP, .linearlocalidregid = regid(63, 0),
+                                  .threadsize = thrsz_cs));
+
       if (!cs->device->physical_device->info->props.supports_double_threadsize) {
-         tu_cs_emit_pkt4(cs, REG_A6XX_SP_PS_WAVE_CNTL, 1);
-         tu_cs_emit(cs, A6XX_SP_PS_WAVE_CNTL_THREADSIZE(thrsz));
+         crb.add(SP_PS_WAVE_CNTL(CHIP, .threadsize = thrsz));
       }
 
       if (cs->device->physical_device->info->props.has_lpac) {
-         tu_cs_emit_pkt4(cs, REG_A6XX_SP_CS_WIE_CNTL_0, 2);
-         tu_cs_emit(cs,
-                    A6XX_SP_CS_WIE_CNTL_0_WGIDCONSTID(work_group_id) |
-                    A6XX_SP_CS_WIE_CNTL_0_WGSIZECONSTID(regid(63, 0)) |
-                    A6XX_SP_CS_WIE_CNTL_0_WGOFFSETCONSTID(regid(63, 0)) |
-                    A6XX_SP_CS_WIE_CNTL_0_LOCALIDREGID(local_invocation_id));
-         tu_cs_emit(cs, A6XX_SP_CS_WIE_CNTL_1_LINEARLOCALIDREGID(regid(63, 0)) |
-                  A6XX_SP_CS_WIE_CNTL_1_THREADSIZE(thrsz));
+         crb.add(A6XX_SP_CS_WIE_CNTL_0(.wgidconstid = work_group_id,
+                                        .wgsizeconstid = regid(63, 0),
+                                        .wgoffsetconstid = regid(63, 0),
+                                        .localidregid = local_invocation_id));
+         crb.add(SP_CS_WIE_CNTL_1(CHIP, .linearlocalidregid = regid(63, 0),
+                                  .threadsize = thrsz));
       }
    } else {
       unsigned tile_height = (v->local_size[1] % 8 == 0)   ? 3
                              : (v->local_size[1] % 4 == 0) ? 5
                              : (v->local_size[1] % 2 == 0) ? 9
                                                            : 17;
-      tu_cs_emit_regs(
-         cs, SP_CS_WGE_CNTL(CHIP,
-                   .linearlocalidregid = regid(63, 0), .threadsize = thrsz_cs,
-                   .workgrouprastorderzfirsten = true,
-                   .wgtilewidth = 4, .wgtileheight = tile_height));
+      crb.add(SP_CS_WGE_CNTL(CHIP, .linearlocalidregid = regid(63, 0),
+                             .threadsize = thrsz_cs,
+                             .workgrouprastorderzfirsten = true,
+                             .wgtilewidth = 4, .wgtileheight = tile_height));
 
-      tu_cs_emit_regs(cs, SP_PS_WAVE_CNTL(CHIP, .threadsize = THREAD64));
+      crb.add(SP_PS_WAVE_CNTL(CHIP, .threadsize = THREAD64));
 
-      tu_cs_emit_pkt4(cs, REG_A6XX_SP_CS_WIE_CNTL_0, 1);
-      tu_cs_emit(cs, A6XX_SP_CS_WIE_CNTL_0_WGIDCONSTID(work_group_id) |
-                        A6XX_SP_CS_WIE_CNTL_0_WGSIZECONSTID(regid(63, 0)) |
-                        A6XX_SP_CS_WIE_CNTL_0_WGOFFSETCONSTID(regid(63, 0)) |
-                        A6XX_SP_CS_WIE_CNTL_0_LOCALIDREGID(local_invocation_id));
+      crb.add(A6XX_SP_CS_WIE_CNTL_0(.wgidconstid = work_group_id,
+                                    .wgsizeconstid = regid(63, 0),
+                                    .wgoffsetconstid = regid(63, 0),
+                                    .localidregid = local_invocation_id));
 
-      tu_cs_emit_regs(cs,
-                      SP_CS_WIE_CNTL_1(CHIP,
-                        .linearlocalidregid = regid(63, 0),
-                        .threadsize = thrsz_cs,
-                        .workitemrastorder =
-                           v->cs.force_linear_dispatch ?
-                           WORKITEMRASTORDER_LINEAR :
-                           WORKITEMRASTORDER_TILED, ));
+      crb.add(SP_CS_WIE_CNTL_1(
+         CHIP, .linearlocalidregid = regid(63, 0), .threadsize = thrsz_cs,
+         .workitemrastorder = v->cs.force_linear_dispatch
+                                 ? WORKITEMRASTORDER_LINEAR
+                                 : WORKITEMRASTORDER_TILED));
 
-      tu_cs_emit_regs(cs, SP_CS_HYSTERESIS(CHIP, 0)); // Sometimes is 0x08000000
+      crb.add(SP_CS_HYSTERESIS(CHIP, 0)); // Sometimes is 0x08000000
    }
 }
 

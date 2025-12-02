@@ -374,7 +374,7 @@ static const xs_config<CHIP> xs_configs[] = {
 
 template <chip CHIP>
 void
-tu6_emit_xs_config(struct tu_cs *cs,
+tu6_emit_xs_config(struct tu_crb &crb,
                    mesa_shader_stage stage, /* xs->type, but xs may be NULL */
                    const struct ir3_shader_variant *xs)
 {
@@ -382,28 +382,27 @@ tu6_emit_xs_config(struct tu_cs *cs,
 
    if (!xs) {
       /* shader stage disabled */
-      tu_cs_emit_pkt4(cs, cfg->reg_sp_xs_config, 1);
-      tu_cs_emit(cs, 0);
-
-      tu_cs_emit_pkt4(cs, cfg->reg_hlsq_xs_ctrl, 1);
-      tu_cs_emit(cs, 0);
+      crb.add(tu_reg_value { .reg = cfg->reg_sp_xs_config, .value = 0 });
+      crb.add(tu_reg_value { .reg = cfg->reg_hlsq_xs_ctrl, .value = 0 });
       return;
    }
 
-   tu_cs_emit_pkt4(cs, cfg->reg_sp_xs_config, 1);
-   tu_cs_emit(cs, A6XX_SP_VS_CONFIG_ENABLED |
-                  COND(xs->bindless_tex, A6XX_SP_VS_CONFIG_BINDLESS_TEX) |
-                  COND(xs->bindless_samp, A6XX_SP_VS_CONFIG_BINDLESS_SAMP) |
-                  COND(xs->bindless_ibo, A6XX_SP_VS_CONFIG_BINDLESS_UAV) |
-                  COND(xs->bindless_ubo, A6XX_SP_VS_CONFIG_BINDLESS_UBO) |
-                  A6XX_SP_VS_CONFIG_NTEX(xs->num_samp) |
-                  A6XX_SP_VS_CONFIG_NSAMP(xs->num_samp));
-
-   tu_cs_emit_pkt4(cs, cfg->reg_hlsq_xs_ctrl, 1);
-   tu_cs_emit(cs, A6XX_SP_VS_CONST_CONFIG_CONSTLEN(xs->constlen) |
-                     A6XX_SP_VS_CONST_CONFIG_ENABLED |
-                     COND(xs->shader_options.push_consts_type == IR3_PUSH_CONSTS_SHARED_PREAMBLE,
-                          A7XX_SP_VS_CONST_CONFIG_READ_IMM_SHARED_CONSTS));
+   crb.add(tu_reg_value {
+      .reg = cfg->reg_sp_xs_config,
+      .value = A6XX_SP_VS_CONFIG_ENABLED |
+               COND(xs->bindless_tex, A6XX_SP_VS_CONFIG_BINDLESS_TEX) |
+               COND(xs->bindless_samp, A6XX_SP_VS_CONFIG_BINDLESS_SAMP) |
+               COND(xs->bindless_ibo, A6XX_SP_VS_CONFIG_BINDLESS_UAV) |
+               COND(xs->bindless_ubo, A6XX_SP_VS_CONFIG_BINDLESS_UBO) |
+               A6XX_SP_VS_CONFIG_NTEX(xs->num_samp) |
+               A6XX_SP_VS_CONFIG_NSAMP(xs->num_samp) });
+   crb.add(tu_reg_value {
+      .reg = cfg->reg_hlsq_xs_ctrl,
+      .value = A6XX_SP_VS_CONST_CONFIG_CONSTLEN(xs->constlen) |
+               A6XX_SP_VS_CONST_CONFIG_ENABLED |
+               COND(xs->shader_options.push_consts_type ==
+                       IR3_PUSH_CONSTS_SHARED_PREAMBLE,
+                    A7XX_SP_VS_CONST_CONFIG_READ_IMM_SHARED_CONSTS) });
 }
 TU_GENX(tu6_emit_xs_config);
 
@@ -466,18 +465,18 @@ tu6_emit_dynamic_offset(struct tu_cs *cs,
 
 template <chip CHIP>
 void
-tu6_emit_shared_consts_enable(struct tu_cs *cs, bool enable)
+tu6_emit_shared_consts_enable(struct tu_crb &crb, bool enable)
 {
    if (CHIP == A6XX) {
       /* Enable/disable shared constants */
-      tu_cs_emit_regs(cs, HLSQ_SHARED_CONSTS(CHIP, .enable = enable));
+      crb.add(HLSQ_SHARED_CONSTS(CHIP, .enable = enable));
    } else {
       assert(!enable);
    }
 
-   tu_cs_emit_regs(cs, A6XX_SP_MODE_CNTL(.constant_demotion_enable = true,
-                                            .isammode = ISAMMODE_GL,
-                                            .shared_consts_enable = enable));
+   crb.add(A6XX_SP_MODE_CNTL(.constant_demotion_enable = true,
+                             .isammode = ISAMMODE_GL,
+                             .shared_consts_enable = enable));
 }
 TU_GENX(tu6_emit_shared_consts_enable);
 
@@ -1257,23 +1256,23 @@ tu6_emit_program_config(struct tu_cs *cs,
 {
    STATIC_ASSERT(MESA_SHADER_VERTEX == 0);
 
+   tu_crb crb = cs->crb(0);
+
    bool shared_consts_enable =
       prog->shared_consts.type == IR3_PUSH_CONSTS_SHARED;
-   tu6_emit_shared_consts_enable<CHIP>(cs, shared_consts_enable);
+   tu6_emit_shared_consts_enable<CHIP>(crb, shared_consts_enable);
 
-   tu_cs_emit_regs(cs, SP_UPDATE_CNTL(CHIP,
-         .vs_state = true,
-         .hs_state = true,
-         .ds_state = true,
-         .gs_state = true,
-         .fs_state = true,
-         .gfx_uav = true,
-         .gfx_shared_const = shared_consts_enable));
+   crb.add(SP_UPDATE_CNTL(CHIP, .vs_state = true, .hs_state = true,
+                          .ds_state = true, .gs_state = true,
+                          .fs_state = true, .gfx_uav = true,
+                          .gfx_shared_const = shared_consts_enable));
    for (size_t stage_idx = MESA_SHADER_VERTEX;
         stage_idx <= MESA_SHADER_FRAGMENT; stage_idx++) {
       mesa_shader_stage stage = (mesa_shader_stage) stage_idx;
-      tu6_emit_xs_config<CHIP>(cs, stage, variants[stage]);
+      tu6_emit_xs_config<CHIP>(crb, stage, variants[stage]);
    }
+
+   crb.flush();
 
    for (size_t stage_idx = MESA_SHADER_VERTEX;
         stage_idx <= MESA_SHADER_FRAGMENT; stage_idx++) {

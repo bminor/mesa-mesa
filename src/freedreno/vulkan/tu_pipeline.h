@@ -303,13 +303,13 @@ struct tu_pvtmem_config {
 
 template <chip CHIP>
 void
-tu6_emit_xs_config(struct tu_cs *cs,
+tu6_emit_xs_config(struct tu_crb &crb,
                    mesa_shader_stage stage,
                    const struct ir3_shader_variant *xs);
 
 template <chip CHIP>
 void
-tu6_emit_shared_consts_enable(struct tu_cs *cs, bool shared_consts_enable);
+tu6_emit_shared_consts_enable(struct tu_crb &crb, bool shared_consts_enable);
 
 template <chip CHIP>
 void
