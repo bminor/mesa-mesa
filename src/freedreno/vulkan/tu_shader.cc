@@ -1976,7 +1976,7 @@ tu6_emit_fs_inputs(struct tu_cs *cs, const struct ir3_shader_variant *fs)
             sysval_regs += 2;
       }
 
-      tu_cs_emit_regs(cs, A7XX_SP_PS_CNTL_1(
+      tu_cs_emit_regs(cs, SP_PS_CNTL_1(CHIP,
          .sysval_regs_count = sysval_regs,
          .defer_wave_alloc_dis = true,
          .evict_buf_mode = 1,
@@ -2138,9 +2138,9 @@ tu6_emit_fs_outputs(struct tu_cs *cs,
    if (CHIP >= A7XX) {
       tu_cs_emit_regs(
          cs,
-         A7XX_SP_PS_OUTPUT_CONST_CNTL(
+         SP_PS_OUTPUT_CONST_CNTL(CHIP,
                .enabled = fragdata_aliased_components != 0),
-         A7XX_SP_PS_OUTPUT_CONST_MASK(.dword = fragdata_aliased_components));
+         SP_PS_OUTPUT_CONST_MASK(CHIP, .dword = fragdata_aliased_components));
    } else {
       assert(fragdata_aliased_components == 0);
    }
