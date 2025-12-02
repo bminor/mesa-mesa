@@ -2054,11 +2054,11 @@ tu6_emit_fs_inputs(struct tu_cs *cs, const struct ir3_shader_variant *fs)
       }
    }
 
-   tu_cs_emit_pkt4(cs, REG_A6XX_VPC_VARYING_LM_TRANSFER_CNTL_DISABLE(0), 4);
-   tu_cs_emit(cs, ~varmask[0]);
-   tu_cs_emit(cs, ~varmask[1]);
-   tu_cs_emit(cs, ~varmask[2]);
-   tu_cs_emit(cs, ~varmask[3]);
+   tu_cs_emit_regs(
+      cs, VPC_VARYING_LM_TRANSFER_CNTL_DISABLE(CHIP, 0, .dword = ~varmask[0]),
+      VPC_VARYING_LM_TRANSFER_CNTL_DISABLE(CHIP, 1, .dword = ~varmask[1]),
+      VPC_VARYING_LM_TRANSFER_CNTL_DISABLE(CHIP, 2, .dword = ~varmask[2]),
+      VPC_VARYING_LM_TRANSFER_CNTL_DISABLE(CHIP, 3, .dword = ~varmask[3]));
 
    unsigned primid_loc = ir3_find_input_loc(fs, VARYING_SLOT_PRIMITIVE_ID);
    unsigned viewid_loc = ir3_find_input_loc(fs, VARYING_SLOT_VIEW_INDEX);
