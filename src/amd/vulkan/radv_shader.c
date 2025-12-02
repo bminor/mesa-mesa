@@ -628,6 +628,17 @@ radv_shader_spirv_to_nir(struct radv_device *device, const struct radv_shader_st
       NIR_PASS(_, nir, nir_lower_view_index_to_device_index);
 
    NIR_PASS(_, nir, nir_lower_system_values);
+
+   if (pdev->info.gfx_level < GFX12 && nir->info.derivative_group == DERIVATIVE_GROUP_QUADS) {
+      nir_lower_compute_system_values_options csv_options = {
+         .shuffle_local_ids_for_quad_derivatives = true,
+         .lower_local_invocation_index = true,
+      };
+
+      NIR_PASS(_, nir, nir_opt_cse); /* CSE load_local_invocation_id */
+      NIR_PASS(_, nir, nir_lower_compute_system_values, &csv_options);
+   }
+
    nir_lower_compute_system_values_options csv_options = {
       /* Mesh shaders run as NGG which can implement local_invocation_index from
        * the wave ID in merged_wave_info, but they don't have local_invocation_ids on GFX10.3.
