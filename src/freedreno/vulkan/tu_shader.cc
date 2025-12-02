@@ -2063,11 +2063,10 @@ tu6_emit_fs_inputs(struct tu_cs *cs, const struct ir3_shader_variant *fs)
    unsigned primid_loc = ir3_find_input_loc(fs, VARYING_SLOT_PRIMITIVE_ID);
    unsigned viewid_loc = ir3_find_input_loc(fs, VARYING_SLOT_VIEW_INDEX);
 
-   tu_cs_emit_pkt4(cs, REG_A6XX_VPC_PS_CNTL, 1);
-   tu_cs_emit(cs, A6XX_VPC_PS_CNTL_NUMNONPOSVAR(fs->total_in) |
-                  COND(fs && fs->total_in, A6XX_VPC_PS_CNTL_VARYING) |
-                  A6XX_VPC_PS_CNTL_PRIMIDLOC(primid_loc) |
-                  A6XX_VPC_PS_CNTL_VIEWIDLOC(viewid_loc));
+   tu_cs_emit_regs(
+      cs,
+      VPC_PS_CNTL(CHIP, .numnonposvar = fs->total_in, .primidloc = primid_loc,
+                  .varying = fs && fs->total_in, .viewidloc = viewid_loc));
 }
 
 template <chip CHIP>
