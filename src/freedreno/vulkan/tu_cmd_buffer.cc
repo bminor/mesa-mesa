@@ -1166,20 +1166,20 @@ tu6_emit_msaa(struct tu_cs *cs, VkSampleCountFlagBits vk_samples,
 {
    const enum a3xx_msaa_samples samples = tu_msaa_samples(vk_samples);
    msaa_disable |= (samples == MSAA_ONE);
-   tu_cs_emit_regs(cs,
-                   A6XX_TPL1_RAS_MSAA_CNTL(samples),
-                   A6XX_TPL1_DEST_MSAA_CNTL(.samples = samples,
-                                             .msaa_disable = msaa_disable));
 
-   tu_cs_emit_regs(cs,
-                   GRAS_SC_RAS_MSAA_CNTL(CHIP, samples),
-                   GRAS_SC_DEST_MSAA_CNTL(CHIP, .samples = samples,
-                                               .msaa_disable = msaa_disable));
+   tu_crb crb = cs->crb(6);
 
-   tu_cs_emit_regs(cs,
-                   A6XX_RB_RAS_MSAA_CNTL(samples),
-                   A6XX_RB_DEST_MSAA_CNTL(.samples = samples,
-                                          .msaa_disable = msaa_disable));
+   crb.add(A6XX_TPL1_RAS_MSAA_CNTL(samples));
+   crb.add(A6XX_TPL1_DEST_MSAA_CNTL(.samples = samples,
+                                    .msaa_disable = msaa_disable));
+
+   crb.add(GRAS_SC_RAS_MSAA_CNTL(CHIP, samples));
+   crb.add(GRAS_SC_DEST_MSAA_CNTL(CHIP, .samples = samples,
+                                  .msaa_disable = msaa_disable));
+
+   crb.add(A6XX_RB_RAS_MSAA_CNTL(samples));
+   crb.add(A6XX_RB_DEST_MSAA_CNTL(.samples = samples,
+                                  .msaa_disable = msaa_disable));
 }
 TU_GENX(tu6_emit_msaa);
 
