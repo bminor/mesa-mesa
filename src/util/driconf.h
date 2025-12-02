@@ -902,6 +902,10 @@
    DRI_CONF_OPT_B(anv_large_workgroup_non_coherent_image_workaround, def, \
                   "Fixup image coherency qualifier for certain shaders.")
 
+#define DRI_CONF_ANV_DISABLE_DRM_AUX_MODIFIERS(def) \
+   DRI_CONF_OPT_B(anv_disable_drm_ccs_modifiers, def, \
+                  "Disable DRM CCS modifier usage")
+
 /**
  * \brief HASVK specific configuration options
  */
