@@ -1028,21 +1028,14 @@ template <chip CHIP>
 void
 tu6_emit_window_offset(struct tu_cs *cs, uint32_t x1, uint32_t y1)
 {
-   tu_cs_emit_regs(cs,
-                   A6XX_RB_WINDOW_OFFSET(.x = x1, .y = y1));
+   tu_crb crb = cs->crb(5);
 
-   tu_cs_emit_regs(cs,
-                   A6XX_RB_RESOLVE_WINDOW_OFFSET(.x = x1, .y = y1));
-
-   tu_cs_emit_regs(cs,
-                   SP_WINDOW_OFFSET(CHIP, .x = x1, .y = y1));
-
-   tu_cs_emit_regs(cs,
-                   A6XX_TPL1_WINDOW_OFFSET(.x = x1, .y = y1));
-
+   crb.add(A6XX_RB_WINDOW_OFFSET(.x = x1, .y = y1));
+   crb.add(A6XX_RB_RESOLVE_WINDOW_OFFSET(.x = x1, .y = y1));
+   crb.add(SP_WINDOW_OFFSET(CHIP, .x = x1, .y = y1));
+   crb.add(A6XX_TPL1_WINDOW_OFFSET(.x = x1, .y = y1));
    if (CHIP >= A7XX) {
-      tu_cs_emit_regs(cs,
-                     TPL1_A2D_WINDOW_OFFSET(CHIP, .x = x1, .y = y1));
+      crb.add(TPL1_A2D_WINDOW_OFFSET(CHIP, .x = x1, .y = y1));
    }
 }
 
