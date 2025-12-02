@@ -2911,10 +2911,10 @@ template <chip CHIP>
 void
 tu6_emit_depth_bias(struct tu_cs *cs, const struct vk_rasterization_state *rs)
 {
-   tu_cs_emit_pkt4(cs, REG_A6XX_GRAS_SU_POLY_OFFSET_SCALE, 3);
-   tu_cs_emit(cs, A6XX_GRAS_SU_POLY_OFFSET_SCALE(rs->depth_bias.slope_factor).value);
-   tu_cs_emit(cs, A6XX_GRAS_SU_POLY_OFFSET_OFFSET(rs->depth_bias.constant_factor).value);
-   tu_cs_emit(cs, A6XX_GRAS_SU_POLY_OFFSET_OFFSET_CLAMP(rs->depth_bias.clamp).value);
+   tu_cs_emit_regs(cs,
+      GRAS_SU_POLY_OFFSET_SCALE(CHIP, rs->depth_bias.slope_factor),
+      GRAS_SU_POLY_OFFSET_OFFSET(CHIP, rs->depth_bias.constant_factor),
+      GRAS_SU_POLY_OFFSET_OFFSET_CLAMP(CHIP, rs->depth_bias.clamp));
 }
 
 static const enum mesa_vk_dynamic_graphics_state tu_bandwidth_state[] = {
