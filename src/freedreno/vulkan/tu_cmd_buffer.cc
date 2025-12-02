@@ -560,7 +560,7 @@ emit_rb_ccu_cntl(struct tu_cs *cs, struct tu_device *dev, bool gmem)
       (a6xx_ccu_cache_size)(dev->physical_device->info->props.gmem_ccu_color_cache_fraction);
 
    if (CHIP == A7XX) {
-      tu_cs_emit_regs(cs, A7XX_RB_CCU_CACHE_CNTL(
+      tu_cs_emit_regs(cs, RB_CCU_CACHE_CNTL(CHIP,
          .depth_offset_hi = depth_offset_hi,
          .color_offset_hi = color_offset_hi,
          .depth_cache_size = CCU_CACHE_SIZE_FULL,
@@ -855,9 +855,7 @@ tu6_emit_bin_size(struct tu_cs *cs,
                         .lrz_feedback_zmode_mask = p.lrz_feedback_zmode_mask, ));
 
    /* no flag for RB_RESOLVE_CNTL_3... */
-   tu_cs_emit_regs(cs,
-                   A6XX_RB_RESOLVE_CNTL_3(.binw = bin_w,
-                                        .binh = bin_h));
+   tu_cs_emit_regs(cs, RB_RESOLVE_CNTL_3(CHIP, .binw = bin_w, .binh = bin_h));
 }
 
 template <chip CHIP>
@@ -2055,7 +2053,7 @@ tu6_init_static_regs(struct tu_device *dev, struct tu_cs *cs)
    tu_cs_emit_write_reg(cs, REG_A6XX_RB_RBP_CNTL,
                         phys_dev->info->magic.RB_RBP_CNTL);
    if (CHIP >= A7XX) {
-      tu_cs_emit_regs(cs, A7XX_RB_UNKNOWN_8E09(0x7));
+      tu_cs_emit_regs(cs, RB_UNKNOWN_8E09(CHIP, 0x7));
       tu_cond_exec_end(cs);
    }
 
@@ -2992,7 +2990,7 @@ tu6_sysmem_render_begin(struct tu_cmd_buffer *cmd, struct tu_cs *cs,
          .rt7_sysmem = true,
       ));
 
-      tu_cs_emit_regs(cs, A7XX_RB_CLEAR_TARGET(.clear_mode = CLEAR_MODE_SYSMEM));
+      tu_cs_emit_regs(cs, RB_CLEAR_TARGET(CHIP, .clear_mode = CLEAR_MODE_SYSMEM));
    }
 
    tu_cs_emit_pkt7(cs, CP_SET_MARKER, 1);

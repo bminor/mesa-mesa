@@ -2566,8 +2566,8 @@ tu6_emit_viewport(struct tu_cs *cs,
    }
 
    tu_cs_emit_regs(cs,
-                   A6XX_RB_VIEWPORT_ZCLAMP_MIN(z_clamp_min),
-                   A6XX_RB_VIEWPORT_ZCLAMP_MAX(z_clamp_max));
+                   RB_VIEWPORT_ZCLAMP_MIN(CHIP, z_clamp_min),
+                   RB_VIEWPORT_ZCLAMP_MAX(CHIP, z_clamp_max));
 }
 
 struct apply_viewport_state {
@@ -3394,10 +3394,10 @@ tu6_emit_rast(struct tu_cs *cs,
                    A6XX_GRAS_SU_POINT_SIZE(1.0f));
 
    if (CHIP == A6XX && cs->device->physical_device->info->props.has_legacy_pipeline_shading_rate) {
-      tu_cs_emit_regs(cs, A6XX_RB_UNKNOWN_8A00());
-      tu_cs_emit_regs(cs, A6XX_RB_UNKNOWN_8A10());
-      tu_cs_emit_regs(cs, A6XX_RB_UNKNOWN_8A20());
-      tu_cs_emit_regs(cs, A6XX_RB_UNKNOWN_8A30());
+      tu_cs_emit_regs(cs, RB_UNKNOWN_8A00(CHIP));
+      tu_cs_emit_regs(cs, RB_UNKNOWN_8A10(CHIP));
+      tu_cs_emit_regs(cs, RB_UNKNOWN_8A20(CHIP));
+      tu_cs_emit_regs(cs, RB_UNKNOWN_8A30(CHIP));
    }
 }
 
