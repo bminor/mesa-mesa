@@ -2574,7 +2574,7 @@ tu_init_cmdbuf_start_a725_quirk(struct tu_device *device)
             .linearlocalidregid = regid(63, 0),
             .threadsize = THREAD128,
             .workitemrastorder = WORKITEMRASTORDER_TILED));
-   tu_cs_emit_regs(&sub_cs, A7XX_SP_CS_UNKNOWN_A9BE(0));
+   tu_cs_emit_regs(&sub_cs, SP_CS_UNKNOWN_A9BE(A7XX, 0));
 
    tu_cs_emit_regs(&sub_cs,
                   SP_CS_NDRANGE_0(A7XX, .kerneldim = 3,
@@ -2587,7 +2587,7 @@ tu_init_cmdbuf_start_a725_quirk(struct tu_device *device)
                   SP_CS_NDRANGE_4(A7XX, .globaloff_y = 0),
                   SP_CS_NDRANGE_5(A7XX, .globalsize_z = 1),
                   SP_CS_NDRANGE_6(A7XX, .globaloff_z = 0));
-   tu_cs_emit_regs(&sub_cs, A7XX_SP_CS_NDRANGE_7(
+   tu_cs_emit_regs(&sub_cs, SP_CS_NDRANGE_7(A7XX,
             .localsizex = 255,
             .localsizey = 0,
             .localsizez = 0));
