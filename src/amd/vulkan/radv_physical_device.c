@@ -1919,7 +1919,13 @@ radv_get_physical_device_properties(struct radv_physical_device *pdev)
       .degenerateTrianglesRasterized = true,
       .degenerateLinesRasterized = false,
       .fullyCoveredFragmentShaderInputVariable = true,
-      .conservativeRasterizationPostDepthCoverage = false,
+      .conservativeRasterizationPostDepthCoverage =
+         pdev->info.gfx_level >= GFX10 &&
+         /* The combination of VRS + underestimate conservative rasterization + post depth coverage
+          * seem to not behave correctly on few RDNA2 GPUs. It might be similar to
+          * has_vrs_ds_export_bug but this isn't documented anywhere. Be conservative here.
+          */
+         pdev->info.family != CHIP_NAVI21 && pdev->info.family != CHIP_NAVI22 && pdev->info.family != CHIP_VANGOGH,
 
 #ifndef _WIN32
       /* VK_EXT_pci_bus_info */
