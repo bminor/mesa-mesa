@@ -708,6 +708,8 @@ if dep_va.found()
                           dependencies: dep_va_headers)
     pre_args += '-DHAVE_VA_SURFACE_ATTRIB_DRM_FORMAT_MODIFIERS'
   endif
+  libva_version = cc.get_define('VA_VERSION', prefix: '#include "va/va_version.h"',
+                                dependencies: dep_va_headers).split('.')
 endif
 with_gallium_va = dep_va.found()
 

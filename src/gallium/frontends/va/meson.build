@@ -1,8 +1,6 @@
 # Copyright © 2017-2019 Intel Corporation
 # SPDX-License-Identifier: MIT
 
-libva_version = dep_va.version().split('.')
-
 libva_st = static_library(
   'va_st',
   files(

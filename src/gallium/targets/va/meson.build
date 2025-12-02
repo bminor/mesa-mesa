@@ -34,10 +34,9 @@ devenv.set('LIBVA_DRIVERS_PATH', meson.current_build_dir())
 if host_machine.system() == 'windows'
   link_with_libva_gallium += [libwsgdi]
 
-  libva_init_version = dep_va.version().split('.')
   vaon12_def_input = configure_file(
     configuration: {
-      '__vaDriverInit_X_Y': '__vaDriverInit_@0@_@1@'.format(libva_init_version[0], libva_init_version[1]) + '@4'
+      '__vaDriverInit_X_Y': '__vaDriverInit_@0@_@1@'.format(libva_version[0], libva_version[1]) + '@4'
     },
     input: 'vaon12.def.in',
     output: 'vaon12.def.in',
