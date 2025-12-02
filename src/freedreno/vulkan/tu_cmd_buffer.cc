@@ -1584,7 +1584,7 @@ tu6_emit_tile_select(struct tu_cmd_buffer *cmd,
                frag_offsets[i].y = y1 - y1 / tile->frag_areas[i].height;
             }
 
-            tu_cs_emit_regs(cs, A7XX_GRAS_BIN_FOVEAT(
+            tu_cs_emit_regs(cs, GRAS_BIN_FOVEAT(CHIP,
                   .binscaleen = bin_scale_en,
                   .xscale_0 = (enum a7xx_bin_scale)util_logbase2(frag_areas[0].width),
                   .yscale_0 = (enum a7xx_bin_scale)util_logbase2(frag_areas[0].height),
@@ -1598,28 +1598,28 @@ tu6_emit_tile_select(struct tu_cmd_buffer *cmd,
                   .yscale_4 = (enum a7xx_bin_scale)util_logbase2(frag_areas[4].height),
                   .xscale_5 = (enum a7xx_bin_scale)util_logbase2(frag_areas[5].width),
                   .yscale_5 = (enum a7xx_bin_scale)util_logbase2(frag_areas[5].height)),
-               A7XX_GRAS_BIN_FOVEAT_OFFSET_0(
+               GRAS_BIN_FOVEAT_OFFSET_0(CHIP,
                   .xoffset_0 = frag_offsets[0].x,
                   .xoffset_1 = frag_offsets[1].x,
                   .xoffset_2 = frag_offsets[2].x),
-               A7XX_GRAS_BIN_FOVEAT_OFFSET_1(
+               GRAS_BIN_FOVEAT_OFFSET_1(CHIP,
                   .xoffset_3 = frag_offsets[3].x,
                   .xoffset_4 = frag_offsets[4].x,
                   .xoffset_5 = frag_offsets[5].x),
-               A7XX_GRAS_BIN_FOVEAT_OFFSET_2(
+               GRAS_BIN_FOVEAT_OFFSET_2(CHIP,
                   .yoffset_0 = frag_offsets[0].y,
                   .yoffset_1 = frag_offsets[1].y,
                   .yoffset_2 = frag_offsets[2].y),
-               A7XX_GRAS_BIN_FOVEAT_OFFSET_3(
+               GRAS_BIN_FOVEAT_OFFSET_3(CHIP,
                   .yoffset_3 = frag_offsets[3].y,
                   .yoffset_4 = frag_offsets[4].y,
                   .yoffset_5 = frag_offsets[5].y));
 
-            tu_cs_emit_regs(cs, A7XX_RB_BIN_FOVEAT(
+            tu_cs_emit_regs(cs, RB_BIN_FOVEAT(CHIP,
                   .binscaleen = bin_scale_en));
          } else {
-            tu_cs_emit_regs(cs, A7XX_GRAS_BIN_FOVEAT());
-            tu_cs_emit_regs(cs, A7XX_RB_BIN_FOVEAT());
+            tu_cs_emit_regs(cs, GRAS_BIN_FOVEAT(CHIP));
+            tu_cs_emit_regs(cs, RB_BIN_FOVEAT(CHIP));
          }
       }
 
@@ -1642,8 +1642,8 @@ tu6_emit_tile_select(struct tu_cmd_buffer *cmd,
       }
       tu_cs_emit_pkt7(cs, CP_WAIT_FOR_ME, 0);
    } else if (cmd->device->physical_device->info->props.has_hw_bin_scaling) {
-      tu_cs_emit_regs(cs, A7XX_GRAS_BIN_FOVEAT());
-      tu_cs_emit_regs(cs, A7XX_RB_BIN_FOVEAT());
+      tu_cs_emit_regs(cs, GRAS_BIN_FOVEAT(CHIP, 0));
+      tu_cs_emit_regs(cs, RB_BIN_FOVEAT(CHIP, 0));
    }
 }
 
@@ -3012,8 +3012,8 @@ tu6_sysmem_render_begin(struct tu_cmd_buffer *cmd, struct tu_cs *cs,
 
    /* Reset bin scaling. */
    if (cmd->device->physical_device->info->props.has_hw_bin_scaling) {
-      tu_cs_emit_regs(cs, A7XX_GRAS_BIN_FOVEAT());
-      tu_cs_emit_regs(cs, A7XX_RB_BIN_FOVEAT());
+      tu_cs_emit_regs(cs, GRAS_BIN_FOVEAT(CHIP));
+      tu_cs_emit_regs(cs, RB_BIN_FOVEAT(CHIP));
    }
 
    tu_autotune_begin_renderpass<CHIP>(cmd, cs, autotune_result);
@@ -3236,8 +3236,8 @@ tu6_tile_render_begin(struct tu_cmd_buffer *cmd, struct tu_cs *cs,
 
    /* Reset bin scaling. */
    if (phys_dev->info->props.has_hw_bin_scaling) {
-      tu_cs_emit_regs(cs, A7XX_GRAS_BIN_FOVEAT());
-      tu_cs_emit_regs(cs, A7XX_RB_BIN_FOVEAT());
+      tu_cs_emit_regs(cs, GRAS_BIN_FOVEAT(CHIP));
+      tu_cs_emit_regs(cs, RB_BIN_FOVEAT(CHIP));
    }
 
    if (use_binning) {

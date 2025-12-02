@@ -1581,8 +1581,8 @@ r3d_setup(struct tu_cmd_buffer *cmd,
       tu_emit_cache_flush_ccu<CHIP>(cmd, cs, TU_CMD_CCU_SYSMEM);
       tu6_emit_window_scissor<CHIP>(cs, 0, 0, 0x3fff, 0x3fff);
       if (cmd->device->physical_device->info->props.has_hw_bin_scaling) {
-         tu_cs_emit_regs(cs, A7XX_GRAS_BIN_FOVEAT());
-         tu_cs_emit_regs(cs, A7XX_RB_BIN_FOVEAT());
+         tu_cs_emit_regs(cs, GRAS_BIN_FOVEAT(CHIP, 0));
+         tu_cs_emit_regs(cs, RB_BIN_FOVEAT(CHIP, 0));
       }
    }
 
