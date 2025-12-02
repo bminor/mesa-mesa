@@ -3326,25 +3326,23 @@ tu6_emit_rast(struct tu_cs *cs,
 
    enum a6xx_polygon_mode polygon_mode = tu6_polygon_mode(rs->polygon_mode);
 
-   tu_cs_emit_regs(cs,
-                   A6XX_VPC_RAST_CNTL(polygon_mode));
+   tu_cs_emit_regs(cs, VPC_RAST_CNTL(CHIP, polygon_mode));
 
    tu_cs_emit_regs(cs,
                    PC_DGEN_RAST_CNTL(CHIP, polygon_mode));
 
    if (CHIP == A7XX || cs->device->physical_device->info->props.is_a702) {
-      tu_cs_emit_regs(cs,
-                     A6XX_VPC_PS_RAST_CNTL(polygon_mode));
+      tu_cs_emit_regs(cs, VPC_PS_RAST_CNTL(CHIP, polygon_mode));
    }
 
    tu_cs_emit_regs(cs, VPC_RAST_STREAM_CNTL(CHIP,
       .stream = rs->rasterization_stream,
       .discard = rs->rasterizer_discard_enable));
    if (CHIP == A6XX) {
-      tu_cs_emit_regs(cs, A6XX_VPC_UNKNOWN_9107(
+      tu_cs_emit_regs(cs, VPC_UNKNOWN_9107(CHIP,
          .raster_discard = rs->rasterizer_discard_enable));
    } else {
-      tu_cs_emit_regs(cs, A7XX_VPC_RAST_STREAM_CNTL_V2(
+      tu_cs_emit_regs(cs, VPC_RAST_STREAM_CNTL_V2(CHIP,
          .stream = rs->rasterization_stream,
          .discard = rs->rasterizer_discard_enable));
 

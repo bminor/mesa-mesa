@@ -882,9 +882,9 @@ r3d_common(struct tu_cmd_buffer *cmd, struct tu_cs *cs, enum r3d_type type,
    tu6_emit_xs(cs, MESA_SHADER_VERTEX, vs, &pvtmem, vs_iova);
    tu6_emit_xs(cs, MESA_SHADER_FRAGMENT, fs, &pvtmem, fs_iova);
 
-   tu_cs_emit_regs(cs, A6XX_PC_CNTL());
+   tu_cs_emit_regs(cs, PC_CNTL(CHIP));
    if (CHIP == A7XX) {
-      tu_cs_emit_regs(cs, A7XX_VPC_PC_CNTL());
+      tu_cs_emit_regs(cs, VPC_PC_CNTL(CHIP));
    }
 
    tu6_emit_vpc<CHIP>(cs, vs, NULL, NULL, NULL, fs);
@@ -894,8 +894,8 @@ r3d_common(struct tu_cmd_buffer *cmd, struct tu_cs *cs, enum r3d_type type,
    }
 
    /* REPL_MODE for varying with RECTLIST (2 vertices only) */
-   tu_cs_emit_regs(cs, A6XX_VPC_VARYING_INTERP_MODE_MODE(0, 0));
-   tu_cs_emit_regs(cs, A6XX_VPC_VARYING_REPLACE_MODE_MODE(0, 2 << 2 | 1 << 0));
+   tu_cs_emit_regs(cs, VPC_VARYING_INTERP_MODE_MODE(CHIP, 0, 0));
+   tu_cs_emit_regs(cs, VPC_VARYING_REPLACE_MODE_MODE(CHIP, 0, 2 << 2 | 1 << 0));
 
    tu6_emit_vs<CHIP>(cs, vs, 0);
    tu6_emit_hs<CHIP>(cs, NULL);
@@ -913,9 +913,9 @@ r3d_common(struct tu_cmd_buffer *cmd, struct tu_cs *cs, enum r3d_type type,
 
    tu_cs_emit_regs(cs, VPC_RAST_STREAM_CNTL(CHIP));
    if (CHIP == A6XX) {
-      tu_cs_emit_regs(cs, A6XX_VPC_UNKNOWN_9107());
+      tu_cs_emit_regs(cs, VPC_UNKNOWN_9107(CHIP));
    } else {
-      tu_cs_emit_regs(cs, A7XX_VPC_RAST_STREAM_CNTL_V2());
+      tu_cs_emit_regs(cs, VPC_RAST_STREAM_CNTL_V2(CHIP));
 
       tu_cs_emit_regs(cs, RB_RENDER_CNTL(CHIP,
             .raster_mode = TYPE_TILED,

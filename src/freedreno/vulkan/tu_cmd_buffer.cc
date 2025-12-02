@@ -2010,10 +2010,10 @@ tu6_init_static_regs(struct tu_device *dev, struct tu_cs *cs)
 
    tu_cs_emit_write_reg(cs, REG_A6XX_RB_UNKNOWN_88F0, 0);
 
-   tu_cs_emit_regs(cs, A6XX_VPC_REPLACE_MODE_CNTL(false));
+   tu_cs_emit_regs(cs, VPC_REPLACE_MODE_CNTL(CHIP, false));
    tu_cs_emit_regs(cs, VPC_ROTATION_CNTL(CHIP));
 
-   tu_cs_emit_regs(cs, A6XX_VPC_SO_OVERRIDE(true));
+   tu_cs_emit_regs(cs, VPC_SO_OVERRIDE(CHIP, true));
 
    tu_cs_emit_write_reg(cs, REG_A6XX_TPL1_PS_SWIZZLE_CNTL, 0);
 
@@ -2069,12 +2069,12 @@ tu6_init_static_regs(struct tu_device *dev, struct tu_cs *cs)
 
    if (CHIP >= A7XX) {
       /* Blob sets these two per draw. */
-      tu_cs_emit_regs(cs, A7XX_PC_HS_BUFFER_SIZE(TU_TESS_PARAM_SIZE));
+      tu_cs_emit_regs(cs, PC_HS_BUFFER_SIZE(CHIP, TU_TESS_PARAM_SIZE));
       /* Blob adds a bit more space ({0x10, 0x20, 0x30, 0x40} bytes)
        * but the meaning of this additional space is not known,
        * so we play safe and don't add it.
        */
-      tu_cs_emit_regs(cs, A7XX_PC_TF_BUFFER_SIZE(TU_TESS_FACTOR_SIZE));
+      tu_cs_emit_regs(cs, PC_TF_BUFFER_SIZE(CHIP, TU_TESS_FACTOR_SIZE));
    }
 
    /* There is an optimization to skip executing draw states for draws with no
@@ -5113,7 +5113,7 @@ tu_CmdEndTransformFeedbackEXT(VkCommandBuffer commandBuffer,
                           CP_COND_REG_EXEC_0_SYSMEM |
                           CP_COND_REG_EXEC_0_BINNING);
 
-   tu_cs_emit_regs(cs, A6XX_VPC_SO_OVERRIDE(true));
+   tu_cs_emit_regs(cs, VPC_SO_OVERRIDE(CHIP, true));
 
    /* TODO: only flush buffers that need to be flushed */
    for (uint32_t i = 0; i < IR3_MAX_SO_BUFFERS; i++) {
@@ -7842,9 +7842,10 @@ tu6_draw_common(struct tu_cmd_buffer *cmd,
          VK_PROVOKING_VERTEX_MODE_LAST_VERTEX_EXT;
 
       uint32_t primitive_cntl_0 =
-         A6XX_PC_CNTL(.primitive_restart = primitive_restart,
-                                  .provoking_vtx_last = provoking_vtx_last).value;
-      tu_cs_emit_regs(cs, A6XX_PC_CNTL(.dword = primitive_cntl_0));
+         PC_CNTL(CHIP, .primitive_restart = primitive_restart,
+                 .provoking_vtx_last = provoking_vtx_last)
+            .value;
+      tu_cs_emit_regs(cs, PC_CNTL(CHIP, .dword = primitive_cntl_0));
       if (CHIP == A7XX) {
          tu_cs_emit_regs(cs, A7XX_VPC_PC_CNTL(.dword = primitive_cntl_0));
       }
@@ -7858,7 +7859,7 @@ tu6_draw_common(struct tu_cmd_buffer *cmd,
       bool tess_upper_left_domain_origin =
          (VkTessellationDomainOrigin)cmd->vk.dynamic_graphics_state.ts.domain_origin ==
          VK_TESSELLATION_DOMAIN_ORIGIN_UPPER_LEFT;
-      tu_cs_emit_regs(cs, A6XX_PC_DS_PARAM(
+      tu_cs_emit_regs(cs, PC_DS_PARAM(CHIP,
             .spacing = tess_params->spacing,
             .output = tess_upper_left_domain_origin ?
                tess_params->output_upper_left :

@@ -2327,7 +2327,7 @@ tu6_emit_fs(struct tu_cs *cs,
    tu_cs_emit_pkt4(cs, REG_A6XX_VFD_CNTL_6, 1);
    tu_cs_emit(cs, COND(fs && fs->reads_primid, A6XX_VFD_CNTL_6_PRIMID4PSEN));
 
-   tu_cs_emit_regs(cs, A6XX_PC_PS_CNTL(.primitiveiden = fs && fs->reads_primid));
+   tu_cs_emit_regs(cs, PC_PS_CNTL(CHIP, .primitiveiden = fs && fs->reads_primid));
 
    if (CHIP >= A7XX) {
       tu_cs_emit_regs(cs, GRAS_MODE_CNTL(CHIP, 0x2));
