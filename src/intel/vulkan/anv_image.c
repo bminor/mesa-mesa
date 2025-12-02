@@ -1943,6 +1943,12 @@ anv_image_init(struct anv_device *device, struct anv_image *image,
           */
          isl_extra_usage_flags |= ISL_SURF_USAGE_DISABLE_AUX_BIT;
       }
+
+      /* Workaround to disable XE2 CCS modifiers from drirc. */
+      if (device->info->ver == 20 &&
+          image->vk.tiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT &&
+          device->physical->instance->disable_xe2_drm_ccs_modifiers)
+         isl_extra_usage_flags |= ISL_SURF_USAGE_DISABLE_AUX_BIT;
    }
 
    /* Fill out the list of view formats. */

@@ -1778,6 +1778,7 @@ struct anv_instance {
     bool                                        has_fake_sparse;
     bool                                        disable_fcv;
     bool                                        enable_buffer_comp;
+    bool                                        disable_xe2_drm_ccs_modifiers;
     bool                                        compression_control_enabled;
     bool                                        anv_fake_nonlocal_memory;
     bool                                        anv_upper_bound_descriptor_pool_sampler;

@@ -914,6 +914,10 @@
    DRI_CONF_OPT_B(force_guc_low_latency, def, \
                   "Enable low latency GuC strategy.")
 
+#define DRI_CONF_ANV_DISABLE_DRM_AUX_MODIFIERS(def) \
+   DRI_CONF_OPT_B(anv_disable_drm_ccs_modifiers, def, \
+                  "Disable DRM CCS modifier usage")
+
 /**
  * \brief HASVK specific configuration options
  */

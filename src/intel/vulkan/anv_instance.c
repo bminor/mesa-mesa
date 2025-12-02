@@ -19,6 +19,7 @@ static const driOptionDescription anv_dri_options[] = {
       DRI_CONF_ANV_ASSUME_FULL_SUBGROUPS_WITH_SHARED_MEMORY(false)
       DRI_CONF_ANV_DISABLE_FCV(false)
       DRI_CONF_ANV_ENABLE_BUFFER_COMP(false)
+      DRI_CONF_ANV_DISABLE_DRM_AUX_MODIFIERS(false)
       DRI_CONF_ANV_EXTERNAL_MEMORY_IMPLICIT_SYNC(true)
       DRI_CONF_ANV_FORCE_GUC_LOW_LATENCY(false)
       DRI_CONF_ANV_SAMPLE_MASK_OUT_OPENGL_BEHAVIOUR(false)
@@ -222,6 +223,8 @@ anv_init_dri_options(struct anv_instance *instance)
        driQueryOptionb(&instance->dri_options, "anv_vf_component_packing");
     instance->lower_terminate_to_discard =
        driQueryOptionb(&instance->dri_options, "vk_lower_terminate_to_discard");
+    instance->disable_xe2_drm_ccs_modifiers =
+       driQueryOptionb(&instance->dri_options, "anv_disable_drm_ccs_modifiers");
 
     if (instance->vk.app_info.engine_name &&
         !strcmp(instance->vk.app_info.engine_name, "DXVK")) {
