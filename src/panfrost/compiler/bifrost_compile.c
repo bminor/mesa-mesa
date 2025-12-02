@@ -2737,9 +2737,6 @@ bi_alu_src_index(bi_builder *b, nir_alu_src src, unsigned comps)
    /* Compose the subword swizzle with existing (identity) swizzle */
    assert(idx.swizzle == BI_SWIZZLE_H01);
 
-   /* Bigger vectors should have been lowered */
-   assert(comps <= (1 << subword_shift));
-
    if (bitsize == 16) {
       unsigned c0 = src.swizzle[0] & 1;
       unsigned c1 = (comps > 1) ? src.swizzle[1] & 1 : c0;
