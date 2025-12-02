@@ -204,16 +204,10 @@ tu_spirv_to_nir(struct tu_device *dev,
    const nir_shader_compiler_options *nir_options =
       ir3_get_compiler_options(dev->compiler);
 
-   spirv_to_nir_options spirv_options = tu_spirv_options;
-   /* ViewID is a sysval in geometry stages and an input in the FS */
-   spirv_options.view_index_is_input =
-      stage == MESA_SHADER_FRAGMENT &&
-      !key->lower_view_index_to_device_index;
-
    nir_shader *nir;
    VkResult result =
       vk_pipeline_shader_stage_to_nir(&dev->vk, pipeline_flags, stage_info,
-                                      &spirv_options, nir_options,
+                                      &tu_spirv_options, nir_options,
                                       mem_ctx, &nir);
    if (result != VK_SUCCESS)
       return NULL;

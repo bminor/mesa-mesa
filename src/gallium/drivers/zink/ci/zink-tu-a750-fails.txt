@@ -189,10 +189,6 @@ spec@glsl-1.50@execution@geometry@point-size-out,Fail
 spec@glsl-1.50@execution@geometry@primitive-id-restart gl_line_strip_adjacency other,Fail
 spec@glsl-1.50@execution@redeclare-pervertex-out-subset-gs,Fail
 spec@glsl-1.50@execution@variable-indexing@gs-output-array-vec4-index-wr,Fail
-spec@ovr_multiview2@triangle_compare_frag_index_uniform,Fail
-spec@ovr_multiview2@triangle_compare_frag_index_uniform_base2,Fail
-spec@ovr_multiview2@triangle_compare_frag_vary_color,Fail
-spec@ovr_multiview2@triangle_compare_frag_vary_color_base2,Fail
 
 spec@glsl-3.30@built-in constants,Fail
 spec@glsl-3.30@built-in constants@gl_MaxFragmentInputComponents,Fail
