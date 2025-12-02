@@ -2961,7 +2961,8 @@ tu_CreateDevice(VkPhysicalDevice physicalDevice,
             goto fail_prepare_perfcntrs_pass_cs;
          }
 
-         tu_cs_emit_regs(&sub_cs, A6XX_CP_SCRATCH_REG(PERF_CNTRS_REG, 1 << i));
+         /* TODO: a8xx */
+         tu_cs_emit_regs(&sub_cs, CP_SCRATCH_REG(A6XX, PERF_CNTRS_REG, 1 << i));
          tu_cs_emit_pkt7(&sub_cs, CP_WAIT_FOR_ME, 0);
 
          device->perfcntrs_pass_cs_entries[i] =
