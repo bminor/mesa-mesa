@@ -70,6 +70,8 @@ struct ac_cu_info {
    bool has_gfx6_mrt_export_bug : 1;
    /* Pre-GFX9: A bug where the alpha component of 10_10_10_2 formats is always unsigned.*/
    bool has_vtx_format_alpha_adjust_bug : 1;
+   /* GFX6-7: SMEM accesses memory even when it's out of bounds */
+   bool has_smem_oob_access_bug : 1;
 };
 
 struct radeon_info {

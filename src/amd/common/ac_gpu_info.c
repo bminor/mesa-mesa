@@ -323,6 +323,13 @@ ac_fill_cu_info(struct radeon_info *info, struct drm_amdgpu_info_device *device_
    cu_info->has_gfx6_mrt_export_bug =
       info->family == CHIP_TAHITI || info->family == CHIP_PITCAIRN || info->family == CHIP_VERDE;
    cu_info->has_vtx_format_alpha_adjust_bug = info->gfx_level <= GFX8 && info->family != CHIP_STONEY;
+
+   /* On GFX6-7, SMEM instructions access memory when num_records == 0 or offset >= num_records,
+    * which causes VM faults when reading a page that isn't mapped. To prevent the VM faults:
+    * - Use a mapped VA instead of zeroes for null descriptors
+    * - Make sure the offset stays within mapped VA ranges
+    */
+   cu_info->has_smem_oob_access_bug = info->gfx_level <= GFX7;
 }
 
 enum ac_query_gpu_info_result
