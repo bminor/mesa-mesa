@@ -7450,6 +7450,7 @@ tu_fs_reads_dynamic_ds_input_attachment(struct tu_cmd_buffer *cmd,
    return fs->fs.dynamic_input_attachments_used & (1u << depth_idx);
 }
 
+template <chip CHIP>
 static void
 tu6_build_depth_plane_z_mode(struct tu_cmd_buffer *cmd, struct tu_cs *cs)
 {
@@ -7531,11 +7532,8 @@ tu6_build_depth_plane_z_mode(struct tu_cmd_buffer *cmd, struct tu_cs *cs)
    if (cmd->state.disable_fs)
       zmode = A6XX_EARLY_Z;
 
-   tu_cs_emit_pkt4(cs, REG_A6XX_GRAS_SU_DEPTH_PLANE_CNTL, 1);
-   tu_cs_emit(cs, A6XX_GRAS_SU_DEPTH_PLANE_CNTL_Z_MODE(zmode));
-
-   tu_cs_emit_pkt4(cs, REG_A6XX_RB_DEPTH_PLANE_CNTL, 1);
-   tu_cs_emit(cs, A6XX_RB_DEPTH_PLANE_CNTL_Z_MODE(zmode));
+   tu_cs_emit_regs(cs, GRAS_SU_DEPTH_PLANE_CNTL(CHIP, .z_mode = zmode));
+   tu_cs_emit_regs(cs, A6XX_RB_DEPTH_PLANE_CNTL(.z_mode = zmode));
 }
 
 static uint32_t
@@ -7900,7 +7898,7 @@ tu6_draw_common(struct tu_cmd_buffer *cmd,
          tu_cs_draw_state(&cmd->sub_cs, &cs, size);
       tu6_update_simplified_stencil_state(cmd);
       tu6_emit_lrz<CHIP>(cmd, &cs);
-      tu6_build_depth_plane_z_mode(cmd, &cs);
+      tu6_build_depth_plane_z_mode<CHIP>(cmd, &cs);
    }
 
    if (BITSET_TEST(cmd->vk.dynamic_graphics_state.dirty,
