@@ -30,6 +30,7 @@ pvr_files = files(
   'pvr_arch_csb.c',
   'pvr_arch_descriptor_set.c',
   'pvr_arch_device.c',
+  'pvr_arch_formats.c',
   'pvr_arch_image.c',
   'pvr_arch_job_compute.c',
   'pvr_arch_job_context.c',
