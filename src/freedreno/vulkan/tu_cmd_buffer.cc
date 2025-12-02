@@ -5118,8 +5118,7 @@ tu_CmdEndTransformFeedbackEXT(VkCommandBuffer commandBuffer,
    /* TODO: only flush buffers that need to be flushed */
    for (uint32_t i = 0; i < IR3_MAX_SO_BUFFERS; i++) {
       /* note: FLUSH_BASE is always the same, so it could go in init_hw()? */
-      tu_cs_emit_pkt4(cs, REG_A6XX_VPC_SO_FLUSH_BASE(i), 2);
-      tu_cs_emit_qw(cs, global_iova_arr(cmd, flush_base, i));
+      tu_cs_emit_regs(cs, VPC_SO_FLUSH_BASE(CHIP, i, .qword = global_iova_arr(cmd, flush_base, i)));
       tu_emit_event_write<CHIP>(cmd, cs, (enum fd_gpu_event) (FD_FLUSH_SO_0 + i));
    }
 
