@@ -46,6 +46,9 @@
 #include "bifrost_nir.h"
 #include "compiler.h"
 
+static void pan_stats_verbose(FILE *f, const char *prefix, const bi_context *ctx,
+                              const struct pan_stats *stats);
+
 /* clang-format off */
 static const struct debug_named_value bifrost_debug_options[] = {
    {"shaders",    BIFROST_DBG_SHADERS,	   "Dump shaders in NIR and MIR"},
@@ -63,6 +66,7 @@ static const struct debug_named_value bifrost_debug_options[] = {
    {"spill",      BIFROST_DBG_SPILL,      "Test register spilling"},
    {"nossara",    BIFROST_DBG_NOSSARA,    "Disable SSA in register allocation"},
    {"statsabs",   BIFROST_DBG_STATSABS,   "Don't normalize statistics"},
+   {"statsfull",  BIFROST_DBG_STATSFULL,  "Print verbose statistics"},
    DEBUG_NAMED_VALUE_END
 };
 /* clang-format on */
@@ -74,7 +78,7 @@ DEBUG_GET_ONCE_FLAGS_OPTION(bifrost_debug, "BIFROST_MESA_DEBUG",
  * clause of the shader, this range must be valid instructions or zero. */
 #define BIFROST_SHADER_PREFETCH 128
 
-int bifrost_debug = 0;
+unsigned bifrost_debug = 0;
 
 static bi_block *emit_cf_list(bi_context *ctx, struct exec_list *list);
 
@@ -5230,6 +5234,29 @@ struct bi_stats {
    uint64_t reg_mask;
 };
 
+static uint64_t
+bi_tuple_regs_used(const bi_registers *regs)
+{
+   uint64_t mask = 0;
+
+   /* note: the stats gathering runs before final packing,
+    * so no need to handle the 63-x trick and similar issues
+    */
+   if (regs->enabled[0]) {
+      mask |= BITFIELD64_BIT(regs->slot[0]);
+   }
+   if (regs->enabled[1]) {
+      mask |= BITFIELD64_BIT(regs->slot[1]);
+   }
+   if (regs->slot23.slot2) {
+      mask |= BITFIELD64_BIT(regs->slot[2]);
+   }
+   if (regs->slot23.slot3) {
+      mask |= BITFIELD64_BIT(regs->slot[3]);
+   }
+   return mask;
+}
+
 static void
 bi_count_tuple_stats(bi_clause *clause, bi_tuple *tuple, struct bi_stats *stats)
 {
@@ -5238,6 +5265,8 @@ bi_count_tuple_stats(bi_clause *clause, bi_tuple *tuple, struct bi_stats *stats)
       unsigned ureg = 1 + (tuple->fau_idx & 0x7f);
       stats->nr_fau_uniforms = MAX2(stats->nr_fau_uniforms, 2*ureg);
    }
+   stats->reg_mask |= bi_tuple_regs_used(&tuple->regs);
+
    /* Count instructions */
    stats->nr_ins += (tuple->fma ? 1 : 0) + (tuple->add ? 1 : 0);
 
@@ -6821,9 +6850,14 @@ bi_compile_variant_nir(nir_shader *nir,
       bi_gather_stats(ctx, binary->size - offset, &stats->bifrost);
    }
 
-   if ((bifrost_debug & BIFROST_DBG_SHADERDB) && !skip_internal) {
+   if ((bifrost_debug & (BIFROST_DBG_SHADERDB|BIFROST_DBG_STATSFULL))
+       && !skip_internal) {
       const char *prefix = bi_shader_stage_name(ctx);
-      pan_stats_fprintf(stderr, prefix, stats);
+      if (bifrost_debug & BIFROST_DBG_STATSFULL) {
+         pan_stats_verbose(stderr, prefix, ctx, stats);
+      } else {
+         pan_stats_fprintf(stderr, prefix, stats);
+      }
    }
 
    return ctx;
@@ -7078,4 +7112,137 @@ bi_find_loop_blocks(const bi_context *ctx, bi_block *header, BITSET_WORD *out)
    BITSET_SET(out, header->index);
 
    ralloc_free(dominators);
+}
+
+/*
+ * verbose stat printing
+ * enable with BIFROST_MESA_DEBUG=statsfull
+ */
+static unsigned
+percent_used(unsigned cur, unsigned max)
+{
+   return (unsigned)(0.5 + 100 * cur / (double)max);
+}
+
+static void
+report_regs(FILE *f, unsigned registers_used, unsigned uniforms_used)
+{
+   fprintf(f, "Work registers:    %u ", registers_used);
+   if (registers_used <= 32) {
+      fprintf(f, "(%u%% used at 100%% occupancy)\n",
+              percent_used(registers_used, 32));
+   } else {
+      fprintf(f, "(%u%% used at 50%% occupancy)\n",
+              percent_used(registers_used, 64));
+   }
+   fprintf(f, "Uniform registers: %u (%u%% used)\n",
+           uniforms_used,
+           percent_used(uniforms_used, 128));
+}
+
+/*
+ * This function prints the pipe statistics in statval[], with `prefix` as
+ * a leading message (e.g. prefix can indicate total stats, max path, etc.).
+ * As a special case, if prefix is empty, only the column headings are
+ * printed.
+ */
+static void
+do_report_pipes(FILE *f, const char *prefix, unsigned n, const char *statname[], float statval[])
+{
+   unsigned limit_idx = 0;
+   float limit_val = statval[0];
+
+   fprintf(f, "%-25s", prefix);
+   if (*prefix == 0) {
+      /* just print column headings, no stats */
+      for (unsigned i = 0; i < n; i++) {
+         fprintf(f, " %6s", statname[i]);
+      }
+      fprintf(f, " %6s\n", "Bound");
+      return;
+   }
+   for (unsigned i = 0; i < n; i++) {
+      fprintf(f, " %6.3f", statval[i]);
+      if (statval[i] > limit_val) {
+         limit_idx = i;
+      }
+   }
+   fprintf(f, " %6s\n", statname[limit_idx]);
+}
+static void
+bifrost_stats_verbose(FILE *f, const bi_context *ctx, const struct bifrost_stats *stats)
+{
+   report_regs(f, stats->registers_used, stats->uniforms_used);
+   fprintf(f, "Code size:         %u bytes\n", stats->code_size);
+   fprintf(f, "Loops:             %u\n", stats->loops);
+   fprintf(f, "Spills/fills:      %u/%u\n", stats->spills, stats->fills);
+   fprintf(f, "Stack size:        %u bytes\n", ctx->info.tls_size);
+
+   /* now print instruction statistics */
+   unsigned n = 4;
+   static const char *statname[4] = {
+      "A", "LS", "V", "T"
+   };
+   float statval[4] = {
+      stats->arith, stats->ldst, stats->v, stats->t,
+   };
+   /* special case, empty prefix prints column headings */
+   do_report_pipes(f, "", n, statname, statval);
+   do_report_pipes(f, "Total instruction cycles:", n, statname, statval);
+   fprintf(f, "\nA = Arithmetic, LS = Load/Store, V = Varying, T = Texture\n");
+}
+
+static void
+valhall_stats_verbose(FILE *f, const bi_context *ctx, const struct valhall_stats *stats)
+{
+   report_regs(f, stats->registers_used, stats->uniforms_used);
+   fprintf(f, "Code size:         %u bytes\n", stats->code_size);
+   fprintf(f, "Loops:             %u\n", stats->loops);
+   fprintf(f, "Spills/fills:      %u/%u\n", stats->spills, stats->fills);
+   fprintf(f, "Stack size:        %u bytes\n", ctx->info.tls_size);
+
+   /* now print instruction statistics */
+   float arith = MAX3(stats->fma, stats->sfu, stats->cvt);
+   unsigned n = 4;
+   static const char *statname[4] = {
+      "A", "LS", "V", "T"
+   };
+   float statval[4] = {
+      arith, stats->ls, stats->v, stats->t,
+   };
+   do_report_pipes(f, "", n, statname, statval);
+   do_report_pipes(f, "Total instruction cycles:", n, statname, statval);
+   fprintf(f, "\nA = Arithmetic, LS = Load/Store, V = Varying, T = Texture\n");
+}
+
+static void
+pan_stats_verbose(FILE *f, const char *prefix, const bi_context *ctx, const struct pan_stats *stats)
+{
+   const struct pan_model *model = pan_get_model(ctx->inputs->gpu_id, ctx->inputs->gpu_variant);
+   unsigned arch = (ctx->arch > 12) ? 0 : ctx->arch;
+   const char *archname[] = {
+      "Unknown",              /* 0 must always be "Unknown" */
+      "Lima", "Lima", "Lima", /* 1-3 */
+      "Utgard", "Midgard", "Bifrost", "Bifrost", /* 4-7 */
+      "Valhall", "Valhall", "Valhall", "Valhall", /* 8-11 */
+      "Avalon",          /* 12 */
+   };
+
+   fprintf(f, "\n");
+   fprintf(f, "Model: %s\n", model->name);
+   fprintf(f, "Shader type: %s\n", prefix);
+      fprintf(f, "Architecture: %s\n", archname[arch]);
+   switch (stats->isa) {
+   case PAN_STAT_VALHALL:
+      valhall_stats_verbose(f, ctx, &stats->valhall);
+      break;
+   case PAN_STAT_BIFROST:
+      bifrost_stats_verbose(f, ctx, &stats->bifrost);
+      break;
+   default:
+      pan_stats_fprintf(f, prefix, stats);
+      break;
+   }
+   fprintf(f, "\n");
+   fprintf(f, "Shader properties:\n\n");
 }
