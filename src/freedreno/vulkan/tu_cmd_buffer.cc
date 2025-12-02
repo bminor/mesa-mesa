@@ -2019,8 +2019,8 @@ tu6_init_static_regs(struct tu_device *dev, struct tu_cs *cs)
 
    tu_cs_emit_regs(cs, GRAS_SC_SCREEN_SCISSOR_CNTL(CHIP));
    if (CHIP == A6XX) {
-      tu_cs_emit_write_reg(cs, REG_A6XX_GRAS_SU_CONSERVATIVE_RAS_CNTL, 0);
-      tu_cs_emit_regs(cs, A6XX_PC_DGEN_SU_CONSERVATIVE_RAS_CNTL());
+      tu_cs_emit_regs(cs, GRAS_SU_CONSERVATIVE_RAS_CNTL(CHIP, 0));
+      tu_cs_emit_regs(cs, PC_DGEN_SU_CONSERVATIVE_RAS_CNTL(CHIP));
 
       tu_cs_emit_write_reg(cs, REG_A6XX_VPC_UNKNOWN_9210, 0);
       tu_cs_emit_write_reg(cs, REG_A6XX_VPC_UNKNOWN_9211, 0);
@@ -7847,7 +7847,7 @@ tu6_draw_common(struct tu_cmd_buffer *cmd,
             .value;
       tu_cs_emit_regs(cs, PC_CNTL(CHIP, .dword = primitive_cntl_0));
       if (CHIP == A7XX) {
-         tu_cs_emit_regs(cs, A7XX_VPC_PC_CNTL(.dword = primitive_cntl_0));
+         tu_cs_emit_regs(cs, VPC_PC_CNTL(CHIP, .dword = primitive_cntl_0));
       }
    }
 

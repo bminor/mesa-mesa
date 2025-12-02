@@ -3365,8 +3365,8 @@ tu6_emit_rast(struct tu_cs *cs,
       tu_cs_emit_regs(cs, A7XX_GRAS_SU_RENDER_CNTL(.fs_disable = disable_fs));
       tu_cs_emit_regs(cs, A7XX_SP_RENDER_CNTL(.fs_disable = disable_fs));
 
-      tu_cs_emit_regs(cs,
-                      A6XX_PC_DGEN_SU_CONSERVATIVE_RAS_CNTL(conservative_ras_en));
+      tu_cs_emit_regs(
+         cs, PC_DGEN_SU_CONSERVATIVE_RAS_CNTL(CHIP, conservative_ras_en));
 
       /* There are only two conservative rasterization modes:
        * - shift_amount = 0 (NO_SHIFT) - normal rasterization
@@ -3383,7 +3383,7 @@ tu6_emit_rast(struct tu_cs *cs,
       enum a6xx_shift_amount shift_amount = conservative_ras_en ?
          (rs->extra_primitive_overestimation_size != 0. ?
             FULL_PIXEL_SHIFT : HALF_PIXEL_SHIFT) : NO_SHIFT;
-      tu_cs_emit_regs(cs, A6XX_GRAS_SU_CONSERVATIVE_RAS_CNTL(
+      tu_cs_emit_regs(cs, GRAS_SU_CONSERVATIVE_RAS_CNTL(CHIP,
             .conservativerasen = conservative_ras_en,
             .shiftamount = shift_amount));
    }

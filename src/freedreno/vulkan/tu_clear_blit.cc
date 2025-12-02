@@ -921,8 +921,8 @@ r3d_common(struct tu_cmd_buffer *cmd, struct tu_cs *cs, enum r3d_type type,
             .raster_mode = TYPE_TILED,
             .raster_direction = LR_TB));
       tu_cs_emit_regs(cs, A7XX_GRAS_SU_RENDER_CNTL());
-      tu_cs_emit_regs(cs, A6XX_PC_DGEN_SU_CONSERVATIVE_RAS_CNTL());
-      tu_cs_emit_regs(cs, A6XX_GRAS_SU_CONSERVATIVE_RAS_CNTL());
+      tu_cs_emit_regs(cs, PC_DGEN_SU_CONSERVATIVE_RAS_CNTL(CHIP));
+      tu_cs_emit_regs(cs, GRAS_SU_CONSERVATIVE_RAS_CNTL(CHIP));
    }
 
    tu_cs_emit_regs(cs,
