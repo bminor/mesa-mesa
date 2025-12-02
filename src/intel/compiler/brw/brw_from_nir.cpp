@@ -4239,13 +4239,21 @@ brw_from_nir_emit_fs_intrinsic(nir_to_brw_state &ntb,
          dst_xy = s.delta_xy[bary];
       }
 
+      /* Force valid linear stride for src1 of PLN.  See
+       * b14313e4529 ("i965/fs: Manually set source regioning on
+       * PLN instructions.") for details.
+       */
+      dst_xy.vstride = BRW_VERTICAL_STRIDE_8;
+      dst_xy.width = BRW_WIDTH_8;
+      dst_xy.hstride = BRW_HORIZONTAL_STRIDE_1;
+
       for (unsigned int i = 0; i < instr->num_components; i++) {
          brw_reg interp =
             brw_interp_reg(bld, nir_intrinsic_base(instr),
                            nir_intrinsic_component(instr) + i, 0);
          interp.type = BRW_TYPE_F;
          dest.type = BRW_TYPE_F;
-
+         assert(is_uniform(interp));
          bld.PLN(offset(dest, bld, i), interp, dst_xy);
       }
       break;

@@ -923,19 +923,7 @@ ALU2(AVG)
 ALU2(ADD)
 ALU2(SRND)
 ALU2(LINE)
-
-brw_eu_inst *
-brw_PLN(struct brw_codegen *p, struct brw_reg dest,
-        struct brw_reg src0, struct brw_reg src1)
-{
-   src0.vstride = BRW_VERTICAL_STRIDE_0;
-   src0.width = BRW_WIDTH_1;
-   src0.hstride = BRW_HORIZONTAL_STRIDE_0;
-   src1.vstride = BRW_VERTICAL_STRIDE_8;
-   src1.width = BRW_WIDTH_8;
-   src1.hstride = BRW_HORIZONTAL_STRIDE_1;
-   return brw_alu2(p, BRW_OPCODE_PLN, dest, src0, src1);
-}
+ALU2(PLN)
 
 brw_eu_inst *
 brw_DPAS(struct brw_codegen *p, enum gfx12_systolic_depth sdepth,
