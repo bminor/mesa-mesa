@@ -2269,6 +2269,12 @@ instruction_restrictions(const struct brw_isa_info *isa,
                brw_type_size_bytes(inst->src[1].type) > 4,
                "AVG does not support 64-bit types.");
    }
+
+   if (inst->opcode == BRW_OPCODE_ADD) {
+      ERROR_IF(brw_type_is_int(inst->src[0].type) !=
+               brw_type_is_int(inst->src[1].type),
+               "ADD can't mix float and non-float sources.");
+   }
 }
 
 static void

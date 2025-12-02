@@ -920,28 +920,7 @@ ALU3(ADD3)
 ALU1(MOV)
 ALU2(MUL)
 ALU2(AVG)
-
-brw_eu_inst *
-brw_ADD(struct brw_codegen *p, struct brw_reg dest,
-        struct brw_reg src0, struct brw_reg src1)
-{
-   /* 6.2.2: add */
-   if (src0.type == BRW_TYPE_F ||
-       (src0.file == IMM &&
-	src0.type == BRW_TYPE_VF)) {
-      assert(src1.type != BRW_TYPE_UD);
-      assert(src1.type != BRW_TYPE_D);
-   }
-
-   if (src1.type == BRW_TYPE_F ||
-       (src1.file == IMM &&
-	src1.type == BRW_TYPE_VF)) {
-      assert(src0.type != BRW_TYPE_UD);
-      assert(src0.type != BRW_TYPE_D);
-   }
-
-   return brw_alu2(p, BRW_OPCODE_ADD, dest, src0, src1);
-}
+ALU2(ADD)
 
 brw_eu_inst *
 brw_LINE(struct brw_codegen *p, struct brw_reg dest,
