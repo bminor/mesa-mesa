@@ -838,6 +838,7 @@ tu_get_descriptors_state(struct tu_cmd_buffer *cmd_buffer,
 void tu6_emit_msaa(struct tu_cs *cs, VkSampleCountFlagBits samples,
                    bool msaa_disable);
 
+template <chip CHIP>
 void tu6_emit_window_scissor(struct tu_cs *cs, uint32_t x1, uint32_t y1, uint32_t x2, uint32_t y2);
 
 void tu6_emit_window_offset(struct tu_cs *cs, uint32_t x1, uint32_t y1);

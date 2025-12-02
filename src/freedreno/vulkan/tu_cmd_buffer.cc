@@ -1004,6 +1004,7 @@ tu6_emit_blit_scissor(struct tu_cmd_buffer *cmd, struct tu_cs *cs, bool align,
    }
 }
 
+template <chip CHIP>
 void
 tu6_emit_window_scissor(struct tu_cs *cs,
                         uint32_t x1,
@@ -1012,13 +1013,14 @@ tu6_emit_window_scissor(struct tu_cs *cs,
                         uint32_t y2)
 {
    tu_cs_emit_regs(cs,
-                   A6XX_GRAS_SC_WINDOW_SCISSOR_TL(.x = x1, .y = y1),
-                   A6XX_GRAS_SC_WINDOW_SCISSOR_BR(.x = x2, .y = y2));
+                   GRAS_SC_WINDOW_SCISSOR_TL(CHIP, .x = x1, .y = y1),
+                   GRAS_SC_WINDOW_SCISSOR_BR(CHIP, .x = x2, .y = y2));
 
    tu_cs_emit_regs(cs,
-                   A6XX_GRAS_A2D_SCISSOR_TL(.x = x1, .y = y1),
-                   A6XX_GRAS_A2D_SCISSOR_BR(.x = x2, .y = y2));
+                   GRAS_A2D_SCISSOR_TL(CHIP, .x = x1, .y = y1),
+                   GRAS_A2D_SCISSOR_BR(CHIP, .x = x2, .y = y2));
 }
+TU_GENX(tu6_emit_window_scissor);
 
 template <chip CHIP>
 void
@@ -1498,9 +1500,9 @@ tu6_emit_tile_select(struct tu_cmd_buffer *cmd,
        */
       uint32_t width = fb->width + tiling->tile0.width;
       uint32_t height = fb->height + tiling->tile0.height;
-      tu6_emit_window_scissor(cs, 0, 0, width, height);
+      tu6_emit_window_scissor<CHIP>(cs, 0, 0, width, height);
    } else {
-      tu6_emit_window_scissor(cs, x1, y1, x2 - 1, y2 - 1);
+      tu6_emit_window_scissor<CHIP>(cs, x1, y1, x2 - 1, y2 - 1);
    }
    tu6_emit_window_offset<CHIP>(cs, x1, y1);
 
@@ -2431,7 +2433,7 @@ tu6_emit_binning_pass(struct tu_cmd_buffer *cmd, struct tu_cs *cs,
    uint32_t width = fb->width + (fdm_offsets ? tiling->tile0.width : 0);
    uint32_t height = fb->height + (fdm_offsets ? tiling->tile0.height : 0);
 
-   tu6_emit_window_scissor(cs, 0, 0, width - 1, height - 1);
+   tu6_emit_window_scissor<CHIP>(cs, 0, 0, width - 1, height - 1);
 
    tu_cs_emit_pkt7(cs, CP_SET_MARKER, 1);
    tu_cs_emit(cs, A6XX_CP_SET_MARKER_0_MODE(RM6_BIN_VISIBILITY));
@@ -2956,7 +2958,7 @@ tu6_sysmem_render_begin(struct tu_cmd_buffer *cmd, struct tu_cs *cs,
    }
 
    assert(fb->width > 0 && fb->height > 0);
-   tu6_emit_window_scissor(cs, 0, 0, fb->width - 1, fb->height - 1);
+   tu6_emit_window_scissor<CHIP>(cs, 0, 0, fb->width - 1, fb->height - 1);
    tu6_emit_window_offset<CHIP>(cs, 0, 0);
 
    tu6_emit_bin_size<CHIP>(cs, 0, 0, {
