@@ -2281,6 +2281,15 @@ instruction_restrictions(const struct brw_isa_info *isa,
       ERROR_IF(!src_has_scalar_region(inst, 0),
                "LINE/PLN source 0 must be a scalar.");
    }
+
+   if (inst->opcode == BRW_OPCODE_ROR ||
+       inst->opcode == BRW_OPCODE_ROL) {
+      ERROR_IF(inst->dst.type != BRW_TYPE_UD &&
+               inst->dst.type != BRW_TYPE_UW,
+               "ROR/ROL dst type must be either UD or UW.");
+      ERROR_IF(inst->dst.type != inst->src[0].type,
+               "ROR/ROL src0 and dst must be of same datatype precision.");
+   }
 }
 
 static void
