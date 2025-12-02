@@ -922,16 +922,7 @@ ALU2(MUL)
 ALU2(AVG)
 ALU2(ADD)
 ALU2(SRND)
-
-brw_eu_inst *
-brw_LINE(struct brw_codegen *p, struct brw_reg dest,
-         struct brw_reg src0, struct brw_reg src1)
-{
-   src0.vstride = BRW_VERTICAL_STRIDE_0;
-   src0.width = BRW_WIDTH_1;
-   src0.hstride = BRW_HORIZONTAL_STRIDE_0;
-   return brw_alu2(p, BRW_OPCODE_LINE, dest, src0, src1);
-}
+ALU2(LINE)
 
 brw_eu_inst *
 brw_PLN(struct brw_codegen *p, struct brw_reg dest,

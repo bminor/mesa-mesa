@@ -2275,6 +2275,11 @@ instruction_restrictions(const struct brw_isa_info *isa,
                brw_type_is_int(inst->src[1].type),
                "ADD can't mix float and non-float sources.");
    }
+
+   if (inst->opcode == BRW_OPCODE_LINE) {
+      ERROR_IF(!src_has_scalar_region(inst, 0),
+               "LINE source 0 must be a scalar.");
+   }
 }
 
 static void
