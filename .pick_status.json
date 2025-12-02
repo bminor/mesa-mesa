@@ -284,7 +284,7 @@
         "description": "gfxstream: fix logspam in TLS helper function",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "4a30c6fd70f3447eccf8d2464507002d7602d02a",
         "notes": null

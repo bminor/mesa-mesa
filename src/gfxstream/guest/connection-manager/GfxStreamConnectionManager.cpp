@@ -31,7 +31,7 @@ static void gfxstream_connection_manager_tls_key_create_once(void) {
         tss_create(&gfxstream_connection_manager_tls_key, gfxstream_connection_manager_tls_free) ==
         thrd_success;
     if (!gfxstream_connection_manager_tls_key_valid) {
-        mesa_loge("WARNING: failed to create gfxstream_connection_manager_tls_key");
+        mesa_logd("WARNING: failed to create gfxstream_connection_manager_tls_key");
     }
 }
 
