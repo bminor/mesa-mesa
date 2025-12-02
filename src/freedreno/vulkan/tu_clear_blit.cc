@@ -926,11 +926,11 @@ r3d_common(struct tu_cmd_buffer *cmd, struct tu_cs *cs, enum r3d_type type,
    }
 
    tu_cs_emit_regs(cs,
-                   A6XX_GRAS_SC_VIEWPORT_SCISSOR_TL(0, .x = 0, .y = 0),
-                   A6XX_GRAS_SC_VIEWPORT_SCISSOR_BR(0, .x = 0x7fff, .y = 0x7fff));
+                   GRAS_SC_VIEWPORT_SCISSOR_TL(CHIP, 0, .x = 0, .y = 0),
+                   GRAS_SC_VIEWPORT_SCISSOR_BR(CHIP, 0, .x = 0x7fff, .y = 0x7fff));
    tu_cs_emit_regs(cs,
-                   A6XX_GRAS_SC_SCREEN_SCISSOR_TL(0, .x = 0, .y = 0),
-                   A6XX_GRAS_SC_SCREEN_SCISSOR_BR(0, .x = 0x7fff, .y = 0x7fff));
+                   GRAS_SC_SCREEN_SCISSOR_TL(CHIP, 0, .x = 0, .y = 0),
+                   GRAS_SC_SCREEN_SCISSOR_BR(CHIP, 0, .x = 0x7fff, .y = 0x7fff));
 
    tu_cs_emit_regs(cs,
                    A6XX_VFD_INDEX_OFFSET(),
