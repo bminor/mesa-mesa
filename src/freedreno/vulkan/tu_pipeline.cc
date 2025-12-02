@@ -3393,8 +3393,8 @@ tu6_emit_rast(struct tu_cs *cs,
 
    /* move to hw ctx init? */
    tu_cs_emit_regs(cs,
-                   A6XX_GRAS_SU_POINT_MINMAX(.min = 1.0f / 16.0f, .max = 4092.0f),
-                   A6XX_GRAS_SU_POINT_SIZE(1.0f));
+                   GRAS_SU_POINT_MINMAX(CHIP, .min = 1.0f / 16.0f, .max = 4092.0f),
+                   GRAS_SU_POINT_SIZE(CHIP, 1.0f));
 
    if (CHIP == A6XX && cs->device->physical_device->info->props.has_legacy_pipeline_shading_rate) {
       tu_cs_emit_regs(cs, RB_UNKNOWN_8A00(CHIP));
@@ -3456,7 +3456,7 @@ tu6_emit_ds(struct tu_cs *cs,
       .fail_bf = tu6_stencil_op((VkStencilOp)ds->stencil.back.op.fail),
       .zpass_bf = tu6_stencil_op((VkStencilOp)ds->stencil.back.op.pass),
       .zfail_bf = tu6_stencil_op((VkStencilOp)ds->stencil.back.op.depth_fail)));
-   tu_cs_emit_regs(cs, A6XX_GRAS_SU_STENCIL_CNTL(stencil_test_enable));
+   tu_cs_emit_regs(cs, GRAS_SU_STENCIL_CNTL(CHIP, stencil_test_enable));
 
    tu_cs_emit_regs(cs, A6XX_RB_STENCIL_MASK(
       .mask = ds->stencil.front.compare_mask,
@@ -3527,10 +3527,10 @@ tu6_emit_rb_depth_cntl(struct tu_cs *cs,
             (ds->depth.test_enable && (zfunc != FUNC_NEVER && zfunc != FUNC_ALWAYS)) ||
             ds->depth.bounds_test.enable,
          .z_bounds_enable = ds->depth.bounds_test.enable));
-      tu_cs_emit_regs(cs, A6XX_GRAS_SU_DEPTH_CNTL(depth_test));
+      tu_cs_emit_regs(cs, GRAS_SU_DEPTH_CNTL(CHIP, depth_test));
    } else {
       tu_cs_emit_regs(cs, A6XX_RB_DEPTH_CNTL());
-      tu_cs_emit_regs(cs, A6XX_GRAS_SU_DEPTH_CNTL());
+      tu_cs_emit_regs(cs, GRAS_SU_DEPTH_CNTL(CHIP));
    }
 }
 

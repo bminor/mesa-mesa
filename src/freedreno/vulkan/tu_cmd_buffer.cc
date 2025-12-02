@@ -659,7 +659,7 @@ tu6_emit_zs(struct tu_cmd_buffer *cmd,
                       A6XX_RB_DEPTH_GMEM_BASE(0));
 
       tu_cs_emit_regs(cs,
-                      A6XX_GRAS_SU_DEPTH_BUFFER_INFO(.depth_format = DEPTH6_NONE));
+                      GRAS_SU_DEPTH_BUFFER_INFO(CHIP, .depth_format = DEPTH6_NONE));
 
       tu_cs_emit_regs(cs, RB_STENCIL_BUFFER_INFO(CHIP, 0));
 
@@ -683,8 +683,7 @@ tu6_emit_zs(struct tu_cmd_buffer *cmd,
       tu_cs_image_ref(cs, &iview->view, 0);
    tu_cs_emit(cs, tu_attachment_gmem_offset(cmd, attachment, 0));
 
-   tu_cs_emit_regs(cs,
-                   A6XX_GRAS_SU_DEPTH_BUFFER_INFO(.depth_format = fmt));
+   tu_cs_emit_regs(cs, GRAS_SU_DEPTH_BUFFER_INFO(CHIP, .depth_format = fmt));
 
    tu_cs_emit_pkt4(cs, REG_A6XX_RB_DEPTH_FLAG_BUFFER_BASE, 3);
    tu_cs_image_flag_ref(cs, &iview->view, 0);
