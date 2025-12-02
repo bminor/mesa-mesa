@@ -918,6 +918,7 @@ ALU2(ADDC)
 ALU2(SUBB)
 ALU3(ADD3)
 ALU1(MOV)
+ALU2(MUL)
 
 brw_eu_inst *
 brw_ADD(struct brw_codegen *p, struct brw_reg dest,
@@ -960,38 +961,6 @@ brw_AVG(struct brw_codegen *p, struct brw_reg dest,
    }
 
    return brw_alu2(p, BRW_OPCODE_AVG, dest, src0, src1);
-}
-
-brw_eu_inst *
-brw_MUL(struct brw_codegen *p, struct brw_reg dest,
-        struct brw_reg src0, struct brw_reg src1)
-{
-   /* 6.32.38: mul */
-   if (src0.type == BRW_TYPE_D ||
-       src0.type == BRW_TYPE_UD ||
-       src1.type == BRW_TYPE_D ||
-       src1.type == BRW_TYPE_UD) {
-      assert(dest.type != BRW_TYPE_F);
-   }
-
-   if (src0.type == BRW_TYPE_F ||
-       (src0.file == IMM &&
-	src0.type == BRW_TYPE_VF)) {
-      assert(src1.type != BRW_TYPE_UD);
-      assert(src1.type != BRW_TYPE_D);
-   }
-
-   if (src1.type == BRW_TYPE_F ||
-       (src1.file == IMM &&
-	src1.type == BRW_TYPE_VF)) {
-      assert(src0.type != BRW_TYPE_UD);
-      assert(src0.type != BRW_TYPE_D);
-   }
-
-   assert(!brw_reg_is_arf(src0, BRW_ARF_ACCUMULATOR));
-   assert(!brw_reg_is_arf(src1, BRW_ARF_ACCUMULATOR));
-
-   return brw_alu2(p, BRW_OPCODE_MUL, dest, src0, src1);
 }
 
 brw_eu_inst *

@@ -1846,6 +1846,15 @@ instruction_restrictions(const struct brw_isa_info *isa,
       const enum brw_reg_type src1_type = inst->src[1].type;
       const enum brw_reg_type dst_type = inst->dst.type;
 
+      ERROR_IF(brw_type_is_float(dst_type) &&
+               (brw_type_is_int(src0_type) ||
+                brw_type_is_int(src1_type)),
+               "MUL can't mix floats and integer sources.");
+
+      ERROR_IF((brw_type_is_int(src0_type) && src0_is_acc(inst)) ||
+               (brw_type_is_int(src1_type) && src1_is_acc(inst)),
+               "In MUL, Integer source operands cannot be accumulators.");
+
       /* Page 966 (page 982 of the PDF) of Broadwell PRM volume 2a says:
        *
        *    When multiplying a DW and any lower precision integer, the DW

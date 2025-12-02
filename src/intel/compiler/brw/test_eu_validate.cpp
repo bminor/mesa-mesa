@@ -3932,3 +3932,40 @@ TEST_P(validation_test, srnd_type_and_immediate_restrictions)
    EXPECT_FALSE(validate(p));
    clear_instructions(p);
 }
+
+TEST_P(validation_test, mul_dont_mix_floats_and_ints)
+{
+   brw_reg a = brw_ud8_grf(10, 0);
+   brw_reg b = brw_ud8_grf(20, 0);
+   brw_reg c = brw_ud8_grf(30, 0);
+
+   brw_MUL(p, retype(a, BRW_TYPE_F),
+              retype(b, BRW_TYPE_UD),
+              retype(c, BRW_TYPE_UD));
+   EXPECT_FALSE(validate(p));
+   clear_instructions(p);
+
+   brw_MUL(p, retype(a, BRW_TYPE_F),
+              retype(b, BRW_TYPE_F),
+              retype(c, BRW_TYPE_UD));
+   EXPECT_FALSE(validate(p));
+   clear_instructions(p);
+
+   brw_MUL(p, retype(a, BRW_TYPE_F),
+              retype(b, BRW_TYPE_UD),
+              brw_imm_vf(0));
+   EXPECT_FALSE(validate(p));
+   clear_instructions(p);
+}
+
+TEST_P(validation_test, mul_dont_accept_int_accumulator_src)
+{
+   brw_reg a = brw_ud8_grf(10, 0);
+   brw_reg c = brw_ud8_grf(30, 0);
+
+   brw_MUL(p, retype(a,    BRW_TYPE_UD),
+              retype(acc0, BRW_TYPE_UD),
+              retype(c,    BRW_TYPE_UD));
+   EXPECT_FALSE(validate(p));
+   clear_instructions(p);
+}
