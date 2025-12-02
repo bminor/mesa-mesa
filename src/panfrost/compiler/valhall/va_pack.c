@@ -280,6 +280,14 @@ va_pack_widen(const bi_instr *I, enum bi_swizzle swz, enum va_size size)
          return VA_SWIZZLES_8_BIT_B2222;
       case BI_SWIZZLE_B3333:
          return VA_SWIZZLES_8_BIT_B3333;
+      case BI_SWIZZLE_B0011:
+         return VA_SWIZZLES_8_BIT_B0011;
+      case BI_SWIZZLE_B2301:
+         return VA_SWIZZLES_8_BIT_B2301;
+      case BI_SWIZZLE_B1032:
+         return VA_SWIZZLES_8_BIT_B1032;
+      case BI_SWIZZLE_B2233:
+         return VA_SWIZZLES_8_BIT_B2233;
       default:
          invalid_instruction(I, "8-bit widen");
       }
