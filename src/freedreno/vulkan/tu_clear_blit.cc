@@ -1399,7 +1399,7 @@ r3d_dst(struct tu_cs *cs, const struct fdl6_view *iview, uint32_t layer,
    /* Use color format from RB_MRT_BUF_INFO. This register is relevant for
     * FMT6_NV12_Y.
     */
-   tu_cs_emit_regs(cs, A6XX_GRAS_LRZ_MRT_BUFFER_INFO_0(.color_format = fmt));
+   tu_cs_emit_regs(cs, GRAS_LRZ_MRT_BUFFER_INFO_0(CHIP, .color_format = fmt));
 
    tu_cs_emit_regs(cs, RB_RENDER_CNTL(CHIP, .flag_mrts = iview->ubwc_enabled));
    tu_cs_emit_regs(cs, A7XX_GRAS_SU_RENDER_CNTL());
@@ -1509,8 +1509,8 @@ r3d_dst_gmem(struct tu_cmd_buffer *cmd, struct tu_cs *cs,
 
    enum a6xx_format color_format = (enum a6xx_format) pkt_field_get(
       A6XX_RB_MRT_BUF_INFO_COLOR_FORMAT, RB_MRT_BUF_INFO);
-   tu_cs_emit_regs(cs,
-                   A6XX_GRAS_LRZ_MRT_BUFFER_INFO_0(.color_format = color_format));
+   tu_cs_emit_regs(
+      cs, GRAS_LRZ_MRT_BUFFER_INFO_0(CHIP, .color_format = color_format));
 
    tu_cs_emit_regs(cs, RB_RENDER_CNTL(CHIP));
    tu_cs_emit_regs(cs, A7XX_GRAS_SU_RENDER_CNTL());
@@ -1640,12 +1640,12 @@ r3d_setup(struct tu_cmd_buffer *cmd,
    tu_cs_emit_regs(cs, A6XX_RB_SRGB_CNTL(util_format_is_srgb(dst_format)));
    tu_cs_emit_regs(cs, A6XX_SP_SRGB_CNTL(util_format_is_srgb(dst_format)));
 
-   tu_cs_emit_regs(cs, A6XX_GRAS_LRZ_CNTL(0));
+   tu_cs_emit_regs(cs, GRAS_LRZ_CNTL(CHIP, 0));
    tu_cs_emit_regs(cs, A6XX_RB_LRZ_CNTL(0));
 
    if (CHIP >= A7XX) {
-      tu_cs_emit_regs(cs, A7XX_GRAS_LRZ_CNTL2(0));
-      tu_cs_emit_regs(cs, A7XX_GRAS_LRZ_DEPTH_BUFFER_INFO());
+      tu_cs_emit_regs(cs, GRAS_LRZ_CNTL2(CHIP, 0));
+      tu_cs_emit_regs(cs, GRAS_LRZ_DEPTH_BUFFER_INFO(CHIP));
 
       tu_cs_emit_regs(cs, A6XX_RB_VRS_CONFIG());
       tu_cs_emit_regs(cs, A7XX_SP_VRS_CONFIG());
@@ -4187,7 +4187,7 @@ tu_clear_sysmem_attachments(struct tu_cmd_buffer *cmd,
             .component_enable = COND(clear_rts & (1 << i), 0xf)));
    }
 
-   tu_cs_emit_regs(cs, A6XX_GRAS_LRZ_CNTL(0));
+   tu_cs_emit_regs(cs, GRAS_LRZ_CNTL(CHIP, 0));
    tu_cs_emit_regs(cs, A6XX_RB_LRZ_CNTL(0));
 
    tu_cs_emit_regs(cs, A6XX_RB_DEPTH_PLANE_CNTL());

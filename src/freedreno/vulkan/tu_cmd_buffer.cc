@@ -784,7 +784,7 @@ tu6_emit_mrt(struct tu_cmd_buffer *cmd,
                        A6XX_SP_PS_MRT_REG(i, .dword = 0));
    }
 
-   tu_cs_emit_regs(cs, A6XX_GRAS_LRZ_MRT_BUFFER_INFO_0(.color_format = mrt0_format));
+   tu_cs_emit_regs(cs, GRAS_LRZ_MRT_BUFFER_INFO_0(CHIP, .color_format = mrt0_format));
 
    const bool dither = subpass->legacy_dithering_enabled;
    const uint32_t dither_cntl =

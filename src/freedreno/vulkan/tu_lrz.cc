@@ -110,14 +110,13 @@ static void
 tu6_emit_lrz_buffer(struct tu_cs *cs, struct tu_image *depth_image)
 {
    if (!depth_image) {
-      tu_cs_emit_regs(cs,
-                      A6XX_GRAS_LRZ_BUFFER_BASE(0),
-                      A6XX_GRAS_LRZ_BUFFER_PITCH(0),
+      tu_cs_emit_regs(cs, GRAS_LRZ_BUFFER_BASE(CHIP, 0),
+                      GRAS_LRZ_BUFFER_PITCH(CHIP, 0),
                       A6XX_GRAS_LRZ_FAST_CLEAR_BUFFER_BASE(0));
 
       if (CHIP >= A7XX) {
-         tu_cs_emit_regs(cs, A7XX_GRAS_LRZ_DEPTH_BUFFER_INFO());
-         tu_cs_emit_regs(cs, A7XX_GRAS_LRZ_CB_CNTL());
+         tu_cs_emit_regs(cs, GRAS_LRZ_DEPTH_BUFFER_INFO(CHIP));
+         tu_cs_emit_regs(cs, GRAS_LRZ_CB_CNTL(CHIP));
       }
 
       return;
@@ -130,18 +129,20 @@ tu6_emit_lrz_buffer(struct tu_cs *cs, struct tu_image *depth_image)
       lrz_fc_iova = 0;
 
    tu_cs_emit_regs(
-      cs, A6XX_GRAS_LRZ_BUFFER_BASE(.qword = lrz_iova),
-      A6XX_GRAS_LRZ_BUFFER_PITCH(.pitch = depth_image->lrz_layout.lrz_pitch,
-                                 .array_pitch =
-                                    depth_image->lrz_layout.lrz_layer_size),
+      cs, GRAS_LRZ_BUFFER_BASE(CHIP, .qword = lrz_iova),
+      GRAS_LRZ_BUFFER_PITCH(
+         CHIP, .pitch = depth_image->lrz_layout.lrz_pitch,
+         .array_pitch = depth_image->lrz_layout.lrz_layer_size),
       A6XX_GRAS_LRZ_FAST_CLEAR_BUFFER_BASE(.qword = lrz_fc_iova));
 
    if (CHIP >= A7XX) {
-      tu_cs_emit_regs(cs, A7XX_GRAS_LRZ_DEPTH_BUFFER_INFO(
-         .depth_format = tu6_pipe2depth(depth_image->vk.format)
-      ));
-      tu_cs_emit_regs(cs, A7XX_GRAS_LRZ_CB_CNTL(
-            .double_buffer_stride = depth_image->lrz_layout.lrz_buffer_size));
+      tu_cs_emit_regs(
+         cs, GRAS_LRZ_DEPTH_BUFFER_INFO(CHIP, .depth_format = tu6_pipe2depth(
+                                                 depth_image->vk.format)));
+      tu_cs_emit_regs(
+         cs,
+         GRAS_LRZ_CB_CNTL(CHIP, .double_buffer_stride =
+                                   depth_image->lrz_layout.lrz_buffer_size));
    }
 }
 
@@ -167,7 +168,7 @@ tu6_write_lrz_cntl(struct tu_cmd_buffer *cmd, struct tu_cs *cs,
 {
    if (CHIP >= A7XX) {
       /* A7XX split LRZ_CNTL into two seperate registers. */
-      struct tu_reg_value cntl2 = A7XX_GRAS_LRZ_CNTL2(
+      struct tu_reg_value cntl2 = GRAS_LRZ_CNTL2(CHIP,
          .disable_on_wrong_dir = cntl.disable_on_wrong_dir,
          .fc_enable = cntl.fc_enable,
       );
@@ -524,7 +525,7 @@ tu_lrz_tiling_begin(struct tu_cmd_buffer *cmd, struct tu_cs *cs)
        *  CUR_DIR_UNSET.
        */
       if (CHIP >= A7XX)
-         tu_cs_emit_regs(cs, A7XX_GRAS_LRZ_DEPTH_CLEAR(lrz->depth_clear_value.depthStencil.depth));
+         tu_cs_emit_regs(cs, GRAS_LRZ_DEPTH_CLEAR(CHIP, lrz->depth_clear_value.depthStencil.depth));
       tu_emit_event_write<CHIP>(cmd, cs, FD_LRZ_CLEAR);
    }
 
@@ -704,7 +705,7 @@ tu_lrz_before_sysmem_br(struct tu_cmd_buffer *cmd, struct tu_cs *cs)
           * dEQP-VK.pipeline.monolithic.color_write_enable.alpha_channel.static.*
           */
          if (lrz->fast_clear)
-            tu_cs_emit_regs(cs, A7XX_GRAS_LRZ_DEPTH_CLEAR(lrz->depth_clear_value.depthStencil.depth));
+            tu_cs_emit_regs(cs, GRAS_LRZ_DEPTH_CLEAR(CHIP, lrz->depth_clear_value.depthStencil.depth));
       } else {
          /* To workaround the same HW errata as above, but where we don't know
           * the clear value, copy the clear value from memory to the register.
@@ -833,7 +834,7 @@ tu_lrz_sysmem_begin(struct tu_cmd_buffer *cmd, struct tu_cs *cs)
          });
 
          if (CHIP >= A7XX)
-            tu_cs_emit_regs(cs, A7XX_GRAS_LRZ_DEPTH_CLEAR(lrz->depth_clear_value.depthStencil.depth));
+            tu_cs_emit_regs(cs, GRAS_LRZ_DEPTH_CLEAR(CHIP, lrz->depth_clear_value.depthStencil.depth));
          tu_emit_event_write<CHIP>(cmd, &cmd->cs, FD_LRZ_CLEAR);
          tu_emit_event_write<CHIP>(cmd, &cmd->cs, FD_LRZ_FLUSH);
       } else {
@@ -1007,7 +1008,7 @@ tu_lrz_clear_depth_image(struct tu_cmd_buffer *cmd,
    });
 
    if (CHIP >= A7XX)
-      tu_cs_emit_regs(&cmd->cs, A7XX_GRAS_LRZ_DEPTH_CLEAR(pDepthStencil->depth));
+      tu_cs_emit_regs(&cmd->cs, GRAS_LRZ_DEPTH_CLEAR(CHIP, pDepthStencil->depth));
    tu_emit_event_write<CHIP>(cmd, &cmd->cs, FD_LRZ_CLEAR);
    tu_emit_event_write<CHIP>(cmd, &cmd->cs, FD_LRZ_FLUSH);
 
