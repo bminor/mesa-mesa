@@ -32,7 +32,7 @@ class Enum(object):
     def names(self):
         return [n for (n, value) in self.values]
 
-    def dump(self, is_deprecated):
+    def dump(self, has_variants):
         use_hex = False
         for (name, value) in self.values:
             if value > 0x1000:
@@ -46,7 +46,7 @@ class Enum(object):
                 print("\t%s = %d," % (name, value))
         print("};\n")
 
-    def dump_pack_struct(self, is_deprecated):
+    def dump_pack_struct(self, has_variants):
         pass
 
 
@@ -230,7 +230,7 @@ class Bitset(object):
 
         print("    };")
 
-    def dump_pack_struct(self, is_deprecated, reg=None):
+    def dump_pack_struct(self, has_variants, reg=None):
         if not reg:
             return
 
@@ -261,20 +261,16 @@ class Bitset(object):
             tab_to("    uint32_t", "dword;")
         print("};\n")
 
-        depcrstr = ""
-        if is_deprecated:
-            depcrstr = " FD_DEPRECATED"
-        print("static%s inline%s struct fd_reg_pair" %
-              (constexpr_mark, depcrstr))
-        if reg.array:
-            print("pack_%s(uint32_t __i, struct %s fields)\n{" % (
-                prefix, prefix))
-        else:
-            print("pack_%s(struct %s fields)\n{" % (prefix, prefix))
+        if not has_variants:
+            print("static%s inline struct fd_reg_pair" % constexpr_mark)
+            if reg.array:
+                print("pack_%s(uint32_t __i, struct %s fields)\n{" % (prefix, prefix))
+            else:
+                print("pack_%s(struct %s fields)\n{" % (prefix, prefix))
 
-        self.dump_regpair_builder(reg)
+            self.dump_regpair_builder(reg)
 
-        print("\n}\n")
+            print("\n}\n")
 
         if self.get_address_field():
             skip = ", { .reg = 0 }"
@@ -288,7 +284,7 @@ class Bitset(object):
             print("#define %s(...) pack_%s(__struct_cast(%s) { __VA_ARGS__ })%s\n" %
                   (prefix, prefix, prefix, skip))
 
-    def dump(self, is_deprecated, prefix=None, reg=None):
+    def dump(self, has_variants, prefix=None, reg=None):
         if prefix is None:
             prefix = self.name
         if self.reg and self.reg.bit_size == 64:
@@ -390,16 +386,13 @@ class Array(object):
             offset += self.parent.total_offset()
         return offset
 
-    def dump(self, is_deprecated):
-        depcrstr = ""
-        if is_deprecated:
-            depcrstr = " FD_DEPRECATED"
+    def dump(self, has_variants):
         proto = indices_varlist(self.indices())
         strides = indices_strides(self.indices())
         array_offset = self.total_offset()
-        if self.fixed_offsets:
-            print("static CONSTEXPR inline%s uint32_t __offset_%s(%s idx)" %
-                  (depcrstr, self.local_name, self.index_ctype()))
+        if self.fixed_offsets and not has_variants:
+            print("static CONSTEXPR inline uint32_t __offset_%s(%s idx)" %
+                  (self.local_name, self.index_ctype()))
             print("{\n\tswitch (idx) {")
             if self.index_type:
                 for val, offset in zip(self.index_type.names(), self.offsets):
@@ -416,7 +409,7 @@ class Array(object):
             tab_to("#define REG_%s_%s(%s)" % (self.domain, self.name,
                    proto), "(0x%08x + %s )\n" % (array_offset, strides))
 
-    def dump_pack_struct(self, is_deprecated):
+    def dump_pack_struct(self, has_variants):
         pass
 
     def dump_regpair_builder(self):
@@ -464,26 +457,23 @@ class Reg(object):
             return "(0x%08x + 0x%x*__i)" % (offset, self.array.stride)
         return "0x%08x" % self.offset
 
-    def dump(self, is_deprecated):
-        depcrstr = ""
-        if is_deprecated:
-            depcrstr = " FD_DEPRECATED "
+    def dump(self, has_variants):
         proto = indices_prototype(self.indices())
         strides = indices_strides(self.indices())
         offset = self.total_offset()
         if proto == '':
             tab_to("#define REG_%s" % self.full_name, "0x%08x" % offset)
-        else:
-            print("static CONSTEXPR inline%s uint32_t REG_%s(%s) { return 0x%08x + %s; }" % (
-                depcrstr, self.full_name, proto, offset, strides))
+        elif not has_variants:
+            print("static CONSTEXPR inline uint32_t REG_%s(%s) { return 0x%08x + %s; }" % (
+                self.full_name, proto, offset, strides))
 
         if self.bitset.inline:
-            self.bitset.dump(is_deprecated, self.full_name, self)
+            self.bitset.dump(has_variants, self.full_name, self)
         print("")
 
-    def dump_pack_struct(self, is_deprecated):
+    def dump_pack_struct(self, has_variants):
         if self.bitset.inline:
-            self.bitset.dump_pack_struct(is_deprecated, self)
+            self.bitset.dump_pack_struct(has_variants, self)
 
     def dump_regpair_builder(self):
         self.bitset.dump_regpair_builder(self)
@@ -984,18 +974,7 @@ def dump_c(args, guard, func):
     print("#endif")
     print()
 
-    print("#ifndef FD_NO_DEPRECATED_PACK")
-    print("#define FD_DEPRECATED __attribute__((deprecated))")
-    print("#else")
-    print("#define FD_DEPRECATED")
-    print("#endif")
-    print()
-
     func(p)
-
-    print()
-    print("#undef FD_DEPRECATED")
-    print()
 
     print("#endif /* %s */" % guard)
 
