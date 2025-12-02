@@ -268,6 +268,8 @@ vn_device_fix_create_info(const struct vn_device *dev,
          block_exts[block_count++] = VK_KHR_PRESENT_WAIT_2_EXTENSION_NAME;
          block_exts[block_count++] = VK_KHR_SWAPCHAIN_EXTENSION_NAME;
          block_exts[block_count++] =
+            VK_KHR_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME;
+         block_exts[block_count++] =
             VK_KHR_SWAPCHAIN_MUTABLE_FORMAT_EXTENSION_NAME;
          block_exts[block_count++] =
             VK_KHR_INCREMENTAL_PRESENT_EXTENSION_NAME;
