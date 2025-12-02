@@ -61,3 +61,9 @@ dEQP-VK.renderpass2.dedicated_allocation.attachment.8.603
 dEQP-VK.binding_model.descriptor_buffer.sparse_residency_buffer.push_descriptor.graphics_geom_sets1_push_set0_single_buffer_commands_2
 dEQP-VK.glsl.conversions.matrix_to_matrix.mat2x4_to_mat3x2_vertex
 dEQP-VK.glsl.operator.binary_operator.div.mediump_float_vec3_vertex
+
+# Nightly run expectations update
+afbcp-spec@arb_texture_gather@texturegather@fs-rg-none-int-cubearray
+afbcp-spec@arb_texture_gather@texturegatheroffset@fs-rgba-green-float-2d
+glx@glx-visuals-stencil
+

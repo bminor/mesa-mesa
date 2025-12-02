@@ -235,11 +235,18 @@ dEQP-GLES2.functional.texture.filtering.2d.linear_nearest_mirror_rgb888_pot
 dEQP-GLES2.functional.texture.filtering.2d.nearest_mipmap_nearest_nearest_mirror_rgba8888
 dEQP-GLES2.functional.uniform_api.random.48
 spec@arb_color_buffer_float@gl_rgba8-drawpixels
+spec@arb_es2_compatibility@fbo-clear-formats
+spec@arb_es2_compatibility@fbo-clear-formats@GL_RGB565
 spec@arb_point_sprite@arb_point_sprite-checkerboard
 spec@ati_texture_compression_3dc@texwrap formats
 spec@ati_texture_compression_3dc@texwrap formats@GL_COMPRESSED_LUMINANCE_ALPHA_3DC_ATI
 spec@ati_texture_compression_3dc@texwrap formats@GL_COMPRESSED_LUMINANCE_ALPHA_3DC_ATI- swizzled
+spec@glsl-1.10@execution@built-in-functions@fs-op-add-ivec3-ivec3
+spec@glsl-1.10@execution@built-in-functions@vs-op-gt-float-float
 spec@glsl-1.10@execution@copy-propagation@glsl-fs-copy-propagation-texcoords-1
+spec@glsl-1.10@execution@samplers@glsl-fs-texture2d
+spec@glsl-1.10@execution@samplers@glsl-fs-texture2d-masked-3
+spec@glsl-1.20@execution@built-in-functions@fs-op-sub-float-mat4x3
 
 # regularly repeated flake
 spec@khr_texture_compression_astc@miptree-gles ldr
