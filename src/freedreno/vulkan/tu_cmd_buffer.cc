@@ -8986,7 +8986,7 @@ tu_dispatch(struct tu_cmd_buffer *cmd,
          for (unsigned i = 0; i < 3; i++)
             last_local_size[i] = ((num_groups[i] - 1) % local_size[i]) + 1;
          tu_cs_emit_regs(cs,
-                         A7XX_SP_CS_NDRANGE_7(.localsizex = last_local_size[0] - 1,
+                         SP_CS_NDRANGE_7(CHIP, .localsizex = last_local_size[0] - 1,
                                                       .localsizey = last_local_size[1] - 1,
                                                       .localsizez = last_local_size[2] - 1));
       }
@@ -9004,7 +9004,7 @@ tu_dispatch(struct tu_cmd_buffer *cmd,
                       SP_CS_NDRANGE_6(CHIP, .globaloff_z = 0));
       if (CHIP >= A7XX) {
          tu_cs_emit_regs(cs,
-                         A7XX_SP_CS_NDRANGE_7(.localsizex = local_size[0] - 1,
+                         SP_CS_NDRANGE_7(CHIP, .localsizex = local_size[0] - 1,
                                                       .localsizey = local_size[1] - 1,
                                                       .localsizez = local_size[2] - 1));
       }
