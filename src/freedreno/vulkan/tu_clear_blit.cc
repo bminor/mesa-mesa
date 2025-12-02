@@ -376,8 +376,7 @@ r2d_src_buffer_unaligned(struct tu_cmd_buffer *cmd,
 
    uint32_t offset_texels = ((va & 0x3f) / util_format_get_blocksize(format));
    va &= ~0x3f;
-   tu_cs_emit_regs(cs,
-                   A7XX_TPL1_A2D_BLT_CNTL(.raw_copy = false,
+   tu_cs_emit_regs(cs, TPL1_A2D_BLT_CNTL(CHIP, .raw_copy = false,
                                          .start_offset_texels = offset_texels,
                                          .type = A6XX_TEX_IMG_BUFFER));
 
@@ -502,7 +501,7 @@ r2d_setup_common(struct tu_cmd_buffer *cmd,
    tu_cs_emit(cs, blit_cntl);
 
    if (CHIP > A6XX) {
-      tu_cs_emit_regs(cs, A7XX_TPL1_A2D_BLT_CNTL(.raw_copy = false,
+      tu_cs_emit_regs(cs, TPL1_A2D_BLT_CNTL(CHIP, .raw_copy = false,
                                                 .start_offset_texels = 0,
                                                 .type = A6XX_TEX_2D));
    }
@@ -2338,15 +2337,15 @@ tu6_blit_image(struct tu_cmd_buffer *cmd,
       r3d_coords_raw(cmd, cs, coords);
    } else {
       tu_cs_emit_regs(cs,
-         A6XX_GRAS_A2D_DEST_TL(.x = MIN2(info->dstOffsets[0].x, info->dstOffsets[1].x),
+         GRAS_A2D_DEST_TL(CHIP, .x = MIN2(info->dstOffsets[0].x, info->dstOffsets[1].x),
                              .y = MIN2(info->dstOffsets[0].y, info->dstOffsets[1].y)),
-         A6XX_GRAS_A2D_DEST_BR(.x = MAX2(info->dstOffsets[0].x, info->dstOffsets[1].x) - 1,
+         GRAS_A2D_DEST_BR(CHIP, .x = MAX2(info->dstOffsets[0].x, info->dstOffsets[1].x) - 1,
                              .y = MAX2(info->dstOffsets[0].y, info->dstOffsets[1].y) - 1));
       tu_cs_emit_regs(cs,
-         A6XX_GRAS_A2D_SRC_XMIN(MIN2(info->srcOffsets[0].x, info->srcOffsets[1].x)),
-         A6XX_GRAS_A2D_SRC_XMAX(MAX2(info->srcOffsets[0].x, info->srcOffsets[1].x) - 1),
-         A6XX_GRAS_A2D_SRC_YMIN(MIN2(info->srcOffsets[0].y, info->srcOffsets[1].y)),
-         A6XX_GRAS_A2D_SRC_YMAX(MAX2(info->srcOffsets[0].y, info->srcOffsets[1].y) - 1));
+         GRAS_A2D_SRC_XMIN(CHIP, MIN2(info->srcOffsets[0].x, info->srcOffsets[1].x)),
+         GRAS_A2D_SRC_XMAX(CHIP, MAX2(info->srcOffsets[0].x, info->srcOffsets[1].x) - 1),
+         GRAS_A2D_SRC_YMIN(CHIP, MIN2(info->srcOffsets[0].y, info->srcOffsets[1].y)),
+         GRAS_A2D_SRC_YMAX(CHIP, MAX2(info->srcOffsets[0].y, info->srcOffsets[1].y) - 1));
    }
 
    struct fdl6_view dst, src;
@@ -5598,9 +5597,9 @@ tu_store_gmem_attachment(struct tu_cmd_buffer *cmd,
           * area.
           */
          tu_cs_emit_regs(cs,
-                         A6XX_GRAS_A2D_SCISSOR_TL(.x = render_area->offset.x,
+                         GRAS_A2D_SCISSOR_TL(CHIP, .x = render_area->offset.x,
                                                      .y = render_area->offset.y,),
-                         A6XX_GRAS_A2D_SCISSOR_BR(.x = render_area->offset.x + render_area->extent.width - 1,
+                         GRAS_A2D_SCISSOR_BR(CHIP, .x = render_area->offset.x + render_area->extent.width - 1,
                                                      .y = render_area->offset.y + render_area->extent.height - 1,));
       }
 

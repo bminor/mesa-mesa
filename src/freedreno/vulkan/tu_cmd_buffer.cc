@@ -1041,7 +1041,7 @@ tu6_emit_window_offset(struct tu_cs *cs, uint32_t x1, uint32_t y1)
 
    if (CHIP >= A7XX) {
       tu_cs_emit_regs(cs,
-                     A7XX_TPL1_A2D_WINDOW_OFFSET(.x = x1, .y = y1));
+                     TPL1_A2D_WINDOW_OFFSET(CHIP, .x = x1, .y = y1));
    }
 }
 
