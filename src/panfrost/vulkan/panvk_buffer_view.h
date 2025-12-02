@@ -20,7 +20,10 @@
 
 struct panvk_buffer_view {
    struct vk_buffer_view vk;
+
+#if PAN_ARCH < 9
    struct panvk_priv_mem mem;
+#endif
 
    struct {
 #if PAN_ARCH >= 9

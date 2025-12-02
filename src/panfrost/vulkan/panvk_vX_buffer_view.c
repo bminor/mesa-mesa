@@ -63,7 +63,6 @@ panvk_per_arch(CreateBufferView)(VkDevice _device,
       };
 
 #if PAN_ARCH >= 9
-      view->mem = panvk_pool_alloc_desc(&device->mempools.rw, BUFFER);
       GENX(pan_buffer_texture_emit)(&bview, &view->descs.buf);
 #else
       view->mem =
@@ -122,6 +121,9 @@ panvk_per_arch(DestroyBufferView)(VkDevice _device, VkBufferView bufferView,
    if (!view)
       return;
 
+#if PAN_ARCH < 9
    panvk_pool_free_mem(&view->mem);
+#endif
+
    vk_buffer_view_destroy(&device->vk, pAllocator, &view->vk);
 }
