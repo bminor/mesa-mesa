@@ -373,6 +373,22 @@ si_vpe_maps_vpe_to_gm_transfer_function(const enum vpe_transfer_function vpe_tf)
    }
 }
 
+static enum ToneMapColorPrimaries
+si_vpe_mpes_vpe_to_gm_primary(enum vpe_color_primaries vpe_pri)
+{
+   switch (vpe_pri) {
+   case VPE_PRIMARIES_BT601:
+      return TMG_CP_BT601;
+   case VPE_PRIMARIES_BT709:
+      return TMG_CP_BT709;
+   case VPE_PRIMARIES_BT2020:
+      return TMG_CP_BT2020;
+   default:
+      SIVPE_PRINT("[FIXIT] No GMLIB Primary mapped\n");
+      return TMG_CP_BT709;
+   }
+}
+
 static void
 si_vpe_load_default_primaries(struct vpe_hdr_metadata* vpe_hdr, enum vpe_color_primaries primaries)
 {
@@ -783,9 +799,10 @@ si_vpe_set_stream_out_param(struct vpe_video_processor *vpeproc,
 }
 
 static inline int
-si_vpe_is_tonemappingstream(enum vpe_transfer_function tf)
+si_vpe_is_tonemappingstream(enum vpe_transfer_function tf, unsigned int in_lum, unsigned int out_lum)
 {
-   return (tf == VPE_TF_HLG || tf == VPE_TF_G10 || tf == VPE_TF_PQ);
+   return ((tf == VPE_TF_HLG) ||
+          ((tf == VPE_TF_G10 || tf == VPE_TF_PQ) && (in_lum > out_lum)));
 }
 
 static void
@@ -793,11 +810,16 @@ si_vpe_set_tonemap(struct vpe_video_processor *vpeproc,
                    const struct pipe_vpp_desc *process_properties,
                    struct vpe_build_param *build_param)
 {
-   if (!debug_get_bool_option("AMDGPU_SIVPE_HDR_TONEMAPPING", false))
+   if (!debug_get_bool_option("AMDGPU_SIVPE_HDR_TONEMAPPING", true))
       return;
 
    /* Check if source is tone mapping stream */
-   if (si_vpe_is_tonemappingstream(build_param->streams[0].surface_info.cs.tf)) {
+   if (si_vpe_is_tonemappingstream(
+               build_param->streams[0].surface_info.cs.tf,
+               build_param->streams[0].hdr_metadata.max_mastering,
+               build_param->hdr_metadata.max_mastering)) {
+
+      SIVPE_DBG(vpeproc->log_level, "Handling Tone mapping stream...\n");
 
       if (!vpeproc->gm_handle) {
          vpeproc->gm_handle = tm_create();
@@ -849,6 +871,7 @@ si_vpe_set_tonemap(struct vpe_video_processor *vpeproc,
          tm_par.dstMetaData.maxContentLightLevel         = build_param->hdr_metadata.max_content;
          tm_par.dstMetaData.maxFrameAverageLightLevel    = build_param->hdr_metadata.avg_content;
          tm_par.outputContainerGamma                     = si_vpe_maps_vpe_to_gm_transfer_function(build_param->dst_surface.cs.tf);
+         tm_par.outputContainerPrimaries                 = si_vpe_mpes_vpe_to_gm_primary(build_param->dst_surface.cs.primaries);
 
          /* If the tone mapping of source is changed during playback, it must be recalculated.
           * Now assume that the tone mapping is fixed.
@@ -863,18 +886,20 @@ si_vpe_set_tonemap(struct vpe_video_processor *vpeproc,
       build_param->streams[0].flags.hdr_metadata             = 1;
       build_param->streams[0].tm_params.enable_3dlut         = 1;
       build_param->streams[0].tm_params.UID                  = 1;
+      SIVPE_DBG(vpeproc->log_level, "Enable Tone mapping 3DLut\n");
    } else {
       build_param->streams[0].flags.hdr_metadata             = 0;
       build_param->streams[0].tm_params.enable_3dlut         = 0;
       build_param->streams[0].tm_params.UID                  = 0;
+      SIVPE_DBG(vpeproc->log_level, "Disable Tone mapping 3DLut\n");
    }
    build_param->streams[0].tm_params.lut_data                = vpeproc->lut_data;
    build_param->streams[0].tm_params.lut_dim                 = VPE_LUT_DIM;
    build_param->streams[0].tm_params.input_pq_norm_factor    = 0;
+   build_param->streams[0].tm_params.shaper_tf               = build_param->streams[0].surface_info.cs.tf;
    build_param->streams[0].tm_params.lut_in_gamut            = build_param->streams[0].surface_info.cs.primaries;
+   build_param->streams[0].tm_params.lut_out_tf              = build_param->dst_surface.cs.tf;
    build_param->streams[0].tm_params.lut_out_gamut           = build_param->dst_surface.cs.primaries;
-   build_param->streams[0].tm_params.lut_out_tf              = build_param->streams[0].surface_info.cs.tf;
-   build_param->streams[0].tm_params.shaper_tf               = build_param->dst_surface.cs.tf;
 }
 
 static void
