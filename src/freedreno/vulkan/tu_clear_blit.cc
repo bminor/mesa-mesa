@@ -1648,7 +1648,7 @@ r3d_setup(struct tu_cmd_buffer *cmd,
       tu_cs_emit_regs(cs, GRAS_LRZ_DEPTH_BUFFER_INFO(CHIP));
 
       tu_cs_emit_regs(cs, A6XX_RB_VRS_CONFIG());
-      tu_cs_emit_regs(cs, A7XX_SP_VRS_CONFIG());
+      tu_cs_emit_regs(cs, SP_VRS_CONFIG(CHIP));
       tu_cs_emit_regs(cs, GRAS_VRS_CONFIG(CHIP));
    }
 

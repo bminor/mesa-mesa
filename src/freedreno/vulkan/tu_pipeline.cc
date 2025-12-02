@@ -3612,7 +3612,7 @@ tu6_emit_fragment_shading_rate(struct tu_cs *cs,
     */
    if (!fsr || (!fs_reads_fsr && vk_fragment_shading_rate_is_disabled(fsr))) {
       tu_cs_emit_regs(cs, A6XX_RB_VRS_CONFIG());
-      tu_cs_emit_regs(cs, A7XX_SP_VRS_CONFIG());
+      tu_cs_emit_regs(cs, SP_VRS_CONFIG(CHIP));
       tu_cs_emit_regs(cs, GRAS_VRS_CONFIG(CHIP));
       return;
    }
@@ -3646,10 +3646,10 @@ tu6_emit_fragment_shading_rate(struct tu_cs *cs,
       A6XX_RB_VRS_CONFIG(.unk2 = true, .pipeline_fsr_enable = enable_draw_fsr,
                          .attachment_fsr_enable = enable_att_fsr,
                          .primitive_fsr_enable = enable_prim_fsr));
-   tu_cs_emit_regs(
-      cs, A7XX_SP_VRS_CONFIG(.pipeline_fsr_enable = enable_draw_fsr,
-                             .attachment_fsr_enable = enable_att_fsr,
-                             .primitive_fsr_enable = enable_prim_fsr));
+   tu_cs_emit_regs(cs,
+                   SP_VRS_CONFIG(CHIP, .pipeline_fsr_enable = enable_draw_fsr,
+                                 .attachment_fsr_enable = enable_att_fsr,
+                                 .primitive_fsr_enable = enable_prim_fsr));
    tu_cs_emit_regs(
       cs, GRAS_VRS_CONFIG(CHIP,
                 .pipeline_fsr_enable = enable_draw_fsr,
