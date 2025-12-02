@@ -258,17 +258,18 @@ tu_emit_vsc(struct tu_cmd_buffer *cmd, struct tu_cs *cs)
  * cache is invalidated so that we don't read stale values when multiple BVHs
  * share the same address.
  */
+template <chip CHIP>
 static void
 tu_emit_rt_workaround(struct tu_cmd_buffer *cmd, struct tu_cs *cs)
 {
    tu_cs_emit_pkt7(cs, CP_SET_MARKER, 1);
    tu_cs_emit(cs, A6XX_CP_SET_MARKER_0_RT_WA_START);
 
-   tu_cs_emit_regs(cs, A7XX_SP_CS_UNKNOWN_A9BE(.dword = 0x10000));
-   tu_cs_emit_regs(cs, A7XX_SP_PS_UNKNOWN_A9AB(.dword = 0x10000));
+   tu_cs_emit_regs(cs, SP_CS_UNKNOWN_A9BE(CHIP, .dword = 0x10000));
+   tu_cs_emit_regs(cs, SP_PS_UNKNOWN_A9AB(CHIP, .dword = 0x10000));
    tu_emit_event_write<A7XX>(cmd, cs, FD_DUMMY_EVENT);
-   tu_cs_emit_regs(cs, A7XX_SP_CS_UNKNOWN_A9BE(.dword = 0));
-   tu_cs_emit_regs(cs, A7XX_SP_PS_UNKNOWN_A9AB(.dword = 0));
+   tu_cs_emit_regs(cs, SP_CS_UNKNOWN_A9BE(CHIP, .dword = 0));
+   tu_cs_emit_regs(cs, SP_PS_UNKNOWN_A9AB(CHIP, .dword = 0));
    tu_emit_event_write<A7XX>(cmd, cs, FD_DUMMY_EVENT);
    tu_emit_event_write<A7XX>(cmd, cs, FD_DUMMY_EVENT);
    tu_emit_event_write<A7XX>(cmd, cs, FD_DUMMY_EVENT);
@@ -331,7 +332,7 @@ tu6_emit_flushes(struct tu_cmd_buffer *cmd_buffer,
       tu_cs_emit_pkt7(cs, CP_CCHE_INVALIDATE, 0);
    if (CHIP >= A7XX && (flushes & TU_CMD_FLAG_RTU_INVALIDATE) &&
        cmd_buffer->device->physical_device->info->props.has_rt_workaround)
-      tu_emit_rt_workaround(cmd_buffer, cs);
+      tu_emit_rt_workaround<CHIP>(cmd_buffer, cs);
    if (flushes & TU_CMD_FLAG_WAIT_MEM_WRITES)
       tu_cs_emit_pkt7(cs, CP_WAIT_MEM_WRITES, 0);
    if (flushes & TU_CMD_FLAG_WAIT_FOR_IDLE)
