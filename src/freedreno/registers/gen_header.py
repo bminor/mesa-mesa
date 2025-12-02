@@ -264,12 +264,13 @@ class Bitset(object):
         depcrstr = ""
         if is_deprecated:
             depcrstr = " FD_DEPRECATED"
+        print("static%s inline%s struct fd_reg_pair" %
+              (constexpr_mark, depcrstr))
         if reg.array:
-            print("static%s inline%s struct fd_reg_pair\npack_%s(uint32_t __i, struct %s fields)\n{" %
-                  (constexpr_mark, depcrstr, prefix, prefix))
+            print("pack_%s(uint32_t __i, struct %s fields)\n{" % (
+                prefix, prefix))
         else:
-            print("static%s inline%s struct fd_reg_pair\npack_%s(struct %s fields)\n{" %
-                  (constexpr_mark, depcrstr, prefix, prefix))
+            print("pack_%s(struct %s fields)\n{" % (prefix, prefix))
 
         self.dump_regpair_builder(reg)
 
