@@ -1588,9 +1588,9 @@ r3d_setup(struct tu_cmd_buffer *cmd,
 
    if (!(blit_param & R3D_DST_GMEM)) {
       if (CHIP == A6XX) {
-         tu_cs_emit_regs(cs, A6XX_GRAS_SC_BIN_CNTL(.buffers_location = BUFFERS_IN_SYSMEM));
+         tu_cs_emit_regs(cs, GRAS_SC_BIN_CNTL(CHIP, .buffers_location = BUFFERS_IN_SYSMEM));
       } else {
-         tu_cs_emit_regs(cs, A6XX_GRAS_SC_BIN_CNTL());
+         tu_cs_emit_regs(cs, GRAS_SC_BIN_CNTL(CHIP));
       }
 
       tu_cs_emit_regs(cs, RB_CNTL(CHIP, .buffers_location = BUFFERS_IN_SYSMEM));

@@ -829,7 +829,7 @@ tu6_emit_bin_size(struct tu_cs *cs,
 {
    if (CHIP == A6XX) {
       tu_cs_emit_regs(
-         cs, A6XX_GRAS_SC_BIN_CNTL(.binw = bin_w,
+         cs, GRAS_SC_BIN_CNTL(CHIP, .binw = bin_w,
                                    .binh = bin_h,
                                    .render_mode = p.render_mode,
                                    .force_lrz_write_dis = p.force_lrz_write_dis,
@@ -837,7 +837,7 @@ tu6_emit_bin_size(struct tu_cs *cs,
                                    .lrz_feedback_zmode_mask = p.lrz_feedback_zmode_mask, ));
    } else {
       tu_cs_emit_regs(cs,
-                      A6XX_GRAS_SC_BIN_CNTL(.binw = bin_w,
+                      GRAS_SC_BIN_CNTL(CHIP, .binw = bin_w,
                                             .binh = bin_h,
                                             .render_mode = p.render_mode,
                                             .force_lrz_write_dis = p.force_lrz_write_dis,
