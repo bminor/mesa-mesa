@@ -423,7 +423,8 @@ struct radv_cmd_state {
    struct radv_graphics_pipeline *emitted_graphics_pipeline;
    struct radv_compute_pipeline *compute_pipeline;
    struct radv_compute_pipeline *emitted_compute_pipeline;
-   struct radv_ray_tracing_pipeline *rt_pipeline; /* emitted = emitted_compute_pipeline */
+   struct radv_ray_tracing_pipeline *rt_pipeline;
+   struct radv_ray_tracing_pipeline *emitted_rt_pipeline;
    struct radv_dynamic_state dynamic;
    struct radv_streamout_state streamout;
 

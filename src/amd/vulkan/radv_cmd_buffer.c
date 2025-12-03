@@ -8231,7 +8231,7 @@ radv_emit_ray_tracing_pipeline(struct radv_cmd_buffer *cmd_buffer, struct radv_r
    const struct radv_shader *rt_prolog = cmd_buffer->state.rt_prolog;
    struct radv_cmd_stream *cs = cmd_buffer->cs;
 
-   if (&pipeline->base == cmd_buffer->state.emitted_compute_pipeline)
+   if (pipeline == cmd_buffer->state.emitted_rt_pipeline)
       return;
 
    radeon_check_space(device->ws, cs->b, pdev->info.gfx_level >= GFX10 ? 25 : 22);
@@ -8268,7 +8268,7 @@ radv_emit_ray_tracing_pipeline(struct radv_cmd_buffer *cmd_buffer, struct radv_r
       radeon_end();
    }
 
-   cmd_buffer->state.emitted_compute_pipeline = &pipeline->base;
+   cmd_buffer->state.emitted_rt_pipeline = pipeline;
 
    if (radv_device_fault_detection_enabled(device))
       radv_save_pipeline(cmd_buffer, &pipeline->base.base);
@@ -9849,6 +9849,10 @@ radv_CmdExecuteCommands(VkCommandBuffer commandBuffer, uint32_t commandBufferCou
        */
       if (secondary->state.emitted_compute_pipeline) {
          primary->state.emitted_compute_pipeline = secondary->state.emitted_compute_pipeline;
+      }
+
+      if (secondary->state.emitted_rt_pipeline) {
+         primary->state.emitted_rt_pipeline = secondary->state.emitted_rt_pipeline;
       }
 
       if (secondary->state.last_ia_multi_vgt_param) {
@@ -13864,6 +13868,7 @@ radv_before_dispatch(struct radv_cmd_buffer *cmd_buffer, struct radv_compute_pip
        */
       radv_mark_descriptors_dirty(cmd_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR);
       cmd_buffer->push_constant_stages |= RADV_RT_STAGE_BITS;
+      cmd_buffer->state.emitted_rt_pipeline = NULL;
    }
 }
 
@@ -13903,7 +13908,7 @@ radv_before_trace_rays(struct radv_cmd_buffer *cmd_buffer, struct radv_ray_traci
 {
    const struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    const struct radv_physical_device *pdev = radv_device_physical(device);
-   const bool pipeline_is_dirty = &pipeline->base != cmd_buffer->state.emitted_compute_pipeline;
+   const bool pipeline_is_dirty = pipeline != cmd_buffer->state.emitted_rt_pipeline;
    const struct radv_shader *rt_prolog = cmd_buffer->state.rt_prolog;
 
    if (rt_prolog->info.cs.regalloc_hang_bug)
@@ -13933,6 +13938,7 @@ radv_before_trace_rays(struct radv_cmd_buffer *cmd_buffer, struct radv_ray_traci
        */
       radv_mark_descriptors_dirty(cmd_buffer, VK_PIPELINE_BIND_POINT_COMPUTE);
       cmd_buffer->push_constant_stages |= VK_SHADER_STAGE_COMPUTE_BIT;
+      cmd_buffer->state.emitted_compute_pipeline = NULL;
    }
 }
 
