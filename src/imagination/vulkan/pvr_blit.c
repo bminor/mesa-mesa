@@ -1835,7 +1835,6 @@ static VkResult pvr_add_deferred_rta_clear(struct pvr_cmd_buffer *cmd_buffer,
    struct pvr_sub_cmd_gfx *sub_cmd = &cmd_buffer->state.current_sub_cmd->gfx;
    const struct pvr_renderpass_hwsetup_render *hw_render =
       &pass_info->pass->hw_setup->renders[sub_cmd->hw_render_idx];
-   struct pvr_transfer_cmd *transfer_cmd_list;
    const struct pvr_image_view *image_view;
    const struct pvr_image *image;
    uint32_t base_layer;
@@ -1853,14 +1852,6 @@ static VkResult pvr_add_deferred_rta_clear(struct pvr_cmd_buffer *cmd_buffer,
 
    assert(
       !PVR_HAS_FEATURE(&cmd_buffer->device->pdevice->dev_info, gs_rta_support));
-
-   transfer_cmd_list = util_dynarray_grow(&cmd_buffer->deferred_clears,
-                                          struct pvr_transfer_cmd,
-                                          rect->layerCount);
-   if (!transfer_cmd_list) {
-      return vk_command_buffer_set_error(&cmd_buffer->vk,
-                                         VK_ERROR_OUT_OF_HOST_MEMORY);
-   }
 
    /* From the Vulkan 1.3.229 spec VUID-VkClearAttachment-aspectMask-00019:
     *
@@ -1899,16 +1890,16 @@ static VkResult pvr_add_deferred_rta_clear(struct pvr_cmd_buffer *cmd_buffer,
    image = vk_to_pvr_image(image_view->vk.image);
 
    for (uint32_t i = 0; i < rect->layerCount; i++) {
-      struct pvr_transfer_cmd *transfer_cmd = &transfer_cmd_list[i];
+      struct pvr_transfer_cmd *transfer_cmd = pvr_transfer_cmd_alloc(cmd_buffer);
 
-      /* TODO: Add an init function for when we don't want to use
-       * pvr_transfer_cmd_alloc()? And use it here.
-       */
-      *transfer_cmd = (struct pvr_transfer_cmd){
-         .flags = PVR_TRANSFER_CMD_FLAGS_FILL,
-         .cmd_buffer = cmd_buffer,
-         .is_deferred_clear = true,
-      };
+      list_addtail(&transfer_cmd->link, &cmd_buffer->deferred_clears);
+
+      if (!transfer_cmd) {
+         return vk_command_buffer_set_error(&cmd_buffer->vk,
+                                            VK_ERROR_OUT_OF_HOST_MEMORY);
+      }
+
+      transfer_cmd->flags = PVR_TRANSFER_CMD_FLAGS_FILL;
 
       if (attachment->aspectMask == VK_IMAGE_ASPECT_COLOR_BIT) {
          for (uint32_t j = 0; j < ARRAY_SIZE(transfer_cmd->clear_color); j++) {

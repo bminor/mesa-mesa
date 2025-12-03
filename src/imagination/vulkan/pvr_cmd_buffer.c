@@ -126,8 +126,7 @@ static void pvr_cmd_buffer_free_sub_cmd(struct pvr_cmd_buffer *cmd_buffer,
                                    sub_cmd->transfer.transfer_cmds,
                                    link) {
             list_del(&transfer_cmd->link);
-            if (!transfer_cmd->is_deferred_clear)
-               vk_free(&cmd_buffer->vk.pool->alloc, transfer_cmd);
+            vk_free(&cmd_buffer->vk.pool->alloc, transfer_cmd);
          }
          break;
 
@@ -174,7 +173,9 @@ static void pvr_cmd_buffer_free_resources(struct pvr_cmd_buffer *cmd_buffer)
       pvr_bo_suballoc_free(suballoc_bo);
    }
 
-   util_dynarray_fini(&cmd_buffer->deferred_clears);
+   /* At the end of any graphics job, all of these get moved elsewhere */
+   assert(list_is_empty(&cmd_buffer->deferred_clears));
+
    util_dynarray_fini(&cmd_buffer->deferred_csb_commands);
    util_dynarray_fini(&cmd_buffer->scissor_array);
    util_dynarray_fini(&cmd_buffer->depth_bias_array);
@@ -241,8 +242,8 @@ static VkResult pvr_cmd_buffer_create(struct pvr_device *device,
    cmd_buffer->depth_bias_array = UTIL_DYNARRAY_INIT;
    cmd_buffer->scissor_array = UTIL_DYNARRAY_INIT;
    cmd_buffer->deferred_csb_commands = UTIL_DYNARRAY_INIT;
-   cmd_buffer->deferred_clears = UTIL_DYNARRAY_INIT;
 
+   list_inithead(&cmd_buffer->deferred_clears);
    list_inithead(&cmd_buffer->sub_cmds);
    list_inithead(&cmd_buffer->bo_list);
 
@@ -2235,11 +2236,13 @@ void pvr_compute_generate_fence(struct pvr_cmd_buffer *cmd_buffer,
 static VkResult
 pvr_cmd_buffer_process_deferred_clears(struct pvr_cmd_buffer *cmd_buffer)
 {
-   util_dynarray_foreach (&cmd_buffer->deferred_clears,
-                          struct pvr_transfer_cmd,
-                          transfer_cmd) {
+   list_for_each_entry_safe (struct pvr_transfer_cmd,
+                             transfer_cmd,
+                             &cmd_buffer->deferred_clears,
+                             link) {
       VkResult result;
 
+      list_del(&transfer_cmd->link);
       result = pvr_cmd_buffer_add_transfer_cmd(cmd_buffer, transfer_cmd);
       if (result != VK_SUCCESS)
          return result;
@@ -7690,7 +7693,7 @@ static VkResult pvr_execute_sub_cmd(struct pvr_cmd_buffer *cmd_buffer,
 
 static VkResult
 pvr_execute_graphics_cmd_buffer(struct pvr_cmd_buffer *cmd_buffer,
-                                const struct pvr_cmd_buffer *sec_cmd_buffer)
+                                struct pvr_cmd_buffer *sec_cmd_buffer)
 {
    const struct pvr_device_info *dev_info =
       &cmd_buffer->device->pdevice->dev_info;
@@ -7833,8 +7836,8 @@ pvr_execute_graphics_cmd_buffer(struct pvr_cmd_buffer *cmd_buffer,
       }
 
       if (!PVR_HAS_FEATURE(dev_info, gs_rta_support)) {
-         util_dynarray_append_dynarray(&cmd_buffer->deferred_clears,
-                                       &sec_cmd_buffer->deferred_clears);
+         list_splicetail(&sec_cmd_buffer->deferred_clears,
+                         &cmd_buffer->deferred_clears);
       }
    }
 
