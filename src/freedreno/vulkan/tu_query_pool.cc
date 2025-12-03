@@ -1158,7 +1158,7 @@ emit_perfcntrs_pass_start(bool has_pred_bit, struct tu_cs *cs, uint32_t pass)
 {
    tu_cs_emit_pkt7(cs, CP_REG_TEST, 1);
    tu_cs_emit(cs, A6XX_CP_REG_TEST_0_REG(
-                        REG_A6XX_CP_SCRATCH_REG(PERF_CNTRS_REG)) |
+                        REG_A6XX_CP_SCRATCH(PERF_CNTRS_REG)) |
                   A6XX_CP_REG_TEST_0_BIT(pass) |
                   (has_pred_bit ?
                      A6XX_CP_REG_TEST_0_PRED_BIT(TU_PREDICATE_PERFCNTRS) : 0) |
