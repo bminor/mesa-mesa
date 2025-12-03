@@ -115,6 +115,8 @@ kk_get_device_extensions(const struct kk_instance *instance,
       .EXT_ycbcr_2plane_444_formats = false,
 
       /* Vulkan 1.4 */
+      .KHR_load_store_op_none = true,
+      .KHR_map_memory2 = true,
       .KHR_push_descriptor = true,
       .KHR_shader_expect_assume = true,
       .KHR_vertex_attribute_divisor = true,
@@ -131,6 +133,7 @@ kk_get_device_extensions(const struct kk_instance *instance,
       .KHR_workgroup_memory_explicit_layout = true,
 
       .EXT_external_memory_metal = true,
+      .EXT_load_store_op_none = true,
       .EXT_mutable_descriptor_type = true,
       .EXT_shader_atomic_float = true,
       .EXT_shader_replicated_composites = true,
@@ -159,8 +162,10 @@ kk_get_device_features(
        * dEQP-VK.robustness.image_robustness.bind.notemplate.*i.unroll.nonvolatile.sampled_image.no_fmt_qual.img.samples_1.*d_array.frag
        */
       .fragmentStoresAndAtomics = false,
+      .fullDrawIndexUint32 = true,
       .imageCubeArray = true,
       .independentBlend = true,
+      .inheritedQueries = true,
       .logicOp = true,
       .multiViewport = true,
       .robustBufferAccess = true,
@@ -171,6 +176,7 @@ kk_get_device_features(
       .shaderSampledImageArrayDynamicIndexing = true,
       .shaderStorageBufferArrayDynamicIndexing = true,
       .shaderStorageImageArrayDynamicIndexing = true,
+      .shaderStorageImageExtendedFormats = true,
       /* TODO_KOSMICKRISP
        * Disabled because the following test
        * dEQP-VK.api.format_feature_flags2.r8_unorm and similars fail, need to
