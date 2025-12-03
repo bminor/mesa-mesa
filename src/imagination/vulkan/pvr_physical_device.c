@@ -46,9 +46,6 @@ pvr_physical_device_dump_info(const struct pvr_physical_device *pdevice,
    if (pdevice->ws->display_fd >= 0)
       version_display = drmGetVersion(pdevice->ws->display_fd);
 
-   if (!version_display)
-      return;
-
    version_render = drmGetVersion(pdevice->ws->render_fd);
    if (!version_render) {
       drmFreeVersion(version_display);
