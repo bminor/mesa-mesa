@@ -528,13 +528,6 @@ enum {
    VERT_FLAT, /* per vertex flat */
 };
 
-struct attr_desc {
-   int location;
-   const struct glsl_type *type;
-   unsigned dwords;
-   unsigned slots;
-};
-
 static void
 brw_compute_mue_map(const struct brw_compiler *compiler,
                     nir_shader *nir, struct brw_mue_map *map,
