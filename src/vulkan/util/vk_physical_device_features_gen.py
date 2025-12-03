@@ -45,6 +45,8 @@ RENAMED_FEATURES = {
     ('CooperativeMatrixFeaturesNV', 'cooperativeMatrixRobustBufferAccess'): 'cooperativeMatrixRobustBufferAccessNV',
 
     ('DeviceGeneratedCommandsFeaturesNV', 'deviceGeneratedCommands'): 'deviceGeneratedCommandsNV',
+
+    ("RayTracingInvocationReorderFeaturesNV", "rayTracingInvocationReorder"): "rayTracingInvocationReorderNV",
 }
 
 KNOWN_ALIASES = [
