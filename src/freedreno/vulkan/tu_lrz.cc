@@ -164,7 +164,7 @@ tu6_write_lrz_reg(struct tu_cmd_buffer *cmd, struct tu_cs *cs,
 template <chip CHIP>
 static void
 tu6_write_lrz_cntl(struct tu_cmd_buffer *cmd, struct tu_cs *cs,
-                   struct A6XX_GRAS_LRZ_CNTL cntl)
+                   struct __GRAS_LRZ_CNTL cntl)
 {
    if (CHIP >= A7XX) {
       /* A7XX split LRZ_CNTL into two seperate registers. */
@@ -175,10 +175,10 @@ tu6_write_lrz_cntl(struct tu_cmd_buffer *cmd, struct tu_cs *cs,
       cntl.disable_on_wrong_dir = false;
       cntl.fc_enable = false;
 
-      tu6_write_lrz_reg(cmd, cs, A6XX_GRAS_LRZ_CNTL(cntl));
+      tu6_write_lrz_reg(cmd, cs, __GRAS_LRZ_CNTL<CHIP>(cntl));
       tu6_write_lrz_reg(cmd, cs, cntl2);
    } else {
-      tu6_write_lrz_reg(cmd, cs, A6XX_GRAS_LRZ_CNTL(cntl));
+      tu6_write_lrz_reg(cmd, cs, __GRAS_LRZ_CNTL<CHIP>(cntl));
    }
 }
 
@@ -1053,7 +1053,7 @@ tu_lrz_flush_valid_during_renderpass(struct tu_cmd_buffer *cmd,
 TU_GENX(tu_lrz_flush_valid_during_renderpass);
 
 template <chip CHIP>
-static struct A6XX_GRAS_LRZ_CNTL
+static struct __GRAS_LRZ_CNTL
 tu6_calculate_lrz_state(struct tu_cmd_buffer *cmd,
                         const uint32_t a)
 {
@@ -1064,7 +1064,7 @@ tu6_calculate_lrz_state(struct tu_cmd_buffer *cmd,
    VkCompareOp depth_compare_op =
       cmd->vk.dynamic_graphics_state.ds.depth.compare_op;
 
-   struct A6XX_GRAS_LRZ_CNTL gras_lrz_cntl = { 0 };
+   struct __GRAS_LRZ_CNTL gras_lrz_cntl = { 0 };
 
    cmd->state.lrz.force_late_z =
       fs->variant->writes_pos && !fs->variant->fs.early_fragment_tests;
@@ -1351,7 +1351,7 @@ void
 tu6_emit_lrz(struct tu_cmd_buffer *cmd, struct tu_cs *cs)
 {
    const uint32_t a = cmd->state.subpass->depth_stencil_attachment.attachment;
-   struct A6XX_GRAS_LRZ_CNTL gras_lrz_cntl = tu6_calculate_lrz_state<CHIP>(cmd, a);
+   struct __GRAS_LRZ_CNTL gras_lrz_cntl = tu6_calculate_lrz_state<CHIP>(cmd, a);
 
    tu6_write_lrz_cntl<CHIP>(cmd, cs, gras_lrz_cntl);
    tu_cs_emit_regs(cs, A6XX_RB_LRZ_CNTL(.enable = gras_lrz_cntl.enable));
