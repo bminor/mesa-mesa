@@ -2508,7 +2508,7 @@ load("ssbo_uniform_block_intel", [-1, 1], [ACCESS, ALIGN_MUL, ALIGN_OFFSET, BASE
 
 # Similar to load_global_const_block_intel but for shared memory
 # src[] = { offset }.
-load("shared_uniform_block_intel", [1], [BASE, ALIGN_MUL, ALIGN_OFFSET], [CAN_ELIMINATE])
+load("shared_uniform_block_intel", [1], [BASE, ACCESS, ALIGN_MUL, ALIGN_OFFSET], [CAN_ELIMINATE])
 
 # Legacy pre-Xe2 URB read.  This takes a URB handle and a 128-bit (vec4)
 # aligned offset.  The hardware can implicitly add a constant offset ("base")
