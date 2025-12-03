@@ -2359,6 +2359,12 @@ visit_atomic_ssbo(isel_context* ctx, nir_intrinsic_instr* instr)
    Temp rsrc = bld.as_uniform(get_ssa_temp(ctx, instr->src[0].ssa));
    Temp dst = get_ssa_temp(ctx, &instr->def);
 
+   /* GFX6-7 are affected by a hw bug that prevents address clamping to
+    * work correctly when the SGPR offset is used.
+    */
+   if (offset.type() == RegType::sgpr && ctx->options->gfx_level < GFX8)
+      offset = as_vgpr(ctx, offset);
+
    aco_opcode op = instr->def.bit_size == 32 ? op32 : op64;
    aco_ptr<Instruction> mubuf{create_instruction(op, Format::MUBUF, 6, return_previous ? 1 : 0)};
    mubuf->operands[0] = Operand(rsrc);
