@@ -1665,7 +1665,7 @@ r3d_setup(struct tu_cmd_buffer *cmd,
 
    tu_cs_emit_regs(cs, A6XX_RB_DITHER_CNTL());
    if (CHIP >= A7XX) {
-      tu_cs_emit_regs(cs, A7XX_SP_DITHER_CNTL());
+      tu_cs_emit_regs(cs, SP_DITHER_CNTL(CHIP));
    }
 
    if (cmd->state.prim_generated_query_running_before_rp) {

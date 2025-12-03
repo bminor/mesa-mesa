@@ -799,7 +799,7 @@ tu6_emit_mrt(struct tu_cmd_buffer *cmd,
          .value;
    tu_cs_emit_regs(cs, A6XX_RB_DITHER_CNTL(.dword = dither_cntl));
    if (CHIP >= A7XX) {
-      tu_cs_emit_regs(cs, A7XX_SP_DITHER_CNTL(.dword = dither_cntl));
+      tu_cs_emit_regs(cs, SP_DITHER_CNTL(CHIP, .dword = dither_cntl));
    }
 
    tu_cs_emit_regs(cs,
