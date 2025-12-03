@@ -289,8 +289,6 @@ class Bitset(object):
                   (prefix, prefix, prefix, skip))
 
     def dump(self, is_deprecated, prefix=None, reg=None):
-        if not reg:
-            return
         if prefix is None:
             prefix = self.name
         if self.reg and self.reg.bit_size == 64:
@@ -315,8 +313,8 @@ class Bitset(object):
                        name, "0x%08xull" % mask(f.low, f.high))
                 tab_to("#define %s__SHIFT" % name, "%d" % f.low)
                 type, val = f.ctype("val")
-                ret_type = "uint64_t" if reg.bit_size == 64 else "uint32_t"
-                cast = "(uint64_t)" if reg.bit_size == 64 else ""
+                ret_type = "uint64_t" if reg and reg.bit_size == 64 else "uint32_t"
+                cast = "(uint64_t)" if reg and reg.bit_size == 64 else ""
 
                 constexpr_mark = "" if type == "float" else " CONSTEXPR"
                 print("static%s inline %s %s(%s val)\n{" % (
