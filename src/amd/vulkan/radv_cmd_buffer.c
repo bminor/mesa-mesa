@@ -13859,9 +13859,6 @@ radv_before_dispatch(struct radv_cmd_buffer *cmd_buffer, struct radv_compute_pip
          cmd_buffer->push_constant_stages |= VK_SHADER_STAGE_COMPUTE_BIT;
       }
    }
-
-   if (pdev->info.gfx_level >= GFX12)
-      radv_gfx12_emit_buffered_regs(device, cmd_buffer->cs);
 }
 
 static void
