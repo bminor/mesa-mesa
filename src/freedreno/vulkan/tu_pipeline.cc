@@ -505,9 +505,9 @@ tu6_setup_streamout(struct tu_cs *cs,
          sizedw += 2;
 
       tu_cs_emit_pkt7(cs, CP_CONTEXT_REG_BUNCH, sizedw);
-      tu_cs_emit(cs, REG_A6XX_VPC_SO_MAPPING_WPTR);
+      tu_cs_emit(cs, VPC_SO_MAPPING_WPTR(CHIP).reg);
       tu_cs_emit(cs, 0);
-      tu_cs_emit(cs, REG_A6XX_VPC_SO_CNTL);
+      tu_cs_emit(cs, VPC_SO_CNTL(CHIP).reg);
       tu_cs_emit(cs, 0);
 
       if (has_pc_dgen_so_cntl) {
@@ -567,18 +567,17 @@ tu6_setup_streamout(struct tu_cs *cs,
       prog_count += 1;
 
    tu_cs_emit_pkt7(cs, CP_CONTEXT_REG_BUNCH, 10 + 2 * prog_count);
-   tu_cs_emit(cs, REG_A6XX_VPC_SO_CNTL);
-   tu_cs_emit(cs, A6XX_VPC_SO_CNTL_STREAM_ENABLE(info->streams_written) |
-                  COND(info->stride[0] > 0,
-                       A6XX_VPC_SO_CNTL_BUF0_STREAM(1 + info->buffer_to_stream[0])) |
-                  COND(info->stride[1] > 0,
-                       A6XX_VPC_SO_CNTL_BUF1_STREAM(1 + info->buffer_to_stream[1])) |
-                  COND(info->stride[2] > 0,
-                       A6XX_VPC_SO_CNTL_BUF2_STREAM(1 + info->buffer_to_stream[2])) |
-                  COND(info->stride[3] > 0,
-                       A6XX_VPC_SO_CNTL_BUF3_STREAM(1 + info->buffer_to_stream[3])));
+   fd_reg_pair reg = VPC_SO_CNTL(
+      CHIP,
+      .buf0_stream = info->stride[0] > 0 ? 1 + info->buffer_to_stream[0] : 0,
+      .buf1_stream = info->stride[1] > 0 ? 1 + info->buffer_to_stream[1] : 0,
+      .buf2_stream = info->stride[2] > 0 ? 1 + info->buffer_to_stream[2] : 0,
+      .buf3_stream = info->stride[3] > 0 ? 1 + info->buffer_to_stream[3] : 0,
+      .stream_enable = info->streams_written);
+   tu_cs_emit(cs, reg.reg);
+   tu_cs_emit(cs, reg.value);
    for (uint32_t i = 0; i < 4; i++) {
-      tu_cs_emit(cs, REG_A6XX_VPC_SO_BUFFER_STRIDE(i));
+      tu_cs_emit(cs, VPC_SO_BUFFER_STRIDE(CHIP, i).reg);
       tu_cs_emit(cs, info->stride[i]);
    }
    bool first = true;
