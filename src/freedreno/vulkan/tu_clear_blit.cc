@@ -5441,6 +5441,7 @@ struct apply_store_coords_state {
    unsigned view;
 };
 
+template <chip CHIP>
 static void
 fdm_apply_store_coords(struct tu_cmd_buffer *cmd,
                        struct tu_cs *cs,
@@ -5466,16 +5467,15 @@ fdm_apply_store_coords(struct tu_cmd_buffer *cmd,
    uint32_t scaled_width = bin.extent.width / frag_area.width;
    uint32_t scaled_height = bin.extent.height / frag_area.height;
 
+   tu_cs_emit_regs(
+      cs, GRAS_A2D_DEST_TL(CHIP, .x = bin.offset.x, .y = bin.offset.y),
+      GRAS_A2D_DEST_BR(CHIP, .x = bin.offset.x + bin.extent.width - 1,
+                       .y = bin.offset.y + bin.extent.height - 1));
    tu_cs_emit_regs(cs,
-      A6XX_GRAS_A2D_DEST_TL(.x = bin.offset.x,
-                          .y = bin.offset.y),
-      A6XX_GRAS_A2D_DEST_BR(.x = bin.offset.x + bin.extent.width - 1,
-                          .y = bin.offset.y + bin.extent.height - 1));
-   tu_cs_emit_regs(cs,
-                   A6XX_GRAS_A2D_SRC_XMIN(common_bin_offset.x),
-                   A6XX_GRAS_A2D_SRC_XMAX(common_bin_offset.x + scaled_width - 1),
-                   A6XX_GRAS_A2D_SRC_YMIN(common_bin_offset.y),
-                   A6XX_GRAS_A2D_SRC_YMAX(common_bin_offset.y + scaled_height - 1));
+                   GRAS_A2D_SRC_XMIN(CHIP, common_bin_offset.x),
+                   GRAS_A2D_SRC_XMAX(CHIP, common_bin_offset.x + scaled_width - 1),
+                   GRAS_A2D_SRC_YMIN(CHIP, common_bin_offset.y),
+                   GRAS_A2D_SRC_YMAX(CHIP, common_bin_offset.y + scaled_height - 1));
 }
 
 template <chip CHIP>
@@ -5610,7 +5610,7 @@ tu_store_gmem_attachment(struct tu_cmd_buffer *cmd,
                .view = i,
             };
             tu_create_fdm_bin_patchpoint(cmd, cs, 8, TU_FDM_SKIP_BINNING,
-                                         fdm_apply_store_coords, state);
+                                         fdm_apply_store_coords<CHIP>, state);
          }
          if (store_common) {
             store_cp_blit<CHIP>(cmd, cs, src_iview, dst_iview, src->samples, false, src_format,
