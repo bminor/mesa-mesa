@@ -126,7 +126,6 @@ static const struct debug_control_bitset debug_control[] = {
    OPT1("no-send-gather",    DEBUG_NO_SEND_GATHER),
    OPT1("no-vrt",            DEBUG_NO_VRT),
    OPT1("shaders-lineno",    DEBUG_SHADERS_LINENO),
-   OPT1("show_shader_stage", DEBUG_SHOW_SHADER_STAGE),
    { NULL, }
 #undef OPT1
 #undef OPT2

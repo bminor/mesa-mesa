@@ -120,8 +120,6 @@ anv_shader_internal_create(struct anv_device *device,
                                  &anv_shader_internal_ops, obj_key_data, key_size);
 
    shader->stage = stage;
-   if(INTEL_DEBUG(DEBUG_SHOW_SHADER_STAGE))
-      fprintf(stderr, "Stage: %s\n", mesa_shader_stage_name(shader->stage));
 
    shader->kernel =
       anv_state_pool_alloc(&device->instruction_state_pool, kernel_size, 64);

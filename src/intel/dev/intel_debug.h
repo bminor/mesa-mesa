@@ -98,7 +98,6 @@ enum intel_debug_flag {
    DEBUG_NO_VRT,
    DEBUG_RT_NO_TRACE,
    DEBUG_SHADERS_LINENO,
-   DEBUG_SHOW_SHADER_STAGE,
    /* Keep the stages grouped */
    DEBUG_VS,
    DEBUG_TCS,
