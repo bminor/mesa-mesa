@@ -4999,6 +4999,7 @@ tu_CmdPushDescriptorSetWithTemplate2KHR(
       pPushDescriptorSetWithTemplateInfo->set, 1, desc_set, 0, NULL);
 }
 
+template <chip CHIP>
 VKAPI_ATTR void VKAPI_CALL
 tu_CmdBindTransformFeedbackBuffersEXT(VkCommandBuffer commandBuffer,
                                       uint32_t firstBinding,
@@ -5029,15 +5030,15 @@ tu_CmdBindTransformFeedbackBuffersEXT(VkCommandBuffer commandBuffer,
       uint32_t offset = iova & 0x1f;
       iova &= ~(uint64_t) 0x1f;
 
-      tu_cs_emit_pkt4(cs, REG_A6XX_VPC_SO_BUFFER_BASE(idx), 3);
-      tu_cs_emit_qw(cs, iova);
-      tu_cs_emit(cs, size + offset);
+      tu_cs_emit_regs(cs, VPC_SO_BUFFER_BASE(CHIP, idx, .qword = iova),
+                      VPC_SO_BUFFER_SIZE(CHIP, idx, size + offset));
 
       cmd->state.streamout_offset[idx] = offset;
    }
 
    tu_cond_exec_end(cs);
 }
+TU_GENX(tu_CmdBindTransformFeedbackBuffersEXT);
 
 template <chip CHIP>
 VKAPI_ATTR void VKAPI_CALL
