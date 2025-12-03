@@ -34,7 +34,6 @@
 #include "genxml/decode.h"
 #include "genxml/gen_macros.h"
 
-#include "clc/pan_compile.h"
 #include "kmod/pan_kmod.h"
 #include "util/os_file.h"
 #include "util/u_printf.h"
@@ -493,7 +492,7 @@ panvk_per_arch(create_device)(struct panvk_physical_device *physical_device,
       goto err_free_priv_bos;
 #endif
 
-   result = panvk_priv_bo_create(device, LIBPAN_PRINTF_BUFFER_SIZE, 0,
+   result = panvk_priv_bo_create(device, PAN_PRINTF_BUFFER_SIZE, 0,
                                  VK_SYSTEM_ALLOCATION_SCOPE_DEVICE,
                                  &device->printf.bo);
    if (result != VK_SUCCESS)

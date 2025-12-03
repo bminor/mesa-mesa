@@ -43,6 +43,8 @@ void pan_preprocess_nir(nir_shader *nir, unsigned gpu_id);
 void pan_optimize_nir(nir_shader *nir, unsigned gpu_id);
 void pan_postprocess_nir(nir_shader *nir, unsigned gpu_id);
 
+#define PAN_PRINTF_BUFFER_SIZE 16384
+
 /* Indices for named (non-XFB) varyings that are present. These are packed
  * tightly so they correspond to a bitfield present (P) indexed by (1 <<
  * PAN_VARY_*). This has the nice property that you can lookup the buffer index

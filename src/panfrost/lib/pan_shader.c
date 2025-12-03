@@ -23,7 +23,6 @@
  */
 
 #include "pan_shader.h"
-#include "panfrost/clc/pan_compile.h"
 #include "pan_blend.h"
 #include "pan_format.h"
 
@@ -39,7 +38,7 @@ pan_shader_compile(nir_shader *s, struct pan_compile_inputs *inputs,
    memset(info, 0, sizeof(*info));
 
    NIR_PASS(_, s, nir_inline_sysval, nir_intrinsic_load_printf_buffer_size,
-            LIBPAN_PRINTF_BUFFER_SIZE - 8);
+            PAN_PRINTF_BUFFER_SIZE - 8);
 
    if (arch >= 6)
       bifrost_compile_shader_nir(s, inputs, binary, info);

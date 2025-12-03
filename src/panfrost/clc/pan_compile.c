@@ -5,7 +5,6 @@
  * SPDX-License-Identifier: MIT
  */
 
-#include "pan_compile.h"
 #include "compiler/glsl_types.h"
 #include "compiler/spirv/nir_spirv.h"
 #include "panfrost/compiler/bifrost/bifrost_compile.h"
