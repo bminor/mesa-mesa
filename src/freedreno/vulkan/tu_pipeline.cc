@@ -2470,7 +2470,7 @@ tu6_emit_viewport(struct tu_cs *cs,
 {
    VkExtent2D guardband = {511, 511};
 
-   tu_cs_emit_pkt4(cs, REG_A6XX_GRAS_CL_VIEWPORT_XOFFSET(0), vp->viewport_count * 6);
+   tu_cs_emit_pkt4(cs, GRAS_CL_VIEWPORT_XOFFSET(CHIP, 0).reg, vp->viewport_count * 6);
    for (uint32_t i = 0; i < vp->viewport_count; i++) {
       const VkViewport *viewport = &vp->viewports[i];
       float offsets[3];
@@ -2502,7 +2502,7 @@ tu6_emit_viewport(struct tu_cs *cs,
          MIN2(guardband.height, fd_calc_guardband(offsets[1], scales[1], false));
    }
 
-   tu_cs_emit_pkt4(cs, REG_A6XX_GRAS_SC_VIEWPORT_SCISSOR_TL(0), vp->viewport_count * 2);
+   tu_cs_emit_pkt4(cs, GRAS_SC_VIEWPORT_SCISSOR_TL(CHIP, 0).reg, vp->viewport_count * 2);
    for (uint32_t i = 0; i < vp->viewport_count; i++) {
       const VkViewport *viewport = &vp->viewports[i];
       VkOffset2D min;
@@ -2531,10 +2531,11 @@ tu6_emit_viewport(struct tu_cs *cs,
       assert(min.x < max.x);
       assert(min.y < max.y);
 
-      tu_cs_emit(cs, A6XX_GRAS_SC_VIEWPORT_SCISSOR_TL_X(min.x) |
-                     A6XX_GRAS_SC_VIEWPORT_SCISSOR_TL_Y(min.y));
-      tu_cs_emit(cs, A6XX_GRAS_SC_VIEWPORT_SCISSOR_BR_X(max.x - 1) |
-                     A6XX_GRAS_SC_VIEWPORT_SCISSOR_BR_Y(max.y - 1));
+      tu_cs_emit(
+         cs, GRAS_SC_VIEWPORT_SCISSOR_TL(CHIP, 0, .x = min.x, .y = min.y).value);
+      tu_cs_emit(
+         cs, GRAS_SC_VIEWPORT_SCISSOR_BR(CHIP, 0, .x = max.x - 1, .y = max.y - 1)
+                .value);
    }
 
    /* A7XX+ doesn't clamp to [0,1] with disabled depth clamp, to support
@@ -2720,7 +2721,7 @@ template <chip CHIP>
 void
 tu6_emit_scissor(struct tu_cs *cs, const struct vk_viewport_state *vp)
 {
-   tu_cs_emit_pkt4(cs, REG_A6XX_GRAS_SC_SCREEN_SCISSOR_TL(0), vp->scissor_count * 2);
+   tu_cs_emit_pkt4(cs, GRAS_SC_SCREEN_SCISSOR_TL(CHIP, 0).reg, vp->scissor_count * 2);
 
    for (uint32_t i = 0; i < vp->scissor_count; i++) {
       const VkRect2D *scissor = &vp->scissors[i];
@@ -2742,10 +2743,8 @@ tu6_emit_scissor(struct tu_cs *cs, const struct vk_viewport_state *vp)
          max_y = MIN2(scissor_max, max_y);
       }
 
-      tu_cs_emit(cs, A6XX_GRAS_SC_SCREEN_SCISSOR_TL_X(min_x) |
-                     A6XX_GRAS_SC_SCREEN_SCISSOR_TL_Y(min_y));
-      tu_cs_emit(cs, A6XX_GRAS_SC_SCREEN_SCISSOR_BR_X(max_x) |
-                     A6XX_GRAS_SC_SCREEN_SCISSOR_BR_Y(max_y));
+      tu_cs_emit(cs, GRAS_SC_SCREEN_SCISSOR_TL(CHIP, i, .x = min_x, .y = min_y).value);
+      tu_cs_emit(cs, GRAS_SC_SCREEN_SCISSOR_BR(CHIP, i, .x = max_x, .y = max_y).value);
    }
 }
 
