@@ -1230,6 +1230,56 @@ struct anv_gfx_state_ptr {
              4 * _cmd_state->len);                                      \
    } while (0)
 
+#define ANV_SHADER_HEAP_MAX_BOS (128)
+
+struct anv_shader_heap {
+   struct anv_device *device;
+
+   struct anv_va_range va_range;
+
+   uint32_t start_pot_size;
+   uint32_t base_pot_size;
+
+   uint64_t start_chunk_size;
+   uint64_t base_chunk_size;
+
+   uint32_t small_chunk_count;
+
+   struct {
+      uint64_t addr;
+      uint64_t size;
+
+      struct anv_bo *bo;
+   } bos[ANV_SHADER_HEAP_MAX_BOS];
+   BITSET_DECLARE(allocated_bos, ANV_SHADER_HEAP_MAX_BOS);
+
+   struct util_vma_heap vma;
+   simple_mtx_t mutex;
+};
+
+struct anv_shader_alloc {
+   uint64_t offset;
+   uint64_t alloc_size;
+};
+
+VkResult anv_shader_heap_init(struct anv_shader_heap *heap,
+                              struct anv_device *device,
+                              struct anv_va_range va_range,
+                              uint32_t start_pot_size,
+                              uint32_t base_pot_size);
+void anv_shader_heap_finish(struct anv_shader_heap *heap);
+
+struct anv_shader_alloc anv_shader_heap_alloc(struct anv_shader_heap *heap,
+                                              uint64_t size,
+                                              uint64_t align,
+                                              bool capture_replay,
+                                              uint64_t requested_addr);
+void anv_shader_heap_free(struct anv_shader_heap *heap, struct anv_shader_alloc alloc);
+
+void anv_shader_heap_upload(struct anv_shader_heap *heap,
+                            struct anv_shader_alloc alloc,
+                            const void *data, uint64_t size);
+
 struct anv_shader {
    struct vk_shader vk;
 
@@ -2462,6 +2512,8 @@ struct anv_device {
     struct util_vma_heap                        vma_desc;
     struct util_vma_heap                        vma_dynamic_visible;
     struct util_vma_heap                        vma_trtt;
+
+    struct anv_shader_heap                      shader_heap;
 
     /** List of all anv_device_memory objects */
     struct list_head                            memory_objects;

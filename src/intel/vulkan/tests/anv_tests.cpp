@@ -20,6 +20,9 @@ ANV_C_TEST(BlockPool, NoFree, block_pool_no_free_test);
 ANV_C_TEST(BlockPool, GrowFirst, block_pool_grow_first_test);
 ANV_C_TEST(BlockPool, MaxSize, block_pool_max_size);
 
+ANV_C_TEST(ShaderHeap, SmallAllocsLow, shader_heap_small_allocs_lo);
+ANV_C_TEST(ShaderHeap, SmallAllocsHigh, shader_heap_small_allocs_hi);
+
 extern "C" void FAIL_IN_GTEST(const char *file_path, unsigned line_number, const char *msg) {
    GTEST_FAIL_AT(file_path, line_number) << msg;
 }

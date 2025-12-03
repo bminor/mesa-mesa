@@ -192,6 +192,7 @@ libanv_files = files(
   'anv_sampler.c',
   'anv_shader.c',
   'anv_shader_compile.c',
+  'anv_shader_heap.c',
   'anv_slab_bo.c',
   'anv_slab_bo.h',
   'anv_sparse.c',
@@ -328,6 +329,7 @@ if with_tests
     'tests/block_pool_no_free.c',
     'tests/block_pool_grow_first.c',
     'tests/block_pool_max_size.c',
+    'tests/shader_heap_small_allocs.c',
   )
 
   test(
