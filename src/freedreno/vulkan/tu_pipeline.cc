@@ -470,7 +470,7 @@ tu6_emit_shared_consts_enable(struct tu_cs *cs, bool enable)
 {
    if (CHIP == A6XX) {
       /* Enable/disable shared constants */
-      tu_cs_emit_regs(cs, A6XX_HLSQ_SHARED_CONSTS(.enable = enable));
+      tu_cs_emit_regs(cs, HLSQ_SHARED_CONSTS(CHIP, .enable = enable));
    } else {
       assert(!enable);
    }
