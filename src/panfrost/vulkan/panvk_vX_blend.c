@@ -196,14 +196,13 @@ emit_blend_desc(const struct pan_shader_info *fs_info, uint64_t fs_code,
          cfg.internal.fixed_function.rt = rt_idx;
 
 #if PAN_ARCH < 9
+         nir_alu_type type = fs_info->bifrost.blend[blend_idx].type;
          if (fs_info->fs.untyped_color_outputs) {
-            nir_alu_type type = fs_info->bifrost.blend[blend_idx].type;
-
             cfg.internal.fixed_function.conversion.register_format =
                GENX(pan_fixup_blend_type)(type, rt->format);
          } else {
             cfg.internal.fixed_function.conversion.register_format =
-               fs_info->bifrost.blend[blend_idx].format;
+               pan_blend_type_from_nir(type);
          }
 
          if (!opaque) {

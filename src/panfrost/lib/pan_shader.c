@@ -170,12 +170,4 @@ pan_shader_compile(nir_shader *s, struct pan_compile_inputs *inputs,
          info->ftz_fp32 = true;
       }
    }
-
-   if (arch >= 6) {
-      /* This is "redundant" information, but is needed in a draw-time hot path */
-      for (unsigned i = 0; i < ARRAY_SIZE(info->bifrost.blend); ++i) {
-         info->bifrost.blend[i].format =
-            pan_blend_type_from_nir(info->bifrost.blend[i].type);
-      }
-   }
 }

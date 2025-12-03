@@ -411,7 +411,7 @@ panfrost_emit_blend(struct panfrost_batch *batch, void *rts,
                   pan_fixup_blend_type)(fs->info.bifrost.blend[i].type, format);
             } else {
                cfg.fixed_function.conversion.register_format =
-                  fs->info.bifrost.blend[i].format;
+                  pan_blend_type_from_nir(fs->info.bifrost.blend[i].type);
             }
 #endif
          }
