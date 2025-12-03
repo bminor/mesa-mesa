@@ -2467,7 +2467,7 @@ load("ssbo_uniform_block_intel", [-1, 1], [ACCESS, ALIGN_MUL, ALIGN_OFFSET, BASE
 
 # Similar to load_global_const_block_intel but for shared memory
 # src[] = { offset }.
-load("shared_uniform_block_intel", [1], [BASE, ALIGN_MUL, ALIGN_OFFSET], [CAN_ELIMINATE])
+load("shared_uniform_block_intel", [1], [BASE, ACCESS, ALIGN_MUL, ALIGN_OFFSET], [CAN_ELIMINATE])
 
 # Inline register delivery (available on Gfx12.5+ for CS/Mesh/Task stages)
 intrinsic("load_inline_data_intel", [], dest_comp=0,

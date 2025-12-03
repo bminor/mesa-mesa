@@ -74,7 +74,7 @@
         "description": "nir: add ACCESS to shared_uniform_block_intel",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "0dd09a292b621492dd5e1a46fe2c3d579318fcfd",
         "notes": null
