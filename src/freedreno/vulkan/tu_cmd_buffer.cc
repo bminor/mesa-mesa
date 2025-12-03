@@ -2303,6 +2303,7 @@ tu_enable_fdm_offset(struct tu_cmd_buffer *cmd)
       VK_IMAGE_CREATE_FRAGMENT_DENSITY_MAP_OFFSET_BIT_EXT;
 }
 
+template <chip CHIP>
 static void
 update_vsc_pipe(struct tu_cmd_buffer *cmd,
                 struct tu_cs *cs,
@@ -2330,7 +2331,8 @@ update_vsc_pipe(struct tu_cmd_buffer *cmd,
                    A6XX_VSC_PIPE_DATA_DRAW_STRIDE(cmd->vsc_draw_strm_pitch),
                    A6XX_VSC_PIPE_DATA_DRAW_LENGTH(cmd->vsc_draw_strm_pitch - VSC_PAD));
 
-   tu_cs_emit_regs(cs, A7XX_VSC_UNKNOWN_0D08(0));
+   if (CHIP >= A7XX)
+      tu_cs_emit_regs(cs, VSC_UNKNOWN_0D08(CHIP, 0));
 }
 
 static void
@@ -2449,7 +2451,7 @@ tu6_emit_binning_pass(struct tu_cmd_buffer *cmd, struct tu_cs *cs,
    tu_cs_emit_regs(cs,
                    A6XX_VFD_RENDER_MODE(.render_mode = BINNING_PASS));
 
-   update_vsc_pipe(cmd, cs, phys_dev->info->num_vsc_pipes);
+   update_vsc_pipe<CHIP>(cmd, cs, phys_dev->info->num_vsc_pipes);
 
    tu_emit_event_write<CHIP>(cmd, cs, FD_VSC_BINNING_START);
 
