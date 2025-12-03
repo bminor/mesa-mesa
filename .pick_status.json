@@ -1,5 +1,435 @@
 [
     {
+        "sha": "ac37885fc85203c08f09345c637b6a21f642ed66",
+        "description": "vulkan: update spec to 1.4.335",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "9b011a7344e62dfc4269e0af54a5957da6b3e7a1",
+        "description": "amd: rename most GFX115x definitions for released chips",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "858364be71efb5d78333b06c36b2abf9776210fc",
+        "description": "intel: Add PIPE_FORMAT_R10G10B10X2_UNORM support",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3652b29573918c70505f8db8d4d8b06df7495df5",
+        "description": "radeonsi/vpe: correct tone mapping parameters",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "62a97e87a649d4b64a92782b91a4e8ec4a6548cf",
+        "description": "docs,kk: Add KosmicKrisp environment variable documentation",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "df19ec302093b5e47c0d7556ea41af47d2b7af67",
+        "description": "vulkan/wsi: Fix double destroy of present_id_timeline at swapchain create",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "c888da3d48a55ad7be4fedf783369fb12163b03e",
+        "notes": null
+    },
+    {
+        "sha": "fda1262eedae057c715eba6a64b9d056aa41e678",
+        "description": "radv: reduce maxTexelBufferElements to 1<<29",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "bb19e30e0d4f310d3add1e8f83a07795fb27c018",
+        "description": "venus: add VK_EXT_mesh_shader support",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6fb6a740d9411d0fc4be0d40aef34395b32cad30",
+        "description": "venus: sync protocol for VK_EXT_mesh_shader support",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "86419dd51933f0830dc8ad60ae4dc8dc0122a2e6",
+        "description": "brw: remove driver specific load_num_workgroup lowering",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "578d2f0daad197b92ad4079a89d847a57bbd6358",
+        "description": "anv: move load_num_workgroups tracking to driver",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e12e7e117c3995ea6e6af0cd8079f8471615cb32",
+        "description": "iris: lower load_num_workgroups",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5bf3546cc667723103d31b44bd524c00b41ff98e",
+        "description": "anv: Use companion cmd buffer for CCS and MCS image barriers",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "69f6966ae2fc5f3d015eb2d72efec32856b41505",
+        "description": "anv: Add shorthand for executing on the companion cmd buffer",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "fe0aed23025295a2f7a7183f58042f2df4741083",
+        "description": "anv: Fix missing const qualifiers on some params in anv_blorp.c",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b16c169b6dbca379da25f266d9c177c573d3ffa9",
+        "description": "vc4: Don't call nir_lower_flrp in vc4_optimize_nir",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "956a09b99093a5124e785e1208c34141798e0505",
+        "description": "broadcom/compiler: only lower flrp once",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d64ce23b08a5fc96dc205dc0f485829d5138497a",
+        "description": "elk: only lower flrp once",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e4b8b758b122abb17a2a333423ff649ad843b73f",
+        "description": "brw: only lower flrp once",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "92e609f4feaa7abbd8396d370ec4c244902c7914",
+        "description": "glsl: Move flrp lowering out of the loop",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4bbc29373a810b76bc4bdab16d28b460e35c1086",
+        "description": "nir/lower_flrp: Check and set shader_info::flrp_lowered",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "341e2d328336788e30e480000c46564d76a510d0",
+        "description": "lavapipe: fp16 flrp must also be lowered",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "b38879f8c5f57b7f1802e433e33181bdf5e72aef",
+        "notes": null
+    },
+    {
+        "sha": "f1debfccafde1ebae7e880d245823571586e375e",
+        "description": "pan: Move pan_shader_compile() to pan_compiler.h",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "10e571aebd2ec4995ee44e5e01e614dadb8a1c25",
+        "description": "pan/compiler: Move pan_ir.h into pan_compiler.h",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2d286ec80a73d4a2f889b594d73db460f05f1fcd",
+        "description": "pan/compiler: Move all NIR passe definitions to pan_nir.h",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b7f45c66feb8fc3a5ce92d5cc99b740dd82eca0a",
+        "description": "pan: Move pan_shader NIR helpers to pan_compiler.h",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "55ae25f2d733d3dc5db25233aa70b3932be3b106",
+        "description": "pan: Move disassembly wrappers to a new pan_compiler.h",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "1f068d8c71030f0e85479a153a5f7810aa58d9f7",
+        "description": "pan: Move pan_arch() to pan_model.h",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4c9ec8fad2143b5cbb294e687204dc59deed56d2",
+        "description": "pan: Add a central libpanfrost_compiler library",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "013c94458ed9e272fed02b1b3fcb762d61e5e522",
+        "description": "pan/bi: Add separate meson files for bifrost tests",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b02bc53261bd5ba51f004edea2d2296b37c3361d",
+        "description": "pan: Move util/* to compiler/",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "fa6c9b68052743542c2bed6d9de7501a8cb7c379",
+        "description": "pan: Move midgard to compiler/midgard",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0f923e7f606c6012a12460b24016f3c8469f04ad",
+        "description": "pan: Move compiler to compiler/bifrost",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "57ae8eb70f71df96d13ad3c5dedbc4fcec05c13f",
+        "description": "android_stub: fix missing prototypes issues",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "1997987b58dbf4710df70247018acf725a723c88",
+        "description": "util: fix error about missing include",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5af6af9644a43ffd736cc348435a0df49e60b89c",
+        "description": "android_stub: add missing definition",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "28d0ff419f00fc5419c5c03cad9c66b4958dbd5a",
+        "description": "nak/legalize: Use ConstTracker to skip some movs",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4890e91f49fa845f9e0c4fde9b935b832ea1a062",
+        "description": "nak: DCE after legalize",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "61abcb2bc8577d22575ae5c53d52d25a38bd4059",
+        "description": "nak: Split LegalizeBuilder into its own type",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7f9c82757767cc7732e6a078d9fac19fdfb04b1c",
+        "description": "nouveau/headers: Use drf and cl906f.h in nv_push.h",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8009bfbc0177587e46df874d9ec852f90d777fe7",
+        "description": "nouveau/headers: Use drf defines in nv_push.c",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b90053cf6b216249a0eff46544cc51280388ab72",
+        "description": "nouveau: Deduplicate drf.h",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "523d9f73b9dce444aa646dc7616ef3735bc325ab",
+        "description": "nouveau/headers: Use 906f defines for nv_push.c",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
         "sha": "a71b4a4b954dcfc1667dc1b36f1f25ac02d3469b",
         "description": "venus: device create to filter promoted swapchain_maintenance1",
         "nominated": false,
