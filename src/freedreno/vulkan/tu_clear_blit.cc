@@ -948,7 +948,7 @@ r3d_common(struct tu_cmd_buffer *cmd, struct tu_cs *cs, enum r3d_type type,
       }
    }
 
-   tu6_emit_msaa(cs, dst_samples, false);
+   tu6_emit_msaa<CHIP>(cs, dst_samples, false);
 }
 
 static void

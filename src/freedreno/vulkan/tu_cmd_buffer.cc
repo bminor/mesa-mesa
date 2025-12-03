@@ -1165,6 +1165,7 @@ tu_cs_emit_draw_state(struct tu_cs *cs, uint32_t id, struct tu_draw_state state)
    tu_cs_emit_qw(cs, state.iova);
 }
 
+template <chip CHIP>
 void
 tu6_emit_msaa(struct tu_cs *cs, VkSampleCountFlagBits vk_samples,
               bool msaa_disable)
@@ -1177,8 +1178,8 @@ tu6_emit_msaa(struct tu_cs *cs, VkSampleCountFlagBits vk_samples,
                                              .msaa_disable = msaa_disable));
 
    tu_cs_emit_regs(cs,
-                   A6XX_GRAS_SC_RAS_MSAA_CNTL(samples),
-                   A6XX_GRAS_SC_DEST_MSAA_CNTL(.samples = samples,
+                   GRAS_SC_RAS_MSAA_CNTL(CHIP, samples),
+                   GRAS_SC_DEST_MSAA_CNTL(CHIP, .samples = samples,
                                                .msaa_disable = msaa_disable));
 
    tu_cs_emit_regs(cs,
@@ -1186,7 +1187,9 @@ tu6_emit_msaa(struct tu_cs *cs, VkSampleCountFlagBits vk_samples,
                    A6XX_RB_DEST_MSAA_CNTL(.samples = samples,
                                           .msaa_disable = msaa_disable));
 }
+TU_GENX(tu6_emit_msaa);
 
+template <chip CHIP>
 static void
 tu6_update_msaa(struct tu_cmd_buffer *cmd)
 {
@@ -1199,9 +1202,10 @@ tu6_update_msaa(struct tu_cmd_buffer *cmd)
     */
    if (samples == 0)
       samples = VK_SAMPLE_COUNT_1_BIT;
-   tu6_emit_msaa(&cmd->draw_cs, samples, cmd->state.msaa_disable);
+   tu6_emit_msaa<CHIP>(&cmd->draw_cs, samples, cmd->state.msaa_disable);
 }
 
+template <chip CHIP>
 static void
 tu6_update_msaa_disable(struct tu_cmd_buffer *cmd)
 {
@@ -1221,7 +1225,7 @@ tu6_update_msaa_disable(struct tu_cmd_buffer *cmd)
 
    if (cmd->state.msaa_disable != msaa_disable) {
       cmd->state.msaa_disable = msaa_disable;
-      tu6_update_msaa(cmd);
+      tu6_update_msaa<CHIP>(cmd);
    }
 }
 
@@ -7941,13 +7945,13 @@ tu6_draw_common(struct tu_cmd_buffer *cmd,
                    MESA_VK_DYNAMIC_RS_LINE_MODE) ||
        (cmd->state.dirty & TU_CMD_DIRTY_TES) ||
        (cmd->state.dirty & TU_CMD_DIRTY_DRAW_STATE)) {
-      tu6_update_msaa_disable(cmd);
+      tu6_update_msaa_disable<CHIP>(cmd);
    }
 
    if (BITSET_TEST(cmd->vk.dynamic_graphics_state.dirty,
                    MESA_VK_DYNAMIC_MS_RASTERIZATION_SAMPLES) ||
        (cmd->state.dirty & TU_CMD_DIRTY_DRAW_STATE)) {
-      tu6_update_msaa(cmd);
+      tu6_update_msaa<CHIP>(cmd);
    }
 
    bool dirty_fs_params = false;

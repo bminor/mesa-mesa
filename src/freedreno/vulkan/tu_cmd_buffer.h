@@ -835,6 +835,7 @@ tu_get_descriptors_state(struct tu_cmd_buffer *cmd_buffer,
    return &cmd_buffer->descriptors[bind_point];
 }
 
+template <chip CHIP>
 void tu6_emit_msaa(struct tu_cs *cs, VkSampleCountFlagBits samples,
                    bool msaa_disable);
 
