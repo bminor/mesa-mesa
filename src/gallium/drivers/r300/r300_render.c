@@ -544,7 +544,14 @@ static void r300_draw_elements_immediate(struct r300_context *r300,
             if (draw->count & 1)
                 OUT_CS(ptr2[i] + draw->index_bias);
         } else {
-            OUT_CS_TABLE(ptr2, count_dwords);
+            /* OUT_CS_TABLE expects full dwords so pack the odd tail manually. */
+            if (draw->count & 1) {
+                if (count_dwords > 1)
+                    OUT_CS_TABLE(ptr2, count_dwords - 1);
+                OUT_CS(ptr2[draw->count - 1]);
+            } else {
+                OUT_CS_TABLE(ptr2, count_dwords);
+            }
         }
         break;
 
