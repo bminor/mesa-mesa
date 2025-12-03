@@ -2301,10 +2301,12 @@ static int amdgpu_cs_flush(struct radeon_cmdbuf *rcs,
                            RADEON_USAGE_READ | RADEON_PRIO_IB, (radeon_bo_domain)0);
    }
 
+   simple_mtx_lock(&aws->stats_lock);
    if (acs->ip_type == AMD_IP_GFX)
       aws->num_gfx_IBs++;
    else if (acs->ip_type == AMD_IP_SDMA)
       aws->num_sdma_IBs++;
+   simple_mtx_unlock(&aws->stats_lock);
 
    return error_code;
 }

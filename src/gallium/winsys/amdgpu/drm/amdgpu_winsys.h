@@ -214,6 +214,7 @@ struct amdgpu_winsys {
    ac_drm_device *dev;
 
    simple_mtx_t bo_fence_lock;
+   simple_mtx_t stats_lock;
 
    int num_cs; /* The number of command streams created. */
    uint32_t next_bo_unique_id;
