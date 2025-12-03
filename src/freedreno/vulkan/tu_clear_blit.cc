@@ -889,7 +889,7 @@ r3d_common(struct tu_cmd_buffer *cmd, struct tu_cs *cs, enum r3d_type type,
    tu6_emit_vpc<CHIP>(cs, vs, NULL, NULL, NULL, fs);
 
    if (CHIP >= A7XX) {
-      tu_cs_emit_regs(cs, A7XX_SP_RENDER_CNTL(.fs_disable = false));
+      tu_cs_emit_regs(cs, SP_RENDER_CNTL(CHIP, .fs_disable = false));
    }
 
    /* REPL_MODE for varying with RECTLIST (2 vertices only) */
