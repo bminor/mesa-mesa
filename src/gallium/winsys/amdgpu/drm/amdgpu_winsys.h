@@ -219,6 +219,7 @@ struct amdgpu_winsys {
    uint32_t next_bo_unique_id;
    uint64_t allocated_vram;
    uint64_t allocated_gtt;
+   uint32_t allocated_oa;
    uint64_t mapped_vram;
    uint64_t mapped_gtt;
    uint64_t slab_wasted_vram;

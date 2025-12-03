@@ -309,6 +309,8 @@ void amdgpu_bo_destroy(struct amdgpu_winsys *aws, struct pb_buffer_lean *_buf)
       aws->allocated_vram -= align64(bo->b.base.size, aws->info.gart_page_size);
    else if (bo->b.base.placement & RADEON_DOMAIN_GTT)
       aws->allocated_gtt -= align64(bo->b.base.size, aws->info.gart_page_size);
+   else if (bo->b.base.placement & RADEON_DOMAIN_OA)
+      aws->allocated_oa -= bo->b.base.size;
 
    simple_mtx_destroy(&bo->map_lock);
    FREE(bo);
@@ -716,6 +718,8 @@ static struct amdgpu_winsys_bo *amdgpu_create_bo(struct amdgpu_winsys *aws,
       aws->allocated_vram += align64(size, aws->info.gart_page_size);
    else if (initial_domain & RADEON_DOMAIN_GTT)
       aws->allocated_gtt += align64(size, aws->info.gart_page_size);
+   else if (initial_domain & RADEON_DOMAIN_OA)
+      aws->allocated_oa += size;
 
    amdgpu_add_buffer_to_global_list(aws, bo);
 
