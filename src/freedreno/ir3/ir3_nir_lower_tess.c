@@ -569,11 +569,6 @@ lower_tess_ctrl_block(nir_block *block, nir_builder *b, struct state *state)
 
          nir_def *address, *offset;
 
-         /* note if vectorization of the tess level loads ever happens:
-          * "ldg" across 16-byte boundaries can behave incorrectly if results
-          * are never used. most likely some issue with (sy) not properly
-          * syncing with values coming from a second memory transaction.
-          */
          gl_varying_slot location = nir_intrinsic_io_semantics(intr).location;
          if (is_tess_levels(location)) {
             assert(intr->def.num_components == 1);
@@ -759,11 +754,6 @@ lower_tess_eval_block(nir_block *block, nir_builder *b, struct state *state)
 
          nir_def *address, *offset;
 
-         /* note if vectorization of the tess level loads ever happens:
-          * "ldg" across 16-byte boundaries can behave incorrectly if results
-          * are never used. most likely some issue with (sy) not properly
-          * syncing with values coming from a second memory transaction.
-          */
          gl_varying_slot location = nir_intrinsic_io_semantics(intr).location;
          if (is_tess_levels(location)) {
             assert(intr->def.num_components == 1);
