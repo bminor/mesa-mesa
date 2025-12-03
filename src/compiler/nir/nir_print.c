@@ -2038,6 +2038,10 @@ print_tex_instr(nir_tex_instr *instr, print_state *state)
    if (instr->skip_helpers) {
       fprintf(fp, ", skip_helpers");
    }
+
+   if (instr->backend_flags) {
+      fprintf(fp, ", backend_flags=0x%X", instr->backend_flags);
+   }
 }
 
 static void
