@@ -4473,6 +4473,7 @@ tu_CmdBindVertexBuffers2(VkCommandBuffer commandBuffer,
    cmd->state.dirty |= TU_CMD_DIRTY_VERTEX_BUFFERS;
 }
 
+template <chip CHIP>
 VKAPI_ATTR void VKAPI_CALL
 tu_CmdBindIndexBuffer2KHR(VkCommandBuffer commandBuffer,
                           VkBuffer buffer,
@@ -4508,7 +4509,7 @@ tu_CmdBindIndexBuffer2KHR(VkCommandBuffer commandBuffer,
    if (buf) {
       /* initialize/update the restart index */
       if (cmd->state.index_size != index_size)
-         tu_cs_emit_regs(&cmd->draw_cs, A6XX_PC_RESTART_INDEX(restart_index));
+         tu_cs_emit_regs(&cmd->draw_cs, PC_RESTART_INDEX(CHIP, restart_index));
 
       cmd->state.index_va = vk_buffer_address(&buf->vk, offset);
       cmd->state.max_index_count = size >> index_shift;
@@ -4519,6 +4520,7 @@ tu_CmdBindIndexBuffer2KHR(VkCommandBuffer commandBuffer,
       cmd->state.index_size = 0;
    }
 }
+TU_GENX(tu_CmdBindIndexBuffer2KHR);
 
 template <chip CHIP>
 static void
