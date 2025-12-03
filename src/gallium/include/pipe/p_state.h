@@ -473,6 +473,7 @@ struct pipe_sampler_state
 };
 
 struct pipe_tex2d_from_buf {
+   /* Only 32K x 32K textures are supported. */
    unsigned offset;  /**< offset in pixels */
    uint16_t row_stride; /**< size of the image row_stride in pixels */
    uint16_t width;      /**< width of image provided by application */
@@ -553,7 +554,7 @@ struct pipe_resource
    EXCLUSIVE_CACHELINE(struct pipe_reference reference);
 
    uint32_t width0; /**< Used by both buffers and textures. */
-   uint16_t height0; /* Textures: The maximum height/depth/array_size is 16k. */
+   uint32_t height0;    /* textures >= 64K are possible */
    uint16_t depth0;
    uint16_t array_size;
 

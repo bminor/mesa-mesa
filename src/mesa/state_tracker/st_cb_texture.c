@@ -1070,8 +1070,8 @@ guess_and_alloc_texture(struct st_context *st,
    const struct gl_texture_image *firstImage;
    GLuint lastLevel, width, height, depth;
    GLuint bindings;
-   unsigned ptWidth;
-   uint16_t ptHeight, ptDepth, ptLayers;
+   unsigned ptWidth, ptHeight;
+   uint16_t ptDepth, ptLayers;
    enum pipe_format fmt;
    bool guessed_box = false;
 
@@ -1239,8 +1239,8 @@ st_AllocTextureImageBuffer(struct gl_context *ctx,
       enum pipe_format format =
          st_mesa_format_to_pipe_format(st, texImage->TexFormat);
       GLuint bindings = default_bindings(st, format);
-      unsigned ptWidth;
-      uint16_t ptHeight, ptDepth, ptLayers;
+      unsigned ptWidth, ptHeight;
+      uint16_t ptDepth, ptLayers;
 
       st_gl_texture_dims_to_pipe_dims(stObj->Target,
                                       width, height, depth,
@@ -3161,8 +3161,8 @@ st_finalize_texture(struct gl_context *ctx,
    GLuint face;
    const struct gl_texture_image *firstImage;
    enum pipe_format firstImageFormat;
-   unsigned ptWidth;
-   uint16_t ptHeight, ptDepth, ptLayers, ptNumSamples;
+   unsigned ptWidth, ptHeight;
+   uint16_t ptDepth, ptLayers, ptNumSamples;
 
    if (tObj->Immutable)
       return GL_TRUE;
@@ -3210,8 +3210,8 @@ st_finalize_texture(struct gl_context *ctx,
 
    /* Find size of level=0 Gallium mipmap image, plus number of texture layers */
    {
-      unsigned width;
-      uint16_t height, depth;
+      unsigned width, height;
+      uint16_t depth;
 
       st_gl_texture_dims_to_pipe_dims(tObj->Target,
                                       firstImage->Width2,
@@ -3441,8 +3441,8 @@ st_texture_storage(struct gl_context *ctx,
    struct gl_texture_image *texImage = texObj->Image[0][0];
    struct st_context *st = st_context(ctx);
    struct pipe_screen *screen = st->screen;
-   unsigned ptWidth, bindings;
-   uint16_t ptHeight, ptDepth, ptLayers;
+   unsigned ptWidth, ptHeight, bindings;
+   uint16_t ptDepth, ptLayers;
    enum pipe_format fmt;
    GLint level;
    GLuint num_samples = texImage->NumSamples;
@@ -3697,8 +3697,8 @@ find_mipmap_level(const struct gl_texture_image *texImage,
    GLint texWidth = texImage->Width;
    GLint texHeight = texImage->Height;
    GLint texDepth = texImage->Depth;
-   unsigned level, w;
-   uint16_t h, d, layers;
+   unsigned level, w, h;
+   uint16_t d, layers;
 
    st_gl_texture_dims_to_pipe_dims(target, texWidth, texHeight, texDepth,
                                    &w, &h, &d, &layers);
