@@ -460,6 +460,8 @@ panvk_preprocess_nir(struct vk_physical_device *vk_pdev,
    uint64_t core_max_id = util_last_bit(pdev->kmod.props.shader_present) - 1;
    NIR_PASS(_, nir, nir_inline_sysval, nir_intrinsic_load_core_max_id_arm,
             core_max_id);
+
+   pan_preprocess_nir(nir, pdev->kmod.props.gpu_id);
 }
 
 static void
@@ -909,8 +911,6 @@ panvk_lower_nir(struct panvk_device *dev, nir_shader *nir,
       mesa_logi("translated nir:");
       nir_log_shaderi(nir);
    }
-
-   pan_preprocess_nir(nir, compile_input->gpu_id);
 
    /* Postprocess can add copies back in and lower_io can't handle them */
    NIR_PASS(_, nir, nir_lower_var_copies);
