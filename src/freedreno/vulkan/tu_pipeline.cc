@@ -4167,6 +4167,7 @@ tu_pipeline_builder_parse_multisample_and_color_blend(
    }
 }
 
+template <chip CHIP>
 static void
 tu_pipeline_builder_parse_rasterization_order(
    struct tu_pipeline_builder *builder, struct tu_pipeline *pipeline)
@@ -4198,9 +4199,8 @@ tu_pipeline_builder_parse_rasterization_order(
    struct tu_cs cs;
 
    pipeline->prim_order.state_gmem = tu_cs_draw_state(&pipeline->cs, &cs, 2);
-   tu_cs_emit_write_reg(&cs, REG_A6XX_GRAS_SC_CNTL,
-                        A6XX_GRAS_SC_CNTL_CCUSINGLECACHELINESIZE(2) |
-                        A6XX_GRAS_SC_CNTL_SINGLE_PRIM_MODE(gmem_prim_mode));
+   tu_cs_emit_regs(&cs, GRAS_SC_CNTL(CHIP, .ccusinglecachelinesize = 2,
+                                     .single_prim_mode = gmem_prim_mode));
 }
 
 static void
@@ -4352,7 +4352,7 @@ tu_pipeline_builder_build(struct tu_pipeline_builder *builder,
    if (set_combined_state(builder, *pipeline,
                           VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT |
                           VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_OUTPUT_INTERFACE_BIT_EXT)) {
-      tu_pipeline_builder_parse_rasterization_order(builder, *pipeline);
+      tu_pipeline_builder_parse_rasterization_order<CHIP>(builder, *pipeline);
    }
 
    tu_pipeline_builder_emit_state<CHIP>(builder, *pipeline);
