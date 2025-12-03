@@ -808,7 +808,7 @@ tu6_emit_mrt(struct tu_cmd_buffer *cmd,
                    A6XX_SP_SRGB_CNTL(.dword = subpass->srgb_cntl));
 
    unsigned layers = MAX2(fb->layers, util_logbase2(subpass->multiview_mask) + 1);
-   tu_cs_emit_regs(cs, A6XX_GRAS_CL_ARRAY_SIZE(layers - 1));
+   tu_cs_emit_regs(cs, GRAS_CL_ARRAY_SIZE(CHIP, layers - 1));
 }
 
 struct tu_bin_size_params {
