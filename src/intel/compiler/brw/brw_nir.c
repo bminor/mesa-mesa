@@ -69,6 +69,14 @@ is_output(nir_intrinsic_instr *intrin)
 struct brw_lower_urb_cb_data {
    const struct intel_device_info *devinfo;
 
+   /* If true, all access is guaranteed to be vec4 (128-bit) aligned.
+    * offset and base are in units of 128-bit vec4 slots.
+    *
+    * If false, all access is guaranteed to be 32-bit aligned.
+    * offset is in 32-bit units, but base is still in 128-bit vec4 units,
+    */
+   bool vec4_access;
+
    /** Map from VARYING_SLOT_* to a vec4 slot index */
    const int8_t *varying_to_slot;
 
@@ -82,6 +90,23 @@ struct brw_lower_urb_cb_data {
    int tes_builtins_slot_offset;
    int tes_per_patch_slots;
 };
+
+/**
+ * Given an URB offset in 32-bit units, determine whether (offset % 4)
+ * is statically known.  If so, add this to the value of first_component.
+ */
+static bool
+io_vec4_static_mod(nir_def *offset_32b, unsigned *first_component)
+{
+   unsigned mod;
+   const bool mod_known =
+      nir_mod_analysis(nir_get_scalar(offset_32b, 0), nir_type_uint, 4, &mod);
+
+   if (mod_known)
+      *first_component += mod;
+
+   return mod_known;
+}
 
 static unsigned
 io_component(nir_intrinsic_instr *io)
@@ -114,6 +139,10 @@ urb_offset(nir_builder *b,
            nir_intrinsic_instr *io)
 {
    nir_def *offset = nir_get_io_offset_src(io)->ssa;
+
+   /* Convert vec4 slot offset to 32-bit dwords */
+   if (!cb_data->vec4_access)
+      offset = nir_ishl_imm(b, offset, 2);
 
    nir_src *index = nir_get_io_arrayed_index_src(io);
    if (index) {
@@ -156,24 +185,51 @@ load_urb(nir_builder *b,
    const unsigned base = io_base_slot(intrin, cb_data);
 
    if (devinfo->ver >= 20) {
-      nir_def *addr = nir_iadd(b, handle, nir_ishl_imm(b, offset, 4));
-      return nir_load_urb_lsc_intel(b, intrin->def.num_components, bits, addr,
+      offset = nir_ishl_imm(b, offset, cb_data->vec4_access ? 4 : 2);
+      return nir_load_urb_lsc_intel(b, intrin->def.num_components, bits,
+                                    nir_iadd(b, handle, offset),
                                     16 * base + 4 * io_component(intrin),
                                     .access = access);
    }
 
-   /* Load a whole vec4 and return the desired portion */
-   const unsigned first_component = io_component(intrin);
-   const unsigned components = intrin->def.num_components + first_component;
-   assert(components <= 4);
+   /* Load a whole vec4 or vec8 and return the desired portion */
+   unsigned first_component = io_component(intrin);
+   nir_component_mask_t mask = nir_component_mask(intrin->def.num_components);
+
+   /* If the offset is in vec4 units, do a straightforward load */
+   if (cb_data->vec4_access) {
+      assert(intrin->def.num_components <= 4);
+      nir_def *load =
+         nir_load_urb_vec4_intel(b, 4, bits, handle, offset,
+                                 .base = base, .access = access);
+      return nir_channels(b, load, mask << first_component);
+   }
+
+   /* Otherwise, the offset is in 32-bit units.  Split it into a vec4-aligned
+    * slot offset and a 32-bit component offset.
+    */
+   nir_def *mod = nir_iand_imm(b, offset, 0x3);
+   nir_def *vec4_offset = nir_ishr_imm(b, offset, 2);
+
+   const bool static_mod = io_vec4_static_mod(offset, &first_component);
+   const bool single_vec4 = (static_mod || intrin->def.num_components == 1)
+      && first_component + intrin->def.num_components <= 4;
 
    nir_def *load =
-      nir_load_urb_vec4_intel(b, components, bits, handle, offset,
-                              .base = base, .access = access);
-   nir_component_mask_t mask =
-      nir_component_mask(intrin->def.num_components) << first_component;
+      nir_load_urb_vec4_intel(b, single_vec4 ? 4 : 8, bits, handle,
+                              vec4_offset, .base = base, .access = access);
 
-   return nir_channels(b, load, mask);
+   if (static_mod) {
+      return nir_channels(b, load, mask << first_component);
+   } else {
+      nir_def *comps[NIR_MAX_VEC_COMPONENTS];
+      for (unsigned i = 0; i < intrin->def.num_components; i++) {
+         comps[i] =
+            nir_vector_extract(b, load,
+                               nir_iadd_imm(b, mod, first_component + i));
+      }
+      return nir_vec(b, comps, intrin->def.num_components);
+   }
 }
 
 static void
@@ -185,13 +241,15 @@ store_urb(nir_builder *b,
 {
    const struct intel_device_info *devinfo = cb_data->devinfo;
    const unsigned base = io_base_slot(intrin, cb_data);
+   unsigned first_component = io_component(intrin);
 
    nir_def *src = intrin->src[0].ssa;
 
    unsigned mask = nir_intrinsic_write_mask(intrin);
 
    if (devinfo->ver >= 20) {
-      nir_def *addr = nir_iadd(b, urb_handle, nir_ishl_imm(b, offset, 4));
+      offset = nir_ishl_imm(b, offset, cb_data->vec4_access ? 4 : 2);
+      nir_def *addr = nir_iadd(b, urb_handle, offset);
       while (mask) {
          int start, count;
          u_bit_scan_consecutive_range(&mask, &start, &count);
@@ -203,18 +261,42 @@ store_urb(nir_builder *b,
          nir_store_urb_lsc_intel(b, nir_channels(b, src, cur_mask), addr,
                                  .base = cur_base);
       }
-   } else {
-      const unsigned first_component = io_component(intrin);
-      if (first_component) {
-         const unsigned components = src->num_components + first_component;
-         assert(components <= 4);
-
-         mask <<= first_component;
-         src = nir_shift_channels(b, src, first_component, components);
-      }
-      nir_store_urb_vec4_intel(b, src, urb_handle, offset,
-                               nir_imm_int(b, mask), .base = base);
+      return;
    }
+
+   nir_def *channel_mask = nir_imm_int(b, mask);
+
+   const bool static_mod = cb_data->vec4_access ||
+                           io_vec4_static_mod(offset, &first_component);
+
+   if (static_mod) {
+      src = nir_shift_channels(b, src, first_component,
+                               align(src->num_components + first_component, 4));
+      channel_mask = nir_ishl_imm(b, channel_mask, first_component);
+   } else {
+      offset = nir_iadd_imm(b, offset, first_component);
+
+      nir_def *undef = nir_undef(b, 1, src->bit_size);
+      nir_def *mod = nir_iand_imm(b, offset, 0x3);
+      channel_mask = nir_ishl(b, channel_mask, mod);
+
+      nir_def *comps[8];
+      for (unsigned i = 0; i < 8; i++) {
+         nir_def *cond = nir_i2b(b, nir_iand_imm(b, channel_mask, 1u << i));
+         nir_def *src_idx = nir_imax_imm(b, nir_isub_imm(b, i, mod), 0);
+         nir_def *src_comp = src->num_components == 1 ? src :
+            nir_vector_extract(b, src, src_idx);
+
+         comps[i] = nir_bcsel(b, cond, src_comp, undef);
+      }
+      src = nir_vec(b, comps, 8);
+   }
+
+   nir_def *vec4_offset =
+      cb_data->vec4_access ? offset : nir_ishr_imm(b, offset, 2);
+
+   nir_store_urb_vec4_intel(b, src, urb_handle, vec4_offset, channel_mask,
+                            .base = base);
 }
 
 static nir_def *
@@ -248,7 +330,7 @@ try_load_push_input(nir_builder *b,
                     nir_intrinsic_instr *io,
                     nir_def *offset)
 {
-   if (!nir_def_is_const(offset))
+   if (!nir_def_is_const(offset) || !cb_data->vec4_access)
       return NULL;
 
    const unsigned base = io_base_slot(io, cb_data) +
@@ -839,6 +921,7 @@ brw_nir_lower_tes_inputs(nir_shader *nir,
 
    const struct brw_lower_urb_cb_data cb_data = {
       .devinfo = devinfo,
+      .vec4_access = true,
       .varying_to_slot = vue_map->varying_to_slot,
       .per_vertex_stride = vue_map->num_per_vertex_slots * 16,
       .dynamic_tes = vue_map->layout == INTEL_VUE_LAYOUT_SEPARATE,
@@ -1116,6 +1199,7 @@ brw_nir_lower_tcs_inputs(nir_shader *nir,
 
    const struct brw_lower_urb_cb_data cb_data = {
       .devinfo = devinfo,
+      .vec4_access = true,
       .varying_to_slot = input_vue_map->varying_to_slot,
    };
    NIR_PASS(_, nir, lower_inputs_to_urb_intrinsics, &cb_data);
@@ -1142,6 +1226,7 @@ brw_nir_lower_tcs_outputs(nir_shader *nir,
 
    const struct brw_lower_urb_cb_data cb_data = {
       .devinfo = devinfo,
+      .vec4_access = true,
       .varying_to_slot = vue_map->varying_to_slot,
       .per_vertex_stride = vue_map->num_per_vertex_slots * 16,
    };
