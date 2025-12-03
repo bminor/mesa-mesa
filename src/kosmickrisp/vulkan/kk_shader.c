@@ -77,9 +77,9 @@ kk_get_spirv_options(struct vk_physical_device *vk_pdev,
 {
    return (struct spirv_to_nir_options){
       .environment = NIR_SPIRV_VULKAN,
-      .ssbo_addr_format = nir_address_format_64bit_bounded_global,
+      .ssbo_addr_format = kk_buffer_addr_format(rs->storage_buffers),
       .phys_ssbo_addr_format = nir_address_format_64bit_global,
-      .ubo_addr_format = nir_address_format_64bit_bounded_global,
+      .ubo_addr_format = kk_buffer_addr_format(rs->uniform_buffers),
       .shared_addr_format = nir_address_format_32bit_offset,
       .min_ssbo_alignment = KK_MIN_SSBO_ALIGNMENT,
       .min_ubo_alignment = KK_MIN_UBO_ALIGNMENT,
@@ -479,9 +479,9 @@ kk_lower_nir(struct kk_device *dev, nir_shader *nir,
    NIR_PASS(_, nir, nir_lower_explicit_io, nir_var_mem_global,
             nir_address_format_64bit_global);
    NIR_PASS(_, nir, nir_lower_explicit_io, nir_var_mem_ssbo,
-            nir_address_format_64bit_bounded_global);
+            kk_buffer_addr_format(rs->storage_buffers));
    NIR_PASS(_, nir, nir_lower_explicit_io, nir_var_mem_ubo,
-            nir_address_format_64bit_bounded_global);
+            kk_buffer_addr_format(rs->uniform_buffers));
 
    NIR_PASS(_, nir, nir_lower_io, nir_var_shader_in | nir_var_shader_out,
             type_size_vec4,
