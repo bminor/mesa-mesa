@@ -224,12 +224,6 @@ tu_spirv_to_nir(struct tu_device *dev,
       nir_print_shader(nir, stderr);
    }
 
-   const struct nir_lower_sysvals_to_varyings_options sysvals_to_varyings = {
-      .point_coord = true,
-      .layer_id = true,
-   };
-   NIR_PASS(_, nir, nir_lower_sysvals_to_varyings, &sysvals_to_varyings);
-
    NIR_PASS(_, nir, nir_lower_global_vars_to_local);
 
    /* Older glslang missing bf6efd0316d8 ("SPV: Fix #2293: keep relaxed
@@ -2791,6 +2785,7 @@ tu_shader_create(struct tu_device *dev,
       NIR_PASS(_, nir, nir_lower_input_attachments, &att_options);
 
       const nir_lower_sysvals_to_varyings_options sysval_options = {
+         .point_coord = true,
          .layer_id = true,
          .view_index = true,
       };
