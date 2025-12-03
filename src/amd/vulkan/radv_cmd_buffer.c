@@ -8224,6 +8224,57 @@ radv_EndCommandBuffer(VkCommandBuffer commandBuffer)
 }
 
 static void
+radv_emit_ray_tracing_pipeline(struct radv_cmd_buffer *cmd_buffer, struct radv_ray_tracing_pipeline *pipeline)
+{
+   const struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
+   const struct radv_physical_device *pdev = radv_device_physical(device);
+   const struct radv_shader *rt_prolog = cmd_buffer->state.rt_prolog;
+   struct radv_cmd_stream *cs = cmd_buffer->cs;
+
+   if (&pipeline->base == cmd_buffer->state.emitted_compute_pipeline)
+      return;
+
+   radeon_check_space(device->ws, cs->b, pdev->info.gfx_level >= GFX10 ? 25 : 22);
+
+   radv_emit_compute_shader(pdev, cs, rt_prolog);
+
+   const uint32_t ray_dynamic_callback_stack_base_offset =
+      radv_get_user_sgpr_loc(rt_prolog, AC_UD_CS_RAY_DYNAMIC_CALLABLE_STACK_BASE);
+   if (ray_dynamic_callback_stack_base_offset) {
+      const struct radv_shader_info *cs_info = &rt_prolog->info;
+
+      radeon_begin(cs);
+      if (pdev->info.gfx_level >= GFX12) {
+         gfx12_push_sh_reg(ray_dynamic_callback_stack_base_offset,
+                           rt_prolog->config.scratch_bytes_per_wave / cs_info->wave_size);
+      } else {
+         radeon_set_sh_reg(ray_dynamic_callback_stack_base_offset,
+                           rt_prolog->config.scratch_bytes_per_wave / cs_info->wave_size);
+      }
+      radeon_end();
+   }
+
+   const uint32_t traversal_shader_addr_offset = radv_get_user_sgpr_loc(rt_prolog, AC_UD_CS_TRAVERSAL_SHADER_ADDR);
+   struct radv_shader *traversal_shader = cmd_buffer->state.shaders[MESA_SHADER_INTERSECTION];
+   if (traversal_shader_addr_offset && traversal_shader) {
+      uint64_t traversal_va = traversal_shader->va | radv_rt_priority_traversal;
+
+      radeon_begin(cs);
+      if (pdev->info.gfx_level >= GFX12) {
+         gfx12_push_32bit_pointer(traversal_shader_addr_offset, traversal_va, &pdev->info);
+      } else {
+         radeon_emit_32bit_pointer(traversal_shader_addr_offset, traversal_va, &pdev->info);
+      }
+      radeon_end();
+   }
+
+   cmd_buffer->state.emitted_compute_pipeline = &pipeline->base;
+
+   if (radv_device_fault_detection_enabled(device))
+      radv_save_pipeline(cmd_buffer, &pipeline->base.base);
+}
+
+static void
 radv_emit_compute_pipeline(struct radv_cmd_buffer *cmd_buffer, struct radv_compute_pipeline *pipeline)
 {
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
@@ -8235,43 +8286,7 @@ radv_emit_compute_pipeline(struct radv_cmd_buffer *cmd_buffer, struct radv_compu
 
    radeon_check_space(device->ws, cs->b, pdev->info.gfx_level >= GFX10 ? 25 : 22);
 
-   if (pipeline->base.type == RADV_PIPELINE_COMPUTE) {
-      radv_emit_compute_shader(pdev, cs, cmd_buffer->state.shaders[MESA_SHADER_COMPUTE]);
-   } else {
-      const struct radv_shader *rt_prolog = cmd_buffer->state.rt_prolog;
-
-      radv_emit_compute_shader(pdev, cs, rt_prolog);
-
-      const uint32_t ray_dynamic_callback_stack_base_offset =
-         radv_get_user_sgpr_loc(rt_prolog, AC_UD_CS_RAY_DYNAMIC_CALLABLE_STACK_BASE);
-      if (ray_dynamic_callback_stack_base_offset) {
-         const struct radv_shader_info *cs_info = &rt_prolog->info;
-
-         radeon_begin(cs);
-         if (pdev->info.gfx_level >= GFX12) {
-            gfx12_push_sh_reg(ray_dynamic_callback_stack_base_offset,
-                              rt_prolog->config.scratch_bytes_per_wave / cs_info->wave_size);
-         } else {
-            radeon_set_sh_reg(ray_dynamic_callback_stack_base_offset,
-                              rt_prolog->config.scratch_bytes_per_wave / cs_info->wave_size);
-         }
-         radeon_end();
-      }
-
-      const uint32_t traversal_shader_addr_offset = radv_get_user_sgpr_loc(rt_prolog, AC_UD_CS_TRAVERSAL_SHADER_ADDR);
-      struct radv_shader *traversal_shader = cmd_buffer->state.shaders[MESA_SHADER_INTERSECTION];
-      if (traversal_shader_addr_offset && traversal_shader) {
-         uint64_t traversal_va = traversal_shader->va | radv_rt_priority_traversal;
-
-         radeon_begin(cs);
-         if (pdev->info.gfx_level >= GFX12) {
-            gfx12_push_32bit_pointer(traversal_shader_addr_offset, traversal_va, &pdev->info);
-         } else {
-            radeon_emit_32bit_pointer(traversal_shader_addr_offset, traversal_va, &pdev->info);
-         }
-         radeon_end();
-      }
-   }
+   radv_emit_compute_shader(pdev, cs, cmd_buffer->state.shaders[MESA_SHADER_COMPUTE]);
 
    cmd_buffer->state.emitted_compute_pipeline = pipeline;
 
@@ -13316,9 +13331,11 @@ radv_CmdDrawMeshTasksIndirectCountEXT(VkCommandBuffer commandBuffer, VkBuffer _b
    radv_after_draw(cmd_buffer, false);
 }
 
-static void radv_before_dispatch(struct radv_cmd_buffer *cmd_buffer, struct radv_compute_pipeline *pipeline,
-                                 VkPipelineBindPoint bind_point);
-static void radv_after_dispatch(struct radv_cmd_buffer *cmd_buffer, VkPipelineBindPoint bind_point, bool dgc);
+static void radv_before_dispatch(struct radv_cmd_buffer *cmd_buffer, struct radv_compute_pipeline *pipeline);
+static void radv_after_dispatch(struct radv_cmd_buffer *cmd_buffer, bool dgc);
+
+static void radv_before_trace_rays(struct radv_cmd_buffer *cmd_buffer, struct radv_ray_tracing_pipeline *pipeline);
+static void radv_after_trace_rays(struct radv_cmd_buffer *cmd_buffer, bool dgc);
 
 /* VK_EXT_device_generated_commands */
 static void
@@ -13419,14 +13436,14 @@ radv_CmdExecuteGeneratedCommandsEXT(VkCommandBuffer commandBuffer, VkBool32 isPr
    }
 
    if (rt) {
-      struct radv_compute_pipeline *compute_pipeline = NULL;
+      struct radv_ray_tracing_pipeline *rt_pipeline = NULL;
 
       if (pipeline_info) {
          VK_FROM_HANDLE(radv_pipeline, pipeline, pipeline_info->pipeline);
-         compute_pipeline = &radv_pipeline_to_ray_tracing(pipeline)->base;
+         rt_pipeline = radv_pipeline_to_ray_tracing(pipeline);
       }
 
-      radv_before_dispatch(cmd_buffer, compute_pipeline, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR);
+      radv_before_trace_rays(cmd_buffer, rt_pipeline);
    } else if (compute) {
       struct radv_compute_pipeline *compute_pipeline = NULL;
 
@@ -13435,7 +13452,7 @@ radv_CmdExecuteGeneratedCommandsEXT(VkCommandBuffer commandBuffer, VkBool32 isPr
          compute_pipeline = radv_pipeline_to_compute(pipeline);
       }
 
-      radv_before_dispatch(cmd_buffer, compute_pipeline, VK_PIPELINE_BIND_POINT_COMPUTE);
+      radv_before_dispatch(cmd_buffer, compute_pipeline);
    } else {
       struct radv_draw_info info = {
          .count = pGeneratedCommandsInfo->maxSequenceCount,
@@ -13463,14 +13480,14 @@ radv_CmdExecuteGeneratedCommandsEXT(VkCommandBuffer commandBuffer, VkBool32 isPr
    if (rt) {
       cmd_buffer->push_constant_stages |= RADV_RT_STAGE_BITS;
 
-      radv_after_dispatch(cmd_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, true);
+      radv_after_trace_rays(cmd_buffer, true);
    } else if (compute) {
       cmd_buffer->push_constant_stages |= VK_SHADER_STAGE_COMPUTE_BIT;
 
       if (ies)
          radv_mark_descriptors_dirty(cmd_buffer, VK_PIPELINE_BIND_POINT_COMPUTE);
 
-      radv_after_dispatch(cmd_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, true);
+      radv_after_dispatch(cmd_buffer, true);
    } else {
       if (layout->vk.dgc_info & BITFIELD_BIT(MESA_VK_DGC_IB)) {
          cmd_buffer->state.last_index_type = -1;
@@ -13814,15 +13831,12 @@ radv_emit_rt_stack_size(struct radv_cmd_buffer *cmd_buffer)
 }
 
 static void
-radv_before_dispatch(struct radv_cmd_buffer *cmd_buffer, struct radv_compute_pipeline *pipeline,
-                     VkPipelineBindPoint bind_point)
+radv_before_dispatch(struct radv_cmd_buffer *cmd_buffer, struct radv_compute_pipeline *pipeline)
 {
    const struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    const struct radv_physical_device *pdev = radv_device_physical(device);
    const bool pipeline_is_dirty = pipeline != cmd_buffer->state.emitted_compute_pipeline;
-   struct radv_shader *compute_shader = bind_point == VK_PIPELINE_BIND_POINT_COMPUTE
-                                           ? cmd_buffer->state.shaders[MESA_SHADER_COMPUTE]
-                                           : cmd_buffer->state.rt_prolog;
+   const struct radv_shader *compute_shader = cmd_buffer->state.shaders[MESA_SHADER_COMPUTE];
 
    if (compute_shader->info.cs.regalloc_hang_bug)
       cmd_buffer->state.flush_bits |= RADV_CMD_FLAG_PS_PARTIAL_FLUSH | RADV_CMD_FLAG_CS_PARTIAL_FLUSH;
@@ -13830,10 +13844,8 @@ radv_before_dispatch(struct radv_cmd_buffer *cmd_buffer, struct radv_compute_pip
    /* Use the optimal packet order similar to draws. */
    if (pipeline)
       radv_emit_compute_pipeline(cmd_buffer, pipeline);
-   if (bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR)
-      radv_emit_rt_stack_size(cmd_buffer);
 
-   radv_upload_compute_shader_descriptors(cmd_buffer, bind_point);
+   radv_upload_compute_shader_descriptors(cmd_buffer, VK_PIPELINE_BIND_POINT_COMPUTE);
 
    if (pdev->info.gfx_level >= GFX12)
       radv_gfx12_emit_buffered_regs(device, cmd_buffer->cs);
@@ -13850,37 +13862,24 @@ radv_before_dispatch(struct radv_cmd_buffer *cmd_buffer, struct radv_compute_pip
        * We only need to do this when the pipeline is dirty because when we switch between
        * the two we always need to switch pipelines.
        */
-      if (bind_point == VK_PIPELINE_BIND_POINT_COMPUTE) {
-         radv_mark_descriptors_dirty(cmd_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR);
-         cmd_buffer->push_constant_stages |= RADV_RT_STAGE_BITS;
-      } else {
-         assert(bind_point == VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR);
-         radv_mark_descriptors_dirty(cmd_buffer, VK_PIPELINE_BIND_POINT_COMPUTE);
-         cmd_buffer->push_constant_stages |= VK_SHADER_STAGE_COMPUTE_BIT;
-      }
+      radv_mark_descriptors_dirty(cmd_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR);
+      cmd_buffer->push_constant_stages |= RADV_RT_STAGE_BITS;
    }
 }
 
 static void
-radv_after_dispatch(struct radv_cmd_buffer *cmd_buffer, VkPipelineBindPoint bind_point, bool dgc)
+radv_after_dispatch(struct radv_cmd_buffer *cmd_buffer, bool dgc)
 {
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    const struct radv_physical_device *pdev = radv_device_physical(device);
-   struct radv_shader *compute_shader = bind_point == VK_PIPELINE_BIND_POINT_COMPUTE
-                                           ? cmd_buffer->state.shaders[MESA_SHADER_COMPUTE]
-                                           : cmd_buffer->state.rt_prolog;
+   const struct radv_shader *compute_shader = cmd_buffer->state.shaders[MESA_SHADER_COMPUTE];
    const bool has_prefetch = pdev->info.gfx_level >= GFX7;
 
    /* Start prefetches after the dispatch has been started. Both will run in parallel, but
     * starting the dispatch first is more important.
     */
-   if (has_prefetch) {
-      if (bind_point == VK_PIPELINE_BIND_POINT_COMPUTE) {
-         radv_emit_compute_prefetch(cmd_buffer);
-      } else {
-         radv_emit_ray_tracing_prefetch(cmd_buffer);
-      }
-   }
+   if (has_prefetch)
+      radv_emit_compute_prefetch(cmd_buffer);
 
    if (compute_shader->info.cs.regalloc_hang_bug)
       cmd_buffer->state.flush_bits |= RADV_CMD_FLAG_CS_PARTIAL_FLUSH;
@@ -13888,31 +13887,84 @@ radv_after_dispatch(struct radv_cmd_buffer *cmd_buffer, VkPipelineBindPoint bind
    radv_cmd_buffer_after_draw(cmd_buffer, RADV_CMD_FLAG_CS_PARTIAL_FLUSH, dgc);
 }
 
-static void
-radv_dispatch(struct radv_cmd_buffer *cmd_buffer, const struct radv_dispatch_info *info,
-              struct radv_compute_pipeline *pipeline, const struct radv_shader *shader, VkPipelineBindPoint bind_point)
-{
-   radv_before_dispatch(cmd_buffer, pipeline, bind_point);
-   radv_emit_dispatch_packets(cmd_buffer, shader, info);
-   radv_after_dispatch(cmd_buffer, bind_point, false);
-}
-
 void
 radv_compute_dispatch(struct radv_cmd_buffer *cmd_buffer, const struct radv_dispatch_info *info)
 {
-   struct radv_compute_pipeline *pipeline = cmd_buffer->state.compute_pipeline;
-   const struct radv_shader *shader = cmd_buffer->state.shaders[MESA_SHADER_COMPUTE];
+   struct radv_compute_pipeline *compute_pipeline = cmd_buffer->state.compute_pipeline;
+   const struct radv_shader *compute_shader = cmd_buffer->state.shaders[MESA_SHADER_COMPUTE];
 
-   radv_dispatch(cmd_buffer, info, pipeline, shader, VK_PIPELINE_BIND_POINT_COMPUTE);
+   radv_before_dispatch(cmd_buffer, compute_pipeline);
+   radv_emit_dispatch_packets(cmd_buffer, compute_shader, info);
+   radv_after_dispatch(cmd_buffer, false);
+}
+
+static void
+radv_before_trace_rays(struct radv_cmd_buffer *cmd_buffer, struct radv_ray_tracing_pipeline *pipeline)
+{
+   const struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
+   const struct radv_physical_device *pdev = radv_device_physical(device);
+   const bool pipeline_is_dirty = &pipeline->base != cmd_buffer->state.emitted_compute_pipeline;
+   const struct radv_shader *rt_prolog = cmd_buffer->state.rt_prolog;
+
+   if (rt_prolog->info.cs.regalloc_hang_bug)
+      cmd_buffer->state.flush_bits |= RADV_CMD_FLAG_PS_PARTIAL_FLUSH | RADV_CMD_FLAG_CS_PARTIAL_FLUSH;
+
+   /* Use the optimal packet order similar to draws. */
+   if (pipeline)
+      radv_emit_ray_tracing_pipeline(cmd_buffer, pipeline);
+   radv_emit_rt_stack_size(cmd_buffer);
+
+   radv_upload_compute_shader_descriptors(cmd_buffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR);
+
+   if (pdev->info.gfx_level >= GFX12)
+      radv_gfx12_emit_buffered_regs(device, cmd_buffer->cs);
+
+   radv_emit_cache_flush(cmd_buffer);
+
+   /* <-- CUs are idle here if shaders are synchronized. */
+
+   if (pipeline_is_dirty) {
+      /* Raytracing uses compute shaders but has separate bind points and pipelines.
+       * So if we set compute userdata & shader registers we should dirty the raytracing
+       * ones and the other way around.
+       *
+       * We only need to do this when the pipeline is dirty because when we switch between
+       * the two we always need to switch pipelines.
+       */
+      radv_mark_descriptors_dirty(cmd_buffer, VK_PIPELINE_BIND_POINT_COMPUTE);
+      cmd_buffer->push_constant_stages |= VK_SHADER_STAGE_COMPUTE_BIT;
+   }
+}
+
+static void
+radv_after_trace_rays(struct radv_cmd_buffer *cmd_buffer, bool dgc)
+{
+   const struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
+   const struct radv_physical_device *pdev = radv_device_physical(device);
+   const struct radv_shader *rt_prolog = cmd_buffer->state.rt_prolog;
+   const bool has_prefetch = pdev->info.gfx_level >= GFX7;
+
+   /* Start prefetches after the dispatch has been started. Both will run in parallel, but
+    * starting the dispatch first is more important.
+    */
+   if (has_prefetch)
+      radv_emit_ray_tracing_prefetch(cmd_buffer);
+
+   if (rt_prolog->info.cs.regalloc_hang_bug)
+      cmd_buffer->state.flush_bits |= RADV_CMD_FLAG_CS_PARTIAL_FLUSH;
+
+   radv_cmd_buffer_after_draw(cmd_buffer, RADV_CMD_FLAG_CS_PARTIAL_FLUSH, dgc);
 }
 
 static void
 radv_rt_dispatch(struct radv_cmd_buffer *cmd_buffer, const struct radv_dispatch_info *info)
 {
-   struct radv_compute_pipeline *pipeline = &cmd_buffer->state.rt_pipeline->base;
-   const struct radv_shader *shader = cmd_buffer->state.rt_prolog;
+   struct radv_ray_tracing_pipeline *rt_pipeline = cmd_buffer->state.rt_pipeline;
+   const struct radv_shader *rt_prolog = cmd_buffer->state.rt_prolog;
 
-   radv_dispatch(cmd_buffer, info, pipeline, shader, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR);
+   radv_before_trace_rays(cmd_buffer, rt_pipeline);
+   radv_emit_dispatch_packets(cmd_buffer, rt_prolog, info);
+   radv_after_trace_rays(cmd_buffer, false);
 }
 
 VKAPI_ATTR void VKAPI_CALL
