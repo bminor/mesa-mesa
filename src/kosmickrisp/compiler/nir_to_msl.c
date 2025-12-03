@@ -1910,10 +1910,8 @@ msl_preprocess_nir(struct nir_shader *nir)
    NIR_PASS(_, nir, nir_lower_system_values);
 
    if (nir->info.stage == MESA_SHADER_FRAGMENT) {
-      nir_input_attachment_options input_attachment_options = { };
+      nir_input_attachment_options input_attachment_options = {};
       NIR_PASS(_, nir, nir_lower_input_attachments, &input_attachment_options);
-      /* KK_WORKAROUND_4 */
-      NIR_PASS(_, nir, nir_lower_is_helper_invocation);
    }
    NIR_PASS(_, nir, nir_opt_combine_barriers, NULL, NULL);
    NIR_PASS(_, nir, nir_lower_var_copies);

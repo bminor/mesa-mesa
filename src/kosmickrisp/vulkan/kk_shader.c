@@ -387,7 +387,8 @@ lower_subpass_dim(nir_builder *b, nir_tex_instr *tex, UNUSED void *_data)
 }
 
 static void
-kk_lower_fs(nir_shader *nir, const struct vk_graphics_pipeline_state *state)
+kk_lower_fs(struct kk_device *dev, nir_shader *nir,
+            const struct vk_graphics_pipeline_state *state)
 {
    if (state->cb)
       kk_lower_fs_blend(nir, state);
@@ -415,6 +416,12 @@ kk_lower_fs(nir_shader *nir, const struct vk_graphics_pipeline_state *state)
    else if (nir->info.fs.needs_full_quad_helper_invocations ||
             nir->info.fs.needs_coarse_quad_helper_invocations)
       NIR_PASS(_, nir, msl_lower_static_sample_mask, 0xFFFFFFFF);
+
+   /* KK_WORKAROUND_4 */
+   if (!(dev->disabled_workarounds & BITFIELD64_BIT(4))) {
+      NIR_PASS(_, nir, nir_lower_helper_writes, true);
+      NIR_PASS(_, nir, nir_lower_is_helper_invocation);
+   }
 }
 
 static void
@@ -517,7 +524,7 @@ kk_lower_nir(struct kk_device *dev, nir_shader *nir,
    if (nir->info.stage == MESA_SHADER_VERTEX) {
       kk_lower_vs(nir, state);
    } else if (nir->info.stage == MESA_SHADER_FRAGMENT) {
-      kk_lower_fs(nir, state);
+      kk_lower_fs(dev, nir, state);
    }
 
    /* Descriptor lowering needs to happen after lowering blend since we will
