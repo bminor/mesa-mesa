@@ -110,7 +110,7 @@ kk_get_device_extensions(const struct kk_instance *instance,
       .EXT_shader_stencil_export = true,
       .EXT_subgroup_size_control = true,
       .EXT_texel_buffer_alignment = false,
-      .EXT_texture_compression_astc_hdr = false,
+      .EXT_texture_compression_astc_hdr = true,
       .EXT_tooling_info = true,
       .EXT_ycbcr_2plane_444_formats = false,
 
@@ -271,6 +271,7 @@ kk_get_device_features(
       .shaderZeroInitializeWorkgroupMemory = true,
       .subgroupSizeControl = true,
       .synchronization2 = true,
+      .textureCompressionASTC_HDR = true,
       .vulkanMemoryModel = true,
       .vulkanMemoryModelDeviceScope = true,
 
