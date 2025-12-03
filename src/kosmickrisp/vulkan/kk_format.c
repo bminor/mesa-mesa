@@ -120,6 +120,14 @@
       .alpha = PIPE_SWIZZLE_X,                                                 \
    }
 
+#define MTL_SWIZZLE_GBAR                                                       \
+   .unswizzle = {                                                              \
+      .red = PIPE_SWIZZLE_Y,                                                   \
+      .green = PIPE_SWIZZLE_Z,                                                 \
+      .blue = PIPE_SWIZZLE_W,                                                  \
+      .alpha = PIPE_SWIZZLE_X,                                                 \
+   }
+
 #define MTL_SWIZZLE_BGRA                                                       \
    .unswizzle = {                                                              \
       .red = PIPE_SWIZZLE_Z,                                                   \
@@ -213,12 +221,14 @@ static const struct kk_va_format kk_vf_formats[] = {
     * required by Vulkan, we can just disable it.
     */
    /* MTL_FMT_NATIVE(A1B5G5R5_UNORM, MTL_FMT_FCBMRS(16), MTL_FMT_TB_NONE), */
+   MTL_FMT_NATIVE(B5G5R5A1_UNORM, MTL_FMT_FCBMRS(16), MTL_FMT_TB_NONE),
    MTL_FMT_NATIVE(A4B4G4R4_UNORM, MTL_FMT_FCBMRS(16), MTL_FMT_TB_NONE),
    MTL_FMT(R4G4B4A4_UNORM, A4B4G4R4_UNORM, MTL_SWIZZLE_ABGR, MTL_FMT_FCBMRS(16),
            MTL_FMT_TB_NONE, false),
    MTL_FMT(A4R4G4B4_UNORM, A4B4G4R4_UNORM, MTL_SWIZZLE_BGRA, MTL_FMT_FCBMRS(16),
            MTL_FMT_TB_NONE, false),
-   MTL_FMT_NATIVE(B5G5R5A1_UNORM, MTL_FMT_FCBMRS(16), MTL_FMT_TB_NONE),
+   MTL_FMT(B4G4R4A4_UNORM, A4B4G4R4_UNORM, MTL_SWIZZLE_GBAR, MTL_FMT_FCBMRS(16),
+           MTL_FMT_TB_NONE, false),
 
    // 32-bit packed formats
    MTL_FMT_NATIVE(R10G10B10A2_UNORM, MTL_FMT_ALL_NO_ATOMIC(32), MTL_FMT_TB_WR),

@@ -98,7 +98,7 @@ kk_get_device_extensions(const struct kk_instance *instance,
       .KHR_shader_terminate_invocation = true,
       .KHR_synchronization2 = true,
       .KHR_zero_initialize_workgroup_memory = true,
-      .EXT_4444_formats = false,
+      .EXT_4444_formats = true,
       .EXT_extended_dynamic_state = true,
       .EXT_extended_dynamic_state2 = false,
       .EXT_image_robustness = true,
@@ -112,7 +112,7 @@ kk_get_device_extensions(const struct kk_instance *instance,
       .EXT_texel_buffer_alignment = false,
       .EXT_texture_compression_astc_hdr = true,
       .EXT_tooling_info = true,
-      .EXT_ycbcr_2plane_444_formats = false,
+      .EXT_ycbcr_2plane_444_formats = true,
 
       /* Vulkan 1.4 */
       .KHR_load_store_op_none = true,
@@ -297,6 +297,10 @@ kk_get_device_features(
       .workgroupMemoryExplicitLayout8BitAccess = true,
       .workgroupMemoryExplicitLayout16BitAccess = true,
 
+      /* EXT_4444_formats */
+      .formatA4R4G4B4 = true,
+      .formatA4B4G4R4 = true,
+
       /* VK_EXT_shader_replicated_composites */
       .shaderReplicatedComposites = true,
 
@@ -307,6 +311,9 @@ kk_get_device_features(
       .shaderBufferFloat32Atomics = true,
       .shaderBufferFloat32AtomicAdd = true,
       .shaderSharedFloat32Atomics = true,
+
+      /* EXT_ycbcr_2plane_444_formats */
+      .ycbcr2plane444Formats = true,
    };
 }
 
