@@ -3316,7 +3316,7 @@ tu6_emit_rast(struct tu_cs *cs,
    bool depth_clip_enable = vk_rasterization_state_depth_clip_enable(rs);
 
    tu_cs_emit_regs(cs,
-                   A6XX_GRAS_CL_CNTL(
+                   GRAS_CL_CNTL(CHIP,
                      .znear_clip_disable = !depth_clip_enable,
                      .zfar_clip_disable = !depth_clip_enable,
                      /* To support VK_EXT_depth_clamp_zero_one on a7xx+ */

@@ -903,7 +903,7 @@ r3d_common(struct tu_cmd_buffer *cmd, struct tu_cs *cs, enum r3d_type type,
    tu6_emit_fs<CHIP>(cs, fs);
 
    tu_cs_emit_regs(cs,
-                   A6XX_GRAS_CL_CNTL(
+                   GRAS_CL_CNTL(CHIP,
                       .clip_disable = 1,
                       .vp_clip_code_ignore = 1,
                       .vp_xform_disable = 1,
