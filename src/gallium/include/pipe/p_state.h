@@ -244,10 +244,10 @@ struct pipe_viewport_state
 
 struct pipe_scissor_state
 {
-   unsigned minx:16;
-   unsigned miny:16;
-   unsigned maxx:16;
-   unsigned maxy:16;
+   unsigned minx;
+   unsigned miny;
+   unsigned maxx;
+   unsigned maxy;
 };
 
 
