@@ -285,10 +285,12 @@ init_common_queue_state(struct anv_queue *queue, struct anv_batch *batch)
       sba.IndirectObjectBufferSizeModifyEnable = true;
 
       sba.InstructionBaseAddress =
-         (struct anv_address) { .offset =
-         device->physical->va.instruction_state_pool.addr,
-      };
-      sba.InstructionBufferSize = device->physical->va.instruction_state_pool.size / 4096;
+         (struct anv_address) {
+            .offset = device->physical->va.instruction_state_pool.addr,
+         };
+      sba.InstructionBufferSize =
+         device->physical->va.instruction_state_pool.size / 4096;
+
       sba.InstructionMOCS = mocs;
       sba.InstructionBaseAddressModifyEnable = true;
       sba.InstructionBuffersizeModifyEnable = true;

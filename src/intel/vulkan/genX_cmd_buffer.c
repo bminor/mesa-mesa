@@ -155,10 +155,12 @@ fill_state_base_addr(struct anv_cmd_buffer *cmd_buffer,
    sba->IndirectObjectBufferSizeModifyEnable  = true;
 
    sba->InstructionBaseAddress =
-      (struct anv_address) { device->instruction_state_pool.block_pool.bo, 0 };
+      (struct anv_address) {
+         .offset = device->physical->va.instruction_state_pool.addr,
+      };
+
    sba->InstructionMOCS = mocs;
-   sba->InstructionBufferSize =
-      device->physical->va.instruction_state_pool.size / 4096;
+   sba->InstructionBufferSize = (device->physical->va.instruction_state_pool.size / 4096);
    sba->InstructionBaseAddressModifyEnable = true;
    sba->InstructionBuffersizeModifyEnable = true;
 
