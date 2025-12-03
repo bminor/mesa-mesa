@@ -2304,19 +2304,16 @@ tu6_emit_gs(struct tu_cs *cs,
       invocations = gs->gs.invocations - 1;
 
       uint32_t primitive_cntl =
-         A6XX_PC_GS_PARAM_0(.gs_vertices_out = vertices_out,
+         PC_GS_PARAM_0(CHIP, .gs_vertices_out = vertices_out,
                                   .gs_invocations = invocations,
                                   .gs_output = output,).value;
 
-      tu_cs_emit_pkt4(cs, REG_A6XX_PC_GS_PARAM_0, 1);
-      tu_cs_emit(cs, primitive_cntl);
+      tu_cs_emit_regs(cs, PC_GS_PARAM_0(CHIP, .dword = primitive_cntl));
 
       if (CHIP >= A7XX) {
-         tu_cs_emit_pkt4(cs, REG_A7XX_VPC_GS_PARAM_0, 1);
-         tu_cs_emit(cs, primitive_cntl);
+         tu_cs_emit_regs(cs, VPC_GS_PARAM_0(CHIP, .dword = primitive_cntl));
       } else {
-         tu_cs_emit_pkt4(cs, REG_A6XX_VPC_GS_PARAM, 1);
-         tu_cs_emit(cs, 0xff);
+         tu_cs_emit_regs(cs, VPC_GS_PARAM(CHIP, .dword = 0xff));
       }
    }
 }
