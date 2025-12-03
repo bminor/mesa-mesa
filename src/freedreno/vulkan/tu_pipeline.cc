@@ -3581,8 +3581,8 @@ tu6_emit_prim_mode_sysmem(struct tu_cs *cs,
    if (sysmem_prim_mode == FLUSH_PER_OVERLAP_AND_OVERWRITE)
       *sysmem_single_prim_mode = true;
 
-   tu_cs_emit_regs(cs, A6XX_GRAS_SC_CNTL(.ccusinglecachelinesize = 2,
-                                         .single_prim_mode = sysmem_prim_mode));
+   tu_cs_emit_regs(cs, GRAS_SC_CNTL(CHIP, .ccusinglecachelinesize = 2,
+                                    .single_prim_mode = sysmem_prim_mode));
 }
 
 static const enum mesa_vk_dynamic_graphics_state tu_fragment_shading_rate_state[] = {
