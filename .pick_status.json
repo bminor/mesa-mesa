@@ -14,7 +14,7 @@
         "description": "panfrost: do not allow skipping of fragment shader when alpha-to-coverage",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
