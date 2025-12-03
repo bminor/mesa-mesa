@@ -3816,7 +3816,7 @@ clear_image_event_blit(struct tu_cmd_buffer *cmd,
    struct tu_cs *cs = &cmd->cs;
 
    tu_cs_emit_regs(cs,
-                   A7XX_RB_CLEAR_TARGET(.clear_mode = CLEAR_MODE_SYSMEM));
+                   RB_CLEAR_TARGET(A7XX, .clear_mode = CLEAR_MODE_SYSMEM));
 
    tu_cs_emit_pkt4(cs, REG_A6XX_RB_RESOLVE_CNTL_0, 1);
    tu_cs_emit(cs, 0);
