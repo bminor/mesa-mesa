@@ -6536,16 +6536,17 @@ tu7_emit_subpass_clear(struct tu_cmd_buffer *cmd, struct tu_resolve_group *resol
    tu_cond_exec_end(cs);
 }
 
+template <chip CHIP>
 static void
 tu7_emit_subpass_shading_rate(struct tu_cmd_buffer *cmd,
                               const struct tu_subpass *subpass,
                               struct tu_cs *cs)
 {
    if (subpass->fsr_attachment == VK_ATTACHMENT_UNUSED) {
-      tu_cs_emit_regs(cs, A7XX_GRAS_QUALITY_BUFFER_INFO(),
-                      A7XX_GRAS_QUALITY_BUFFER_DIMENSION());
-      tu_cs_emit_regs(cs, A7XX_GRAS_QUALITY_BUFFER_PITCH());
-      tu_cs_emit_regs(cs, A7XX_GRAS_QUALITY_BUFFER_BASE());
+      tu_cs_emit_regs(cs, GRAS_QUALITY_BUFFER_INFO(CHIP),
+                      GRAS_QUALITY_BUFFER_DIMENSION(CHIP));
+      tu_cs_emit_regs(cs, GRAS_QUALITY_BUFFER_PITCH(CHIP));
+      tu_cs_emit_regs(cs, GRAS_QUALITY_BUFFER_BASE(CHIP));
       /* We need to invalidate cache when changing to NULL FSR attachment, but
        * only once.
        */
@@ -6563,17 +6564,16 @@ tu7_emit_subpass_shading_rate(struct tu_cmd_buffer *cmd,
 
    tu_cs_emit_regs(
       cs,
-      A7XX_GRAS_QUALITY_BUFFER_INFO(.layered = true,
-                                .tile_mode =
-                                   (a6xx_tile_mode) iview->image->layout[0]
-                                      .tile_mode, ),
-      A7XX_GRAS_QUALITY_BUFFER_DIMENSION(.width = iview->view.width,
-                                .height = iview->view.height));
+      GRAS_QUALITY_BUFFER_INFO(
+         CHIP, .layered = true,
+         .tile_mode = (a6xx_tile_mode) iview->image->layout[0].tile_mode, ),
+      GRAS_QUALITY_BUFFER_DIMENSION(CHIP, .width = iview->view.width,
+                                    .height = iview->view.height));
    tu_cs_emit_regs(
-      cs, A7XX_GRAS_QUALITY_BUFFER_PITCH(.pitch = iview->view.pitch,
-                                     .array_pitch = iview->view.layer_size));
-   tu_cs_emit_regs(cs,
-                   A7XX_GRAS_QUALITY_BUFFER_BASE(.qword = iview->view.base_addr));
+      cs, GRAS_QUALITY_BUFFER_PITCH(CHIP, .pitch = iview->view.pitch,
+                                    .array_pitch = iview->view.layer_size));
+   tu_cs_emit_regs(
+      cs, GRAS_QUALITY_BUFFER_BASE(CHIP, .qword = iview->view.base_addr));
 
    tu_emit_raw_event_write<A7XX>(cmd, cs, LRZ_Q_CACHE_INVALIDATE, false);
    cmd->prev_fsr_is_null = false;
@@ -6607,7 +6607,7 @@ tu_emit_subpass_begin(struct tu_cmd_buffer *cmd)
    tu6_emit_render_cntl<CHIP>(cmd, cmd->state.subpass, &cmd->draw_cs, false);
 
    if (CHIP >= A7XX) {
-      tu7_emit_subpass_shading_rate(cmd, cmd->state.subpass, &cmd->draw_cs);
+      tu7_emit_subpass_shading_rate<CHIP>(cmd, cmd->state.subpass, &cmd->draw_cs);
    }
 
    tu_set_input_attachments(cmd, cmd->state.subpass);
