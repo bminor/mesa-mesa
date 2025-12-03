@@ -56,10 +56,6 @@ enum nir_spirv_execution_environment {
 struct spirv_to_nir_options {
    enum nir_spirv_execution_environment environment;
 
-   /* Whether to keep ViewIndex as an input instead of rewriting to a sysval.
-    */
-   bool view_index_is_input;
-
    /* Create a nir library. */
    bool create_library;
 
