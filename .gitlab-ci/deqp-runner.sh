@@ -39,7 +39,7 @@ if [ -n "${FLUSTER_TAG:-}" ]; then
   export LIBVA_MESSAGING_LEVEL=1
 fi
 
-if [ -n "$PIGLIT_TAG" ]; then
+if [ -n "${PIGLIT_TAG:-}" ]; then
   # Are we using the right Piglit version?
   ci_tag_test_time_check "PIGLIT_TAG"
 elif [ -d "/piglit" ]; then
