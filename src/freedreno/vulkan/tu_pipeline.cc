@@ -747,6 +747,7 @@ tu6_vpc_varying_mode(const struct ir3_shader_variant *fs,
    return util_bitcount(compmask) * 2;
 }
 
+template <chip CHIP>
 static void
 tu6_emit_vpc_varying_modes(struct tu_cs *cs,
                            const struct ir3_shader_variant *fs,
@@ -784,10 +785,10 @@ tu6_emit_vpc_varying_modes(struct tu_cs *cs,
    }
 
    if (interp_regs) {
-      tu_cs_emit_pkt4(cs, REG_A6XX_VPC_VARYING_INTERP_MODE_MODE(0), interp_regs);
+      tu_cs_emit_pkt4(cs, VPC_VARYING_INTERP_MODE_MODE(CHIP, 0).reg, interp_regs);
       tu_cs_emit_array(cs, interp_modes, interp_regs);
 
-      tu_cs_emit_pkt4(cs, REG_A6XX_VPC_VARYING_REPLACE_MODE_MODE(0), interp_regs);
+      tu_cs_emit_pkt4(cs, VPC_VARYING_REPLACE_MODE_MODE(CHIP, 0).reg, interp_regs);
       tu_cs_emit_array(cs, ps_repl_modes, interp_regs);
    }
 }
@@ -1064,7 +1065,7 @@ tu6_emit_vpc(struct tu_cs *cs,
    tu_cs_emit(cs, CONDREG(layer_regid, A6XX_GRAS_SU_VS_SIV_CNTL_WRITES_LAYER) |
                   CONDREG(view_regid, A6XX_GRAS_SU_VS_SIV_CNTL_WRITES_VIEW));
 
-   tu6_emit_vpc_varying_modes(cs, fs, last_shader);
+   tu6_emit_vpc_varying_modes<CHIP>(cs, fs, last_shader);
 }
 TU_GENX(tu6_emit_vpc);
 
