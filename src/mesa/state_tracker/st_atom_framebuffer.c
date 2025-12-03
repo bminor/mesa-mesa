@@ -61,7 +61,7 @@ static void
 update_framebuffer_size(struct pipe_framebuffer_state *framebuffer,
                         struct pipe_surface *surface)
 {
-   uint16_t width, height;
+   unsigned width, height;
    assert(surface);
    pipe_surface_size(surface, &width, &height);
    assert(width  < USHRT_MAX);

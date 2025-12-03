@@ -429,7 +429,7 @@ struct pipe_surface
  */
 struct pipe_framebuffer_state
 {
-   uint16_t width, height;
+   uint32_t width, height;
    uint16_t layers;  /**< Number of layers  in a no-attachment framebuffer */
    uint8_t samples; /**< Number of samples in a no-attachment framebuffer */
 

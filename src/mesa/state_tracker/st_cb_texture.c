@@ -1794,7 +1794,7 @@ try_pbo_upload_common(struct gl_context *ctx,
       pipe_sampler_view_release(sampler_view);
    }
 
-   uint16_t width, height;
+   unsigned width, height;
    pipe_surface_size(surface, &width, &height);
 
    /* Framebuffer_state */
