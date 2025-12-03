@@ -294,7 +294,7 @@ radeon_check_space(struct radeon_winsys *ws, struct ac_cmdbuf *cs, unsigned need
    gfx11_opt_push_reg2(reg, reg_enum, v1, v2, SI_CONTEXT, __cs_context_regs, __cs_context_reg_count)
 
 ALWAYS_INLINE static void
-radv_gfx12_emit_buffered_regs(struct radv_device *device, struct radv_cmd_stream *cs)
+radv_gfx12_emit_buffered_regs(const struct radv_device *device, struct radv_cmd_stream *cs)
 {
    const uint32_t reg_count = cs->buffered_sh_regs.num;
 
