@@ -217,7 +217,6 @@ enum pvr_transfer_pbe_pixel_src {
  */
 
 struct pvr_tex_format_description {
-   uint32_t tex_format;
    enum pipe_format pipe_format_int;
    enum pipe_format pipe_format_float;
 };

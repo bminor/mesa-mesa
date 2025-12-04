@@ -257,7 +257,6 @@ static const struct pvr_format pvr_format_table[] = {
 #define FORMAT(tex_fmt, pipe_fmt_int, pipe_fmt_float) \
    [ROGUE_TEXSTATE_FORMAT_##tex_fmt] = {                    \
       .desc = {                                             \
-         .tex_format = ROGUE_TEXSTATE_FORMAT_##tex_fmt,     \
          .pipe_format_int = PIPE_FORMAT_##pipe_fmt_int,     \
          .pipe_format_float = PIPE_FORMAT_##pipe_fmt_float, \
       },                                                    \
