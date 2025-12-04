@@ -354,7 +354,7 @@
         "description": "panfrost: add earlyzs FPK condition for v6-",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "c43882ad544af3cddd55278212f11cbd4686da63",
         "notes": null
