@@ -2410,6 +2410,7 @@ impl fmt::Display for MemEvictionPriority {
 
 /// Memory load cache ops used by Kepler
 #[allow(dead_code)]
+#[expect(clippy::enum_variant_names)]
 #[derive(Clone, Copy, Default, Eq, Hash, PartialEq)]
 pub enum LdCacheOp {
     #[default]
