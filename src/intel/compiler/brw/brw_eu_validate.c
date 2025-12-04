@@ -1919,6 +1919,9 @@ instruction_restrictions(const struct brw_isa_info *isa,
       case BRW_MATH_FUNCTION_INT_DIV_QUOTIENT_AND_REMAINDER:
       case BRW_MATH_FUNCTION_INT_DIV_QUOTIENT:
       case BRW_MATH_FUNCTION_INT_DIV_REMAINDER: {
+         ERROR_IF(devinfo->verx10 >= 125,
+                  "INT DIV functions not supported in Gfx125+.");
+
          /* Page 442 of the Broadwell PRM Volume 2a "Extended Math Function" says:
           *    INT DIV function does not support source modifiers.
           * Bspec 6647 extends it back to Ivy Bridge.
@@ -1927,10 +1930,68 @@ instruction_restrictions(const struct brw_isa_info *isa,
          bool src1_valid = !inst->src[1].negate && !inst->src[1].abs;
          ERROR_IF(!src0_valid || !src1_valid,
                   "INT DIV function does not support source modifiers.");
+
+         ERROR_IF(inst->src[0].type != BRW_TYPE_D &&
+                  inst->src[0].type != BRW_TYPE_UD,
+                  "INT DIV function need D or UD source type.");
+         ERROR_IF(inst->src[0].type != inst->src[0].type ||
+                  inst->src[0].type != inst->dst.type,
+                  "INT DIV function need all operand types to match.");
          break;
       }
-      default:
+
+      default: {
+         ERROR_IF(devinfo->verx10 >= 125 &&
+                  (math_function == BRW_MATH_FUNCTION_POW ||
+                   math_function == BRW_MATH_FUNCTION_FDIV),
+                  "POW/FDIV not supported in Gfx125+.");
+
+         const bool ieee_macro =
+            math_function == GFX8_MATH_FUNCTION_INVM ||
+            math_function == GFX8_MATH_FUNCTION_RSQRTM;
+
+         if (ieee_macro && devinfo->ver >= 125) {
+            ERROR_IF(inst->src[0].type != BRW_TYPE_F &&
+                     inst->src[0].type != BRW_TYPE_HF &&
+                     inst->src[0].type != BRW_TYPE_DF,
+                     "MATH IEEE macros source type must be F, HF or DF (for Gfx125+).");
+         } else {
+            ERROR_IF(inst->src[0].type != BRW_TYPE_F &&
+                     inst->src[0].type != BRW_TYPE_HF,
+                     "MATH source type must be F or HF.");
+         }
+
+         const bool two_srcs =
+            math_function == GFX8_MATH_FUNCTION_INVM ||
+            math_function == BRW_MATH_FUNCTION_POW ||
+            math_function == BRW_MATH_FUNCTION_FDIV;
+
+         if (devinfo->ver >= 125) {
+            ERROR_IF(inst->src[0].type != inst->dst.type,
+                     "Math function source and destination types must match on Gfx125+.");
+            ERROR_IF(two_srcs &&
+                     inst->src[0].type != inst->src[1].type,
+                     "Math function need both source types to match on Gfx125+.");
+         } else {
+            ERROR_IF(inst->dst.type != BRW_TYPE_F &&
+                     inst->dst.type != BRW_TYPE_HF,
+                     "Math function destination must be F or HF before Gfx125.");
+            ERROR_IF(two_srcs &&
+                     inst->src[1].type != BRW_TYPE_F &&
+                     inst->src[1].type != BRW_TYPE_HF,
+                     "Math function source 1 type must be F or HF before Gfx125.");
+         }
+
+         ERROR_IF(inst->dst.file != FIXED_GRF,
+                  "The math instruction must use GRF as destination.");
+
+         ERROR_IF((devinfo->ver >= 20 || !ieee_macro) &&
+                  (src0_is_acc(inst) || (two_srcs && src1_is_acc(inst))),
+                  "Accumulator register access is only supported for Gfx125 and earlier, "
+                  "and only for IEEE macro functions (INVM/RSQRTM).");
+
          break;
+      }
       }
    }
 

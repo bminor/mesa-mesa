@@ -1298,30 +1298,7 @@ void gfx6_math(struct brw_codegen *p,
    const struct intel_device_info *devinfo = p->devinfo;
    brw_eu_inst *insn = next_insn(p, BRW_OPCODE_MATH);
 
-   assert(dest.file == FIXED_GRF);
-
    assert(dest.hstride == BRW_HORIZONTAL_STRIDE_1);
-
-   if (function == BRW_MATH_FUNCTION_INT_DIV_QUOTIENT ||
-       function == BRW_MATH_FUNCTION_INT_DIV_REMAINDER ||
-       function == BRW_MATH_FUNCTION_INT_DIV_QUOTIENT_AND_REMAINDER) {
-      assert(src0.type != BRW_TYPE_F);
-      assert(src1.type != BRW_TYPE_F);
-      assert(src1.file == FIXED_GRF ||
-             src1.file == IMM);
-      /* From BSpec 6647/47428 "[Instruction] Extended Math Function":
-       *     INT DIV function does not support source modifiers.
-       */
-      assert(!src0.negate);
-      assert(!src0.abs);
-      assert(!src1.negate);
-      assert(!src1.abs);
-   } else {
-      assert(src0.type == BRW_TYPE_F ||
-             (src0.type == BRW_TYPE_HF && devinfo->ver >= 9));
-      assert(src1.type == BRW_TYPE_F ||
-             (src1.type == BRW_TYPE_HF && devinfo->ver >= 9));
-   }
 
   /* This workaround says that we cannot use scalar broadcast with HF types.
    * However, for is_scalar values, all 16 elements contain the same value, so
