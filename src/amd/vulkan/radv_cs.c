@@ -451,7 +451,7 @@ radv_init_tracked_regs(struct radv_cmd_stream *cs)
    struct radv_tracked_regs *tracked_regs = &cs->tracked_regs;
 
    /* Mark all registers as unknown. */
-   memset(tracked_regs->reg_value, 0, RADV_NUM_ALL_TRACKED_REGS * sizeof(uint32_t));
+   memset(tracked_regs->reg_value, 0, AC_NUM_ALL_TRACKED_REGS * sizeof(uint32_t));
    BITSET_ZERO(tracked_regs->reg_saved_mask);
 
    /* 0xffffffff is an impossible value for these registers */
