@@ -364,39 +364,39 @@ static void si_emit_guardband(struct si_context *sctx, unsigned index)
    if (sctx->gfx_level >= GFX12) {
       radeon_begin(&sctx->gfx_cs);
       gfx12_begin_context_regs();
-      gfx12_opt_set_context_reg(R_028BE4_PA_SU_VTX_CNTL, SI_TRACKED_PA_SU_VTX_CNTL,
+      gfx12_opt_set_context_reg(R_028BE4_PA_SU_VTX_CNTL, AC_TRACKED_PA_SU_VTX_CNTL,
                                 pa_su_vtx_cntl);
       gfx12_opt_set_context_reg4(R_02842C_PA_CL_GB_VERT_CLIP_ADJ,
-                                 SI_TRACKED_PA_CL_GB_VERT_CLIP_ADJ,
+                                 AC_TRACKED_PA_CL_GB_VERT_CLIP_ADJ,
                                  fui(guardband_y), fui(discard_y),
                                  fui(guardband_x), fui(discard_x));
       gfx12_opt_set_context_reg(R_028234_PA_SU_HARDWARE_SCREEN_OFFSET,
-                                SI_TRACKED_PA_SU_HARDWARE_SCREEN_OFFSET,
+                                AC_TRACKED_PA_SU_HARDWARE_SCREEN_OFFSET,
                                 pa_su_hardware_screen_offset);
       gfx12_end_context_regs();
       radeon_end(); /* don't track context rolls on GFX12 */
    } else if (sctx->screen->info.has_set_context_pairs_packed) {
       radeon_begin(&sctx->gfx_cs);
       gfx11_begin_packed_context_regs();
-      gfx11_opt_set_context_reg(R_028BE4_PA_SU_VTX_CNTL, SI_TRACKED_PA_SU_VTX_CNTL,
+      gfx11_opt_set_context_reg(R_028BE4_PA_SU_VTX_CNTL, AC_TRACKED_PA_SU_VTX_CNTL,
                                 pa_su_vtx_cntl);
       gfx11_opt_set_context_reg4(R_028BE8_PA_CL_GB_VERT_CLIP_ADJ,
-                                 SI_TRACKED_PA_CL_GB_VERT_CLIP_ADJ,
+                                 AC_TRACKED_PA_CL_GB_VERT_CLIP_ADJ,
                                  fui(guardband_y), fui(discard_y),
                                  fui(guardband_x), fui(discard_x));
       gfx11_opt_set_context_reg(R_028234_PA_SU_HARDWARE_SCREEN_OFFSET,
-                                SI_TRACKED_PA_SU_HARDWARE_SCREEN_OFFSET,
+                                AC_TRACKED_PA_SU_HARDWARE_SCREEN_OFFSET,
                                 pa_su_hardware_screen_offset);
       gfx11_end_packed_context_regs();
       radeon_end(); /* don't track context rolls on GFX11 */
    } else {
       radeon_begin(&sctx->gfx_cs);
-      radeon_opt_set_context_reg5(R_028BE4_PA_SU_VTX_CNTL, SI_TRACKED_PA_SU_VTX_CNTL,
+      radeon_opt_set_context_reg5(R_028BE4_PA_SU_VTX_CNTL, AC_TRACKED_PA_SU_VTX_CNTL,
                                   pa_su_vtx_cntl,
                                   fui(guardband_y), fui(discard_y),
                                   fui(guardband_x), fui(discard_x));
       radeon_opt_set_context_reg(R_028234_PA_SU_HARDWARE_SCREEN_OFFSET,
-                                 SI_TRACKED_PA_SU_HARDWARE_SCREEN_OFFSET,
+                                 AC_TRACKED_PA_SU_HARDWARE_SCREEN_OFFSET,
                                  pa_su_hardware_screen_offset);
       radeon_end_update_context_roll();
    }
@@ -720,7 +720,7 @@ static void si_emit_window_rectangles(struct si_context *sctx, unsigned index)
    if (sctx->gfx_level >= GFX12) {
       radeon_begin(cs);
       gfx12_begin_context_regs();
-      gfx12_opt_set_context_reg(R_02820C_PA_SC_CLIPRECT_RULE, SI_TRACKED_PA_SC_CLIPRECT_RULE, rule);
+      gfx12_opt_set_context_reg(R_02820C_PA_SC_CLIPRECT_RULE, AC_TRACKED_PA_SC_CLIPRECT_RULE, rule);
 
       if (num_rectangles) {
          for (unsigned i = 0; i < num_rectangles; i++) {
@@ -742,7 +742,7 @@ static void si_emit_window_rectangles(struct si_context *sctx, unsigned index)
       radeon_end();
    } else {
       radeon_begin(cs);
-      radeon_opt_set_context_reg(R_02820C_PA_SC_CLIPRECT_RULE, SI_TRACKED_PA_SC_CLIPRECT_RULE,
+      radeon_opt_set_context_reg(R_02820C_PA_SC_CLIPRECT_RULE, AC_TRACKED_PA_SC_CLIPRECT_RULE,
                                  rule);
       if (num_rectangles) {
          radeon_set_context_reg_seq(R_028210_PA_SC_CLIPRECT_0_TL, num_rectangles * 2);

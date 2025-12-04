@@ -56,6 +56,180 @@ struct ac_buffered_sh_regs {
    };
 };
 
+/* Tracked registers. */
+enum ac_tracked_reg
+{
+   /* CONTEXT registers. */
+   /* 2 consecutive registers (GFX6-11), or separate registers (GFX12) */
+   AC_TRACKED_DB_RENDER_CONTROL,
+   AC_TRACKED_DB_COUNT_CONTROL,
+
+   AC_TRACKED_DB_DEPTH_CONTROL,
+   AC_TRACKED_DB_STENCIL_CONTROL,
+   /* 2 consecutive registers */
+   AC_TRACKED_DB_DEPTH_BOUNDS_MIN,
+   AC_TRACKED_DB_DEPTH_BOUNDS_MAX,
+
+   AC_TRACKED_SPI_INTERP_CONTROL_0,
+   AC_TRACKED_PA_SU_POINT_SIZE,
+   AC_TRACKED_PA_SU_POINT_MINMAX,
+   AC_TRACKED_PA_SU_LINE_CNTL,
+   AC_TRACKED_PA_SC_MODE_CNTL_0,
+   AC_TRACKED_PA_SU_SC_MODE_CNTL,
+   AC_TRACKED_PA_SC_EDGERULE,
+
+   /* 6 consecutive registers */
+   AC_TRACKED_PA_SU_POLY_OFFSET_DB_FMT_CNTL,
+   AC_TRACKED_PA_SU_POLY_OFFSET_CLAMP,
+   AC_TRACKED_PA_SU_POLY_OFFSET_FRONT_SCALE,
+   AC_TRACKED_PA_SU_POLY_OFFSET_FRONT_OFFSET,
+   AC_TRACKED_PA_SU_POLY_OFFSET_BACK_SCALE,
+   AC_TRACKED_PA_SU_POLY_OFFSET_BACK_OFFSET,
+
+   /* 2 consecutive registers */
+   AC_TRACKED_PA_SC_LINE_CNTL,
+   AC_TRACKED_PA_SC_AA_CONFIG,
+
+   /* 5 consecutive registers (GFX6-11) */
+   AC_TRACKED_PA_SU_VTX_CNTL,
+   /* 4 consecutive registers (GFX12) */
+   AC_TRACKED_PA_CL_GB_VERT_CLIP_ADJ,
+   AC_TRACKED_PA_CL_GB_VERT_DISC_ADJ,
+   AC_TRACKED_PA_CL_GB_HORZ_CLIP_ADJ,
+   AC_TRACKED_PA_CL_GB_HORZ_DISC_ADJ,
+
+   /* Non-consecutive register */
+   AC_TRACKED_SPI_SHADER_POS_FORMAT,
+
+   /* 5 consecutive registers (GFX12), or 2 consecutive registers (GFX6-11) */
+   AC_TRACKED_SPI_SHADER_Z_FORMAT,
+   AC_TRACKED_SPI_SHADER_COL_FORMAT,
+
+   /* 2 consecutive registers. */
+   AC_TRACKED_SPI_PS_INPUT_ENA,
+   AC_TRACKED_SPI_PS_INPUT_ADDR,
+
+   AC_TRACKED_DB_EQAA,
+   AC_TRACKED_DB_RENDER_OVERRIDE2,
+   AC_TRACKED_DB_SHADER_CONTROL,
+   AC_TRACKED_CB_SHADER_MASK,
+   AC_TRACKED_CB_TARGET_MASK,
+   AC_TRACKED_PA_CL_CLIP_CNTL,
+   AC_TRACKED_PA_CL_VS_OUT_CNTL,
+   AC_TRACKED_PA_CL_VTE_CNTL,
+   AC_TRACKED_PA_SC_CLIPRECT_RULE,
+   AC_TRACKED_PA_SC_LINE_STIPPLE,
+   AC_TRACKED_PA_SC_MODE_CNTL_1,
+   AC_TRACKED_PA_SU_HARDWARE_SCREEN_OFFSET,
+   AC_TRACKED_SPI_PS_IN_CONTROL,
+   AC_TRACKED_VGT_GS_INSTANCE_CNT,
+   AC_TRACKED_VGT_GS_MAX_VERT_OUT,
+   AC_TRACKED_VGT_SHADER_STAGES_EN,
+   AC_TRACKED_VGT_LS_HS_CONFIG,
+   AC_TRACKED_VGT_TF_PARAM,
+   AC_TRACKED_PA_SU_SMALL_PRIM_FILTER_CNTL,  /* GFX8-9 (only with has_small_prim_filter_sample_loc_bug) */
+   AC_TRACKED_PA_SC_BINNER_CNTL_0,           /* GFX9+ */
+   AC_TRACKED_GE_MAX_OUTPUT_PER_SUBGROUP,    /* GFX10+ - the SMALL_PRIM_FILTER slot above can be reused */
+   AC_TRACKED_GE_NGG_SUBGRP_CNTL,            /* GFX10+ */
+   AC_TRACKED_PA_CL_NGG_CNTL,                /* GFX10+ */
+   AC_TRACKED_DB_PA_SC_VRS_OVERRIDE_CNTL,    /* GFX10.3+ */
+
+   /* 3 consecutive registers */
+   AC_TRACKED_SX_PS_DOWNCONVERT,             /* GFX8+ */
+   AC_TRACKED_SX_BLEND_OPT_EPSILON,          /* GFX8+ */
+   AC_TRACKED_SX_BLEND_OPT_CONTROL,          /* GFX8+ */
+
+   /* The slots below can be reused by other generations. */
+   AC_TRACKED_VGT_ESGS_RING_ITEMSIZE,        /* GFX6-8 (GFX9+ can reuse this slot) */
+   AC_TRACKED_VGT_REUSE_OFF,                 /* GFX6-8,10.3 */
+   AC_TRACKED_IA_MULTI_VGT_PARAM,            /* GFX6-8 (GFX9+ can reuse this slot) */
+
+   AC_TRACKED_VGT_GS_MAX_PRIMS_PER_SUBGROUP, /* GFX9 - the slots above can be reused */
+   AC_TRACKED_VGT_GS_ONCHIP_CNTL,            /* GFX9-10 - the slots above can be reused */
+
+   AC_TRACKED_VGT_GSVS_RING_ITEMSIZE,        /* GFX6-10 (GFX11+ can reuse this slot) */
+   AC_TRACKED_VGT_GS_MODE,                   /* GFX6-10 (GFX11+ can reuse this slot) */
+   AC_TRACKED_VGT_VERTEX_REUSE_BLOCK_CNTL,   /* GFX6-10 (GFX11+ can reuse this slot) */
+   AC_TRACKED_VGT_GS_OUT_PRIM_TYPE,          /* GFX6-10 (GFX11+ can reuse this slot) */
+
+   /* 3 consecutive registers */
+   AC_TRACKED_VGT_GSVS_RING_OFFSET_1,        /* GFX6-10 (GFX11+ can reuse this slot) */
+   AC_TRACKED_VGT_GSVS_RING_OFFSET_2,        /* GFX6-10 (GFX11+ can reuse this slot) */
+   AC_TRACKED_VGT_GSVS_RING_OFFSET_3,        /* GFX6-10 (GFX11+ can reuse this slot) */
+
+   /* 4 consecutive registers */
+   AC_TRACKED_VGT_GS_VERT_ITEMSIZE,          /* GFX6-10 (GFX11+ can reuse this slot) */
+   AC_TRACKED_VGT_GS_VERT_ITEMSIZE_1,        /* GFX6-10 (GFX11+ can reuse this slot) */
+   AC_TRACKED_VGT_GS_VERT_ITEMSIZE_2,        /* GFX6-10 (GFX11+ can reuse this slot) */
+   AC_TRACKED_VGT_GS_VERT_ITEMSIZE_3,        /* GFX6-10 (GFX11+ can reuse this slot) */
+
+   AC_TRACKED_SPI_VS_OUT_CONFIG,             /* GFX6-11 */
+   AC_TRACKED_DB_RENDER_OVERRIDE = AC_TRACKED_SPI_VS_OUT_CONFIG, /* GFX12+ (slot reused) */
+   AC_TRACKED_VGT_PRIMITIVEID_EN,            /* GFX6-11 */
+   AC_TRACKED_CB_DCC_CONTROL,                /* GFX8-11 */
+   AC_TRACKED_DB_STENCIL_READ_MASK,          /* GFX12+ */
+   AC_TRACKED_DB_STENCIL_WRITE_MASK,         /* GFX12+ */
+   AC_TRACKED_PA_SC_HISZ_CONTROL,            /* GFX12+ */
+   AC_TRACKED_PA_SC_LINE_STIPPLE_RESET,      /* GFX12+ */
+
+   AC_NUM_TRACKED_CONTEXT_REGS,
+   AC_FIRST_TRACKED_OTHER_REG = AC_NUM_TRACKED_CONTEXT_REGS,
+
+   /* SH and UCONFIG registers. */
+   AC_TRACKED_GE_PC_ALLOC = AC_FIRST_TRACKED_OTHER_REG, /* GFX10-11 */
+   AC_TRACKED_SPI_SHADER_PGM_RSRC3_GS,       /* GFX7-11 */
+   AC_TRACKED_SPI_SHADER_PGM_RSRC4_GS,       /* GFX10+ */
+   AC_TRACKED_VGT_GS_OUT_PRIM_TYPE_UCONFIG,  /* GFX11+ */
+   AC_TRACKED_SPI_SHADER_GS_OUT_CONFIG_PS,   /* GFX12+ */
+   AC_TRACKED_VGT_PRIMITIVEID_EN_UCONFIG,    /* GFX12+ */
+
+   AC_TRACKED_IA_MULTI_VGT_PARAM_UCONFIG,    /* GFX9 only */
+   AC_TRACKED_GE_CNTL = AC_TRACKED_IA_MULTI_VGT_PARAM_UCONFIG, /* GFX10+ */
+
+   AC_TRACKED_SPI_SHADER_PGM_RSRC2_HS,       /* GFX9+ (not tracked on previous chips) */
+   AC_TRACKED_SPI_SHADER_USER_DATA_PS__ALPHA_REF,
+
+   /* 3 consecutive registers. */
+   AC_TRACKED_SPI_SHADER_USER_DATA_HS__TCS_OFFCHIP_LAYOUT,
+   AC_TRACKED_SPI_SHADER_USER_DATA_HS__TCS_OFFCHIP_ADDR,
+   AC_TRACKED_SPI_SHADER_USER_DATA_HS__VS_STATE_BITS,    /* GFX6-8 */
+
+   AC_TRACKED_SPI_SHADER_USER_DATA_LS__BASE_VERTEX,
+   AC_TRACKED_SPI_SHADER_USER_DATA_LS__DRAWID,
+   AC_TRACKED_SPI_SHADER_USER_DATA_LS__START_INSTANCE,
+
+   AC_TRACKED_SPI_SHADER_USER_DATA_ES__BASE_VERTEX,
+   AC_TRACKED_SPI_SHADER_USER_DATA_ES__DRAWID,
+   AC_TRACKED_SPI_SHADER_USER_DATA_ES__START_INSTANCE,
+
+   AC_TRACKED_SPI_SHADER_USER_DATA_VS__BASE_VERTEX,      /* GFX6-10 */
+   AC_TRACKED_SPI_SHADER_USER_DATA_VS__DRAWID,           /* GFX6-10 */
+   AC_TRACKED_SPI_SHADER_USER_DATA_VS__START_INSTANCE,   /* GFX6-10 */
+
+   AC_TRACKED_COMPUTE_RESOURCE_LIMITS,
+   AC_TRACKED_COMPUTE_DISPATCH_INTERLEAVE,   /* GFX12+ (not tracked on previous chips) */
+   AC_TRACKED_COMPUTE_NUM_THREAD_X,
+   AC_TRACKED_COMPUTE_NUM_THREAD_Y,
+   AC_TRACKED_COMPUTE_NUM_THREAD_Z,
+   AC_TRACKED_COMPUTE_TMPRING_SIZE,
+   AC_TRACKED_COMPUTE_PGM_RSRC3,             /* GFX11+ */
+
+   /* 2 consecutive registers. */
+   AC_TRACKED_COMPUTE_PGM_RSRC1,
+   AC_TRACKED_COMPUTE_PGM_RSRC2,
+
+   /* 2 consecutive registers. */
+   AC_TRACKED_COMPUTE_DISPATCH_SCRATCH_BASE_LO, /* GFX11+ */
+   AC_TRACKED_COMPUTE_DISPATCH_SCRATCH_BASE_HI, /* GFX11+ */
+
+   /* 3 consecutive registers. */
+   AC_TRACKED_SPI_SHADER_GS_MESHLET_DIM,       /* GFX11+ */
+   AC_TRACKED_SPI_SHADER_GS_MESHLET_EXP_ALLOC, /* GFX11+ */
+   AC_TRACKED_SPI_SHADER_GS_MESHLET_CTRL,      /* GFX12+ */
+
+   AC_NUM_ALL_TRACKED_REGS,
+};
+
 #define ac_cmdbuf_begin(cs) struct ac_cmdbuf *__cs = (cs);                        \
                             uint32_t __cs_num = __cs->cdw;                        \
                             UNUSED uint32_t __cs_num_initial = __cs_num;          \

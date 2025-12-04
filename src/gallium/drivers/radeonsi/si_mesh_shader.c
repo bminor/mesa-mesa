@@ -245,7 +245,7 @@ static void clear_reg_saved_mask(struct si_context *sctx, unsigned reg)
 {
    if (reg >= SI_SGPR_BASE_VERTEX && reg <= SI_SGPR_START_INSTANCE) {
       BITSET_CLEAR(sctx->tracked_regs.reg_saved_mask,
-                   SI_TRACKED_SPI_SHADER_USER_DATA_ES__BASE_VERTEX +
+                   AC_TRACKED_SPI_SHADER_USER_DATA_ES__BASE_VERTEX +
                    (reg - SI_SGPR_BASE_VERTEX));
    }
 }
@@ -254,7 +254,7 @@ static void clear_reg_saved_mask(struct si_context *sctx, unsigned reg)
    do { \
       unsigned addr = sh_base_reg + (reg) * 4; \
       if ((reg) >= SI_SGPR_BASE_VERTEX && (reg) <= SI_SGPR_START_INSTANCE) { \
-         unsigned tracked_reg = SI_TRACKED_SPI_SHADER_USER_DATA_ES__BASE_VERTEX; \
+         unsigned tracked_reg = AC_TRACKED_SPI_SHADER_USER_DATA_ES__BASE_VERTEX; \
          tracked_reg += (reg) - SI_SGPR_BASE_VERTEX; \
          if (sctx->gfx_level >= GFX12) \
             gfx12_opt_push_gfx_sh_reg(addr, tracked_reg, value); \
