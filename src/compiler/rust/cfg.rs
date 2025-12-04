@@ -249,7 +249,7 @@ impl<'a, N> DepthFirstSearch for ReachesDFS<'a, N> {
 
     fn pre(&mut self, id: usize) -> Self::ChildIter {
         if id == self.stop || self.reaches.contains(id) {
-            return (&[]).iter().cloned();
+            return [].iter().cloned();
         }
 
         self.reaches.insert(id);
