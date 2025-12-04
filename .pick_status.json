@@ -1,5 +1,165 @@
 [
     {
+        "sha": "b13003133d4440bfd33fc320c051b474458c8e02",
+        "description": "radv: add radv_cmd_state::emitted_rt_pipeline",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7d4c49a271f7f27228b75ea87368ce53d5767504",
+        "description": "radv: decouple RT and compute dispatches paths",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "fa225de793fb6c24e3d2fedb34a990a8beb72c40",
+        "description": "radv: constify radv_gfx12_emit_buffered_regs()",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e3aac0d11fb1f6d651fb6ec6d004e0fef9993444",
+        "description": "radv: remove redundant buffered regs emission for dispatches on GFX12+",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "069f60a4e7d1e351fca7e9140f66da2e12ce390b",
+        "description": "radv: enable conservativeRasterizationPostDepthCoverage on GFX10+ when possible",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d1386e167e604128701962ae4574741bcf8d53a3",
+        "description": "radv: add support for computeDerivativeGroupQuads on < GFX12",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6a8460297aef198edbe70108ff8ac39d68a9959b",
+        "description": "lavapipe: Advertise variableMultisampleRate",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a255e2ca5645f674fa69e1030154603da5801178",
+        "description": "nir: add ACCESS to shared_uniform_block_intel",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "0dd09a292b621492dd5e1a46fe2c3d579318fcfd",
+        "notes": null
+    },
+    {
+        "sha": "21d21ac82421e747c140b685b766f58fd6ff1be1",
+        "description": "docs: add sha sum for 25.2.8",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "da01adfd11e30d9bc313768868b5c055c9ba4d27",
+        "description": "docs: add release notes for 25.2.8",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ef057f7ca0cb7f9af579a64ada438309d435fc05",
+        "description": "docs: update calendar for 25.2.8",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "46b97da60bca9de4f6f2353870c9a1c543182b0c",
+        "description": "pvr: fix PVR_DEBUG=info when running w/o KHR_display",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "8825c91dcb84a5302455cf20a89297329bf0cd5b",
+        "notes": null
+    },
+    {
+        "sha": "a372d39609360ef0a90749a90602a77f4252bf73",
+        "description": "docs: update calendar for 25.3.1",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "79b32de5bf6472888373dcf6bf9a8cbb2704107c",
+        "description": "docs: Add checksums for 25.3.1",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a9dd1954fa635424600097d380b39c80e6480297",
+        "description": "docs: add release notes for 25.3.1",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "16427816736f90e1c11612e453245cc0638ec775",
+        "description": "r300/ci: update expectations",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
         "sha": "b75cd07265b6d34cefde80399e7ff0cd7652dbca",
         "description": "util/driconf: add Cursemark workaround",
         "nominated": true,
