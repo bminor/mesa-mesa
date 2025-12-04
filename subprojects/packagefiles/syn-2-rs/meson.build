@@ -3,6 +3,7 @@ project(
   'rust',
   version : '2.0.87',
   license : 'MIT OR Apache-2.0',
+  meson_version : '>= 1.7.0',
 )
 
 rc = meson.get_compiler('rust')

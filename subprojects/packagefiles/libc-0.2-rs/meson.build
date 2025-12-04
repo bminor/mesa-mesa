@@ -6,6 +6,7 @@ project(
   'rust',
   version : '0.2.168',
   license : 'MIT OR Apache-2.0',
+  meson_version : '>= 1.7.0',
 )
 
 libc_args = [

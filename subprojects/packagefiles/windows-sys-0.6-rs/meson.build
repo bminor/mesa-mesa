@@ -6,6 +6,7 @@ project(
   'rust',
   version : '0.61.1',
   license : 'MIT OR Apache-2.0',
+  meson_version : '>= 1.7.0',
 )
 
 windows_link = subproject('windows-link-0.2-rs').get_variable('lib')

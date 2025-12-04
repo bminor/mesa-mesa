@@ -3,6 +3,7 @@ project(
   'rust',
   version : '1.0.1',
   license : 'MIT OR Apache-2.0',
+  meson_version : '>= 1.7.0',
 )
 
 lib = static_library(

@@ -6,6 +6,7 @@ project(
   'rust',
   version : '1.1.2',
   license : 'Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT',
+  meson_version : '>= 1.7.0',
 )
 
 errno = subproject('errno-0.3-rs').get_variable('lib')

@@ -6,6 +6,7 @@ project(
   'rust',
   version : '0.2.12',
   license : 'MIT OR Apache-2.0',
+  meson_version : '>= 1.7.0',
 )
 
 syn = subproject('syn-2-rs').get_variable('lib')
