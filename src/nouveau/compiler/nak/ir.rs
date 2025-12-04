@@ -9756,7 +9756,7 @@ impl Shader<'_> {
                 assert!(self.functions.len() == 1);
                 vertex_info.isbe_space_sharing_enable =
                     can_isbe_space_sharing_be_enabled(
-                        self.functions.get(0).unwrap(),
+                        self.functions.first().unwrap(),
                     );
             }
         }
