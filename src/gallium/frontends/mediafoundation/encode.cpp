@@ -677,6 +677,10 @@ done:
       *ppDX12EncodeContext = pDX12EncodeContext;
       pDX12EncodeContext = nullptr;
    }
+   else
+   {
+      MFE_ERROR( "[dx12 hmft 0x%p] PrepareForEncode - hr=0x%x", this, hr );
+   }
    SAFE_DELETE( pDX12EncodeContext );
    SAFE_CLOSEHANDLE( hTexture );
    return hr;

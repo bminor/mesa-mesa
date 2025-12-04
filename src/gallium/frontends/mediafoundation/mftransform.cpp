@@ -2538,7 +2538,7 @@ CDX12EncHMFT::ProcessInput( DWORD dwInputStreamIndex, IMFSample *pSample, DWORD 
    (void) pSample->GetUINT32( MFSampleExtension_ChromaOnly, &unChromaOnly );
 
    // setup the source buffer
-   CHECKHR_HRGOTO( PrepareForEncode( pSample, &pDX12EncodeContext ), MF_E_INVALIDMEDIATYPE, done );
+   CHECKHR_GOTO( PrepareForEncode( pSample, &pDX12EncodeContext ), done );
    if( SUCCEEDED( GetQPMapBufferFromSampleLockHeld( pSample, &qpData, &qpSize, qpMapBuffer ) ) && qpMapBuffer )
    {
       pDX12EncodeContext->SetPipeQPMapBufferInfo( qpData, qpSize );

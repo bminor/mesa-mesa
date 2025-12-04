@@ -29,14 +29,6 @@
          goto label;                                                                                                               \
       }                                                                                                                            \
    }
-#define CHECKHR_HRGOTO( hresult, newhresult, label )                                                                               \
-   {                                                                                                                               \
-      hr = hresult;                                                                                                                \
-      if( FAILED( hr ) )                                                                                                           \
-      {                                                                                                                            \
-         CHECKHR_GOTO( newhresult, label );                                                                                        \
-      }                                                                                                                            \
-   }
 #define CHECKBOOL_GOTO( exp, err, label )                                                                                          \
    if( !( exp ) )                                                                                                                  \
    {                                                                                                                               \
