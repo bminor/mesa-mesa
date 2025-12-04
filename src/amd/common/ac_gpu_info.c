@@ -959,8 +959,10 @@ ac_query_gpu_info(int fd, void *dev_p, struct radeon_info *info,
    /* GFX6 hw bug when the IBO addr is 0 which causes invalid clamping (underflow).
     * Setting the IB addr to 2 or higher solves this issue.
     * See waMiscNullIb in PAL.
+    *
+    * Drawing from 0-sized index buffers causes hangs on gfx10.
     */
-   info->has_null_index_buffer_clamping_bug = info->gfx_level == GFX6;
+   info->has_zero_index_buffer_bug = info->gfx_level == GFX6 || info->gfx_level == GFX10;
 
    /* On GFX6 and GFX7 except Hawaii, the CB doesn't clamp outputs
     * to the range supported by the type if a channel has less
@@ -969,9 +971,6 @@ ac_query_gpu_info(int fd, void *dev_p, struct radeon_info *info,
     */
    info->has_cb_lt16bit_int_clamp_bug = info->gfx_level <= GFX7 &&
                                         info->family != CHIP_HAWAII;
-
-   /* Drawing from 0-sized index buffers causes hangs on gfx10. */
-   info->has_zero_index_buffer_bug = info->gfx_level == GFX10;
 
    /* Whether chips are affected by the image load/sample/gather hw bug when
     * DCC is enabled (ie. WRITE_COMPRESS_ENABLE should be 0).

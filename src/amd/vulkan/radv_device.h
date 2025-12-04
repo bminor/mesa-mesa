@@ -169,6 +169,7 @@ struct radv_device {
    /* GFX7 and later */
    uint32_t gfx_init_size_dw;
    struct radeon_winsys_bo *gfx_init;
+   struct radeon_winsys_bo *zero_bo;
 
    struct radeon_winsys_bo *trace_bo;
    struct radv_trace_data *trace_data;

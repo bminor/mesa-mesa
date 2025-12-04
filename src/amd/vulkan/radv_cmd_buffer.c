@@ -5837,21 +5837,15 @@ radv_emit_guardband_state(struct radv_cmd_buffer *cmd_buffer)
    radeon_end();
 }
 
-/* Bind an internal index buffer for GPUs that hang with 0-sized index buffers to handle robustness2
- * which requires 0 for out-of-bounds access.
+/* Use a zero-filled BO as index buffer on GPUs that hang with NULL or 0-sized
+ * index buffers to handle robustness2 which requires 0 for out-of-bounds access.
  */
 static void
 radv_handle_zero_index_buffer_bug(struct radv_cmd_buffer *cmd_buffer, uint64_t *index_va, uint32_t *remaining_indexes)
 {
-   const uint32_t zero = 0;
-   uint32_t offset;
+   struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
 
-   if (!radv_cmd_buffer_upload_data(cmd_buffer, sizeof(uint32_t), &zero, &offset)) {
-      vk_command_buffer_set_error(&cmd_buffer->vk, VK_ERROR_OUT_OF_HOST_MEMORY);
-      return;
-   }
-
-   *index_va = radv_buffer_get_va(cmd_buffer->upload.upload_bo) + offset;
+   *index_va = radv_buffer_get_va(device->zero_bo);
    *remaining_indexes = 1;
 }
 
@@ -7939,7 +7933,6 @@ radv_CmdBindIndexBuffer2(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDevic
    VK_FROM_HANDLE(radv_cmd_buffer, cmd_buffer, commandBuffer);
    VK_FROM_HANDLE(radv_buffer, index_buffer, buffer);
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
-   const struct radv_physical_device *pdev = radv_device_physical(device);
    struct radv_cmd_stream *cs = cmd_buffer->cs;
 
    cmd_buffer->state.index_type = vk_to_index_type(indexType);
@@ -7953,9 +7946,6 @@ radv_CmdBindIndexBuffer2(VkCommandBuffer commandBuffer, VkBuffer buffer, VkDevic
    } else {
       cmd_buffer->state.index_va = 0;
       cmd_buffer->state.max_index_count = 0;
-
-      if (pdev->info.has_null_index_buffer_clamping_bug)
-         cmd_buffer->state.index_va = 0x2;
    }
 
    cmd_buffer->state.dirty |= RADV_CMD_DIRTY_INDEX_BUFFER;

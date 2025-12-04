@@ -1091,6 +1091,11 @@ radv_destroy_device(struct radv_device *device, const VkAllocationCallbacks *pAl
 {
    radv_device_finish_perf_counter(device);
 
+   if (device->zero_bo) {
+      device->ws->buffer_make_resident(device->ws, device->zero_bo, false);
+      radv_bo_destroy(device, NULL, device->zero_bo);
+   }
+
    if (device->gfx_init)
       radv_bo_destroy(device, NULL, device->gfx_init);
 
@@ -1403,6 +1408,19 @@ radv_CreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCr
        device->vk.enabled_features.extendedDynamicState3AlphaToCoverageEnable ||
        device->vk.enabled_features.extendedDynamicState3ColorBlendEquation)
       radv_shader_part_cache_init(&device->ps_epilogs, &ps_epilog_ops);
+
+   if (pdev->info.has_zero_index_buffer_bug) {
+      result = radv_bo_create(device, NULL, 4096, 4096, RADEON_DOMAIN_VRAM,
+                              RADEON_FLAG_NO_CPU_ACCESS | RADEON_FLAG_NO_INTERPROCESS_SHARING | RADEON_FLAG_READ_ONLY |
+                                 RADEON_FLAG_ZERO_VRAM | RADEON_FLAG_32BIT,
+                              RADV_BO_PRIORITY_VIRTUAL, 0, true, &device->zero_bo);
+      if (result != VK_SUCCESS)
+         goto fail;
+
+      result = device->ws->buffer_make_resident(device->ws, device->zero_bo, true);
+      if (result != VK_SUCCESS)
+         goto fail;
+   }
 
    if (pdev->info.has_graphics && !(instance->debug_flags & RADV_DEBUG_NO_IB_CHAINING))
       radv_create_gfx_preamble(device);
