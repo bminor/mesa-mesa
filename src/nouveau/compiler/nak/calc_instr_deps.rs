@@ -1010,7 +1010,7 @@ fn calc_delays(f: &mut Function, sm: &ShaderModelInfo) -> u64 {
         for (ip, i) in b.instrs.iter_mut().enumerate() {
             let delay = cycles[ip] - cycles.get(ip + 1).copied().unwrap_or(0);
             let delay: u8 = delay.try_into().expect("Delay overflow");
-            i.deps.delay = delay.max(MIN_INSTR_DELAY) as u8;
+            i.deps.delay = delay.max(MIN_INSTR_DELAY);
         }
     }
 
