@@ -48,12 +48,6 @@
 #include "vk_log.h"
 #include "vk_util.h"
 
-#define PVR_BIND_VERTEX_BUFFER BITFIELD_BIT(0)
-#define PVR_BIND_SAMPLER_VIEW BITFIELD_BIT(1)
-#define PVR_BIND_RENDER_TARGET BITFIELD_BIT(2)
-#define PVR_BIND_DEPTH_STENCIL BITFIELD_BIT(3)
-#define PVR_BIND_STORAGE_IMAGE BITFIELD_BIT(4)
-
 /* Convenience */
 
 #define _V PVR_BIND_VERTEX_BUFFER
@@ -94,13 +88,6 @@
       .stencil_tex_format = ROGUE_TEXSTATE_FORMAT_##s_fmt,   \
       .bind = FLAGS__T_Z,                                    \
    }
-
-struct pvr_format {
-   uint32_t tex_format;
-   uint32_t depth_tex_format;
-   uint32_t stencil_tex_format;
-   uint32_t bind;
-};
 
 /* clang-format off */
 static const struct pvr_format pvr_format_table[] = {
@@ -284,6 +271,13 @@ static const struct pvr_pbe_format pvr_pbe_format_table[] = {
 #undef FORMAT
 #undef FORMAT_DEPTH_STENCIL
 
+const struct pvr_format *pvr_get_format_table(unsigned *num_formats)
+{
+   assert(num_formats != NULL);
+   *num_formats = ARRAY_SIZE(pvr_format_table);
+   return pvr_format_table;
+}
+
 static inline const struct pvr_format *pvr_get_format(VkFormat vk_format)
 {
    if (vk_format < ARRAY_SIZE(pvr_format_table) &&
@@ -296,6 +290,16 @@ static inline const struct pvr_format *pvr_get_format(VkFormat vk_format)
              vk_format);
 
    return NULL;
+}
+
+static inline const struct pvr_format *
+pvr_get_pdevice_format(struct pvr_physical_device *pdevice, VkFormat vk_format)
+{
+   if (vk_format >= pdevice->num_formats ||
+       pvr_format_table[vk_format].bind == 0)
+      return NULL;
+
+   return &pdevice->formats[vk_format];
 }
 
 static inline const struct pvr_pbe_format *
@@ -517,11 +521,14 @@ void pvr_get_hw_clear_color(
 #undef f32_to_f16
 
 static VkFormatFeatureFlags2
-pvr_get_image_format_features2(VkFormat vk_format, VkImageTiling vk_tiling)
+pvr_get_image_format_features2(struct pvr_physical_device *pdevice,
+                               VkFormat vk_format,
+                               VkImageTiling vk_tiling)
 {
    VkFormatFeatureFlags2 flags = 0;
 
-   const struct pvr_format *pvr_format = pvr_get_format(vk_format);
+   const struct pvr_format *pvr_format =
+      pvr_get_pdevice_format(pdevice, vk_format);
    if (!pvr_format)
       return 0;
 
@@ -624,12 +631,15 @@ pvr_get_format_swizzle_for_tpu(const struct util_format_description *desc)
    return desc->swizzle;
 }
 
-static VkFormatFeatureFlags2 pvr_get_buffer_format_features2(VkFormat vk_format)
+static VkFormatFeatureFlags2
+pvr_get_buffer_format_features2(struct pvr_physical_device *pdevice,
+                                VkFormat vk_format)
 {
    const struct util_format_description *desc;
    VkFormatFeatureFlags2 flags = 0;
 
-   const struct pvr_format *pvr_format = pvr_get_format(vk_format);
+   const struct pvr_format *pvr_format =
+      pvr_get_pdevice_format(pdevice, vk_format);
    if (!pvr_format)
       return 0;
 
@@ -712,11 +722,14 @@ void pvr_GetPhysicalDeviceFormatProperties2(
    VkFormat format,
    VkFormatProperties2 *pFormatProperties)
 {
+   VK_FROM_HANDLE(pvr_physical_device, pdevice, physicalDevice);
    VkFormatFeatureFlags2 linear2, optimal2, buffer2;
 
-   linear2 = pvr_get_image_format_features2(format, VK_IMAGE_TILING_LINEAR);
-   optimal2 = pvr_get_image_format_features2(format, VK_IMAGE_TILING_OPTIMAL);
-   buffer2 = pvr_get_buffer_format_features2(format);
+   linear2 =
+      pvr_get_image_format_features2(pdevice, format, VK_IMAGE_TILING_LINEAR);
+   optimal2 =
+      pvr_get_image_format_features2(pdevice, format, VK_IMAGE_TILING_OPTIMAL);
+   buffer2 = pvr_get_buffer_format_features2(pdevice, format);
 
    pFormatProperties->formatProperties = (VkFormatProperties){
       .linearTilingFeatures = vk_format_features2_to_features(linear2),
@@ -772,7 +785,7 @@ pvr_get_image_format_properties(struct pvr_physical_device *pdevice,
    }
 
    tiling_features2 =
-      pvr_get_image_format_features2(info->format, info->tiling);
+      pvr_get_image_format_features2(pdevice, info->format, info->tiling);
    if (tiling_features2 == 0) {
       result = vk_error(pdevice, VK_ERROR_FORMAT_NOT_SUPPORTED);
       goto err_unsupported_format;

@@ -32,6 +32,7 @@
 #   define PVR_USE_WSI_PLATFORM false
 #endif
 
+struct pvr_format;
 struct pvr_instance;
 typedef struct _pco_ctx pco_ctx;
 
@@ -58,6 +59,9 @@ struct pvr_physical_device {
    struct wsi_device wsi_device;
 
    pco_ctx *pco_ctx;
+
+   const struct pvr_format *formats;
+   unsigned num_formats;
 
    uint8_t device_uuid[SHA1_DIGEST_LENGTH];
    uint8_t cache_uuid[SHA1_DIGEST_LENGTH];

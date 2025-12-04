@@ -210,6 +210,21 @@ enum pvr_transfer_pbe_pixel_src {
    PVR_TRANSFER_PBE_PIXEL_SRC_NUM = 54,
 };
 
+#define PVR_BIND_VERTEX_BUFFER BITFIELD_BIT(0)
+#define PVR_BIND_SAMPLER_VIEW BITFIELD_BIT(1)
+#define PVR_BIND_RENDER_TARGET BITFIELD_BIT(2)
+#define PVR_BIND_DEPTH_STENCIL BITFIELD_BIT(3)
+#define PVR_BIND_STORAGE_IMAGE BITFIELD_BIT(4)
+
+struct pvr_format {
+   uint32_t tex_format;
+   uint32_t depth_tex_format;
+   uint32_t stencil_tex_format;
+   uint32_t bind;
+};
+
+const struct pvr_format *pvr_get_format_table(unsigned *num_formats);
+
 struct util_format_description;
 const uint8_t *
 pvr_get_format_swizzle_for_tpu(const struct util_format_description *desc);

@@ -894,6 +894,12 @@ pvr_get_cache_uuid(const struct pvr_physical_device *const pdevice,
 }
 
 static void
+pvr_physical_device_setup_formats(struct pvr_physical_device *const pdevice)
+{
+   pdevice->formats = pvr_get_format_table(&pdevice->num_formats);
+}
+
+static void
 pvr_physical_device_setup_uuids(struct pvr_physical_device *const pdevice)
 {
    const struct pvr_instance *instance = pdevice->instance;
@@ -1085,6 +1091,8 @@ VkResult pvr_physical_device_init(struct pvr_physical_device *pdevice,
                                     &dispatch_table);
    if (result != VK_SUCCESS)
       goto err_pvr_winsys_destroy;
+
+   pvr_physical_device_setup_formats(pdevice);
 
    pvr_physical_device_setup_uuids(pdevice);
 
