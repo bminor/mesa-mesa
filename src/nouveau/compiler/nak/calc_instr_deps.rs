@@ -896,10 +896,10 @@ impl BlockDelayScheduler<'_> {
                 src_dst_idx: u16::MAX,
             };
             reg_uses.for_each_pred(|c| {
-                c.add_read(read_origin.clone(), 0);
+                c.add_read(read_origin, 0);
             });
             reg_uses.for_each_carry(|c| {
-                c.add_read(read_origin.clone(), 0);
+                c.add_read(read_origin, 0);
             });
         }
 

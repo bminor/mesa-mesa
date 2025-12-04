@@ -3251,7 +3251,7 @@ impl<'a> ShaderFromNir<'a> {
 
                 b.push_op(OpLdSharedLock {
                     dst: dst.clone().into(),
-                    locked: locked.clone().into(),
+                    locked: locked.into(),
                     addr,
                     offset,
                     mem_type,
@@ -3675,7 +3675,7 @@ impl<'a> ShaderFromNir<'a> {
                 let locked = b.alloc_ssa(RegFile::Pred);
 
                 b.push_op(OpStSCheckUnlock {
-                    locked: locked.clone().into(),
+                    locked: locked.into(),
                     addr,
                     data,
                     offset,
@@ -3787,7 +3787,7 @@ impl<'a> ShaderFromNir<'a> {
                 let dst = b.alloc_ssa(RegFile::GPR);
                 let src = self.get_src(&srcs[0]);
                 b.push_op(OpMovm {
-                    dst: dst.clone().into(),
+                    dst: dst.into(),
                     src,
                 });
                 self.set_dst(&intrin.def, dst.into());
