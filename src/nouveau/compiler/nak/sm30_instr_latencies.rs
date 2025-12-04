@@ -125,11 +125,8 @@ where
     // --- Real encoding ---
     // Create an instruction iterator and iterate it in chunks of 7.
     // fill the last chunk with a nop (it should never be executed).
-    let mut instr_iter = func
-        .blocks
-        .iter()
-        .flat_map(|b| b.instrs.iter().map(|x| &*x))
-        .peekable();
+    let mut instr_iter =
+        func.blocks.iter().flat_map(|b| b.instrs.iter()).peekable();
     let mut filling_instr = Instr {
         pred: true.into(),
         op: Op::Nop(OpNop { label: None }),
