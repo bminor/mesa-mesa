@@ -319,7 +319,8 @@ CDX12EncHMFT::PrepareForEncodeHelper( LPDX12EncodeContext pDX12EncodeContext, bo
       if( cur_frame_desc->ref_list0_mod_operations.size() > PIPE_H264_MAX_NUM_LIST_REF )
       {
          assert( false );
-         return E_UNEXPECTED;
+         hr = E_UNEXPECTED;
+         goto done;
       }
       pPicInfo->slice.num_ref_list0_mod_operations = static_cast<uint8_t>( cur_frame_desc->ref_list0_mod_operations.size() );
       for( uint32_t i = 0; i < pPicInfo->slice.num_ref_list0_mod_operations; i++ )
@@ -329,7 +330,8 @@ CDX12EncHMFT::PrepareForEncodeHelper( LPDX12EncodeContext pDX12EncodeContext, bo
    if( cur_frame_desc->mmco_operations.size() > PIPE_H264_MAX_NUM_LIST_REF )
    {
       assert( false );
-      return E_UNEXPECTED;
+      hr = E_UNEXPECTED;
+      goto done;
    }
    pPicInfo->slice.num_ref_pic_marking_operations = static_cast<uint8_t>( cur_frame_desc->mmco_operations.size() );
    if( pPicInfo->slice.num_ref_pic_marking_operations > 0 )
@@ -639,6 +641,10 @@ CDX12EncHMFT::PrepareForEncodeHelper( LPDX12EncodeContext pDX12EncodeContext, bo
                  pPicInfo->num_slice_descriptors );
 
 done:
+   if( FAILED( hr ) )
+   {
+      MFE_ERROR( "[dx12 hmft 0x%p] PrepareForEncodeHelper - hr=0x%x", this, hr );
+   }
    return hr;
 }
 
@@ -704,6 +710,10 @@ CDX12EncHMFT::GetCodecPrivateData( LPBYTE pSPSPPSData, DWORD dwSPSPPSDataLen, LP
 
    *lpdwSPSPPSDataLen = (DWORD) buf_size;
 done:
+   if( FAILED( hr ) )
+   {
+      MFE_ERROR( "[dx12 hmft 0x%p] GetCodecPrivateData - hr=0x%x", this, hr );
+   }
    return hr;
 }
 
@@ -1143,6 +1153,10 @@ CDX12EncHMFT::CreateGOPTracker( uint32_t textureWidth, uint32_t textureHeight )
    CHECKHR_GOTO( hr, done );
 
 done:
+   if( FAILED( hr ) )
+   {
+      MFE_ERROR( "[dx12 hmft 0x%p] CreateGOPTracker - hr=0x%x", this, hr );
+   }
    return hr;
 }
 

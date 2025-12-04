@@ -665,6 +665,10 @@ CDX12EncHMFT::PrepareForEncodeHelper( LPDX12EncodeContext pDX12EncodeContext, bo
                  pPicInfo->num_slice_descriptors );
 
 done:
+   if( FAILED( hr ) )
+   {
+      MFE_ERROR( "[dx12 hmft 0x%p] PrepareForEncodeHelper - hr=0x%x", this, hr );
+   }
    return hr;
 }
 
@@ -741,6 +745,10 @@ CDX12EncHMFT::GetCodecPrivateData( LPBYTE pSPSPPSData, DWORD dwSPSPPSDataLen, LP
 
    *lpdwSPSPPSDataLen = (DWORD) buf_size;
 done:
+   if( FAILED( hr ) )
+   {
+      MFE_ERROR( "[dx12 hmft 0x%p] GetCodecPrivateData - hr=0x%x", this, hr );
+   }
    return hr;
 }
 
@@ -983,6 +991,10 @@ CDX12EncHMFT::CreateGOPTracker( uint32_t textureWidth, uint32_t textureHeight )
    CHECKHR_GOTO( hr, done );
 
 done:
+   if( FAILED( hr ) )
+   {
+      MFE_ERROR( "[dx12 hmft 0x%p] CreateGOPTracker - hr=0x%x", this, hr );
+   }
    return hr;
 }
 

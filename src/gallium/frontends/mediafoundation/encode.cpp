@@ -711,5 +711,9 @@ CDX12EncHMFT::ValidateDirtyRects( const LPDX12EncodeContext pDX12EncodeContext, 
       }
    }
 done:
+   if( FAILED( hr ) )
+   {
+      MFE_ERROR( "[dx12 hmft 0x%p] ValidateDirtyRects - hr=0x%x", this, hr );
+   }
    return hr;
 }
