@@ -50,7 +50,6 @@
 
 #define FORMAT(vk, tex_fmt, pack_mode, accum_format)           \
    [VK_FORMAT_##vk] = {                                        \
-      .vk_format = VK_FORMAT_##vk,                             \
       .tex_format = ROGUE_TEXSTATE_FORMAT_##tex_fmt,           \
       .depth_tex_format = ROGUE_TEXSTATE_FORMAT_INVALID,       \
       .stencil_tex_format = ROGUE_TEXSTATE_FORMAT_INVALID,     \
@@ -61,7 +60,6 @@
 
 #define FORMAT_COMPRESSED(vk, tex_fmt)                          \
    [VK_FORMAT_##vk] = {                                         \
-      .vk_format = VK_FORMAT_##vk,                              \
       .tex_format = ROGUE_TEXSTATE_FORMAT_COMPRESSED_##tex_fmt, \
       .depth_tex_format = ROGUE_TEXSTATE_FORMAT_INVALID,        \
       .stencil_tex_format = ROGUE_TEXSTATE_FORMAT_INVALID,      \
@@ -72,7 +70,6 @@
 
 #define FORMAT_DEPTH_STENCIL(vk, combined_fmt, d_fmt, s_fmt)  \
    [VK_FORMAT_##vk] = {                                       \
-      .vk_format = VK_FORMAT_##vk,                            \
       .tex_format = ROGUE_TEXSTATE_FORMAT_##combined_fmt,     \
       .depth_tex_format = ROGUE_TEXSTATE_FORMAT_##d_fmt,      \
       .stencil_tex_format = ROGUE_TEXSTATE_FORMAT_##s_fmt,    \
@@ -82,7 +79,6 @@
    }
 
 struct pvr_format {
-   VkFormat vk_format;
    uint32_t tex_format;
    uint32_t depth_tex_format;
    uint32_t stencil_tex_format;
@@ -613,18 +609,15 @@ void pvr_get_hw_clear_color(
 #undef f32_to_f16
 
 static VkFormatFeatureFlags2
-pvr_get_image_format_features2(const struct pvr_format *pvr_format,
-                               VkImageTiling vk_tiling)
+pvr_get_image_format_features2(VkFormat vk_format, VkImageTiling vk_tiling)
 {
    VkFormatFeatureFlags2 flags = 0;
-   VkFormat vk_format;
 
+   const struct pvr_format *pvr_format = pvr_get_format(vk_format);
    if (!pvr_format)
       return 0;
 
    assert(pvr_format->supported);
-
-   vk_format = pvr_format->vk_format;
 
    if (vk_format_is_scaled(vk_format))
       return 0;
@@ -778,19 +771,16 @@ pvr_get_format_swizzle_for_tpu(const struct util_format_description *desc)
    return desc->swizzle;
 }
 
-static VkFormatFeatureFlags2
-pvr_get_buffer_format_features2(const struct pvr_format *pvr_format)
+static VkFormatFeatureFlags2 pvr_get_buffer_format_features2(VkFormat vk_format)
 {
    const struct util_format_description *desc;
    VkFormatFeatureFlags2 flags = 0;
-   VkFormat vk_format;
 
+   const struct pvr_format *pvr_format = pvr_get_format(vk_format);
    if (!pvr_format)
       return 0;
 
    assert(pvr_format->supported);
-
-   vk_format = pvr_format->vk_format;
 
    if (!vk_format_is_color(vk_format))
       return 0;
@@ -870,13 +860,11 @@ void pvr_GetPhysicalDeviceFormatProperties2(
    VkFormat format,
    VkFormatProperties2 *pFormatProperties)
 {
-   const struct pvr_format *pvr_format = pvr_get_format(format);
    VkFormatFeatureFlags2 linear2, optimal2, buffer2;
 
-   linear2 = pvr_get_image_format_features2(pvr_format, VK_IMAGE_TILING_LINEAR);
-   optimal2 =
-      pvr_get_image_format_features2(pvr_format, VK_IMAGE_TILING_OPTIMAL);
-   buffer2 = pvr_get_buffer_format_features2(pvr_format);
+   linear2 = pvr_get_image_format_features2(format, VK_IMAGE_TILING_LINEAR);
+   optimal2 = pvr_get_image_format_features2(format, VK_IMAGE_TILING_OPTIMAL);
+   buffer2 = pvr_get_buffer_format_features2(format);
 
    pFormatProperties->formatProperties = (VkFormatProperties){
       .linearTilingFeatures = vk_format_features2_to_features(linear2),
@@ -931,7 +919,8 @@ pvr_get_image_format_properties(struct pvr_physical_device *pdevice,
       goto err_unsupported_format;
    }
 
-   tiling_features2 = pvr_get_image_format_features2(pvr_format, info->tiling);
+   tiling_features2 =
+      pvr_get_image_format_features2(info->format, info->tiling);
    if (tiling_features2 == 0) {
       result = vk_error(pdevice, VK_ERROR_FORMAT_NOT_SUPPORTED);
       goto err_unsupported_format;
