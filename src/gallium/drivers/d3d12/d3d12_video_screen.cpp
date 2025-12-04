@@ -1358,9 +1358,11 @@ union pipe_enc_cap_sliced_notifications
 get_sliced_encode_support(D3D12_VIDEO_ENCODER_SUPPORT_FLAGS capEncoderSupportFlags)
 {
    union pipe_enc_cap_sliced_notifications sliced_encode_support = {};
-   sliced_encode_support.bits.supported = ((capEncoderSupportFlags & D3D12_VIDEO_ENCODER_SUPPORT_FLAG_SUBREGION_NOTIFICATION_SINGLE_BUFFER_AVAILABLE) ||
-                                           (capEncoderSupportFlags & D3D12_VIDEO_ENCODER_SUPPORT_FLAG_SUBREGION_NOTIFICATION_ARRAY_OF_BUFFERS_AVAILABLE)) ? 1u : 0u;
-   sliced_encode_support.bits.multiple_buffers_required = (capEncoderSupportFlags & D3D12_VIDEO_ENCODER_SUPPORT_FLAG_SUBREGION_NOTIFICATION_ARRAY_OF_BUFFERS_AVAILABLE) ? 1u : 0u;
+   sliced_encode_support.bits.supported = (((capEncoderSupportFlags & D3D12_VIDEO_ENCODER_SUPPORT_FLAG_SUBREGION_NOTIFICATION_SINGLE_BUFFER_AVAILABLE) != 0) ||
+                                           ((capEncoderSupportFlags & D3D12_VIDEO_ENCODER_SUPPORT_FLAG_SUBREGION_NOTIFICATION_ARRAY_OF_BUFFERS_AVAILABLE) != 0)) ? 1u : 0u;
+   // multiple_buffers_required is only set when single buffer is NOT available but array of buffers IS available
+   sliced_encode_support.bits.multiple_buffers_required = (((capEncoderSupportFlags & D3D12_VIDEO_ENCODER_SUPPORT_FLAG_SUBREGION_NOTIFICATION_SINGLE_BUFFER_AVAILABLE) == 0) &&
+                                                           ((capEncoderSupportFlags & D3D12_VIDEO_ENCODER_SUPPORT_FLAG_SUBREGION_NOTIFICATION_ARRAY_OF_BUFFERS_AVAILABLE) != 0)) ? 1u : 0u;
    return sliced_encode_support;
 }
 
