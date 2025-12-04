@@ -584,7 +584,7 @@
         "description": "wsi/metal: Fix blit_imate_to_image's pool selection for cmd buffer alloc",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "39a7d65113c6df7d1da6e88b16fab0686db6fc83",
         "notes": null
