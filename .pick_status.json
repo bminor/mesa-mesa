@@ -1,5 +1,145 @@
 [
     {
+        "sha": "b75cd07265b6d34cefde80399e7ff0cd7652dbca",
+        "description": "util/driconf: add Cursemark workaround",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d5498240ac8766fa084f7d4ba8494b67893a4448",
+        "description": "spirv: Remove view_index_is_input",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "63a38b945dc4ffe9bdebd0b9760ec3efbb35700a",
+        "description": "tu: Call nir_lower_sysvals_to_varyings once",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "5bbbf5cf9ba1764277115db8453a8ace41d3fa87",
+        "notes": null
+    },
+    {
+        "sha": "4cfa188db62dadca3342f3d6b02379b190745733",
+        "description": "tu: Stop setting view_index_is_input",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "5bbbf5cf9ba1764277115db8453a8ace41d3fa87",
+        "notes": null
+    },
+    {
+        "sha": "e14f8ee0e4706b8de78cfad9191c3596b649d0f8",
+        "description": "nir/has_divergent_loop: require divergence metadata, check all function impls",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d0b83dd7ce65f2e134f464a8b336cfdb63d146bb",
+        "description": "pan: Move pan_compile_shader to pan_compiler.c",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e64736fba740507f15f2cbbb17a92bcdbc670f65",
+        "description": "pan: Drop bifrost_shader_blend_info::format",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "39705485564175305b4f35513a9ecbef98e27c9f",
+        "description": "pan: Move PRINTF_BUFFER_SIZE to the compiler",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "83f90b0760bd355cd77316711da73f7c7ec33567",
+        "description": "pan/bi: Fix LD_VAR_BUF indirect offset calculations",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "0fcddd4d2c401a7678139456702cbe15288eebf1",
+        "notes": null
+    },
+    {
+        "sha": "9f173bb0663cc8737c2efe6c56b54675617ef339",
+        "description": "panvk/jm: Delete panvk_varying_hw_format()",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "cad5fb43705130413d3976a124d5e5c28e966907",
+        "description": "pan/blend: Use flat inputs for blend shaders",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "bdd4bea6366d2957dad7c760d24964178925a902",
+        "description": "pan/genxml: Decode blend shaders on CSF",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4f45e834ae7fa6d6d687d2d96fadb1d32be20452",
+        "description": "gfxstream: fix logspam in TLS helper function",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "4a30c6fd70f3447eccf8d2464507002d7602d02a",
+        "notes": null
+    },
+    {
+        "sha": "4f4745ebf3c39bde6faf2fc8baedf69a321c2b2f",
+        "description": "frontends/va: get libva api version from va_version.h",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
         "sha": "ac37885fc85203c08f09345c637b6a21f642ed66",
         "description": "vulkan: update spec to 1.4.335",
         "nominated": false,
