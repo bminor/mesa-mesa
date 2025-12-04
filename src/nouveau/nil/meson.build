@@ -75,7 +75,7 @@ _libnil_rs_bindings = static_library(
 )
 
 _libnil = static_library(
-  'libnil',
+  'nil',
   files('lib.rs'),
   gnu_symbol_visibility: 'hidden',
   rust_abi: 'c',
