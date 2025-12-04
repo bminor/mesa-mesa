@@ -801,7 +801,7 @@ impl BlockDelayScheduler<'_> {
             // current block is complete, so it is effectively executed at cycle
             // `0 - delay`, adding the latency we get `latency - delay`
             // Underflow means that the instruction is already done (delay > latency).
-            latency.checked_sub(delay.into()).unwrap_or(0)
+            latency.saturating_sub(delay.into())
         }
     }
 
