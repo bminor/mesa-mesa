@@ -1441,6 +1441,8 @@ impl Kernel {
     ) {
         // We have to use the required workgroup size if specified.
         if self.work_group_size() != [0; 3] {
+            // This is not just a memcpy, clippy is wrong here
+            #[expect(clippy::manual_memcpy)]
             for i in 0..work_dim {
                 block[i] = self.work_group_size()[i];
                 grid[i] /= block[i];
