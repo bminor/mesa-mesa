@@ -329,7 +329,7 @@ wsi_cmd_blit_image_to_image(const struct wsi_swapchain *chain,
       const VkCommandBufferAllocateInfo cmd_buffer_info = {
          .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
          .pNext = NULL,
-         .commandPool = chain->cmd_pools[0],
+         .commandPool = chain->cmd_pools[i],
          .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
          .commandBufferCount = 1,
       };
