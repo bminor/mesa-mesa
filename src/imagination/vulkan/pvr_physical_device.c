@@ -30,6 +30,7 @@
 #include "pvr_device.h"
 #include "pvr_dump_info.h"
 #include "pvr_entrypoints.h"
+#include "pvr_instance.h"
 #include "pvr_winsys.h"
 #include "pvr_wsi.h"
 

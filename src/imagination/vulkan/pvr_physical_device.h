@@ -25,7 +25,6 @@
 #include "wsi_common.h"
 
 #include "pvr_device_info.h"
-#include "pvr_instance.h"
 
 #if defined(VK_USE_PLATFORM_DISPLAY_KHR) || \
     defined(VK_USE_PLATFORM_WAYLAND_KHR)
