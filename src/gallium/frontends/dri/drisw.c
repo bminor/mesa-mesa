@@ -225,6 +225,13 @@ drisw_copy_to_front(struct pipe_context *pipe,
 static void
 drisw_swap_buffers_with_damage(struct dri_drawable *drawable, int nrects, const int *rects)
 {
+   /* Damage regions still require us to update the whole front buffer
+    * in case the compositor doesn't obey them, so we will just ignore
+    * the passed in damage regions and swap the whole buffer
+    */
+   (void)nrects;
+   (void)rects;
+
    struct dri_context *ctx = dri_get_current();
    struct dri_screen *screen = drawable->screen;
    struct pipe_resource *ptex;
@@ -241,25 +248,6 @@ drisw_swap_buffers_with_damage(struct dri_drawable *drawable, int nrects, const 
 
    if (ptex) {
       struct pipe_fence_handle *fence = NULL;
-
-      struct pipe_box stack_boxes[64];
-      if (nrects > ARRAY_SIZE(stack_boxes))
-         nrects = 0;
-      if (nrects) {
-         for (unsigned int i = 0; i < nrects; i++) {
-            const int *rect = &rects[i * 4];
-
-            int w = MIN2(rect[2], ptex->width0);
-            int h = MIN2(rect[3], ptex->height0);
-            int x = CLAMP(rect[0], 0, ptex->width0);
-            int y = CLAMP(ptex->height0 - rect[1] - h, 0, ptex->height0);
-
-            if (h > ptex->height0 - y)
-               h = ptex->height0 - y;
-
-            u_box_2d(x, y, w, h, &stack_boxes[i]);
-         }
-      }
 
       if (ctx->pp)
          pp_run(ctx->pp, ptex, ptex, drawable->textures[ST_ATTACHMENT_DEPTH_STENCIL]);
@@ -279,7 +267,7 @@ drisw_swap_buffers_with_damage(struct dri_drawable *drawable, int nrects, const 
       screen->base.screen->fence_finish(screen->base.screen, ctx->st->pipe,
                                         fence, OS_TIMEOUT_INFINITE);
       screen->base.screen->fence_reference(screen->base.screen, &fence, NULL);
-      drisw_copy_to_front(ctx->st->pipe, drawable, ptex, nrects, nrects ? stack_boxes : NULL);
+      drisw_copy_to_front(ctx->st->pipe, drawable, ptex, 0, NULL);
       drawable->buffer_age = 1;
 
       /* TODO: remove this if the framebuffer state doesn't change. */
