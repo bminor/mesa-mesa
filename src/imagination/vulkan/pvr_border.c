@@ -57,6 +57,131 @@ struct pvr_border_color_table_entry {
    struct pvr_border_color_table_value compressed_values[PVR_TEX_FORMAT_COUNT];
 } PACKED;
 
+/* FIXME: Replace all instances of uint32_t with ROGUE_TEXSTATE_FORMAT or
+ * ROGUE_TEXSTATE_FORMAT_COMPRESSED after the pvr_common cleanup is complete.
+ */
+
+struct pvr_tex_format_description {
+   enum pipe_format pipe_format_int;
+   enum pipe_format pipe_format_float;
+};
+
+struct pvr_tex_format_compressed_description {
+   uint32_t tex_format;
+   enum pipe_format pipe_format;
+   uint32_t tex_format_simple;
+};
+
+#define FORMAT(tex_fmt, pipe_fmt_int, pipe_fmt_float) \
+   [ROGUE_TEXSTATE_FORMAT_##tex_fmt] = {                    \
+      .desc = {                                             \
+         .pipe_format_int = PIPE_FORMAT_##pipe_fmt_int,     \
+         .pipe_format_float = PIPE_FORMAT_##pipe_fmt_float, \
+      },                                                    \
+      .present = true,                                      \
+   }
+
+static const struct pvr_tex_format_table_entry {
+   struct pvr_tex_format_description desc;
+   bool present;
+} pvr_tex_format_table[PVR_TEX_FORMAT_COUNT] = {
+   /*   0 */ FORMAT(U8, R8_UINT, R8_UNORM),
+   /*   1 */ FORMAT(S8, R8_SINT, R8_SNORM),
+   /*   2 */ FORMAT(A4R4G4B4, A4R4G4B4_UINT, A4R4G4B4_UNORM),
+   /*   4 */ FORMAT(A1R5G5B5, A1R5G5B5_UINT, B5G5R5A1_UNORM),
+   /*   5 */ FORMAT(R5G6B5, R5G6B5_UINT, B5G6R5_UNORM),
+   /*   7 */ FORMAT(U8U8, R8G8_UINT, R8G8_UNORM),
+   /*   8 */ FORMAT(S8S8, R8G8_SINT, R8G8_SNORM),
+   /*   9 */ FORMAT(U16, R16_UINT, R16_UNORM),
+   /*  10 */ FORMAT(S16, R16_SINT, R16_SNORM),
+   /*  11 */ FORMAT(F16, NONE, R16_FLOAT),
+   /*  12 */ FORMAT(U8U8U8U8, R8G8B8A8_UINT, R8G8B8A8_UNORM),
+   /*  13 */ FORMAT(S8S8S8S8, R8G8B8A8_SINT, R8G8B8A8_SNORM),
+   /*  14 */ FORMAT(A2R10B10G10, R10G10B10A2_UINT, R10G10B10A2_UNORM),
+   /*  15 */ FORMAT(U16U16, R16G16_UINT, R16G16_UNORM),
+   /*  16 */ FORMAT(S16S16, R16G16_SINT, R16G16_SNORM),
+   /*  17 */ FORMAT(F16F16, NONE, R16G16_FLOAT),
+   /*  18 */ FORMAT(F32, NONE, R32_FLOAT),
+   /*  21 */ FORMAT(X8U24, NONE, Z24X8_UNORM),
+   /*  22 */ FORMAT(ST8U24, Z24_UNORM_S8_UINT, Z24_UNORM_S8_UINT),
+   /*  23 */ FORMAT(U8X24, X24S8_UINT, NONE),
+   /*  24 */ FORMAT(U32, R32_UINT, R32_UNORM),
+   /*  25 */ FORMAT(S32, R32_SINT, R32_SNORM),
+   /*  26 */ FORMAT(SE9995, NONE, R9G9B9E5_FLOAT),
+   /*  28 */ FORMAT(F16F16F16F16, NONE, R16G16B16A16_FLOAT),
+   /*  29 */ FORMAT(U16U16U16U16, R16G16B16A16_UINT, R16G16B16A16_UNORM),
+   /*  30 */ FORMAT(S16S16S16S16, R16G16B16A16_SINT, R16G16B16A16_SNORM),
+   /*  32 */ FORMAT(U16U16U16, R16G16B16_UINT, R16G16B16_UNORM),
+   /*  33 */ FORMAT(S16S16S16, R16G16B16_SINT, R16G16B16_SNORM),
+   /*  34 */ FORMAT(F32F32, NONE, R32G32_FLOAT),
+   /*  35 */ FORMAT(U32U32, R32G32_UINT, R32G32_UNORM),
+   /*  36 */ FORMAT(S32S32, R32G32_SINT, R32G32_SNORM),
+   /*  37 */ FORMAT(X24U8F32, Z32_FLOAT_S8X24_UINT, Z32_FLOAT_S8X24_UINT),
+   /*  38 */ FORMAT(X24X8F32, NONE, Z32_FLOAT_S8X24_UINT),
+   /*  39 */ FORMAT(X24G8X32, X32_S8X24_UINT, NONE),
+   /*  58 */ FORMAT(U8U8U8, R8G8B8_UINT, R8G8B8_UNORM),
+   /*  61 */ FORMAT(F32F32F32F32, NONE, R32G32B32A32_FLOAT),
+   /*  62 */ FORMAT(U32U32U32U32, R32G32B32A32_UINT, R32G32B32A32_UNORM),
+   /*  63 */ FORMAT(S32S32S32S32, R32G32B32A32_SINT, R32G32B32A32_SNORM),
+   /*  64 */ FORMAT(F32F32F32, NONE, R32G32B32_FLOAT),
+   /*  65 */ FORMAT(U32U32U32, R32G32B32_UINT, R32G32B32_UNORM),
+   /*  66 */ FORMAT(S32S32S32, R32G32B32_SINT, R32G32B32_SNORM),
+   /*  88 */ FORMAT(F10F11F11, NONE, R11G11B10_FLOAT),
+};
+
+#undef FORMAT
+
+#define FORMAT(tex_fmt, pipe_fmt, tex_fmt_simple) \
+   [ROGUE_TEXSTATE_FORMAT_COMPRESSED_##tex_fmt] = {                   \
+      .desc = {                                                       \
+         .tex_format = ROGUE_TEXSTATE_FORMAT_COMPRESSED_##tex_fmt,    \
+         .pipe_format = PIPE_FORMAT_##pipe_fmt,                       \
+         .tex_format_simple = ROGUE_TEXSTATE_FORMAT_##tex_fmt_simple, \
+      },                                                              \
+      .present = true,                                                \
+   }
+
+static const struct pvr_tex_format_compressed_table_entry {
+   struct pvr_tex_format_compressed_description desc;
+   bool present;
+} pvr_tex_format_compressed_table[PVR_TEX_FORMAT_COUNT] = {
+   /*  68 */ FORMAT(ETC2_RGB, ETC2_RGB8, U8U8U8U8),
+   /*  69 */ FORMAT(ETC2A_RGBA, ETC2_RGBA8, U8U8U8U8),
+   /*  70 */ FORMAT(ETC2_PUNCHTHROUGHA, ETC2_RGB8A1, U8U8U8U8),
+   /*  71 */ FORMAT(EAC_R11_UNSIGNED, ETC2_R11_UNORM, U16U16U16U16),
+   /*  72 */ FORMAT(EAC_R11_SIGNED, ETC2_R11_SNORM, S16S16S16S16),
+   /*  73 */ FORMAT(EAC_RG11_UNSIGNED, ETC2_RG11_UNORM, U16U16U16U16),
+   /*  74 */ FORMAT(EAC_RG11_SIGNED, ETC2_RG11_SNORM, S16S16S16S16),
+};
+
+#undef FORMAT
+
+static inline bool tex_format_is_supported(const uint32_t tex_format)
+{
+   return tex_format < ARRAY_SIZE(pvr_tex_format_table) &&
+          pvr_tex_format_table[tex_format].present;
+}
+
+static inline const struct pvr_tex_format_description *
+get_tex_format_description(const uint32_t tex_format)
+{
+   assert(tex_format_is_supported(tex_format));
+   return &pvr_tex_format_table[tex_format].desc;
+}
+
+static inline bool tex_format_compressed_is_supported(const uint32_t tex_format)
+{
+   return tex_format < ARRAY_SIZE(pvr_tex_format_compressed_table) &&
+          pvr_tex_format_compressed_table[tex_format].present;
+}
+
+static inline const struct pvr_tex_format_compressed_description *
+get_tex_format_compressed_description(const uint32_t tex_format)
+{
+   assert(tex_format_compressed_is_supported(tex_format));
+   return &pvr_tex_format_compressed_table[tex_format].desc;
+}
+
 static inline void pvr_border_color_table_pack_single(
    struct pvr_border_color_table_value *const dst,
    const union pipe_color_union *const color,
@@ -104,7 +229,7 @@ static inline void pvr_border_color_table_pack_single_compressed(
 {
    if (PVR_HAS_FEATURE(dev_info, tpu_border_colour_enhanced)) {
       const struct pvr_tex_format_description *pvr_tex_fmt_desc_simple =
-         pvr_get_tex_format_description(pvr_tex_fmt_desc->tex_format_simple);
+         get_tex_format_description(pvr_tex_fmt_desc->tex_format_simple);
 
       pvr_border_color_table_pack_single(dst,
                                          color,
@@ -154,21 +279,28 @@ pvr_border_color_table_fill_entry(struct pvr_border_color_table *const table,
    struct pvr_border_color_table_entry *const entries = table->table->bo->map;
    struct pvr_border_color_table_entry *const entry = &entries[index];
 
-   pvr_foreach_supported_tex_format (tex_format, desc) {
-      pvr_border_color_table_pack_single(&entry->values[tex_format],
-                                         color,
-                                         desc,
-                                         is_int,
-                                         dev_info);
+   for (enum ROGUE_TEXSTATE_FORMAT tex_format = 0;
+        tex_format < PVR_TEX_FORMAT_COUNT;
+        tex_format++) {
+      if (tex_format_is_supported(tex_format))
+         pvr_border_color_table_pack_single(
+            &entry->values[tex_format],
+            color,
+            get_tex_format_description(tex_format),
+            is_int,
+            dev_info);
    }
 
-   pvr_foreach_supported_tex_format_compressed (tex_format, desc) {
-      pvr_border_color_table_pack_single_compressed(
-         &entry->compressed_values[tex_format],
-         color,
-         desc,
-         is_int,
-         dev_info);
+   for (enum ROGUE_TEXSTATE_FORMAT_COMPRESSED tex_format = 0;
+        tex_format < PVR_TEX_FORMAT_COUNT;
+        tex_format++) {
+      if (tex_format_compressed_is_supported(tex_format))
+         pvr_border_color_table_pack_single_compressed(
+            &entry->compressed_values[tex_format],
+            color,
+            get_tex_format_compressed_description(tex_format),
+            is_int,
+            dev_info);
    }
 }
 
@@ -369,8 +501,8 @@ static inline void pvr_border_color_table_set_custom_entry(
    assert(tex_format != ROGUE_TEXSTATE_FORMAT_INVALID);
 
    if (util_format_is_compressed(format)) {
-      const struct pvr_tex_format_compressed_description *const pvr_tex_fmt_desc =
-         pvr_get_tex_format_compressed_description(tex_format);
+      const struct pvr_tex_format_compressed_description *const
+         pvr_tex_fmt_desc = get_tex_format_compressed_description(tex_format);
 
       pvr_border_color_table_pack_single_compressed(
          &entry->compressed_values[tex_format],
@@ -380,7 +512,7 @@ static inline void pvr_border_color_table_set_custom_entry(
          dev_info);
    } else {
       const struct pvr_tex_format_description *const pvr_tex_fmt_desc =
-         pvr_get_tex_format_description(tex_format);
+         get_tex_format_description(tex_format);
       union pipe_color_union swizzled_color = *color;
 
       if (util_format_is_depth_or_stencil(format)) {
