@@ -448,7 +448,7 @@ radv_cs_emit_cache_flush(struct radeon_winsys *ws, struct radv_cmd_stream *cs, e
 static void
 radv_init_tracked_regs(struct radv_cmd_stream *cs)
 {
-   struct radv_tracked_regs *tracked_regs = &cs->tracked_regs;
+   struct ac_tracked_regs *tracked_regs = &cs->tracked_regs;
 
    /* Mark all registers as unknown. */
    memset(tracked_regs->reg_value, 0, AC_NUM_ALL_TRACKED_REGS * sizeof(uint32_t));

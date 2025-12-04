@@ -1324,7 +1324,7 @@ struct si_context {
       bool with_db;
    } force_shader_coherency;
 
-   struct si_tracked_regs tracked_regs;
+   struct ac_tracked_regs tracked_regs;
 
    /* Resources that need to be flushed, but will not get an explicit
     * flush_resource from the frontend and that will need to get flushed during

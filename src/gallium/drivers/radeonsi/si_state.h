@@ -273,12 +273,6 @@ struct si_shader_data {
 #define BASEVERTEX_DRAWID_MASK               (BASEVERTEX_MASK | DRAWID_MASK)
 #define BASEVERTEX_DRAWID_STARTINSTANCE_MASK (BASEVERTEX_MASK | DRAWID_MASK | STARTINSTANCE_MASK)
 
-struct si_tracked_regs {
-   BITSET_DECLARE(reg_saved_mask, AC_NUM_ALL_TRACKED_REGS);
-   uint32_t reg_value[AC_NUM_ALL_TRACKED_REGS];
-   uint32_t spi_ps_input_cntl[32];
-};
-
 /* Private read-write buffer slots. */
 enum
 {

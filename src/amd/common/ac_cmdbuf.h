@@ -11,6 +11,8 @@
 
 #include "ac_pm4.h"
 
+#include "util/bitset.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -249,6 +251,14 @@ enum ac_tracked_reg
    AC_TRACKED_SPI_SHADER_GS_MESHLET_CTRL,      /* GFX12+ */
 
    AC_NUM_ALL_TRACKED_REGS,
+};
+
+struct ac_tracked_regs {
+   BITSET_DECLARE(reg_saved_mask, AC_NUM_ALL_TRACKED_REGS);
+   uint32_t reg_value[AC_NUM_ALL_TRACKED_REGS];
+   uint32_t spi_ps_input_cntl[32];
+   uint32_t cb_blend_control[8];
+   uint32_t sx_mrt_blend_opt[8];
 };
 
 #define ac_cmdbuf_begin(cs) struct ac_cmdbuf *__cs = (cs);                        \

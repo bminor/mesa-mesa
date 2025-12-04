@@ -279,14 +279,6 @@ enum rgp_flush_bits {
    RGP_FLUSH_INVAL_L1 = 0x8000,
 };
 
-struct radv_tracked_regs {
-   BITSET_DECLARE(reg_saved_mask, AC_NUM_ALL_TRACKED_REGS);
-   uint32_t reg_value[AC_NUM_ALL_TRACKED_REGS];
-   uint32_t spi_ps_input_cntl[32];
-   uint32_t cb_blend_control[MAX_RTS];
-   uint32_t sx_mrt_blend_opt[MAX_RTS];
-};
-
 enum radv_depth_clamp_mode {
    RADV_DEPTH_CLAMP_MODE_VIEWPORT = 0,     /* Clamp to the viewport min/max depth bounds */
    RADV_DEPTH_CLAMP_MODE_USER_DEFINED = 1, /* Range set using VK_EXT_depth_clamp_control */
@@ -477,7 +469,7 @@ struct radv_cmd_stream {
 
    bool context_roll_without_scissor_emitted;
 
-   struct radv_tracked_regs tracked_regs;
+   struct ac_tracked_regs tracked_regs;
    enum amd_ip_type hw_ip;
 
    struct ac_buffered_sh_regs buffered_sh_regs;
