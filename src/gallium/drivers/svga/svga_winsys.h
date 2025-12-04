@@ -707,6 +707,10 @@ struct svga_winsys_screen
 
    /** Do we support coherent surface memory? */
    bool have_coherent;
+
+   /** Max MOB Memory in MiB */
+   uint32_t max_mob_memory_mib;
+
    /**
     * Create and define a GB shader.
     */

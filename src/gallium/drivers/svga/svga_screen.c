@@ -527,7 +527,7 @@ svga_init_screen_caps(struct svga_screen *svgascreen)
 
    caps->vendor_id = 0x15ad; /* VMware Inc. */
    caps->device_id = sws->device_id ? sws->device_id : 0x0405; /* assume SVGA II */
-   caps->video_memory = 1; /* XXX: Query the host ? */
+   caps->video_memory = sws->max_mob_memory_mib ? sws->max_mob_memory_mib : 1;
    caps->copy_between_compressed_and_plain_formats = sws->have_vgpu10;
    caps->doubles = sws->have_sm5;
    caps->uma = false;

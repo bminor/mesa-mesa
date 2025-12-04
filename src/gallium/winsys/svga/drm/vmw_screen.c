@@ -138,6 +138,7 @@ vmw_winsys_create( int fd )
       goto out_no_ioctl;
 
    vws->base.have_gb_dma = !vws->force_coherent;
+   vws->base.max_mob_memory_mib = vws->ioctl.max_mob_memory >> 20;
    vws->base.need_to_rebind_resources = false;
    vws->base.have_transfer_from_buffer_cmd = vws->base.have_vgpu10;
    vws->base.have_constant_buffer_offset_cmd =
