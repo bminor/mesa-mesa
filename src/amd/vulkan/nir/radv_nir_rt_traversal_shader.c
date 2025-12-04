@@ -225,6 +225,13 @@ lower_ahit_isec_intrinsics(nir_builder *b, nir_intrinsic_instr *intr, void *_par
 
    nir_def *ret = NULL;
    switch (intr->intrinsic) {
+      /* When any-hit shaders are invoked, the traversal ray origin/direction is in object space */
+   case nir_intrinsic_load_ray_object_origin:
+      ret = nir_load_var(b, params->trav_vars->origin);
+      break;
+   case nir_intrinsic_load_ray_object_direction:
+      ret = nir_load_var(b, params->trav_vars->dir);
+      break;
    case nir_intrinsic_load_ray_world_origin:
       ret = nir_load_var(b, params->anyhit_vars->origin);
       break;
@@ -285,18 +292,6 @@ lower_ahit_isec_intrinsics(nir_builder *b, nir_intrinsic_instr *intr, void *_par
       radv_load_otw_matrix(params->device, b, nir_load_var(b, params->candidate->instance_addr), otw_matrix);
       ret = nir_vec3(b, nir_channel(b, otw_matrix[0], c), nir_channel(b, otw_matrix[1], c),
                      nir_channel(b, otw_matrix[2], c));
-      break;
-   }
-   case nir_intrinsic_load_ray_object_origin: {
-      nir_def *wto_matrix[3];
-      radv_load_wto_matrix(params->device, b, nir_load_var(b, params->trav_vars->instance_addr), wto_matrix);
-      ret = nir_build_vec3_mat_mult(b, nir_load_var(b, params->anyhit_vars->origin), wto_matrix, true);
-      break;
-   }
-   case nir_intrinsic_load_ray_object_direction: {
-      nir_def *wto_matrix[3];
-      radv_load_wto_matrix(params->device, b, nir_load_var(b, params->trav_vars->instance_addr), wto_matrix);
-      ret = nir_build_vec3_mat_mult(b, nir_load_var(b, params->anyhit_vars->dir), wto_matrix, false);
       break;
    }
    case nir_intrinsic_ignore_ray_intersection: {
