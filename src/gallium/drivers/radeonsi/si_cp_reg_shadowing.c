@@ -106,7 +106,7 @@ bool si_init_cp_reg_shadowing(struct si_context *sctx)
       }
 
       if (sctx->gfx_level < GFX12)
-         si_set_tracked_regs_to_clear_state(sctx);
+         ac_set_tracked_regs_to_clear_state(&sctx->tracked_regs, &sctx->screen->info);
 
       /* Setup preemption. The shadowing preamble will be executed as a preamble IB,
        * which will load register values from memory on a context switch.

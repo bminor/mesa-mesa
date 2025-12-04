@@ -367,7 +367,7 @@ void radv_cs_emit_cache_flush(struct radeon_winsys *ws, struct radv_cmd_stream *
 VkResult radv_create_cmd_stream(const struct radv_device *device, const enum amd_ip_type ip_type,
                                 const bool is_secondary, struct radv_cmd_stream **cs_out);
 
-void radv_init_cmd_stream(struct radv_cmd_stream *cs, const enum amd_ip_type ip_type);
+void radv_init_cmd_stream(const struct radv_device *device, struct radv_cmd_stream *cs, const enum amd_ip_type ip_type);
 
 void radv_reset_cmd_stream(const struct radv_device *device, struct radv_cmd_stream *cs);
 

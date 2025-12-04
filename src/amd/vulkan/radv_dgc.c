@@ -3380,7 +3380,7 @@ radv_update_ies_shader(struct radv_device *device, struct radv_indirect_executio
    /* The IES shader may be used on GFX and compute queues.
     * IP type doesn't matter here, but use compute because this emits a compute shader.
     */
-   radv_init_cmd_stream(&cs, AMD_IP_COMPUTE);
+   radv_init_cmd_stream(device, &cs, AMD_IP_COMPUTE);
 
    assert(shader->info.stage == MESA_SHADER_COMPUTE);
    radv_get_compute_shader_metadata(device, shader, &md);

@@ -490,6 +490,14 @@ ac_init_graphics_preamble_state(const struct ac_preamble_state *state,
                                 struct ac_pm4_state *pm4);
 
 void
+ac_init_tracked_regs(struct ac_tracked_regs *tracked_regs,
+                     const struct radeon_info *info, bool init_to_clear_state);
+
+void
+ac_set_tracked_regs_to_clear_state(struct ac_tracked_regs *tracked_regs,
+                                   const struct radeon_info *info);
+
+void
 ac_cmdbuf_flush_vgt_streamout(struct ac_cmdbuf *cs, enum amd_gfx_level gfx_level);
 
 #ifdef __cplusplus

@@ -445,29 +445,16 @@ radv_cs_emit_cache_flush(struct radeon_winsys *ws, struct radv_cmd_stream *cs, e
    radeon_end();
 }
 
-static void
-radv_init_tracked_regs(struct radv_cmd_stream *cs)
-{
-   struct ac_tracked_regs *tracked_regs = &cs->tracked_regs;
-
-   /* Mark all registers as unknown. */
-   memset(tracked_regs->reg_value, 0, AC_NUM_ALL_TRACKED_REGS * sizeof(uint32_t));
-   BITSET_ZERO(tracked_regs->reg_saved_mask);
-
-   /* 0xffffffff is an impossible value for these registers */
-   memset(tracked_regs->spi_ps_input_cntl, 0xff, sizeof(uint32_t) * 32);
-   memset(tracked_regs->cb_blend_control, 0xff, sizeof(uint32_t) * MAX_RTS);
-   memset(tracked_regs->sx_mrt_blend_opt, 0xff, sizeof(uint32_t) * MAX_RTS);
-}
-
 void
-radv_init_cmd_stream(struct radv_cmd_stream *cs, const enum amd_ip_type ip_type)
+radv_init_cmd_stream(const struct radv_device *device, struct radv_cmd_stream *cs, const enum amd_ip_type ip_type)
 {
+   const struct radv_physical_device *pdev = radv_device_physical(device);
+
    cs->context_roll_without_scissor_emitted = false;
    cs->buffered_sh_regs.num = 0;
    cs->hw_ip = ip_type;
 
-   radv_init_tracked_regs(cs);
+   ac_init_tracked_regs(&cs->tracked_regs, &pdev->info, false);
 }
 
 VkResult
@@ -481,7 +468,7 @@ radv_create_cmd_stream(const struct radv_device *device, const enum amd_ip_type 
    if (!cs)
       return VK_ERROR_OUT_OF_HOST_MEMORY;
 
-   radv_init_cmd_stream(cs, ip_type);
+   radv_init_cmd_stream(device, cs, ip_type);
 
    cs->b = ws->cs_create(ws, ip_type, is_secondary);
    if (!cs->b) {
@@ -498,7 +485,7 @@ radv_reset_cmd_stream(const struct radv_device *device, struct radv_cmd_stream *
 {
    struct radeon_winsys *ws = device->ws;
 
-   radv_init_cmd_stream(cs, cs->hw_ip);
+   radv_init_cmd_stream(device, cs, cs->hw_ip);
 
    ws->cs_reset(cs->b);
 }
