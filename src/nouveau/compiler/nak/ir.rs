@@ -9647,7 +9647,7 @@ fn can_isbe_space_sharing_be_enabled(f: &Function) -> bool {
         let mut sim = IsbeSpaceSharingStateTracker::new();
 
         for instr in block.instrs.iter() {
-            sim.visit_instr(&instr);
+            sim.visit_instr(instr);
         }
 
         if !sim.can_overlap_io {
