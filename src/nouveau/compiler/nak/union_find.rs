@@ -193,7 +193,7 @@ mod tests {
             }
             assert_eq!(total_size, self.uf.nodes.len());
             assert_eq!(total_size, self.uf.idx_map.len());
-            return max_height;
+            max_height
         }
 
         pub fn check(uf: &'a UnionFind<X, H>) -> u32 {
