@@ -10,7 +10,7 @@ ucd = subproject('ucd-trie-0.1-rs').get_variable('lib')
 lib = static_library(
   'pest',
   'src/lib.rs',
-  override_options : ['rust_std=2021', 'build.rust_std=2021'],
+  override_options : ['rust_std=2021', 'build.rust_std=2021', 'warning_level=0'],
   link_with : [ucd],
   rust_abi : 'rust',
   native : true,

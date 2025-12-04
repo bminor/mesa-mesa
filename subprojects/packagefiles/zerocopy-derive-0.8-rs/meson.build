@@ -16,7 +16,7 @@ rust = import('rust')
 lib = rust.proc_macro(
   'zerocopy_derive',
   'src/lib.rs',
-  override_options : ['rust_std=2021', 'build.rust_std=2021'],
+  override_options : ['rust_std=2021', 'build.rust_std=2021', 'warning_level=0'],
   link_with : [syn, quote, proc_macro2]
 )
 

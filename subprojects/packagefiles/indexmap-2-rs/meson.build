@@ -16,7 +16,7 @@ lib = static_library(
   'indexmap',
   'src/lib.rs',
   rust_args : rust_args,
-  override_options : ['rust_std=2021', 'build.rust_std=2021'],
+  override_options : ['rust_std=2021', 'build.rust_std=2021', 'warning_level=0'],
   rust_abi : 'rust',
   native : true,
   dependencies : [dep_equivalent, dep_hashbrown]

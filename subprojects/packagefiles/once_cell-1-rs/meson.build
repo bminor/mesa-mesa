@@ -13,7 +13,7 @@ lib = static_library(
   'once_cell',
   'src/lib.rs',
   rust_args : rust_args,
-  override_options : ['rust_std=2018', 'build.rust_std=2018'],
+  override_options : ['rust_std=2018', 'build.rust_std=2018', 'warning_level=0'],
   rust_abi : 'rust',
   native : true,
 )

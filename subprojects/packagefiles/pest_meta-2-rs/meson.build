@@ -11,7 +11,7 @@ pest = subproject('pest-2-rs').get_variable('lib')
 lib = static_library(
   'pest_meta',
   'src/lib.rs',
-  override_options : ['rust_std=2021', 'build.rust_std=2021'],
+  override_options : ['rust_std=2021', 'build.rust_std=2021', 'warning_level=0'],
   link_with : [once_cell, pest],
   rust_abi : 'rust',
   native : true,

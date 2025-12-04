@@ -11,7 +11,7 @@ project(
 lib = static_library(
   'cfg_if',
   'src/lib.rs',
-  override_options : ['rust_std=2018', 'build.rust_std=2018'],
+  override_options : ['rust_std=2018', 'build.rust_std=2018', 'warning_level=0'],
   rust_abi : 'rust',
 )
 

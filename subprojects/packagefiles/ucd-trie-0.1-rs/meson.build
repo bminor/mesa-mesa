@@ -8,7 +8,7 @@ project(
 lib = static_library(
   'ucd_trie',
   'src/lib.rs',
-  override_options : ['rust_std=2021', 'build.rust_std=2021'],
+  override_options : ['rust_std=2021', 'build.rust_std=2021', 'warning_level=0'],
   rust_abi : 'rust',
   native : true,
 )

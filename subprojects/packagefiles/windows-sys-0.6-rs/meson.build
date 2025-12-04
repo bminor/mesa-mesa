@@ -23,7 +23,7 @@ windows_sys_args = [
 lib = static_library(
   'windows_sys',
   'src/lib.rs',
-  override_options : ['rust_std=2021', 'build.rust_std=2021'],
+  override_options : ['rust_std=2021', 'build.rust_std=2021', 'warning_level=0'],
   link_with: [windows_link],
   rust_abi: 'rust',
   rust_args: windows_sys_args,

@@ -34,7 +34,7 @@ lib = static_library(
   'libc',
   'src/lib.rs',
   rust_abi : 'rust',
-  override_options : ['rust_std=2021', 'build.rust_std=2021'],
+  override_options : ['rust_std=2021', 'build.rust_std=2021', 'warning_level=0'],
   rust_args: libc_args,
 )
 

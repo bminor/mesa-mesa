@@ -8,7 +8,7 @@ project(
 lib = static_library(
   'equivalent',
   'src/lib.rs',
-  override_options : ['rust_std=2015', 'build.rust_std=2015'],
+  override_options : ['rust_std=2015', 'build.rust_std=2015', 'warning_level=0'],
   rust_abi : 'rust',
   native : true,
 )

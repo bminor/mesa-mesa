@@ -16,7 +16,7 @@ thiserror_impl = subproject('thiserror-impl-2-rs').get_variable('lib')
 lib = static_library(
   'thiserror',
   'src/lib.rs',
-  override_options : ['rust_std=2021', 'build.rust_std=2021'],
+  override_options : ['rust_std=2021', 'build.rust_std=2021', 'warning_level=0'],
   rust_abi : 'rust',
   link_with : [thiserror_impl]
 )
