@@ -197,12 +197,6 @@ static const struct pvr_format pvr_format_table[] = {
       .accum_format = PVR_PBE_ACCUM_FORMAT_##accum_format_, \
    }
 
-#define FORMAT_COMPRESSED(vk)                       \
-   [VK_FORMAT_##vk] = {                             \
-      .packmode = ROGUE_PBESTATE_PACKMODE_INVALID,  \
-      .accum_format = PVR_PBE_ACCUM_FORMAT_INVALID, \
-   }
-
 #define FORMAT_DEPTH_STENCIL(vk, combined_fmt)            \
    [VK_FORMAT_##vk] = {                                   \
       .packmode = ROGUE_PBESTATE_PACKMODE_##combined_fmt, \
@@ -285,21 +279,10 @@ static const struct pvr_pbe_format pvr_pbe_format_table[] = {
    FORMAT_DEPTH_STENCIL(S8_UINT, U8),
    FORMAT_DEPTH_STENCIL(D24_UNORM_S8_UINT, ST8U24),
    FORMAT_DEPTH_STENCIL(D32_SFLOAT_S8_UINT, X24U8F32),
-   FORMAT_COMPRESSED(ETC2_R8G8B8_UNORM_BLOCK),
-   FORMAT_COMPRESSED(ETC2_R8G8B8_SRGB_BLOCK),
-   FORMAT_COMPRESSED(ETC2_R8G8B8A1_UNORM_BLOCK),
-   FORMAT_COMPRESSED(ETC2_R8G8B8A1_SRGB_BLOCK),
-   FORMAT_COMPRESSED(ETC2_R8G8B8A8_UNORM_BLOCK),
-   FORMAT_COMPRESSED(ETC2_R8G8B8A8_SRGB_BLOCK),
-   FORMAT_COMPRESSED(EAC_R11_UNORM_BLOCK),
-   FORMAT_COMPRESSED(EAC_R11_SNORM_BLOCK),
-   FORMAT_COMPRESSED(EAC_R11G11_UNORM_BLOCK),
-   FORMAT_COMPRESSED(EAC_R11G11_SNORM_BLOCK),
 };
 
 #undef FORMAT
 #undef FORMAT_DEPTH_STENCIL
-#undef FORMAT_COMPRESSED
 
 static inline const struct pvr_format *pvr_get_format(VkFormat vk_format)
 {
@@ -350,11 +333,13 @@ uint32_t pvr_get_tex_format_aspect(VkFormat vk_format,
 
 uint32_t pvr_get_pbe_packmode(VkFormat vk_format)
 {
+   assert(!vk_format_is_block_compressed(vk_format));
    return pvr_get_pbe_format(vk_format)->packmode;
 }
 
 uint32_t pvr_get_pbe_accum_format(VkFormat vk_format)
 {
+   assert(!vk_format_is_block_compressed(vk_format));
    return pvr_get_pbe_format(vk_format)->accum_format;
 }
 
