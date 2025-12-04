@@ -210,7 +210,7 @@ static const struct pvr_format pvr_format_table[] = {
    }
 
 struct pvr_pbe_format {
-   uint32_t packmode;
+   enum ROGUE_PBESTATE_PACKMODE packmode;
    enum pvr_pbe_accum_format accum_format;
 };
 
