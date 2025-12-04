@@ -247,7 +247,9 @@ GENX(pandecode_fbd)(struct pandecode_context *ctx, uint64_t gpu_va,
       pan_unpack(dcd, DRAW, draw);
       pandecode_log(ctx, "Pre frame 0 @%" PRIx64 " (mode=%d):\n",
                     params.frame_shader_dcds, params.pre_frame_0);
+      ctx->indent++;
       GENX(pandecode_dcd)(ctx, &draw, job_type_param, gpu_id);
+      ctx->indent--;
    }
 
    if (params.pre_frame_1 != MALI_PRE_POST_FRAME_SHADER_MODE_NEVER) {
@@ -256,7 +258,9 @@ GENX(pandecode_fbd)(struct pandecode_context *ctx, uint64_t gpu_va,
       pan_unpack(dcd, DRAW, draw);
       pandecode_log(ctx, "Pre frame 1 @%" PRIx64 ":\n",
                     params.frame_shader_dcds + (1 * dcd_size));
+      ctx->indent++;
       GENX(pandecode_dcd)(ctx, &draw, job_type_param, gpu_id);
+      ctx->indent--;
    }
 
    if (params.post_frame != MALI_PRE_POST_FRAME_SHADER_MODE_NEVER) {
@@ -264,7 +268,9 @@ GENX(pandecode_fbd)(struct pandecode_context *ctx, uint64_t gpu_va,
          ctx, dcd, params.frame_shader_dcds + (2 * dcd_size));
       pan_unpack(dcd, DRAW, draw);
       pandecode_log(ctx, "Post frame:\n");
+      ctx->indent++;
       GENX(pandecode_dcd)(ctx, &draw, job_type_param, gpu_id);
+      ctx->indent--;
    }
 #else
    DUMP_SECTION(ctx, FRAMEBUFFER, LOCAL_STORAGE, fb, "Local Storage:\n");
