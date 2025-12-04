@@ -1165,11 +1165,10 @@ static void r300_delete_fs_state(struct pipe_context* pipe, void* shader)
     struct r300_fragment_shader* fs = (struct r300_fragment_shader*)shader;
     struct r300_fragment_shader_code *tmp, *ptr = fs->first;
 
-    free(fs->shader->code.constants_remap_table);
-
     while (ptr) {
         tmp = ptr;
         ptr = ptr->next;
+        FREE(tmp->code.constants_remap_table);
         rc_constants_destroy(&tmp->code.constants);
         FREE(tmp->cb_code);
         free(tmp->error);
