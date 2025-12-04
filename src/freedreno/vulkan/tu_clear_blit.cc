@@ -919,7 +919,8 @@ r3d_common(struct tu_cmd_buffer *cmd, struct tu_cs *cs, enum r3d_type type,
       tu_cs_emit_regs(cs, RB_RENDER_CNTL(CHIP,
             .raster_mode = TYPE_TILED,
             .raster_direction = LR_TB));
-      tu_cs_emit_regs(cs, A7XX_GRAS_SU_RENDER_CNTL());
+      if (CHIP >= A7XX)
+         tu_cs_emit_regs(cs, GRAS_SU_RENDER_CNTL(CHIP));
       tu_cs_emit_regs(cs, PC_DGEN_SU_CONSERVATIVE_RAS_CNTL(CHIP));
       tu_cs_emit_regs(cs, GRAS_SU_CONSERVATIVE_RAS_CNTL(CHIP));
    }
@@ -1401,7 +1402,8 @@ r3d_dst(struct tu_cs *cs, const struct fdl6_view *iview, uint32_t layer,
    tu_cs_emit_regs(cs, GRAS_LRZ_MRT_BUFFER_INFO_0(CHIP, .color_format = fmt));
 
    tu_cs_emit_regs(cs, RB_RENDER_CNTL(CHIP, .flag_mrts = iview->ubwc_enabled));
-   tu_cs_emit_regs(cs, A7XX_GRAS_SU_RENDER_CNTL());
+   if (CHIP >= A7XX)
+      tu_cs_emit_regs(cs, GRAS_SU_RENDER_CNTL(CHIP));
 }
 
 template <chip CHIP>
@@ -1420,7 +1422,8 @@ r3d_dst_depth(struct tu_cs *cs, const struct tu_image_view *iview, uint32_t laye
    tu_cs_image_flag_ref(cs, &iview->view, layer);
 
    tu_cs_emit_regs(cs, RB_RENDER_CNTL(CHIP, .flag_mrts = iview->view.ubwc_enabled));
-   tu_cs_emit_regs(cs, A7XX_GRAS_SU_RENDER_CNTL());
+   if (CHIP >= A7XX)
+      tu_cs_emit_regs(cs, GRAS_SU_RENDER_CNTL(CHIP));
 }
 
 static uint32_t
@@ -1443,7 +1446,8 @@ r3d_dst_stencil(struct tu_cs *cs, const struct tu_image_view *iview, uint32_t la
    );
 
    tu_cs_emit_regs(cs, RB_RENDER_CNTL(CHIP));
-   tu_cs_emit_regs(cs, A7XX_GRAS_SU_RENDER_CNTL());
+   if (CHIP >= A7XX)
+      tu_cs_emit_regs(cs, GRAS_SU_RENDER_CNTL(CHIP));
 }
 
 template <chip CHIP>
@@ -1464,7 +1468,8 @@ r3d_dst_buffer(struct tu_cs *cs, enum pipe_format format, uint64_t va, uint32_t 
                    A6XX_RB_MRT_BASE_GMEM(0, 0));
 
    tu_cs_emit_regs(cs, RB_RENDER_CNTL(CHIP));
-   tu_cs_emit_regs(cs, A7XX_GRAS_SU_RENDER_CNTL());
+   if (CHIP >= A7XX)
+      tu_cs_emit_regs(cs, GRAS_SU_RENDER_CNTL(CHIP));
 }
 
 template <chip CHIP>
@@ -1512,7 +1517,8 @@ r3d_dst_gmem(struct tu_cmd_buffer *cmd, struct tu_cs *cs,
       cs, GRAS_LRZ_MRT_BUFFER_INFO_0(CHIP, .color_format = color_format));
 
    tu_cs_emit_regs(cs, RB_RENDER_CNTL(CHIP));
-   tu_cs_emit_regs(cs, A7XX_GRAS_SU_RENDER_CNTL());
+   if (CHIP >= A7XX)
+      tu_cs_emit_regs(cs, GRAS_SU_RENDER_CNTL(CHIP));
 }
 
 static uint8_t

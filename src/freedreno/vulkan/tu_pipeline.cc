@@ -3362,8 +3362,11 @@ tu6_emit_rast(struct tu_cs *cs,
             .raster_mode = TYPE_TILED,
             .raster_direction = LR_TB,
             .conservativerasen = conservative_ras_en));
-      tu_cs_emit_regs(cs, A7XX_GRAS_SU_RENDER_CNTL(.fs_disable = disable_fs));
-      tu_cs_emit_regs(cs, A7XX_SP_RENDER_CNTL(.fs_disable = disable_fs));
+
+      if (CHIP >= A7XX) {
+         tu_cs_emit_regs(cs, GRAS_SU_RENDER_CNTL(CHIP, .fs_disable = disable_fs));
+         tu_cs_emit_regs(cs, SP_RENDER_CNTL(CHIP, .fs_disable = disable_fs));
+      }
 
       tu_cs_emit_regs(
          cs, PC_DGEN_SU_CONSERVATIVE_RAS_CNTL(CHIP, conservative_ras_en));
