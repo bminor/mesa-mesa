@@ -12,7 +12,6 @@ use std::cmp::max;
 use std::hash::Hash;
 use std::ops::Range;
 use std::slice;
-use std::{u16, u32, u8};
 
 #[derive(Clone)]
 enum RegUse<T: Clone> {
@@ -129,7 +128,7 @@ where
                 }
                 Entry::Occupied(mut occupied_entry) => {
                     let orig = occupied_entry.get_mut();
-                    *orig = merger(&orig, v);
+                    *orig = merger(orig, v);
                 }
             }
         }
