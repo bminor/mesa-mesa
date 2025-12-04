@@ -5030,7 +5030,7 @@ radv_update_bound_fast_clear_ds(struct radv_cmd_buffer *cmd_buffer, const struct
       radv_update_zrange_precision(cmd_buffer, &cmd_buffer->state.render.ds_att.ds, iview, false);
    }
 
-   cmd_buffer->cs->context_roll_without_scissor_emitted = true;
+   cmd_buffer->cs->b->context_roll = true;
 }
 
 /**
@@ -5293,7 +5293,7 @@ radv_update_bound_fast_clear_color(struct radv_cmd_buffer *cmd_buffer, struct ra
 
    assert(cs->b->cdw <= cdw_max);
 
-   cmd_buffer->cs->context_roll_without_scissor_emitted = true;
+   cmd_buffer->cs->b->context_roll = true;
 }
 
 /**
@@ -11226,7 +11226,7 @@ radv_get_needed_dynamic_states(struct radv_cmd_buffer *cmd_buffer)
 static bool
 radv_need_late_scissor_emission(struct radv_cmd_buffer *cmd_buffer, const struct radv_draw_info *info)
 {
-   if (cmd_buffer->cs->context_roll_without_scissor_emitted || info->strmout_va)
+   if (cmd_buffer->cs->b->context_roll || info->strmout_va)
       return true;
 
    uint64_t used_dynamic_states = radv_get_needed_dynamic_states(cmd_buffer);
@@ -12713,7 +12713,7 @@ radv_emit_all_graphics_states(struct radv_cmd_buffer *cmd_buffer, const struct r
 
    if (late_scissor_emission) {
       radv_emit_scissor_state(cmd_buffer);
-      cmd_buffer->cs->context_roll_without_scissor_emitted = false;
+      cmd_buffer->cs->b->context_roll = false;
    }
 }
 
@@ -15345,7 +15345,7 @@ radv_CmdBeginTransformFeedbackEXT(VkCommandBuffer commandBuffer, uint32_t firstC
           */
          radeon_set_context_reg(R_028AD0_VGT_STRMOUT_BUFFER_SIZE_0 + 16 * i, sb[i].size >> 2);
 
-         cmd_buffer->cs->context_roll_without_scissor_emitted = true;
+         cmd_buffer->cs->b->context_roll = true;
 
          if (append) {
             radeon_emit(PKT3(PKT3_STRMOUT_BUFFER_UPDATE, 4, 0));
@@ -15458,7 +15458,7 @@ radv_CmdEndTransformFeedbackEXT(VkCommandBuffer commandBuffer, uint32_t firstCou
 
          radeon_end();
 
-         cmd_buffer->cs->context_roll_without_scissor_emitted = true;
+         cmd_buffer->cs->b->context_roll = true;
       }
    }
 

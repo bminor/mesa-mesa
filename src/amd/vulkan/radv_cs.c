@@ -450,7 +450,6 @@ radv_init_cmd_stream(const struct radv_device *device, struct radv_cmd_stream *c
 {
    const struct radv_physical_device *pdev = radv_device_physical(device);
 
-   cs->context_roll_without_scissor_emitted = false;
    cs->buffered_sh_regs.num = 0;
    cs->hw_ip = ip_type;
 

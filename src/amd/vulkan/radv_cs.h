@@ -61,7 +61,7 @@ radeon_check_space(struct radeon_winsys *ws, struct ac_cmdbuf *cs, unsigned need
          radeon_set_context_reg(reg, __value);                                                                         \
          BITSET_SET(__tracked_regs->reg_saved_mask, (reg_enum));                                                       \
          __tracked_regs->reg_value[(reg_enum)] = __value;                                                              \
-         __rcs->context_roll_without_scissor_emitted = true;                                                           \
+         __cs->context_roll = true;                                                                                    \
       }                                                                                                                \
    } while (0)
 
@@ -77,7 +77,7 @@ radeon_check_space(struct radeon_winsys *ws, struct ac_cmdbuf *cs, unsigned need
          BITSET_SET_RANGE_INSIDE_WORD(__tracked_regs->reg_saved_mask, (reg_enum), (reg_enum) + 1);                     \
          __tracked_regs->reg_value[(reg_enum)] = __v1;                                                                 \
          __tracked_regs->reg_value[(reg_enum) + 1] = __v2;                                                             \
-         __rcs->context_roll_without_scissor_emitted = true;                                                           \
+         __cs->context_roll = true;                                                                                    \
       }                                                                                                                \
    } while (0)
 
@@ -96,7 +96,7 @@ radeon_check_space(struct radeon_winsys *ws, struct ac_cmdbuf *cs, unsigned need
          __tracked_regs->reg_value[(reg_enum)] = __v1;                                                                 \
          __tracked_regs->reg_value[(reg_enum) + 1] = __v2;                                                             \
          __tracked_regs->reg_value[(reg_enum) + 2] = __v3;                                                             \
-         __rcs->context_roll_without_scissor_emitted = true;                                                           \
+         __cs->context_roll = true;                                                                                    \
       }                                                                                                                \
    } while (0)
 
@@ -117,7 +117,7 @@ radeon_check_space(struct radeon_winsys *ws, struct ac_cmdbuf *cs, unsigned need
          __tracked_regs->reg_value[(reg_enum) + 1] = __v2;                                                             \
          __tracked_regs->reg_value[(reg_enum) + 2] = __v3;                                                             \
          __tracked_regs->reg_value[(reg_enum) + 3] = __v4;                                                             \
-         __rcs->context_roll_without_scissor_emitted = true;                                                           \
+         __cs->context_roll = true;                                                                                    \
       }                                                                                                                \
    } while (0)
 
@@ -127,7 +127,7 @@ radeon_check_space(struct radeon_winsys *ws, struct ac_cmdbuf *cs, unsigned need
          radeon_set_context_reg_seq(reg, num);                                                                         \
          radeon_emit_array(values, num);                                                                               \
          memcpy(saved_values, values, sizeof(uint32_t) * (num));                                                       \
-         __rcs->context_roll_without_scissor_emitted = true;                                                           \
+         __cs->context_roll = true;                                                                                    \
       }                                                                                                                \
    } while (0)
 

@@ -467,9 +467,8 @@ struct radv_cmd_buffer_upload {
 struct radv_cmd_stream {
    struct ac_cmdbuf *b;
 
-   bool context_roll_without_scissor_emitted;
-
    struct ac_tracked_regs tracked_regs;
+
    enum amd_ip_type hw_ip;
 
    struct ac_buffered_sh_regs buffered_sh_regs;
