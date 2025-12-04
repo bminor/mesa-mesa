@@ -48,12 +48,35 @@
 #include "vk_log.h"
 #include "vk_util.h"
 
-#define FORMAT(vk, tex_fmt)                                \
+#define PVR_BIND_VERTEX_BUFFER BITFIELD_BIT(0)
+#define PVR_BIND_SAMPLER_VIEW BITFIELD_BIT(1)
+#define PVR_BIND_RENDER_TARGET BITFIELD_BIT(2)
+#define PVR_BIND_DEPTH_STENCIL BITFIELD_BIT(3)
+#define PVR_BIND_STORAGE_IMAGE BITFIELD_BIT(4)
+
+/* Convenience */
+
+#define _V PVR_BIND_VERTEX_BUFFER
+#define _T PVR_BIND_SAMPLER_VIEW
+#define _R PVR_BIND_RENDER_TARGET
+#define _Z PVR_BIND_DEPTH_STENCIL
+#define _I PVR_BIND_STORAGE_IMAGE
+
+#define FLAGS_V___ (_V)
+#define FLAGS__T__ (_T)
+#define FLAGS__TR_ (_T | _R)
+#define FLAGS__TRI (_T | _R | _I)
+#define FLAGS_VT__ (_V | _T)
+#define FLAGS_VTR_ (_V | _T | _R)
+#define FLAGS_VTRI (_V | _T | _R | _I)
+#define FLAGS__T_Z (_T | _Z)
+
+#define FORMAT(vk, tex_fmt, bind_)                         \
    [VK_FORMAT_##vk] = {                                    \
       .tex_format = ROGUE_TEXSTATE_FORMAT_##tex_fmt,       \
       .depth_tex_format = ROGUE_TEXSTATE_FORMAT_INVALID,   \
       .stencil_tex_format = ROGUE_TEXSTATE_FORMAT_INVALID, \
-      .supported = true,                                   \
+      .bind = FLAGS_##bind_,                               \
    }
 
 #define FORMAT_COMPRESSED(vk, tex_fmt)                          \
@@ -61,7 +84,7 @@
       .tex_format = ROGUE_TEXSTATE_FORMAT_COMPRESSED_##tex_fmt, \
       .depth_tex_format = ROGUE_TEXSTATE_FORMAT_INVALID,        \
       .stencil_tex_format = ROGUE_TEXSTATE_FORMAT_INVALID,      \
-      .supported = true,                                        \
+      .bind = FLAGS__T__,                                       \
    }
 
 #define FORMAT_DEPTH_STENCIL(vk, combined_fmt, d_fmt, s_fmt) \
@@ -69,81 +92,82 @@
       .tex_format = ROGUE_TEXSTATE_FORMAT_##combined_fmt,    \
       .depth_tex_format = ROGUE_TEXSTATE_FORMAT_##d_fmt,     \
       .stencil_tex_format = ROGUE_TEXSTATE_FORMAT_##s_fmt,   \
-      .supported = true,                                     \
+      .bind = FLAGS__T_Z,                                    \
    }
 
 struct pvr_format {
    uint32_t tex_format;
    uint32_t depth_tex_format;
    uint32_t stencil_tex_format;
-   bool supported;
+   uint32_t bind;
 };
 
+/* clang-format off */
 static const struct pvr_format pvr_format_table[] = {
-   FORMAT(B4G4R4A4_UNORM_PACK16, A4R4G4B4),
-   FORMAT(R5G6B5_UNORM_PACK16, R5G6B5),
-   FORMAT(A1R5G5B5_UNORM_PACK16, A1R5G5B5),
-   FORMAT(R8_UNORM, U8),
-   FORMAT(R8_SNORM, S8),
-   FORMAT(R8_UINT, U8),
-   FORMAT(R8_SINT, S8),
-   FORMAT(R8G8_UNORM, U8U8),
-   FORMAT(R8G8_SNORM, S8S8),
-   FORMAT(R8G8_SSCALED, S8S8),
-   FORMAT(R8G8_UINT, U8U8),
-   FORMAT(R8G8_SINT, S8S8),
-   FORMAT(R8G8B8_UINT, U8U8U8),
-   FORMAT(R8G8B8A8_UNORM, U8U8U8U8),
-   FORMAT(R8G8B8A8_SNORM, S8S8S8S8),
-   FORMAT(R8G8B8A8_UINT, U8U8U8U8),
-   FORMAT(R8G8B8A8_SINT, S8S8S8S8),
-   FORMAT(R8G8B8A8_SRGB, U8U8U8U8),
-   FORMAT(B8G8R8A8_UNORM, U8U8U8U8),
-   FORMAT(B8G8R8A8_SRGB, U8U8U8U8),
-   FORMAT(A8B8G8R8_UNORM_PACK32, U8U8U8U8),
-   FORMAT(A8B8G8R8_SNORM_PACK32, S8S8S8S8),
-   FORMAT(A8B8G8R8_UINT_PACK32, U8U8U8U8),
-   FORMAT(A8B8G8R8_SINT_PACK32, S8S8S8S8),
-   FORMAT(A8B8G8R8_SRGB_PACK32, U8U8U8U8),
-   FORMAT(A2R10G10B10_USCALED_PACK32, INVALID),
-   FORMAT(A2R10G10B10_SSCALED_PACK32, INVALID),
-   FORMAT(A2B10G10R10_UNORM_PACK32, A2R10B10G10),
-   FORMAT(A2B10G10R10_SNORM_PACK32, A2R10B10G10),
-   FORMAT(A2B10G10R10_USCALED_PACK32, INVALID),
-   FORMAT(A2B10G10R10_SSCALED_PACK32, INVALID),
-   FORMAT(A2B10G10R10_UINT_PACK32, A2R10B10G10),
-   FORMAT(R16_UNORM, U16),
-   FORMAT(R16_SNORM, S16),
-   FORMAT(R16_UINT, U16),
-   FORMAT(R16_SINT, S16),
-   FORMAT(R16_SFLOAT, F16),
-   FORMAT(R16G16_UNORM, U16U16),
-   FORMAT(R16G16_SNORM, S16S16),
-   FORMAT(R16G16_UINT, U16U16),
-   FORMAT(R16G16_SINT, S16S16),
-   FORMAT(R16G16_SFLOAT, F16F16),
-   FORMAT(R16G16B16_SNORM, S16S16S16),
-   FORMAT(R16G16B16_UINT, U16U16U16),
-   FORMAT(R16G16B16_SINT, S16S16S16),
-   FORMAT(R16G16B16A16_UNORM, U16U16U16U16),
-   FORMAT(R16G16B16A16_SNORM, S16S16S16S16),
-   FORMAT(R16G16B16A16_UINT, U16U16U16U16),
-   FORMAT(R16G16B16A16_SINT, S16S16S16S16),
-   FORMAT(R16G16B16A16_SFLOAT, F16F16F16F16),
-   FORMAT(R32_UINT, U32),
-   FORMAT(R32_SINT, S32),
-   FORMAT(R32_SFLOAT, F32),
-   FORMAT(R32G32_UINT, U32U32),
-   FORMAT(R32G32_SINT, S32S32),
-   FORMAT(R32G32_SFLOAT, F32F32),
-   FORMAT(R32G32B32_UINT, U32U32U32),
-   FORMAT(R32G32B32_SINT, S32S32S32),
-   FORMAT(R32G32B32_SFLOAT, F32F32F32),
-   FORMAT(R32G32B32A32_UINT, U32U32U32U32),
-   FORMAT(R32G32B32A32_SINT, S32S32S32S32),
-   FORMAT(R32G32B32A32_SFLOAT, F32F32F32F32),
-   FORMAT(B10G11R11_UFLOAT_PACK32, F10F11F11),
-   FORMAT(E5B9G9R9_UFLOAT_PACK32, SE9995),
+   FORMAT(B4G4R4A4_UNORM_PACK16,      A4R4G4B4,     VTR_),
+   FORMAT(R5G6B5_UNORM_PACK16,        R5G6B5,       VTR_),
+   FORMAT(A1R5G5B5_UNORM_PACK16,      A1R5G5B5,     VTR_),
+   FORMAT(R8_UNORM,                   U8,           VTRI),
+   FORMAT(R8_SNORM,                   S8,           VTRI),
+   FORMAT(R8_UINT,                    U8,           VTRI),
+   FORMAT(R8_SINT,                    S8,           VTRI),
+   FORMAT(R8G8_UNORM,                 U8U8,         VTRI),
+   FORMAT(R8G8_SNORM,                 S8S8,         VTRI),
+   FORMAT(R8G8_SSCALED,               S8S8,         V___),
+   FORMAT(R8G8_UINT,                  U8U8,         VTRI),
+   FORMAT(R8G8_SINT,                  S8S8,         VTRI),
+   FORMAT(R8G8B8_UINT,                U8U8U8,       VTR_),
+   FORMAT(R8G8B8A8_UNORM,             U8U8U8U8,     VTRI),
+   FORMAT(R8G8B8A8_SNORM,             S8S8S8S8,     VTRI),
+   FORMAT(R8G8B8A8_UINT,              U8U8U8U8,     VTRI),
+   FORMAT(R8G8B8A8_SINT,              S8S8S8S8,     VTRI),
+   FORMAT(R8G8B8A8_SRGB,              U8U8U8U8,     _TR_),
+   FORMAT(B8G8R8A8_UNORM,             U8U8U8U8,     VTR_),
+   FORMAT(B8G8R8A8_SRGB,              U8U8U8U8,     _TR_),
+   FORMAT(A8B8G8R8_UNORM_PACK32,      U8U8U8U8,     VTR_),
+   FORMAT(A8B8G8R8_SNORM_PACK32,      S8S8S8S8,     VTR_),
+   FORMAT(A8B8G8R8_UINT_PACK32,       U8U8U8U8,     VTR_),
+   FORMAT(A8B8G8R8_SINT_PACK32,       S8S8S8S8,     VTR_),
+   FORMAT(A8B8G8R8_SRGB_PACK32,       U8U8U8U8,     _TR_),
+   FORMAT(A2R10G10B10_USCALED_PACK32, INVALID,      V___),
+   FORMAT(A2R10G10B10_SSCALED_PACK32, INVALID,      V___),
+   FORMAT(A2B10G10R10_UNORM_PACK32,   A2R10B10G10,  VTRI),
+   FORMAT(A2B10G10R10_SNORM_PACK32,   A2R10B10G10,  V___),
+   FORMAT(A2B10G10R10_USCALED_PACK32, INVALID,      V___),
+   FORMAT(A2B10G10R10_SSCALED_PACK32, INVALID,      V___),
+   FORMAT(A2B10G10R10_UINT_PACK32,    A2R10B10G10,  VTRI),
+   FORMAT(R16_UNORM,                  U16,          VTRI),
+   FORMAT(R16_SNORM,                  S16,          VTRI),
+   FORMAT(R16_UINT,                   U16,          VTRI),
+   FORMAT(R16_SINT,                   S16,          VTRI),
+   FORMAT(R16_SFLOAT,                 F16,          VTRI),
+   FORMAT(R16G16_UNORM,               U16U16,       VTRI),
+   FORMAT(R16G16_SNORM,               S16S16,       VTRI),
+   FORMAT(R16G16_UINT,                U16U16,       VTRI),
+   FORMAT(R16G16_SINT,                S16S16,       VTRI),
+   FORMAT(R16G16_SFLOAT,              F16F16,       VTRI),
+   FORMAT(R16G16B16_SNORM,            S16S16S16,    VTR_),
+   FORMAT(R16G16B16_UINT,             U16U16U16,    VTR_),
+   FORMAT(R16G16B16_SINT,             S16S16S16,    VTR_),
+   FORMAT(R16G16B16A16_UNORM,         U16U16U16U16, VTRI),
+   FORMAT(R16G16B16A16_SNORM,         S16S16S16S16, VTRI),
+   FORMAT(R16G16B16A16_UINT,          U16U16U16U16, VTRI),
+   FORMAT(R16G16B16A16_SINT,          S16S16S16S16, VTRI),
+   FORMAT(R16G16B16A16_SFLOAT,        F16F16F16F16, VTRI),
+   FORMAT(R32_UINT,                   U32,          VTRI),
+   FORMAT(R32_SINT,                   S32,          VTRI),
+   FORMAT(R32_SFLOAT,                 F32,          VTRI),
+   FORMAT(R32G32_UINT,                U32U32,       VTRI),
+   FORMAT(R32G32_SINT,                S32S32,       VTRI),
+   FORMAT(R32G32_SFLOAT,              F32F32,       VTRI),
+   FORMAT(R32G32B32_UINT,             U32U32U32,    VTR_),
+   FORMAT(R32G32B32_SINT,             S32S32S32,    VTR_),
+   FORMAT(R32G32B32_SFLOAT,           F32F32F32,    VTR_),
+   FORMAT(R32G32B32A32_UINT,          U32U32U32U32, VTRI),
+   FORMAT(R32G32B32A32_SINT,          S32S32S32S32, VTRI),
+   FORMAT(R32G32B32A32_SFLOAT,        F32F32F32F32, VTRI),
+   FORMAT(B10G11R11_UFLOAT_PACK32,    F10F11F11,    _TRI),
+   FORMAT(E5B9G9R9_UFLOAT_PACK32,     SE9995,       VT__),
    FORMAT_DEPTH_STENCIL(D16_UNORM, U16, U16, INVALID),
    FORMAT_DEPTH_STENCIL(X8_D24_UNORM_PACK32, X8U24, X8U24, INVALID),
    FORMAT_DEPTH_STENCIL(D32_SFLOAT, F32, F32, INVALID),
@@ -161,6 +185,7 @@ static const struct pvr_format pvr_format_table[] = {
    FORMAT_COMPRESSED(EAC_R11G11_UNORM_BLOCK, EAC_RG11_UNSIGNED),
    FORMAT_COMPRESSED(EAC_R11G11_SNORM_BLOCK, EAC_RG11_SIGNED),
 };
+/* clang-format on */
 
 #undef FORMAT
 #undef FORMAT_DEPTH_STENCIL
@@ -279,7 +304,7 @@ static const struct pvr_pbe_format pvr_pbe_format_table[] = {
 static inline const struct pvr_format *pvr_get_format(VkFormat vk_format)
 {
    if (vk_format < ARRAY_SIZE(pvr_format_table) &&
-       pvr_format_table[vk_format].supported) {
+       pvr_format_table[vk_format].bind != 0) {
       return &pvr_format_table[vk_format];
    }
 
@@ -515,23 +540,9 @@ pvr_get_image_format_features2(VkFormat vk_format, VkImageTiling vk_tiling)
    if (!pvr_format)
       return 0;
 
-   assert(pvr_format->supported);
+   assert(pvr_format->bind != 0);
 
-   if (vk_format_is_scaled(vk_format))
-      return 0;
-
-   switch (vk_format) {
-   default:
-      break;
-
-   case VK_FORMAT_A2R10G10B10_SNORM_PACK32:
-   case VK_FORMAT_A2R10G10B10_SSCALED_PACK32:
-   case VK_FORMAT_A2B10G10R10_SNORM_PACK32:
-   case VK_FORMAT_A2B10G10R10_SSCALED_PACK32:
-      return 0;
-   }
-
-   if (pvr_get_tex_format(vk_format) != ROGUE_TEXSTATE_FORMAT_INVALID) {
+   if (pvr_format->bind & PVR_BIND_SAMPLER_VIEW) {
       if (vk_tiling == VK_IMAGE_TILING_OPTIMAL) {
          const uint32_t first_component_size =
             vk_format_get_component_bits(vk_format,
@@ -557,16 +568,16 @@ pvr_get_image_format_features2(VkFormat vk_format, VkImageTiling vk_tiling)
       }
    }
 
-   if (pvr_get_pbe_accum_format(vk_format) != PVR_PBE_ACCUM_FORMAT_INVALID) {
-      if (vk_format_is_color(vk_format)) {
-         flags |= VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT |
-                  VK_FORMAT_FEATURE_2_BLIT_DST_BIT;
+   if (pvr_format->bind & PVR_BIND_RENDER_TARGET) {
+      flags |= VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT |
+               VK_FORMAT_FEATURE_2_BLIT_DST_BIT;
 
-         if (!vk_format_is_int(vk_format)) {
-            flags |= VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BLEND_BIT;
-         }
+      if (!vk_format_is_int(vk_format)) {
+         flags |= VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BLEND_BIT;
       }
-   } else if (vk_format_is_depth_or_stencil(vk_format)) {
+   }
+
+   if (pvr_format->bind & PVR_BIND_DEPTH_STENCIL) {
       flags |= VK_FORMAT_FEATURE_2_DEPTH_STENCIL_ATTACHMENT_BIT |
                VK_FORMAT_FEATURE_2_BLIT_DST_BIT |
                VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_DEPTH_COMPARISON_BIT;
@@ -584,49 +595,8 @@ pvr_get_image_format_features2(VkFormat vk_format, VkImageTiling vk_tiling)
       if (vk_format_has_stencil(vk_format))
          flags |= VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_BIT;
 
-      switch (vk_format) {
-      case VK_FORMAT_R8_UNORM:
-      case VK_FORMAT_R8_SNORM:
-      case VK_FORMAT_R8_UINT:
-      case VK_FORMAT_R8_SINT:
-      case VK_FORMAT_R8G8_UNORM:
-      case VK_FORMAT_R8G8_SNORM:
-      case VK_FORMAT_R8G8_UINT:
-      case VK_FORMAT_R8G8_SINT:
-      case VK_FORMAT_R8G8B8A8_UNORM:
-      case VK_FORMAT_R8G8B8A8_SNORM:
-      case VK_FORMAT_R8G8B8A8_UINT:
-      case VK_FORMAT_R8G8B8A8_SINT:
-      case VK_FORMAT_A2B10G10R10_UNORM_PACK32:
-      case VK_FORMAT_A2B10G10R10_UINT_PACK32:
-      case VK_FORMAT_R16_UNORM:
-      case VK_FORMAT_R16_SNORM:
-      case VK_FORMAT_R16_UINT:
-      case VK_FORMAT_R16_SINT:
-      case VK_FORMAT_R16_SFLOAT:
-      case VK_FORMAT_R16G16_UNORM:
-      case VK_FORMAT_R16G16_SNORM:
-      case VK_FORMAT_R16G16_UINT:
-      case VK_FORMAT_R16G16_SINT:
-      case VK_FORMAT_R16G16_SFLOAT:
-      case VK_FORMAT_R16G16B16A16_UNORM:
-      case VK_FORMAT_R16G16B16A16_SNORM:
-      case VK_FORMAT_R16G16B16A16_UINT:
-      case VK_FORMAT_R16G16B16A16_SINT:
-      case VK_FORMAT_R16G16B16A16_SFLOAT:
-      case VK_FORMAT_R32_SFLOAT:
-      case VK_FORMAT_R32G32_UINT:
-      case VK_FORMAT_R32G32_SINT:
-      case VK_FORMAT_R32G32_SFLOAT:
-      case VK_FORMAT_R32G32B32A32_UINT:
-      case VK_FORMAT_R32G32B32A32_SINT:
-      case VK_FORMAT_R32G32B32A32_SFLOAT:
-      case VK_FORMAT_B10G11R11_UFLOAT_PACK32:
+      if (pvr_format->bind & PVR_BIND_STORAGE_IMAGE)
          flags |= VK_FORMAT_FEATURE_2_STORAGE_IMAGE_BIT;
-         break;
-      default:
-         break;
-      }
    }
 
    if (flags & VK_FORMAT_FEATURE_2_STORAGE_IMAGE_BIT) {
@@ -678,23 +648,24 @@ static VkFormatFeatureFlags2 pvr_get_buffer_format_features2(VkFormat vk_format)
    if (!pvr_format)
       return 0;
 
-   assert(pvr_format->supported);
+   assert(pvr_format->bind != 0);
 
    if (!vk_format_is_color(vk_format))
       return 0;
 
    desc = vk_format_description(vk_format);
 
+   if (pvr_format->bind & PVR_BIND_VERTEX_BUFFER)
+      flags |= VK_FORMAT_FEATURE_2_VERTEX_BUFFER_BIT;
+
    if (vk_format_is_scaled(vk_format))
-      return VK_FORMAT_FEATURE_2_VERTEX_BUFFER_BIT;
+      return flags;
 
    flags |= VK_FORMAT_FEATURE_2_TRANSFER_SRC_BIT |
             VK_FORMAT_FEATURE_2_TRANSFER_DST_BIT;
 
    if (desc->layout == UTIL_FORMAT_LAYOUT_PLAIN &&
        desc->colorspace == UTIL_FORMAT_COLORSPACE_RGB) {
-      flags |= VK_FORMAT_FEATURE_2_VERTEX_BUFFER_BIT;
-
       if (desc->is_array && vk_format != VK_FORMAT_R32G32B32_UINT &&
           vk_format != VK_FORMAT_R32G32B32_SINT &&
           vk_format != VK_FORMAT_R32G32B32_SFLOAT) {
@@ -703,8 +674,6 @@ static VkFormatFeatureFlags2 pvr_get_buffer_format_features2(VkFormat vk_format)
                  vk_format == VK_FORMAT_A2B10G10R10_UINT_PACK32) {
          flags |= VK_FORMAT_FEATURE_2_UNIFORM_TEXEL_BUFFER_BIT;
       }
-   } else if (vk_format == VK_FORMAT_E5B9G9R9_UFLOAT_PACK32) {
-      flags |= VK_FORMAT_FEATURE_2_VERTEX_BUFFER_BIT;
    }
 
    if (vk_format_is_color(vk_format) &&
@@ -830,7 +799,7 @@ pvr_get_image_format_properties(struct pvr_physical_device *pdevice,
    if ((info->flags & VK_IMAGE_CREATE_EXTENDED_USAGE_BIT) == 0 &&
        usage & (VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT |
                 VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) &&
-       pvr_get_pbe_accum_format(info->format) == PVR_PBE_ACCUM_FORMAT_INVALID) {
+       !(pvr_format->bind & PVR_BIND_RENDER_TARGET)) {
       result = vk_error(pdevice, VK_ERROR_FORMAT_NOT_SUPPORTED);
       goto err_unsupported_format;
    }
