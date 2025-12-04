@@ -261,9 +261,7 @@ impl ShaderModel for ShaderModel70 {
     }
 
     fn latency_upper_bound(&self) -> u32 {
-        if self.is_blackwell() {
-            30
-        } else if self.is_ampere() || self.is_ada() {
+        if self.is_blackwell() || self.is_ampere() || self.is_ada() {
             30
         } else if self.is_turing() {
             25
