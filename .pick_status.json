@@ -4914,7 +4914,7 @@
         "description": "venus: fix racy semaphore feedback counter update",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 3,
         "main_sha": null,
         "because_sha": "5c7e60362cbf26e331b5621fac643813558b6493",
         "notes": null
