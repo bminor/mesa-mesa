@@ -183,6 +183,35 @@ bool brw_nir_lower_alpha_to_coverage(nir_shader *shader);
 bool brw_needs_vertex_attributes_bypass(const nir_shader *shader);
 void brw_nir_lower_fs_barycentrics(nir_shader *shader);
 
+struct brw_lower_urb_cb_data {
+   const struct intel_device_info *devinfo;
+
+   /* If true, all access is guaranteed to be vec4 (128-bit) aligned.
+    * offset and base are in units of 128-bit vec4 slots.
+    *
+    * If false, all access is guaranteed to be 32-bit aligned.
+    * offset is in 32-bit units, but base is still in 128-bit vec4 units,
+    */
+   bool vec4_access;
+
+   /** Map from VARYING_SLOT_* to a vec4 slot index */
+   const int8_t *varying_to_slot;
+
+   /** Stride in bytes between each vertex's worth of per-vertex varyings */
+   unsigned per_vertex_stride;
+
+   /** Do we need to use dynamic TES input bases (intel_nir_tess_field)? */
+   bool dynamic_tes;
+
+   /** Static offsets and sizes (in slots) for TES inputs */
+   int tes_builtins_slot_offset;
+   int tes_per_patch_slots;
+};
+
+bool brw_nir_lower_inputs_to_urb_intrinsics(nir_shader *, const struct brw_lower_urb_cb_data *);
+
+bool brw_nir_lower_outputs_to_urb_intrinsics(nir_shader *, const struct brw_lower_urb_cb_data *);
+
 void brw_nir_lower_vs_inputs(nir_shader *nir);
 void brw_nir_lower_gs_inputs(nir_shader *nir,
                              const struct intel_vue_map *vue_map);

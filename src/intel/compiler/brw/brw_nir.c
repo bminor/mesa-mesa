@@ -66,31 +66,6 @@ is_output(nir_intrinsic_instr *intrin)
           intrin->intrinsic == nir_intrinsic_store_per_view_output;
 }
 
-struct brw_lower_urb_cb_data {
-   const struct intel_device_info *devinfo;
-
-   /* If true, all access is guaranteed to be vec4 (128-bit) aligned.
-    * offset and base are in units of 128-bit vec4 slots.
-    *
-    * If false, all access is guaranteed to be 32-bit aligned.
-    * offset is in 32-bit units, but base is still in 128-bit vec4 units,
-    */
-   bool vec4_access;
-
-   /** Map from VARYING_SLOT_* to a vec4 slot index */
-   const int8_t *varying_to_slot;
-
-   /** Stride in bytes between each vertex's worth of per-vertex varyings */
-   unsigned per_vertex_stride;
-
-   /** Do we need to use dynamic TES input bases (intel_nir_tess_field)? */
-   bool dynamic_tes;
-
-   /** Static offsets and sizes (in slots) for TES inputs */
-   int tes_builtins_slot_offset;
-   int tes_per_patch_slots;
-};
-
 /**
  * Given an URB offset in 32-bit units, determine whether (offset % 4)
  * is statically known.  If so, add this to the value of first_component.
@@ -408,22 +383,20 @@ lower_urb_outputs(nir_builder *b, nir_intrinsic_instr *intrin, void *data)
    return true;
 }
 
-static bool
-lower_inputs_to_urb_intrinsics(nir_shader *nir,
-                               const struct brw_lower_urb_cb_data *cb_data)
+bool
+brw_nir_lower_inputs_to_urb_intrinsics(nir_shader *nir,
+                                       const struct brw_lower_urb_cb_data *cd)
 {
    return nir_shader_intrinsics_pass(nir, lower_urb_inputs,
-                                     nir_metadata_control_flow,
-                                     (void *) cb_data);
+                                     nir_metadata_control_flow, (void *) cd);
 }
 
-static bool
-lower_outputs_to_urb_intrinsics(nir_shader *nir,
-                                const struct brw_lower_urb_cb_data *cb_data)
+bool
+brw_nir_lower_outputs_to_urb_intrinsics(nir_shader *nir,
+                                        const struct brw_lower_urb_cb_data *cd)
 {
    return nir_shader_intrinsics_pass(nir, lower_urb_outputs,
-                                     nir_metadata_control_flow,
-                                     (void *) cb_data);
+                                     nir_metadata_control_flow, (void *) cd);
 }
 
 static bool
@@ -928,7 +901,7 @@ brw_nir_lower_tes_inputs(nir_shader *nir,
       .tes_builtins_slot_offset = vue_map->builtins_slot_offset,
       .tes_per_patch_slots = vue_map->num_per_patch_slots,
    };
-   NIR_PASS(_, nir, lower_inputs_to_urb_intrinsics, &cb_data);
+   NIR_PASS(_, nir, brw_nir_lower_inputs_to_urb_intrinsics, &cb_data);
 }
 
 static bool
@@ -1202,7 +1175,7 @@ brw_nir_lower_tcs_inputs(nir_shader *nir,
       .vec4_access = true,
       .varying_to_slot = input_vue_map->varying_to_slot,
    };
-   NIR_PASS(_, nir, lower_inputs_to_urb_intrinsics, &cb_data);
+   NIR_PASS(_, nir, brw_nir_lower_inputs_to_urb_intrinsics, &cb_data);
 }
 
 void
@@ -1230,7 +1203,7 @@ brw_nir_lower_tcs_outputs(nir_shader *nir,
       .varying_to_slot = vue_map->varying_to_slot,
       .per_vertex_stride = vue_map->num_per_vertex_slots * 16,
    };
-   NIR_PASS(_, nir, lower_outputs_to_urb_intrinsics, &cb_data);
+   NIR_PASS(_, nir, brw_nir_lower_outputs_to_urb_intrinsics, &cb_data);
 }
 
 void
