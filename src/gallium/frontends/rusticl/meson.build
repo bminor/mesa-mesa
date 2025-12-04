@@ -64,6 +64,7 @@ rusticl_files = files(
 )
 
 rusticl_args = [
+  rust_global_args,
   rust_2024_lint_args,
 
   # Should be ran manually before moving to the 2024 edition
@@ -451,6 +452,7 @@ if meson.version().version_compare('>= 1.9.0') and with_tests
     'rusticl_test',
     'test/lib.rs',
     rust_abi : 'c',
+    rust_args : rust_global_args,
   )
 
   rust.test('rusticl_opencl_gen_test', rusticl_opencl_gen, suite : ['rusticl'])

@@ -229,6 +229,7 @@ if with_nouveau_vk
     files('nv_push_rs/lib.rs'),
     gnu_symbol_visibility: 'hidden',
     rust_abi: 'rust',
+    rust_args : rust_global_args,
     dependencies: [idep_nvidia_headers_rs],
   )
 

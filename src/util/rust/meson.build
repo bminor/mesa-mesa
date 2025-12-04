@@ -45,5 +45,6 @@ libmesa_rust_util = static_library(
   'lib.rs',
   gnu_symbol_visibility : 'hidden',
   rust_abi : 'rust',
+  rust_args : rust_global_args,
   dependencies: dep_mesa3d_util,
 )

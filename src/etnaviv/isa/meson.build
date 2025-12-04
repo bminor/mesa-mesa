@@ -153,6 +153,7 @@ if with_tools.contains('etnaviv')
     'etnaviv_isa_proc',
     files('isa_proc.rs', 'isa.rs'),
     dependencies : [dep_indexmap, dep_roxmltree, dep_syn, dep_pest_generator],
+    rust_args : rust_global_args,
   )
 
   if with_tests
@@ -165,6 +166,7 @@ if with_tools.contains('etnaviv')
     files('lib.rs'),
     gnu_symbol_visibility : 'hidden',
     rust_abi : 'c',
+    rust_args : rust_global_args,
     dependencies: [dep_indexmap, dep_roxmltree, dep_pest],
     link_with: [_libetnaviv_isa_bindings_gen, _libetnaviv_isa_proc_rs],
   )

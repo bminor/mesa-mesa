@@ -820,6 +820,9 @@ if with_gallium_rusticl or with_nouveau_vk or with_tools.contains('etnaviv') or 
     bindgen_output_args += ['--raw-line', '#![allow(unnecessary_transmutes)]']
   endif
 
+  rust_global_args = [
+  ]
+
   rust_2024_lint_args = [
     '-Dboxed_slice_into_iter',
     '-Ddeprecated_safe_2024',

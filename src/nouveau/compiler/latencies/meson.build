@@ -56,4 +56,5 @@ libnak_latencies_rs = static_library(
   _nak_latencies_lib_rs,
   gnu_symbol_visibility : 'hidden',
   rust_abi : 'rust',
+  rust_args : rust_global_args,
 )

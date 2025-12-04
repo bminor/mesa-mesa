@@ -39,6 +39,7 @@ _compiler_binding_types = [
 ]
 
 _compiler_rust_args = [
+  rust_global_args,
   rust_2024_lint_args,
   '-Aclippy::identity_op',
   '-Aclippy::len_zero',
@@ -159,6 +160,7 @@ _libcompiler_proc_rs = static_library(
   gnu_symbol_visibility : 'hidden',
   dependencies : [dep_syn],
   rust_abi : 'rust',
+  rust_args : rust_global_args,
   native : true,
 )
 

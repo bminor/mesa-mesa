@@ -20,6 +20,7 @@ libvirtgpu_kumquat_ffi = static_library(
   gnu_symbol_visibility : 'hidden',
   rust_abi : 'c',
   rust_args : [
+    rust_global_args,
     virtgpu_kumquat_ffi_args,
   ],
   link_with: [libmesa_protocols, libmesa_rust_util, libvirtgpu_kumquat],
