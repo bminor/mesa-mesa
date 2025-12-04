@@ -131,6 +131,7 @@ static void pvr_physical_device_get_supported_extensions(
       .KHR_descriptor_update_template = true,
       .KHR_device_group = true,
       .KHR_driver_properties = true,
+      .KHR_dynamic_rendering = true,
       .KHR_external_fence = true,
       .KHR_external_fence_fd = true,
       .KHR_external_memory = true,
@@ -461,6 +462,9 @@ static void pvr_physical_device_get_supported_features(
 
       /* VK_EXT_zero_initialize_device_memory */
       .zeroInitializeDeviceMemory = true,
+
+      /* Vulkan 1.2 / VK_KHR_dynamic_rendering */
+      .dynamicRendering = true,
    };
 }
 
