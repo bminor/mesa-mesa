@@ -363,10 +363,7 @@ void si_set_tracked_regs_to_clear_state(struct si_context *ctx)
    ctx->tracked_regs.reg_value[AC_TRACKED_VGT_GS_VERT_ITEMSIZE_2] = 0;
    ctx->tracked_regs.reg_value[AC_TRACKED_VGT_GS_VERT_ITEMSIZE_3] = 0;
 
-   if (ctx->gfx_level >= GFX12)
-      ctx->tracked_regs.reg_value[AC_TRACKED_DB_RENDER_OVERRIDE] = 0;
-   else
-      ctx->tracked_regs.reg_value[AC_TRACKED_SPI_VS_OUT_CONFIG] = 0;
+   ctx->tracked_regs.reg_value[AC_TRACKED_SPI_VS_OUT_CONFIG] = 0;
 
    ctx->tracked_regs.reg_value[AC_TRACKED_VGT_PRIMITIVEID_EN] = 0;
    ctx->tracked_regs.reg_value[AC_TRACKED_CB_DCC_CONTROL] = 0;
