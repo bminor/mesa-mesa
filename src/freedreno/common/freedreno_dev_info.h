@@ -210,6 +210,8 @@ struct fd_dev_info {
 
       bool has_sampler_minmax;
 
+      bool has_astc_hdr;
+
       bool broken_ds_ubwc_quirk;
 
       /* See ir3_compiler::has_scalar_alu. */

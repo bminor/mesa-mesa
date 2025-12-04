@@ -320,6 +320,7 @@ a6xx_base = GPUProps(
         has_hw_multiview = True,
         has_fs_tex_prefetch = True,
         has_sampler_minmax = True,
+        has_astc_hdr = True,
 
         supports_double_threadsize = True,
 
@@ -349,6 +350,7 @@ a6xx_gen1_low = GPUProps(
         has_gmem_fast_clear = False,
         has_hw_multiview = False,
         has_sampler_minmax = False,
+        has_astc_hdr = False,
         has_fs_tex_prefetch = False,
         sysmem_per_ccu_color_cache_size = 8 * 1024,
         sysmem_per_ccu_depth_cache_size = 8 * 1024,

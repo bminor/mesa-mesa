@@ -358,6 +358,21 @@ static const struct fd6_format formats[PIPE_FORMAT_COUNT] = {
    _T_(ASTC_12x10_SRGB, ASTC_12x10,             WZYX),
    _T_(ASTC_12x12_SRGB, ASTC_12x12,             WZYX),
 
+   _T_(ASTC_4x4_FLOAT,   ASTC_4x4,              WZYX),
+   _T_(ASTC_5x4_FLOAT,   ASTC_5x4,              WZYX),
+   _T_(ASTC_5x5_FLOAT,   ASTC_5x5,              WZYX),
+   _T_(ASTC_6x5_FLOAT,   ASTC_6x5,              WZYX),
+   _T_(ASTC_6x6_FLOAT,   ASTC_6x6,              WZYX),
+   _T_(ASTC_8x5_FLOAT,   ASTC_8x5,              WZYX),
+   _T_(ASTC_8x6_FLOAT,   ASTC_8x6,              WZYX),
+   _T_(ASTC_8x8_FLOAT,   ASTC_8x8,              WZYX),
+   _T_(ASTC_10x5_FLOAT,  ASTC_10x5,             WZYX),
+   _T_(ASTC_10x6_FLOAT,  ASTC_10x6,             WZYX),
+   _T_(ASTC_10x8_FLOAT,  ASTC_10x8,             WZYX),
+   _T_(ASTC_10x10_FLOAT, ASTC_10x10,            WZYX),
+   _T_(ASTC_12x10_FLOAT, ASTC_12x10,            WZYX),
+   _T_(ASTC_12x12_FLOAT, ASTC_12x12,            WZYX),
+
    _T_(G8B8_G8R8_UNORM, R8G8R8B8_422_UNORM,     WZYX), /* YUYV */
    _T_(B8G8_R8G8_UNORM, G8R8B8R8_422_UNORM,     WZYX), /* UYVY */
 
@@ -432,6 +447,28 @@ bool
 fd6_texture_format_supported(const struct fd_dev_info *info, enum pipe_format format,
                              enum a6xx_tile_mode tile_mode, bool is_mutable)
 {
+   if (!info->props.has_astc_hdr) {
+      /* ASTC HDR formats are removed */
+      switch (format) {
+      case PIPE_FORMAT_ASTC_4x4_FLOAT:
+      case PIPE_FORMAT_ASTC_5x4_FLOAT:
+      case PIPE_FORMAT_ASTC_5x5_FLOAT:
+      case PIPE_FORMAT_ASTC_6x5_FLOAT:
+      case PIPE_FORMAT_ASTC_6x6_FLOAT:
+      case PIPE_FORMAT_ASTC_8x5_FLOAT:
+      case PIPE_FORMAT_ASTC_8x6_FLOAT:
+      case PIPE_FORMAT_ASTC_8x8_FLOAT:
+      case PIPE_FORMAT_ASTC_10x5_FLOAT:
+      case PIPE_FORMAT_ASTC_10x6_FLOAT:
+      case PIPE_FORMAT_ASTC_10x8_FLOAT:
+      case PIPE_FORMAT_ASTC_10x10_FLOAT:
+      case PIPE_FORMAT_ASTC_12x10_FLOAT:
+      case PIPE_FORMAT_ASTC_12x12_FLOAT:
+         return false;
+      default:
+         break;
+      }
+   }
    if (info->props.is_a702) {
       /* BPTC is removed */
       switch (format) {
