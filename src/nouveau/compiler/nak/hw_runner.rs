@@ -614,7 +614,7 @@ impl Runner {
                 data.len().try_into().unwrap(),
                 stride.try_into().unwrap(),
                 data.as_mut_ptr().cast(),
-                data.len() * stride,
+                size_of_val(data),
             )
         }
     }
