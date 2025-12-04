@@ -336,6 +336,7 @@ get_device_extensions(const struct tu_physical_device *device,
       .EXT_swapchain_maintenance1 = true,
 #endif
       .EXT_texel_buffer_alignment = true,
+      .EXT_texture_compression_astc_hdr = device->info->props.has_astc_hdr,
       .EXT_tooling_info = true,
       .EXT_transform_feedback = true,
       .EXT_vertex_attribute_divisor = true,
@@ -505,7 +506,7 @@ tu_get_features(struct tu_physical_device *pdevice,
    features->subgroupSizeControl                 = true;
    features->computeFullSubgroups                = true;
    features->synchronization2                    = true;
-   features->textureCompressionASTC_HDR          = false;
+   features->textureCompressionASTC_HDR          = pdevice->info->props.has_astc_hdr;
    features->shaderZeroInitializeWorkgroupMemory = true;
    features->dynamicRendering                    = true;
    features->shaderIntegerDotProduct             = true;
