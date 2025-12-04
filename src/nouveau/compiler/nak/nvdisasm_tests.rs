@@ -171,9 +171,9 @@ fn sm_list() -> &'static [u8] {
         assert!(out.status.success());
         let stdout = std::str::from_utf8(&out.stdout).unwrap();
 
-        if stdout.find("cuda_12").is_some() {
+        if stdout.contains("cuda_12") {
             &[70, 75, 80, 86, 89, 90, 100, 120]
-        } else if stdout.find("cuda_13").is_some() {
+        } else if stdout.contains("cuda_13") {
             &[75, 80, 86, 89, 90, 100, 120]
         } else {
             panic!("Unknown nvdisasm version. stdout: {stdout}");
