@@ -489,31 +489,26 @@ cs_overflow_length_reg(struct cs_builder *b)
 }
 
 static inline struct cs_index
-cs_extract32(struct cs_builder *b, struct cs_index idx, unsigned word)
+cs_extract_tuple(struct cs_builder *b, struct cs_index idx, unsigned word,
+                 unsigned size)
 {
    assert(idx.type == CS_INDEX_REGISTER && "unsupported");
-   assert(word < idx.size && "overrun");
+   assert(word + size <= idx.size && "overrun");
 
-   return cs_reg32(b, idx.reg + word);
+   return cs_reg_tuple(b, idx.reg + word, size);
+}
+
+static inline struct cs_index
+cs_extract32(struct cs_builder *b, struct cs_index idx, unsigned word)
+{
+   return cs_extract_tuple(b, idx, word, 1);
 }
 
 static inline struct cs_index
 cs_extract64(struct cs_builder *b, struct cs_index idx, unsigned word)
 {
-   assert(idx.type == CS_INDEX_REGISTER && "unsupported");
-   assert(word + 1 < idx.size && "overrun");
-
-   return cs_reg64(b, idx.reg + word);
-}
-
-static inline struct cs_index
-cs_extract_tuple(struct cs_builder *b, struct cs_index idx, unsigned word,
-                 unsigned size)
-{
-   assert(idx.type == CS_INDEX_REGISTER && "unsupported");
-   assert(word + size < idx.size && "overrun");
-
-   return cs_reg_tuple(b, idx.reg + word, size);
+   assert(!(word & 1) && "not properly aligned");
+   return cs_extract_tuple(b, idx, word, 2);
 }
 
 static inline struct cs_block *
