@@ -2204,7 +2204,7 @@ retry:
       }
    }
    if (zink_format_is_emulated_alpha(pformat)) {
-      VkFormatFeatureFlags blocked = VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT | VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT;
+      VkFormatFeatureFlags2 blocked = VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT | VK_FORMAT_FEATURE_2_STORAGE_IMAGE_BIT;
       screen->format_props[pformat].linearTilingFeatures &= ~blocked;
       screen->format_props[pformat].optimalTilingFeatures &= ~blocked;
       screen->format_props[pformat].bufferFeatures = 0;
