@@ -566,8 +566,7 @@ populate_wm_prog_key(struct brw_wm_prog_key *key,
 static void
 populate_cs_prog_key(struct brw_cs_prog_key *key,
                      const struct vk_physical_device *device,
-                     const struct vk_pipeline_robustness_state *rs,
-                     bool lower_unaligned_dispatch)
+                     const struct vk_pipeline_robustness_state *rs)
 {
    const struct anv_physical_device *pdevice =
       container_of(device, const struct anv_physical_device, vk);
@@ -575,7 +574,6 @@ populate_cs_prog_key(struct brw_cs_prog_key *key,
    populate_base_prog_key(&key->base, device, rs);
 
    key->base.uses_inline_push_addr = pdevice->info.verx10 >= 125;
-   key->lower_unaligned_dispatch = lower_unaligned_dispatch;
 }
 
 static void
@@ -644,7 +642,7 @@ anv_shader_hash_state(struct vk_physical_device *device,
          _mesa_blake3_update(&blake3_ctx, &key.wm, sizeof(key.wm));
          break;
       case VK_SHADER_STAGE_COMPUTE_BIT:
-         populate_cs_prog_key(&key.cs, device, NULL, false);
+         populate_cs_prog_key(&key.cs, device, NULL);
          _mesa_blake3_update(&blake3_ctx, &key.cs, sizeof(key.cs));
          break;
       default:
@@ -1362,7 +1360,7 @@ anv_shader_lower_nir(struct anv_device *device,
    }
 
    if (nir->info.stage == MESA_SHADER_COMPUTE &&
-       shader_data->key.cs.lower_unaligned_dispatch) {
+       (shader_data->info->flags & VK_SHADER_CREATE_UNALIGNED_DISPATCH_BIT_MESA)) {
       NIR_PASS(_, nir, anv_nir_lower_unaligned_dispatch);
       /* anv_nir_lower_unaligned_dispatch pass uses nir_jump_return that we
        * need to lower it.
@@ -1964,8 +1962,7 @@ anv_shader_compile(struct vk_device *vk_device,
          break;
       case MESA_SHADER_COMPUTE:
          populate_cs_prog_key(&shader_data->key.cs, vk_device->physical,
-                              info->robustness,
-                              info->flags & VK_SHADER_CREATE_UNALIGNED_DISPATCH_BIT_MESA);
+                              info->robustness);
          break;
       case MESA_SHADER_RAYGEN:
       case MESA_SHADER_ANY_HIT:
