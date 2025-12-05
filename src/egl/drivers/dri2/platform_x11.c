@@ -873,6 +873,8 @@ dri2_x11_get_msc_rate(_EGLDisplay *display, _EGLSurface *surface,
     * We defaulted to the first CRTC in the list's refresh rate, earlier.
     */
 
+   free(reply);
+
    return EGL_TRUE;
 }
 
