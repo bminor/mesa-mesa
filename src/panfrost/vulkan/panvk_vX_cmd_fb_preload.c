@@ -23,6 +23,10 @@ struct panvk_fb_preload_shader_key {
    struct {
       nir_alu_type type;
    } color[8];
+   struct {
+      bool color[8];
+      bool z, s;
+   } read_sample_0;
 };
 
 static nir_def *
@@ -93,8 +97,9 @@ get_preload_nir_shader(const struct panvk_fb_preload_shader_key *key)
          if (key->color[i].type == nir_type_invalid)
             continue;
 
-         nir_def *texel = texel_fetch(b, key->view_type, key->color[i].type, i,
-                                      sample_id, coords);
+         nir_def *texel =
+            texel_fetch(b, key->view_type, key->color[i].type, i,
+                        key->read_sample_0.color[i] ? NULL : sample_id, coords);
 
          nir_store_output(
             b, texel, nir_imm_int(b, 0), .base = i,
@@ -106,8 +111,9 @@ get_preload_nir_shader(const struct panvk_fb_preload_shader_key *key)
    }
 
    if (key->aspects & VK_IMAGE_ASPECT_DEPTH_BIT) {
-      nir_def *texel = texel_fetch(b, key->view_type, nir_type_float32, 0,
-                                   sample_id, coords);
+      nir_def *texel =
+         texel_fetch(b, key->view_type, nir_type_float32, 0,
+                     key->read_sample_0.z ? NULL : sample_id, coords);
 
       nir_store_output(b, nir_channel(b, texel, 0), nir_imm_int(b, 0),
                        .base = 0, .src_type = nir_type_float32,
@@ -117,9 +123,10 @@ get_preload_nir_shader(const struct panvk_fb_preload_shader_key *key)
    }
 
    if (key->aspects & VK_IMAGE_ASPECT_STENCIL_BIT) {
-      nir_def *texel = texel_fetch(
-         b, key->view_type, nir_type_uint32,
-         key->aspects & VK_IMAGE_ASPECT_DEPTH_BIT ? 1 : 0, sample_id, coords);
+      nir_def *texel =
+         texel_fetch(b, key->view_type, nir_type_uint32,
+                     key->aspects & VK_IMAGE_ASPECT_DEPTH_BIT ? 1 : 0,
+                     key->read_sample_0.s ? NULL : sample_id, coords);
 
       nir_store_output(b, nir_channel(b, texel, 0), nir_imm_int(b, 0),
                        .base = 0, .src_type = nir_type_uint32,
@@ -224,6 +231,30 @@ get_reg_fmt(nir_alu_type type)
    }
 }
 
+static struct panvk_image_view *
+get_color_attachment_view(struct panvk_cmd_buffer *cmdbuf, uint32_t i)
+{
+   return cmdbuf->state.gfx.render.color_attachments.preload_iviews[i] != NULL
+             ? cmdbuf->state.gfx.render.color_attachments.preload_iviews[i]
+             : cmdbuf->state.gfx.render.color_attachments.iviews[i];
+}
+
+static struct panvk_image_view *
+get_z_attachment_view(struct panvk_cmd_buffer *cmdbuf)
+{
+   return cmdbuf->state.gfx.render.z_attachment.preload_iview
+             ? cmdbuf->state.gfx.render.z_attachment.preload_iview
+             : cmdbuf->state.gfx.render.z_attachment.iview;
+}
+
+static struct panvk_image_view *
+get_s_attachment_view(struct panvk_cmd_buffer *cmdbuf)
+{
+   return cmdbuf->state.gfx.render.s_attachment.preload_iview
+             ? cmdbuf->state.gfx.render.s_attachment.preload_iview
+             : cmdbuf->state.gfx.render.s_attachment.iview;
+}
+
 static void
 fill_textures(struct panvk_cmd_buffer *cmdbuf, struct pan_fb_info *fbinfo,
               const struct panvk_fb_preload_shader_key *key,
@@ -231,8 +262,7 @@ fill_textures(struct panvk_cmd_buffer *cmdbuf, struct pan_fb_info *fbinfo,
 {
    if (key->aspects == VK_IMAGE_ASPECT_COLOR_BIT) {
       for (unsigned i = 0; i < fbinfo->rt_count; i++) {
-         struct panvk_image_view *iview =
-            cmdbuf->state.gfx.render.color_attachments.iviews[i];
+         struct panvk_image_view *iview = get_color_attachment_view(cmdbuf, i);
 
          if (iview)
             textures[i] = iview->descs.tex[0];
@@ -244,9 +274,11 @@ fill_textures(struct panvk_cmd_buffer *cmdbuf, struct pan_fb_info *fbinfo,
 
    uint32_t idx = 0;
    if (key->aspects & VK_IMAGE_ASPECT_DEPTH_BIT) {
-      struct panvk_image_view *iview =
-         cmdbuf->state.gfx.render.z_attachment.iview
-            ?: cmdbuf->state.gfx.render.s_attachment.iview;
+      struct panvk_image_view *iview = NULL;
+      if (cmdbuf->state.gfx.render.z_attachment.iview)
+         iview = get_z_attachment_view(cmdbuf);
+      else
+         iview = get_s_attachment_view(cmdbuf);
 
       textures[idx++] = vk_format_has_depth(iview->vk.view_format)
                            ? iview->descs.zs.tex
@@ -254,9 +286,11 @@ fill_textures(struct panvk_cmd_buffer *cmdbuf, struct pan_fb_info *fbinfo,
    }
 
    if (key->aspects & VK_IMAGE_ASPECT_STENCIL_BIT) {
-      struct panvk_image_view *iview =
-         cmdbuf->state.gfx.render.s_attachment.iview
-            ?: cmdbuf->state.gfx.render.z_attachment.iview;
+      struct panvk_image_view *iview = NULL;
+      if (cmdbuf->state.gfx.render.s_attachment.iview)
+         iview = get_s_attachment_view(cmdbuf);
+      else
+         iview = get_z_attachment_view(cmdbuf);
 
       textures[idx++] = vk_format_has_depth(iview->vk.view_format)
                            ? iview->descs.zs.other_aspect_tex
@@ -717,18 +751,23 @@ cmd_preload_zs_attachments(struct panvk_cmd_buffer *cmdbuf,
    };
 
    if (fbinfo->zs.preload.z) {
+      struct panvk_image_view *iview = get_z_attachment_view(cmdbuf)
+                                          ? get_z_attachment_view(cmdbuf)
+                                          : get_s_attachment_view(cmdbuf);
+
       key.aspects = VK_IMAGE_ASPECT_DEPTH_BIT;
-      key.view_type =
-         cmdbuf->state.gfx.render.z_attachment.iview
-            ? cmdbuf->state.gfx.render.z_attachment.iview->vk.view_type
-            : cmdbuf->state.gfx.render.s_attachment.iview->vk.view_type;
+      key.view_type = iview->vk.view_type;
+      key.read_sample_0.z = iview->pview.nr_samples == 1 && key.samples > 1;
    }
 
    if (fbinfo->zs.preload.s) {
-      VkImageViewType view_type =
-         cmdbuf->state.gfx.render.s_attachment.iview
-            ? cmdbuf->state.gfx.render.s_attachment.iview->vk.view_type
-            : cmdbuf->state.gfx.render.z_attachment.iview->vk.view_type;
+      struct panvk_image_view *iview = get_s_attachment_view(cmdbuf)
+                                          ? get_s_attachment_view(cmdbuf)
+                                          : get_z_attachment_view(cmdbuf);
+
+      key.read_sample_0.s = iview->pview.nr_samples == 1 && key.samples > 1;
+
+      VkImageViewType view_type = iview->vk.view_type;
 
       key.aspects |= VK_IMAGE_ASPECT_STENCIL_BIT;
       if (!fbinfo->zs.preload.z)
@@ -757,9 +796,10 @@ cmd_preload_color_attachments(struct panvk_cmd_buffer *cmdbuf,
          continue;
 
       enum pipe_format pfmt = fbinfo->rts[i].view->format;
-      struct panvk_image_view *iview =
-         cmdbuf->state.gfx.render.color_attachments.iviews[i];
+      struct panvk_image_view *iview = get_color_attachment_view(cmdbuf, i);
 
+      key.read_sample_0.color[i] =
+         iview->pview.nr_samples == 1 && key.samples > 1;
       key.color[i].type = util_format_is_pure_uint(pfmt)   ? nir_type_uint32
                           : util_format_is_pure_sint(pfmt) ? nir_type_int32
                                                            : nir_type_float32;
