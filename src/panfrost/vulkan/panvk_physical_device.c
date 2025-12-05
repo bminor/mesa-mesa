@@ -932,6 +932,13 @@ panvk_GetPhysicalDeviceFormatProperties2(VkPhysicalDevice physicalDevice,
          }
       }
    }
+
+   VkSubpassResolvePerformanceQueryEXT *subpass_resolve_perf = vk_find_struct(
+      pFormatProperties->pNext, SUBPASS_RESOLVE_PERFORMANCE_QUERY_EXT);
+   if (subpass_resolve_perf) {
+      /* We always resolve in a separate command instead of in HW atm. */
+      subpass_resolve_perf->optimal = VK_FALSE;
+   }
 }
 
 #define MAX_IMAGE_SIZE_PX (1 << 16)
