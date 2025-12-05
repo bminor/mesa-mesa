@@ -35,6 +35,7 @@ struct radv_amdgpu_map_range {
 struct radv_amdgpu_winsys_bo {
    struct radeon_winsys_bo base;
    amdgpu_va_handle va_handle;
+   uint32_t flags;
    uint8_t priority;
 
    union {
