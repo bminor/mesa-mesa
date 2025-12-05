@@ -1923,14 +1923,15 @@ cs_set_state_imm32(struct cs_builder *b, enum mali_cs_set_state_type state,
 
 /*
  * Select which scoreboard entry will track endpoint tasks.
- * On v10, this also set other endpoint to SB0.
+ * On v10, this also set the "other" SB to the ls_sb_slot passed at config
+ * time, because there's no way to set those things independently.
  * Pass to cs_wait to wait later.
  */
 static inline void
-cs_select_sb_entries_for_async_ops(struct cs_builder *b, unsigned ep)
+cs_select_endpoint_sb(struct cs_builder *b, unsigned ep)
 {
 #if PAN_ARCH == 10
-   cs_set_scoreboard_entry(b, ep, 0);
+   cs_set_scoreboard_entry(b, ep, b->conf.ls_sb_slot);
 #else
    cs_set_state_imm32(b, MALI_CS_SET_STATE_TYPE_SB_SEL_ENDPOINT, ep);
 #endif

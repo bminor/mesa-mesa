@@ -810,7 +810,7 @@ panvk_per_arch(cs_next_iter_sb)(struct panvk_cmd_buffer *cmdbuf,
 
    cs_match_iter_sb(b, x, iter_sb, cmp_scratch) {
       cs_wait_slot(b, SB_ITER(x));
-      cs_select_sb_entries_for_async_ops(b, SB_ITER(x));
+      cs_select_endpoint_sb(b, SB_ITER(x));
    }
 
    cs_store32(b, iter_sb, cs_subqueue_ctx_reg(b),

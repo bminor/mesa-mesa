@@ -167,7 +167,7 @@ csf_oom_handler_init(struct panfrost_context *ctx)
       cs_wait_slot(&b, 0);
 
       /* Run the fragment job and wait */
-      cs_select_sb_entries_for_async_ops(&b, 3);
+      cs_select_endpoint_sb(&b, 3);
       cs_run_fragment(&b, MALI_TILE_RENDER_ORDER_Z_ORDER, false);
       cs_wait_slot(&b, 3);
 
@@ -197,7 +197,7 @@ csf_oom_handler_init(struct panfrost_context *ctx)
 
       cs_wait_slot(&b, 0);
 
-      cs_select_sb_entries_for_async_ops(&b, 2);
+      cs_select_endpoint_sb(&b, 2);
    }
 
    assert(cs_is_valid(&b));
@@ -272,7 +272,7 @@ GENX(csf_init_batch)(struct panfrost_batch *batch)
 
    /* Set up entries */
    struct cs_builder *b = batch->csf.cs.builder;
-   cs_select_sb_entries_for_async_ops(b, 2);
+   cs_select_endpoint_sb(b, 2);
 
    batch->framebuffer = alloc_fbd(batch);
    if (!batch->framebuffer.gpu)
