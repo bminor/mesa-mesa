@@ -1695,13 +1695,13 @@ cs_add64(struct cs_builder *b, struct cs_index dest, struct cs_index src,
 }
 
 static inline void
-cs_umin32(struct cs_builder *b, struct cs_index dest, struct cs_index src1,
-          struct cs_index src2)
+cs_umin32(struct cs_builder *b, struct cs_index dest, struct cs_index src0,
+          struct cs_index src1)
 {
    cs_emit(b, UMIN32, I) {
       I.destination = cs_dst32(b, dest);
+      I.source_0 = cs_src32(b, src0);
       I.source_1 = cs_src32(b, src1);
-      I.source_0 = cs_src32(b, src2);
    }
 }
 
@@ -1720,35 +1720,35 @@ cs_move_reg32(struct cs_builder *b, struct cs_index dest, struct cs_index src)
 
 #if PAN_ARCH >= 11
 static inline void
-cs_and32(struct cs_builder *b, struct cs_index dest, struct cs_index src1,
-         struct cs_index src2)
+cs_and32(struct cs_builder *b, struct cs_index dest, struct cs_index src0,
+         struct cs_index src1)
 {
    cs_emit(b, AND32, I) {
       I.destination = cs_dst32(b, dest);
+      I.source_0 = cs_src32(b, src0);
       I.source_1 = cs_src32(b, src1);
-      I.source_0 = cs_src32(b, src2);
    }
 }
 
 static inline void
-cs_or32(struct cs_builder *b, struct cs_index dest, struct cs_index src1,
-        struct cs_index src2)
+cs_or32(struct cs_builder *b, struct cs_index dest, struct cs_index src0,
+        struct cs_index src1)
 {
    cs_emit(b, OR32, I) {
       I.destination = cs_dst32(b, dest);
+      I.source_0 = cs_src32(b, src0);
       I.source_1 = cs_src32(b, src1);
-      I.source_0 = cs_src32(b, src2);
    }
 }
 
 static inline void
-cs_xor32(struct cs_builder *b, struct cs_index dest, struct cs_index src1,
-         struct cs_index src2)
+cs_xor32(struct cs_builder *b, struct cs_index dest, struct cs_index src0,
+         struct cs_index src1)
 {
    cs_emit(b, XOR32, I) {
       I.destination = cs_dst32(b, dest);
+      I.source_0 = cs_src32(b, src0);
       I.source_1 = cs_src32(b, src1);
-      I.source_0 = cs_src32(b, src2);
    }
 }
 
@@ -1762,24 +1762,24 @@ cs_not32(struct cs_builder *b, struct cs_index dest, struct cs_index src)
 }
 
 static inline void
-cs_bit_set32(struct cs_builder *b, struct cs_index dest, struct cs_index src1,
-             struct cs_index src2)
+cs_bit_set32(struct cs_builder *b, struct cs_index dest, struct cs_index src0,
+             struct cs_index src1)
 {
    cs_emit(b, BIT_SET32, I) {
       I.destination = cs_dst32(b, dest);
-      I.source_0 = cs_src32(b, src1);
-      I.source_1 = cs_src32(b, src2);
+      I.source_0 = cs_src32(b, src0);
+      I.source_1 = cs_src32(b, src1);
    }
 }
 
 static inline void
-cs_bit_clear32(struct cs_builder *b, struct cs_index dest, struct cs_index src1,
-               struct cs_index src2)
+cs_bit_clear32(struct cs_builder *b, struct cs_index dest, struct cs_index src0,
+               struct cs_index src1)
 {
    cs_emit(b, BIT_CLEAR32, I) {
       I.destination = cs_dst32(b, dest);
+      I.source_0 = cs_src32(b, src0);
       I.source_1 = cs_src32(b, src1);
-      I.source_0 = cs_src32(b, src2);
    }
 }
 
