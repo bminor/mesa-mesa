@@ -6252,6 +6252,12 @@ bifrost_preprocess_nir(nir_shader *nir, unsigned gpu_id)
    /* Lower away all variables for smaller shaders */
    NIR_PASS(_, nir, nir_lower_vars_to_ssa);
    NIR_PASS(_, nir, nir_remove_dead_variables, nir_var_function_temp, NULL);
+}
+
+void
+bifrost_postprocess_nir(nir_shader *nir, unsigned gpu_id)
+{
+   MESA_TRACE_FUNC();
 
    /* We assume that UBO and SSBO were lowered, let's move things around. */
    nir_move_options move_all = nir_move_const_undef | nir_move_load_ubo |
@@ -6260,12 +6266,6 @@ bifrost_preprocess_nir(nir_shader *nir, unsigned gpu_id)
 
    NIR_PASS(_, nir, nir_opt_sink, move_all);
    NIR_PASS(_, nir, nir_opt_move, move_all);
-}
-
-void
-bifrost_postprocess_nir(nir_shader *nir, unsigned gpu_id)
-{
-   MESA_TRACE_FUNC();
 
    bifrost_lower_texture_nir(nir, gpu_id);
 
