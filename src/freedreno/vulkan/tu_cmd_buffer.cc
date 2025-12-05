@@ -1440,6 +1440,8 @@ tu6_emit_tile_select(struct tu_cmd_buffer *cmd,
    }
 
    unsigned views = tu_fdm_num_layers(cmd);
+   unsigned layers = MAX2(cmd->state.pass->num_views,
+                          cmd->state.framebuffer->layers);
    bool bin_is_scaled = false;
 
    if (fdm) {
@@ -1454,7 +1456,7 @@ tu6_emit_tile_select(struct tu_cmd_buffer *cmd,
 
    bool bin_scale_en =
       cmd->device->physical_device->info->props.has_hw_bin_scaling &&
-      views <= MAX_HW_SCALED_VIEWS && !cmd->state.rp.shared_viewport &&
+      layers <= MAX_HW_SCALED_VIEWS && !cmd->state.rp.shared_viewport &&
       bin_is_scaled;
 
    /* We cannot support LRZ if we cannot use HW bin scaling and the bin is
@@ -1569,16 +1571,23 @@ tu6_emit_tile_select(struct tu_cmd_buffer *cmd,
          if (bin_scale_en) {
             VkExtent2D frag_areas[MAX_HW_SCALED_VIEWS];
             for (unsigned i = 0; i < MAX_HW_SCALED_VIEWS; i++) {
-               if (i >= views) {
+               if (i >= layers) {
                   /* Make sure unused views aren't garbage */
                   frag_areas[i] = (VkExtent2D) {1, 1};
                   frag_offsets[i] = (VkOffset2D) { 0, 0 };
                   continue;
                }
 
-               frag_areas[i] = tile->frag_areas[i];
-               frag_offsets[i].x = x1 - x1 / tile->frag_areas[i].width;
-               frag_offsets[i].y = y1 - y1 / tile->frag_areas[i].height;
+               /* The HW bin offset is always per-layer, whereas if there is
+                * more than 1 layer (i.e. layered rendering instead of
+                * multiview rendering) and FDM is not per-layer then all
+                * layers implicitly use the scale from FDM layer 0. We have to
+                * explicitly broadcast it here.
+                */
+               unsigned view = MIN2(i, views - 1);
+               frag_areas[i] = tile->frag_areas[view];
+               frag_offsets[i].x = x1 - x1 / tile->frag_areas[view].width;
+               frag_offsets[i].y = y1 - y1 / tile->frag_areas[view].height;
             }
 
             tu_cs_emit_regs(cs, GRAS_BIN_FOVEAT(CHIP,
