@@ -89,10 +89,10 @@ kk_CreateBufferView(VkDevice _device, const VkBufferViewCreateInfo *pCreateInfo,
       .format = {.pipe = p_format, .mtl = supported_format->mtl_pixel_format},
       .swizzle =
          {
-            .red = supported_format->swizzle.red,
-            .green = supported_format->swizzle.green,
-            .blue = supported_format->swizzle.blue,
-            .alpha = supported_format->swizzle.alpha,
+            .red = supported_format->unswizzle.red,
+            .green = supported_format->unswizzle.green,
+            .blue = supported_format->unswizzle.blue,
+            .alpha = supported_format->unswizzle.alpha,
          },
       .linear_stride_B = view->vk.range,
    };

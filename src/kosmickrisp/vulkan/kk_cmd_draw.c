@@ -155,8 +155,8 @@ vk_clear_color_value_to_mtl_clear_color(union VkClearColorValue color,
    const struct kk_va_format *supported_format = kk_get_va_format(format);
    struct mtl_clear_color swizzled_color;
    for (uint32_t i = 0u; i < 4; ++i)
-      swizzled_color.channel[i] =
-         value.channel[supported_format->swizzle.channels[i]];
+      swizzled_color.channel[supported_format->unswizzle.channels[i]] =
+         value.channel[i];
 
    return swizzled_color;
 }

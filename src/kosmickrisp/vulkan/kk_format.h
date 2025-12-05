@@ -17,7 +17,8 @@ enum pipe_format;
 enum mtl_pixel_format;
 
 struct kk_va_format {
-   /* Would love to use enum pipe_swizzle, but it's bigger than the required
+   /* Transforms from the native format to the emulated format.
+    * Would love to use enum pipe_swizzle, but it's bigger than the required
     * type for util_format_compose_swizzles... */
    struct {
       union {
@@ -29,7 +30,7 @@ struct kk_va_format {
          };
          uint8_t channels[4];
       };
-   } swizzle;
+   } unswizzle;
    uint32_t mtl_pixel_format;
    uint8_t bit_widths;
    uint8_t filter  : 1;

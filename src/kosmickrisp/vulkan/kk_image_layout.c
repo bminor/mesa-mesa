@@ -94,10 +94,10 @@ kk_image_layout_init(const struct kk_device *dev,
       create_info->usage, create_info->flags, supported_format->atomic);
    layout->format.pipe = format;
    layout->format.mtl = supported_format->mtl_pixel_format;
-   layout->swizzle.red = supported_format->swizzle.red;
-   layout->swizzle.green = supported_format->swizzle.green;
-   layout->swizzle.blue = supported_format->swizzle.blue;
-   layout->swizzle.alpha = supported_format->swizzle.alpha;
+   layout->swizzle.red = supported_format->unswizzle.red;
+   layout->swizzle.green = supported_format->unswizzle.green;
+   layout->swizzle.blue = supported_format->unswizzle.blue;
+   layout->swizzle.alpha = supported_format->unswizzle.alpha;
    layout->sample_count_sa = create_info->samples;
    mtl_heap_texture_size_and_align_with_descriptor(dev->mtl_handle, layout);
 

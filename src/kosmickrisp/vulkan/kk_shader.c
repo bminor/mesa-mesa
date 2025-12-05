@@ -252,21 +252,21 @@ kk_nir_swizzle_fragment_output(nir_builder *b, nir_intrinsic_instr *intrin,
 
    /* Check if we have to apply any swizzle */
    if (!supported_format->is_native) {
-      unsigned channel_swizzle[] = {
-         supported_format->swizzle.red, supported_format->swizzle.green,
-         supported_format->swizzle.blue, supported_format->swizzle.alpha};
+      unsigned channel_unswizzle[] = {
+         supported_format->unswizzle.red, supported_format->unswizzle.green,
+         supported_format->unswizzle.blue, supported_format->unswizzle.alpha};
 
       if (intrin->intrinsic == nir_intrinsic_store_output) {
+         unsigned channel_swizzle[4] = {0u};
+         for (uint32_t i = 0u; i < 4; ++i)
+            channel_swizzle[channel_unswizzle[i]] = i;
+
          b->cursor = nir_before_instr(&intrin->instr);
          nir_def *to_replace = intrin->src[0].ssa;
          nir_def *swizzled = nir_swizzle(b, to_replace, channel_swizzle,
                                          to_replace->num_components);
          nir_src_rewrite(&intrin->src[0], swizzled);
       } else {
-         unsigned channel_unswizzle[4] = {0u};
-         for (uint32_t i = 0u; i < 4; ++i)
-            channel_unswizzle[channel_swizzle[i]] = i;
-
          b->cursor = nir_after_instr(&intrin->instr);
          nir_def *to_replace = &intrin->def;
          nir_def *swizzled = nir_swizzle(b, to_replace, channel_unswizzle,

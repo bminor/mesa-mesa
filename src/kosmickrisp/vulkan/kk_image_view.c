@@ -119,7 +119,7 @@ kk_image_view_init(struct kk_device *dev, struct kk_image_view *view,
                                  vk_swizzle_to_pipe(view->vk.swizzle.g),
                                  vk_swizzle_to_pipe(view->vk.swizzle.b),
                                  vk_swizzle_to_pipe(view->vk.swizzle.a)};
-      util_format_compose_swizzles(supported_format->swizzle.channels,
+      util_format_compose_swizzles(supported_format->unswizzle.channels,
                                    view_swizzle, view_layout.swizzle.channels);
 
       /* When sampling a depth/stencil texture Metal returns (d, d, d, 1), but

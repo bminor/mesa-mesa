@@ -105,7 +105,7 @@
    }
 
 #define MTL_SWIZZLE_IDENTITY                                                   \
-   .swizzle = {                                                                \
+   .unswizzle = {                                                              \
       .red = PIPE_SWIZZLE_X,                                                   \
       .green = PIPE_SWIZZLE_Y,                                                 \
       .blue = PIPE_SWIZZLE_Z,                                                  \
@@ -113,7 +113,7 @@
    }
 
 #define MTL_SWIZZLE_ABGR                                                       \
-   .swizzle = {                                                                \
+   .unswizzle = {                                                              \
       .red = PIPE_SWIZZLE_W,                                                   \
       .green = PIPE_SWIZZLE_Z,                                                 \
       .blue = PIPE_SWIZZLE_Y,                                                  \
@@ -121,7 +121,7 @@
    }
 
 #define MTL_SWIZZLE_BGRA                                                       \
-   .swizzle = {                                                                \
+   .unswizzle = {                                                              \
       .red = PIPE_SWIZZLE_Z,                                                   \
       .green = PIPE_SWIZZLE_Y,                                                 \
       .blue = PIPE_SWIZZLE_X,                                                  \
@@ -129,7 +129,7 @@
    }
 
 #define MTL_SWIZZLE_RGB1                                                       \
-   .swizzle = {                                                                \
+   .unswizzle = {                                                              \
       .red = PIPE_SWIZZLE_X,                                                   \
       .green = PIPE_SWIZZLE_Y,                                                 \
       .blue = PIPE_SWIZZLE_Z,                                                  \
