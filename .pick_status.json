@@ -1,5 +1,715 @@
 [
     {
+        "sha": "0104b3df414bddeab37ae6cf116c532410134bc0",
+        "description": "kk: Expose shader storage image read/write without format",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3ce6bcb9e8ccde7c543816baeada2912f5a47bda",
+        "description": "panfrost: do not allow skipping of fragment shader when alpha-to-coverage",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "53014c0c1aa5998562587c832589f91e7dd21490",
+        "description": "winsys/amdgpu: protect driver stats changes by a mutex",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0724428d550400c9f50c35705663e79fdff57595",
+        "description": "winsys/amdgpu: retry the CS ioctl on -ENOMEM only if GDS OA is used",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f56e70f230b08811612bc42018b46bb430f42dd1",
+        "description": "lavapipe: Support VkDrmFormatModifierPropertiesList2EXT",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0574bfd5f46c9e991095373c458caf6b400d54c9",
+        "description": "tu: add UBO lowering workaround for Yooka-Laylee",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "66b157095c8a15dfae9235fc6dcd10184ba7c40b",
+        "description": "nir/shader_bisect: Allow passing in a --lo / --hi to continue a run.",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4287bb761e5198fe57aa5463c95bdef6f91c8a82",
+        "description": "nir/shader_bisect: Fix C code printing after review feedback changes.",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "fd6489c026f4ce0042d1b83bb705d810604d5976",
+        "description": "tu: Drop emitting of deprecated packing.",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ab6b2e46631657507cb0a99e0e7f0a51b03eeefe",
+        "description": "freedreno/registers: Restore reg definitions required by kernel.",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a001867e455cf1515993503008562324e5a8800e",
+        "description": "freedreno/registers: Simplify a bit of reg printing.",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b69f53816ccdad2917a2bce041a1a678582f5b8c",
+        "description": "freedreno/registers: Apply autopep8 to gen_header.py.",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "09e758bcd055aa2095d2d8eb7e9125c9af968c48",
+        "description": "tu: Convert remaining tu_cs_emit_pkt4()s to avoid deprecated reg definitions.",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "54652a4c3935ac18a2aa3bb0c3361950ab797694",
+        "description": "tu: Use non-deprecated reg packing for RB_CLEAR_TARGET().",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c8abe7f3dbf6678e4d4f6782ae5a63732ee20ecd",
+        "description": "tu: Pass around the new packing struct for GRAS_LRZ_CNTL.",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a3740003c232888a44b37527b08a20793ed1be47",
+        "description": "tu: Use appropriate variant for HLSQ regs.",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7e027d56720b1390d3add7e6b42a93969913549a",
+        "description": "tu: Use proper reg packing in another place.",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "dae582ecc19766bcc810e9f644220b0601576633",
+        "description": "tu: Use appropriate variants for SP regs.",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "298237b362bd3a673efa72349b521c1542c8ea30",
+        "description": "tu: Use appropriate variants for other GRAS regs.",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "69cf144144f8dc883d3d91da6c17cf2689dc9009",
+        "description": "tu: use non-deprecated packing for GRAS_CL_ARRAY_SIZE.",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c5bb86c8df3508860407789e2a78f46d9e1683d1",
+        "description": "tu: Use non-deprecated packing for SP_DITHER_CNTL.",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "08e17ff22272f2be4b5a2a7235d821824f6b5c4f",
+        "description": "tu: Use a register pack for VPC_VARYING_LM_TRANSFER_CNTL_DISABLE[].",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6d8f08a6788dc88f2a7d423c11fd54f0a9bc66d1",
+        "description": "tu: Use appropriate variants for GRAS_SU regs.",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7eb24634c385ba9ac8bb53143a72cd8ae0ad104b",
+        "description": "tu: Only emit GRAS_SU_RENDER_CNTL and SP_RENDER_CNTL on >=a7xx.",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4aec44ea919a5f5539db321cdccdb1e1eb9cc826",
+        "description": "tu: Use appropriate chip variants for RB regs.",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "247a0389d64f1ece5af8657c96a68592bc7624ce",
+        "description": "tu: Use appropriate chip variants for A2D reg packing.",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5d4598199e349ace50944df0c7fefb1611e12496",
+        "description": "tu: Use appropriate chip variants for CONSERVATIVE_RAS_CNTL.",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "907dfeb73233488f6405a73debaae93493d8af5d",
+        "description": "tu: Use appropriate chip variants in PS setup.",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b38bd7f8686c32b75f11d5e06fe7786707083d90",
+        "description": "tu: Use appopriate chip variants in SC scissor/viewport reg packing.",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "249680b50801f44e1f55784df13005dcdcf98d9f",
+        "description": "tu: Use appropriate chip variants for SP_CS reg packing.",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "002fc56a0ccfcd398bb7cd28745d7b5f5a3f1287",
+        "description": "tu: Use appropriate chip variants for VPC/PC reg packing.",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8ed98f7429a88862ff35922e16148f394ca308a9",
+        "description": "tu: Use appropriate chip variants for SC_BIN_CNTL reg packing.",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d335232fe51d7f0307df3802eb1a801bb7076b72",
+        "description": "tu: Use appropriate chip variants for VRS reg packing.",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "08782fbdc3de720d7dae940acc726650343d0e1a",
+        "description": "tu: Use appropriate chip variants for LRZ reg packing.",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "1f016974faecc6e54c1049ab29c61d85b02fbc91",
+        "description": "tu: Use appropriate chip variants for FOVEAT regs.",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5a6bfc161491ca38cfda405fd481b85e4121e429",
+        "description": "tu: Use non-deprecated names for scratch regs.",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f12a9b91c95bc16c13a4284ae7d2fcb8f2a27768",
+        "description": "tu: Explicitly use 6XX scratch reg packing in perfcntrs_pass_cs_entries.",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "454c6655528d2893530cdfc1ea20f2c87fbba6b6",
+        "description": "tu: Move tu6_emit_gs() to use reg packing.",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "56e63dc5ed499ecad6949cdf3ab375df2e1f2596",
+        "description": "tu: Move VPC_SO_FLUSH_BASE to use reg packing.",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4bc21cd77dd6682388cc76f6264d305f3754e286",
+        "description": "tu: Convert tu_init_cmdbuf_start_a725_quirk() to non-deprecated packing.",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a7ffdd31c5ead30ca2d56dd79d9e06fad44164b6",
+        "description": "tu: Template tu_pipeline_builder_parse_rasterization_order() by CHIP.",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "fbcc32e990f7417656cf63462103b1d6aea99127",
+        "description": "tu: Template tu6_emit_vpc_varying_modes() by CHIP.",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "436f6059b4e4375a617277111796699eb8fe22ab",
+        "description": "tu: Template tu7_emit_subpass_shading_rate by CHIP.",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "99f31785a2d1f078327d4e0a4fc629cdf05bee17",
+        "description": "tu: Template tu6_emit_msaa() by CHIP.",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "22a847515176300ce8d0059dffffb0f355d5084b",
+        "description": "tu: Template update_vsc_pipe by CHIP.",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "17e47f4dffbfbab8955f20d1483b5db5e3206ab6",
+        "description": "tu: Template fdm_apply_store_coords() by CHIP.",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "339c3c79701b312df7748c17ee8bf1b57e1bfd12",
+        "description": "tu: Use non-deprecated reg packing in tu6_setup_streamout()'s CRBs.",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7555600cc8826cca06bb76dd626e8d53f19d4557",
+        "description": "tu: Template tu_CmdBindIndexBuffer2KHR by CHIP.",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2f3ebc4f46aff22582bb0795b47b7b2c945ec3d1",
+        "description": "tu: Template tu_CmdBindTransformFeedbackBuffersEXT by CHIP.",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "bfbc625f797b2612eff9680c9250cbd755f3d0f5",
+        "description": "tu: Template tu_CmdBeginTransformFeedbackEXT() by CHIP.",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b69aa7745676deb0ad4ab4b3cf343f95eb38b292",
+        "description": "tu: Template r2d_coords by CHIP.",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b1a27570974e99f64eeac103f6712b24c1c47907",
+        "description": "tu: Template tu7_emit_tile_render_begin_regs by CHIP.",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e6a3699bf3a2f3db2955901754347d94292a9cb8",
+        "description": "tu: Template tu6_build_depth_plane_z_mode by CHIP.",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "00bf0907e4ae265d9938f54a216812fdfd489e4a",
+        "description": "tu: Use tu_cs_emit_regs() for SU_POLY_OFFSET setup.",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "35e5be2bed7b6f702c6417275bdb7aacf9796d20",
+        "description": "tu: Template tu6_emit_rt_workaround() by CHIP.",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4439101dd3816c537ca93947791cf63a63e6bca9",
+        "description": "tu: Template tu6_emit_window_scissor by CHIP.",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "21e6c68bd1491c074112ef4cdd1a553c693e9f4b",
+        "description": "tu: Use a register pack for VPC_PS_CNTL.",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b42d7c380955a4ebbf9954ef9d572709bc09f537",
+        "description": "ci: uprev virglrenderer",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "273f668520fe166cbda8765deb9403b4abf4abdd",
+        "description": "wsi/metal: Fix blit_imate_to_image's pool selection for cmd buffer alloc",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "39a7d65113c6df7d1da6e88b16fab0686db6fc83",
+        "notes": null
+    },
+    {
+        "sha": "a547c6306a8645c409e5bed47d95dbbb4abf72a9",
+        "description": "wsi/metal: Fix command buffer release at destroy",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "39a7d65113c6df7d1da6e88b16fab0686db6fc83",
+        "notes": null
+    },
+    {
+        "sha": "49adffb0c0f9a61ce89612f1022acb67f38e95a2",
+        "description": "iris: Rename iris_binding_table::sizes to iris_binding_table::surf_count",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e551c8d302e6393b3d0a1ddd5fd1829b3e87706e",
+        "description": "iris: Move code to emit push constants to its own function",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3dda6b05e0f514078244e2b393fc547d12fc4a2a",
+        "description": "iris: Improve iris_emit_binding_tables()",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d4658ddb7333e44dfe2a8423a749635b286cc33e",
+        "description": "iris: Move code to emit binding tables to its own function",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5b039e099638f54859039635093bedac00d86ffe",
+        "description": "kk: Expose more features/extensions we already support",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2e62777e0d13d3c2c5aaf72516779e2edfb5e6eb",
+        "description": "kk: Apply robustness only when requested",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "48555926ac10e5e5f7493c3179bccc1ee65ae6e4",
+        "description": "kk: Guard writes after fragment demote",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "9e145f33cb080e326e0dbded2ab8c6b97473a6cb",
+        "description": "ir3: Drop old comment about ldg vectorization limitation.",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "24cd5088ca3ab07ddb34500e928f96a5a726e88c",
+        "description": "ir3: Perform vectorization on ldg/stg just like other memory access.",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f27b2b8d777c96525305d9f3af167d27a539b9f4",
+        "description": "winsys/amdgpu,ac: get eop and csa size,alignment from kernel query",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f322bc8631b6d9f8f6b2154f5a4af52476db5ecc",
+        "description": "ac: update amdgpu_drm.h for uq metadata query info",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
         "sha": "b13003133d4440bfd33fc320c051b474458c8e02",
         "description": "radv: add radv_cmd_state::emitted_rt_pipeline",
         "nominated": false,
@@ -364,7 +1074,7 @@
         "description": "radv: reduce maxTexelBufferElements to 1<<29",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 3,
         "main_sha": null,
         "because_sha": null,
         "notes": null
@@ -1034,7 +1744,7 @@
         "description": "radv/video: Fix force_integer_mv=1 on intra frame",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 3,
         "main_sha": null,
         "because_sha": null,
         "notes": null
@@ -2684,7 +3394,7 @@
         "description": "radv: add radv_hide_rebar_on_dgpu and enable for Red Dead Redemption 2",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 3,
         "main_sha": null,
         "because_sha": null,
         "notes": null
@@ -4764,7 +5474,7 @@
         "description": "radv: recalculate legacy_gs_info on bind",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 3,
         "main_sha": null,
         "because_sha": null,
         "notes": null
