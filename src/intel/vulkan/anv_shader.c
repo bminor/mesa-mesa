@@ -632,6 +632,7 @@ anv_shader_create(struct anv_device *device,
    shader->kernel =
       anv_state_pool_alloc(&device->instruction_state_pool,
                            shader_data->prog_data.base.program_size, 64);
+   ANV_DMR_SP_ALLOC(&device->vk.base, &device->instruction_state_pool, shader->kernel);
    if (shader->kernel.alloc_size == 0) {
       result = vk_error(device, VK_ERROR_OUT_OF_DEVICE_MEMORY);
       goto error_embedded_samplers;
@@ -718,6 +719,7 @@ anv_shader_create(struct anv_device *device,
  error_embedded_samplers:
    for (uint32_t s = 0; s < shader->bind_map.embedded_sampler_count; s++)
       anv_embedded_sampler_unref(device, shader->embedded_samplers[s]);
+   ANV_DMR_SP_FREE(&device->vk.base, &device->instruction_state_pool, shader->kernel);
    anv_state_pool_free(&device->instruction_state_pool, shader->kernel);
  error_shader:
    anv_state_pool_free(&device->instruction_state_pool, shader->kernel);
