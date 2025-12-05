@@ -1,4 +1,5 @@
 /*
+ * Copyright © 2025 Arm Ltd.
  * Copyright © 2021 Collabora Ltd.
  *
  * Derived from tu_image.c which is:
@@ -286,6 +287,34 @@ prepare_attr_buf_descs(struct panvk_image_view *view)
 }
 #endif
 
+static void
+create_ms_views(struct panvk_device *dev, struct panvk_image_view *view,
+                const VkImageViewCreateInfo *pCreateInfo,
+                const VkAllocationCallbacks *pAllocator)
+{
+   struct panvk_image *source_img =
+      panvk_image_from_handle(vk_image_to_handle(view->vk.image));
+   const VkImage *target_images = source_img->ms_imgs;
+
+   VkImageViewCreateInfo create_info = *pCreateInfo;
+
+   for (uint32_t idx = 0; idx < ARRAY_SIZE(source_img->ms_imgs); ++idx) {
+      if (target_images[idx] == VK_NULL_HANDLE)
+         continue;
+
+      create_info.image = target_images[idx];
+
+      assert(vk_image_from_handle(create_info.image)->format ==
+             source_img->vk.format);
+      assert(view->vk.format == create_info.format);
+      assert(!(vk_image_from_handle(create_info.image)->create_flags &
+               VK_IMAGE_CREATE_MULTISAMPLED_RENDER_TO_SINGLE_SAMPLED_BIT_EXT));
+
+      panvk_per_arch(CreateImageView)(panvk_device_to_handle(dev), &create_info,
+                                      pAllocator, &view->ms_views[idx]);
+   }
+}
+
 VKAPI_ATTR VkResult VKAPI_CALL
 panvk_per_arch(CreateImageView)(VkDevice _device,
                                 const VkImageViewCreateInfo *pCreateInfo,
@@ -386,6 +415,10 @@ panvk_per_arch(CreateImageView)(VkDevice _device,
       prepare_attr_buf_descs(view);
 #endif
 
+   if (view->vk.image->create_flags &
+       VK_IMAGE_CREATE_MULTISAMPLED_RENDER_TO_SINGLE_SAMPLED_BIT_EXT)
+      create_ms_views(device, view, pCreateInfo, pAllocator);
+
    *pView = panvk_image_view_to_handle(view);
    return VK_SUCCESS;
 
@@ -403,6 +436,14 @@ panvk_per_arch(DestroyImageView)(VkDevice _device, VkImageView _view,
 
    if (!view)
       return;
+
+   if (view->vk.image->create_flags &
+       VK_IMAGE_CREATE_MULTISAMPLED_RENDER_TO_SINGLE_SAMPLED_BIT_EXT) {
+      for (uint32_t i = 0; i < ARRAY_SIZE(view->ms_views); ++i) {
+         panvk_per_arch(DestroyImageView)(_device, view->ms_views[i],
+                                          pAllocator);
+      }
+   }
 
    panvk_pool_free_mem(&view->mem);
    vk_image_view_destroy(&device->vk, pAllocator, &view->vk);

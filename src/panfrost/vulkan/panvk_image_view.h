@@ -43,6 +43,9 @@ struct panvk_image_view {
       struct mali_attribute_buffer_packed img_attrib_buf[2];
 #endif
    } descs;
+
+   /* One image each for 2x 4x 8x 16x. We don't support more than 16x. */
+   VkImageView ms_views[4];
 };
 
 VK_DEFINE_NONDISP_HANDLE_CASTS(panvk_image_view, vk.base, VkImageView,

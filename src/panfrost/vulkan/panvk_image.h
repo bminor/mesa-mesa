@@ -40,6 +40,9 @@ struct panvk_image {
 
    uint8_t plane_count;
    struct panvk_image_plane planes[PANVK_MAX_PLANES];
+
+   /* One image each for 2x 4x 8x 16x. We don't support more than 16x. */
+   VkImage ms_imgs[4];
 };
 
 VK_DEFINE_NONDISP_HANDLE_CASTS(panvk_image, vk.base, VkImage,
