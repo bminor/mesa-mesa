@@ -418,10 +418,15 @@ init_subqueue(struct panvk_gpu_queue *queue, enum panvk_subqueue_id subqueue)
       .syncobjs = panvk_priv_mem_dev_addr(queue->syncobjs),
       .debug.tracebuf.cs = subq->tracebuf.addr.dev,
 #if PAN_ARCH == 10
-      /* Iterator scoreboard will be picked in CS and wrap back to SB_ITER(0) on
-         first RUN_* so we ensure an invalid value here that is handled by our
-         partial modulo implementation */
-      .iter_sb = SB_ITER(dev->csf.sb.iter_count),
+      /* On the VT/COMPUTE queue, the first iter_sb will skipped since
+       * cs_next_iter_sb() is called before the first use, but that's okay,
+       * because the next slot will be equally free, and the skipped one will
+       * be re-used at some point.
+       * On the fragment queue, we increment the iterator when the
+       * FINISH_FRAGMENT job is issued, which is why we need this value
+       * to point to a valid+free scoreboard from the start.
+       */
+      .iter_sb = SB_ITER(0),
 #endif
       .reg_dump_addr = panvk_priv_mem_dev_addr(subq->regs_save),
    };
@@ -448,6 +453,7 @@ init_subqueue(struct panvk_gpu_queue *queue, enum panvk_subqueue_id subqueue)
    /* Intialize scoreboard slots used for asynchronous operations. */
 #if PAN_ARCH >= 11
    cs_set_state_imm32(&b, MALI_CS_SET_STATE_TYPE_SB_SEL_ENDPOINT, SB_ITER(0));
+   cs_set_state_imm32(&b, MALI_CS_SET_STATE_TYPE_SB_MASK_WAIT, SB_WAIT_ITER(0));
    cs_set_state_imm32(&b, MALI_CS_SET_STATE_TYPE_SB_SEL_OTHER, SB_ID(LS));
    cs_set_state_imm32(&b, MALI_CS_SET_STATE_TYPE_SB_SEL_DEFERRED,
                       SB_ID(DEFERRED_SYNC));

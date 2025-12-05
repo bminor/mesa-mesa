@@ -3066,9 +3066,6 @@ issue_fragment_jobs(struct panvk_cmd_buffer *cmdbuf)
    struct cs_builder *b = panvk_get_cs_builder(cmdbuf, PANVK_SUBQUEUE_FRAGMENT);
    bool has_oq_chain = cmdbuf->state.gfx.render.oq.chain != 0;
 
-  cs_next_iter_sb(cmdbuf, PANVK_SUBQUEUE_FRAGMENT,
-                  cs_scratch_reg_tuple(b, 0, 2));
-
    /* Now initialize the fragment bits. */
    cs_update_frag_ctx(b) {
       cs_move32_to(b, cs_sr_reg32(b, FRAGMENT, BBOX_MIN),
@@ -3243,6 +3240,7 @@ issue_fragment_jobs(struct panvk_cmd_buffer *cmdbuf)
    }
 
    struct cs_index sync_addr = cs_scratch_reg64(b, 0);
+   struct cs_index sb_update_scratch_regs = cs_scratch_reg_tuple(b, 2, 2);
    struct cs_index add_val = cs_scratch_reg64(b, 4);
    struct cs_index add_val_lo = cs_scratch_reg32(b, 4);
    struct cs_index ringbuf_sync_addr = cs_scratch_reg64(b, 6);
@@ -3268,29 +3266,27 @@ issue_fragment_jobs(struct panvk_cmd_buffer *cmdbuf)
 
    cs_move32_to(b, tiler_count, td_count);
 
-#if PAN_ARCH >= 11
    cs_load64_to(b, sync_addr, cs_subqueue_ctx_reg(b),
                 offsetof(struct panvk_cs_subqueue_context, syncobjs));
    cs_add64(b, sync_addr, sync_addr,
             PANVK_SUBQUEUE_FRAGMENT * sizeof(struct panvk_cs_sync64));
-#else
-   struct cs_index iter_sb = cs_scratch_reg32(b, 2);
-   struct cs_index cmp_scratch = cs_scratch_reg32(b, 3);
 
-   cs_load_to(b, cs_scratch_reg_tuple(b, 0, 3), cs_subqueue_ctx_reg(b),
-              BITFIELD_MASK(3),
-              offsetof(struct panvk_cs_subqueue_context, syncobjs));
-   cs_add64(b, sync_addr, sync_addr,
-            PANVK_SUBQUEUE_FRAGMENT * sizeof(struct panvk_cs_sync64));
-#endif
-
+   cs_iter_sb_update(cmdbuf, PANVK_SUBQUEUE_FRAGMENT, sb_update_scratch_regs,
+                     sb_upd_ctx) {
+      /* We wait on the current iter, but we signal the next one, so that
+       * the next FINISH_FRAGMENT can't start until this one is done (required
+       * to guarantee that used heap chunks won't be released prematurely).
+       * No need to wait for sb_upd_ctx.next_sb, this is taken care of in
+       * the cs_iter_sb_update() preamble.
+       */
 #if PAN_ARCH >= 11
-   {
       const struct cs_async_op async = cs_defer_indirect();
+
+      cs_set_state(b, MALI_CS_SET_STATE_TYPE_SB_SEL_DEFERRED,
+                   sb_upd_ctx.regs.next_sb);
 #else
-   cs_match_iter_sb(b, x, iter_sb, cmp_scratch) {
-      const struct cs_async_op async =
-         cs_defer(SB_WAIT_ITER(x), SB_ID(DEFERRED_SYNC));
+      struct cs_async_op async =
+         cs_defer(SB_WAIT_ITER(sb_upd_ctx.cur_sb), SB_ITER(sb_upd_ctx.next_sb));
 #endif
 
       if (td_count == 1) {
@@ -3307,6 +3303,13 @@ issue_fragment_jobs(struct panvk_cmd_buffer *cmdbuf)
          }
          cs_frag_end(b, async);
       }
+
+#if PAN_ARCH >= 11
+      cs_set_state_imm32(b, MALI_CS_SET_STATE_TYPE_SB_SEL_DEFERRED,
+                         SB_ID(DEFERRED_SYNC));
+#else
+      async = cs_defer(SB_WAIT_ITER(sb_upd_ctx.cur_sb), SB_ID(DEFERRED_SYNC));
+#endif
 
       if (free_render_descs) {
          cs_sync32_add(b, true, MALI_CS_SYNC_SCOPE_CSG, release_sz,

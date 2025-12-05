@@ -640,6 +640,12 @@ static inline void
 cs_next_iter_sb(struct panvk_cmd_buffer *cmdbuf,
                 enum panvk_subqueue_id subqueue, struct cs_index scratch_regs)
 {
+   /* Scoreboard transitions on the fragment subqueue is more complex than just
+    * updating the scoreboard slot, so make sure we never hit that path on a
+    * fragment subqueue. See issue_fragment_jobs() for more details.
+    */
+   assert(subqueue != PANVK_SUBQUEUE_FRAGMENT);
+
    cs_iter_sb_update(cmdbuf, subqueue, scratch_regs, _) {
       /* We only want to move to the new scoreboard, so nothing to do here. */
    }
