@@ -50,6 +50,23 @@ pan_get_gpu_id(void)
    return PAN_GPU_ID_DEFAULT;
 }
 
+/*
+ * The gpu variant is specified as a hex value after the GPU id
+ * in PAN_GPU_ID, e.g. PAN_GPU_ID=ac04:4.
+ */
+static uint64_t
+pan_get_gpu_variant(void)
+{
+   const char *override_version = os_get_option("PAN_GPU_ID");
+
+   if (override_version) {
+      const char *sep = strchr(override_version, ':');
+      if (sep)
+         return strtol(sep+1, NULL, 16);
+   }
+   return 0;
+}
+
 static int
 pan_ioctl_noop(int fd, unsigned long request, void *arg)
 {
@@ -169,6 +186,10 @@ panthor_ioctl_dev_query(int fd, unsigned long request, void *arg)
 
       gpu_info->gpu_id = pan_get_gpu_id() << 16;
       gpu_info->gpu_rev = 0;
+
+      /* for some reason the variant is in the bottom 8 bits of
+       * the core_features */
+      gpu_info->core_features = pan_get_gpu_variant();
 
       /* Dumped from a G610 */
       gpu_info->csf_id = 0x40a0412;
