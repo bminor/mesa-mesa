@@ -449,8 +449,10 @@ init_subqueue(struct panvk_gpu_queue *queue, enum panvk_subqueue_id subqueue)
 #if PAN_ARCH >= 11
    cs_set_state_imm32(&b, MALI_CS_SET_STATE_TYPE_SB_SEL_ENDPOINT, SB_ITER(0));
    cs_set_state_imm32(&b, MALI_CS_SET_STATE_TYPE_SB_SEL_OTHER, SB_ID(LS));
-   cs_set_state_imm32(&b, MALI_CS_SET_STATE_TYPE_SB_SEL_DEFERRED, SB_ID(DEFERRED_SYNC));
-   cs_set_state_imm32(&b, MALI_CS_SET_STATE_TYPE_SB_MASK_STREAM, dev->csf.sb.all_iters_mask);
+   cs_set_state_imm32(&b, MALI_CS_SET_STATE_TYPE_SB_SEL_DEFERRED,
+                      SB_ID(DEFERRED_SYNC));
+   cs_set_state_imm32(&b, MALI_CS_SET_STATE_TYPE_SB_MASK_STREAM,
+                      dev->csf.sb.all_iters_mask & ~SB_WAIT_ITER(0));
 #else
    cs_set_scoreboard_entry(&b, SB_ITER(0), SB_ID(LS));
 #endif
