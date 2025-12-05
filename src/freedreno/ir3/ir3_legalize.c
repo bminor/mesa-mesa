@@ -2254,14 +2254,6 @@ ir3_legalize(struct ir3 *ir, struct ir3_shader_variant *so, int *max_bary)
       progress |= apply_fine_deriv_macro(ctx, block);
    }
 
-   if (ir3_shader_debug & IR3_DBG_FULLSYNC) {
-      dbg_sync_sched(ir, so);
-   }
-
-   if (ir3_shader_debug & IR3_DBG_FULLNOP) {
-      dbg_nop_sched(ir, so);
-   }
-
    bool cfg_changed = false;
    while (opt_jump(ir))
       cfg_changed = true;
@@ -2278,6 +2270,14 @@ ir3_legalize(struct ir3 *ir, struct ir3_shader_variant *so, int *max_bary)
    if (so->type == MESA_SHADER_FRAGMENT && so->need_pixlod &&
        so->compiler->gen >= 6)
       helper_sched(ctx, ir, so);
+
+   if (ir3_shader_debug & IR3_DBG_FULLSYNC) {
+      dbg_sync_sched(ir, so);
+   }
+
+   if (ir3_shader_debug & IR3_DBG_FULLNOP) {
+      dbg_nop_sched(ir, so);
+   }
 
    /* Note: insert (last) before alias.tex to have the sources that are actually
     * read by instructions (as opposed to alias registers) more easily
