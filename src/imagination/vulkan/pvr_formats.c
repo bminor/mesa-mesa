@@ -814,20 +814,23 @@ pvr_get_image_format_properties(struct pvr_physical_device *pdevice,
       }
    }
 
+   const uint32_t max_render_size_z =
+      rogue_get_render_size_max_z(&pdevice->dev_info);
+
    if (usage & render_usage) {
       const uint32_t max_render_size =
          rogue_get_render_size_max(&pdevice->dev_info);
 
       pImageFormatProperties->maxExtent.width = max_render_size;
       pImageFormatProperties->maxExtent.height = max_render_size;
-      pImageFormatProperties->maxExtent.depth = PVR_MAX_TEXTURE_EXTENT_Z;
+      pImageFormatProperties->maxExtent.depth = max_render_size_z;
    } else {
       const uint32_t max_texture_extent_xy =
-         ROGUE_TEXSTATE_IMAGE_WORD0_WIDTH_MAX_SIZE + 1U;
+         rogue_get_texture_extent_max(&pdevice->dev_info);
 
       pImageFormatProperties->maxExtent.width = max_texture_extent_xy;
       pImageFormatProperties->maxExtent.height = max_texture_extent_xy;
-      pImageFormatProperties->maxExtent.depth = PVR_MAX_TEXTURE_EXTENT_Z;
+      pImageFormatProperties->maxExtent.depth = max_render_size_z;
    }
 
    if (info->tiling == VK_IMAGE_TILING_LINEAR) {
@@ -841,7 +844,10 @@ pvr_get_image_format_properties(struct pvr_physical_device *pdevice,
 
       const uint32_t max_sample_bits = ((max_multisample << 1) - 1);
 
-      pImageFormatProperties->maxArrayLayers = PVR_MAX_ARRAY_LAYERS;
+      const uint32_t max_array_layers =
+         rogue_get_render_size_max_z(&pdevice->dev_info);
+
+      pImageFormatProperties->maxArrayLayers = max_array_layers;
       pImageFormatProperties->sampleCounts = max_sample_bits;
    }
 

@@ -261,6 +261,28 @@ rogue_get_render_size_max(const struct pvr_device_info *dev_info)
    rogue_get_render_size_max(dev_info)
 
 static inline uint32_t
+rogue_get_render_size_max_z(const struct pvr_device_info *dev_info)
+{
+   switch (dev_info->ident.arch) {
+   case PVR_DEVICE_ARCH_ROGUE:
+      return 2048;
+   default:
+      UNREACHABLE("unexpected arch");
+   }
+}
+
+static inline uint32_t
+rogue_get_texture_extent_max(const struct pvr_device_info *dev_info)
+{
+   switch (dev_info->ident.arch) {
+   case PVR_DEVICE_ARCH_ROGUE:
+      return 16384;
+   default:
+      UNREACHABLE("unexpected arch");
+   }
+}
+
+static inline uint32_t
 rogue_max_compute_shared_registers(const struct pvr_device_info *dev_info)
 {
    if (PVR_HAS_FEATURE(dev_info, compute))
