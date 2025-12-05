@@ -94,6 +94,19 @@ static const char *conditions_str[] = {
    "le", "gt", "eq", "ne", "lt", "ge", "always",
 };
 
+#if PAN_ARCH >= 11
+static const char *defer_modes_str[] = {
+   ".defer_immediate",
+   ".defer_indirect",
+};
+
+#define defer_mode_str(I)                                                      \
+   I.defer_mode < ARRAY_SIZE(defer_modes_str) ? defer_modes_str[I.defer_mode]  \
+                                              : ".defer_mode_invalid"
+#else
+#define defer_mode_str(I) ""
+#endif
+
 static void
 print_cs_instr(FILE *fp, const uint64_t *instr)
 {
@@ -321,14 +334,9 @@ print_cs_instr(FILE *fp, const uint64_t *instr)
          ".increment",
       };
 
-      const char *defer_mode_name[] = {
-         ".defer_immediate",
-         ".defer_indirect",
-      };
-
       fprintf(fp, "SHARED_SB_INC%s%s #%u, #%u",
               progress_increment_name[I.progress_increment],
-              defer_mode_name[I.defer_mode], I.sb_mask, I.shared_entry);
+              defer_mode_str(I), I.sb_mask, I.shared_entry);
       break;
    }
 
@@ -379,8 +387,9 @@ print_cs_instr(FILE *fp, const uint64_t *instr)
 
    case MALI_CS_OPCODE_FINISH_FRAGMENT: {
       cs_unpack(instr, CS_FINISH_FRAGMENT, I);
-      fprintf(fp, "FINISH_FRAGMENT%s d%u, d%u, #%x, #%u",
+      fprintf(fp, "FINISH_FRAGMENT%s%s d%u, d%u, #%x, #%u",
               I.increment_fragment_completed ? ".frag_end" : "",
+              defer_mode_str(I),
               I.last_heap_chunk, I.first_heap_chunk, I.wait_mask,
               I.signal_slot);
       break;
@@ -493,28 +502,29 @@ print_cs_instr(FILE *fp, const uint64_t *instr)
          "INVALID",
       };
 
-      fprintf(fp, "FLUSH_CACHE2.%s_l2.%s_lsc.%s r%u, #%x, #%u",
+      fprintf(fp, "FLUSH_CACHE2.%s_l2.%s_lsc.%s%s r%u, #%x, #%u",
               mode[I.l2_flush_mode], mode[I.lsc_flush_mode],
-              other_mode[I.other_flush_mode], I.latest_flush_id, I.wait_mask,
-              I.signal_slot);
+              other_mode[I.other_flush_mode], defer_mode_str(I),
+              I.latest_flush_id, I.wait_mask, I.signal_slot);
       break;
    }
 
    case MALI_CS_OPCODE_SYNC_ADD32: {
       cs_unpack(instr, CS_SYNC_ADD32, I);
-      fprintf(fp, "SYNC_ADD32%s%s [d%u], r%u, #%x, #%u",
+      fprintf(fp, "SYNC_ADD32%s%s%s [d%u], r%u, #%x, #%u",
               I.error_propagate ? ".error_propagate" : "",
-              I.scope == MALI_CS_SYNC_SCOPE_CSG ? ".csg" : ".system", I.address,
+              I.scope == MALI_CS_SYNC_SCOPE_CSG ? ".csg" : ".system",
+              defer_mode_str(I), I.address,
               I.data, I.wait_mask, I.signal_slot);
       break;
    }
 
    case MALI_CS_OPCODE_SYNC_SET32: {
       cs_unpack(instr, CS_SYNC_SET32, I);
-      fprintf(fp, "SYNC_SET32%s%s [d%u], r%u, #%x, #%u",
+      fprintf(fp, "SYNC_SET32%s%s%s [d%u], r%u, #%x, #%u",
               I.error_propagate ? ".error_propagate" : "",
-              I.scope == MALI_CS_SYNC_SCOPE_CSG ? ".csg" : ".system", I.address,
-              I.data, I.wait_mask, I.signal_slot);
+              I.scope == MALI_CS_SYNC_SCOPE_CSG ? ".csg" : ".system",
+              defer_mode_str(I), I.address, I.data, I.wait_mask, I.signal_slot);
       break;
    }
 
@@ -534,9 +544,10 @@ print_cs_instr(FILE *fp, const uint64_t *instr)
       };
 
       cs_unpack(instr, CS_STORE_STATE, I);
-      fprintf(fp, "STORE_STATE.%s d%u, #%i, #%x, #%u",
+      fprintf(fp, "STORE_STATE.%s%s d%u, #%i, #%x, #%u",
               I.state >= ARRAY_SIZE(states_str) ? "UNKNOWN_STATE"
                                                 : states_str[I.state],
+              defer_mode_str(I),
               I.address, I.offset, I.wait_mask, I.signal_slot);
       break;
    }
@@ -590,27 +601,27 @@ print_cs_instr(FILE *fp, const uint64_t *instr)
 
    case MALI_CS_OPCODE_TRACE_POINT: {
       cs_unpack(instr, CS_TRACE_POINT, I);
-      fprintf(fp, "TRACE_POINT r%d:r%d, #%x, #%u", I.base_register,
-              I.base_register + I.register_count - 1, I.wait_mask,
-              I.signal_slot);
+      fprintf(fp, "TRACE_POINT%s r%d:r%d, #%x, #%u", defer_mode_str(I),
+              I.base_register, I.base_register + I.register_count - 1,
+              I.wait_mask, I.signal_slot);
       break;
    }
 
    case MALI_CS_OPCODE_SYNC_ADD64: {
       cs_unpack(instr, CS_SYNC_ADD64, I);
-      fprintf(fp, "SYNC_ADD64%s%s [d%u], d%u, #%x, #%u",
+      fprintf(fp, "SYNC_ADD64%s%s%s [d%u], d%u, #%x, #%u",
               I.error_propagate ? ".error_propagate" : "",
-              I.scope == MALI_CS_SYNC_SCOPE_CSG ? ".csg" : ".system", I.address,
-              I.data, I.wait_mask, I.signal_slot);
+              I.scope == MALI_CS_SYNC_SCOPE_CSG ? ".csg" : ".system",
+              defer_mode_str(I), I.address, I.data, I.wait_mask, I.signal_slot);
       break;
    }
 
    case MALI_CS_OPCODE_SYNC_SET64: {
       cs_unpack(instr, CS_SYNC_SET64, I);
-      fprintf(fp, "SYNC_SET64.%s%s [d%u], d%u, #%x, #%u",
+      fprintf(fp, "SYNC_SET64.%s%s%s [d%u], d%u, #%x, #%u",
               I.error_propagate ? ".error_propagate" : "",
-              I.scope == MALI_CS_SYNC_SCOPE_CSG ? ".csg" : ".system", I.address,
-              I.data, I.wait_mask, I.signal_slot);
+              I.scope == MALI_CS_SYNC_SCOPE_CSG ? ".csg" : ".system",
+              defer_mode_str(I), I.address, I.data, I.wait_mask, I.signal_slot);
       break;
    }
 
