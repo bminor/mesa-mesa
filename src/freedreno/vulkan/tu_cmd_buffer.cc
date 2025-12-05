@@ -6699,10 +6699,7 @@ fdm_apply_fs_params(struct tu_cmd_buffer *cmd,
        */
       VkExtent2D area = frag_areas[MIN2(i, views - 1)];
       VkRect2D bin = bins[MIN2(i, views - 1)];
-      VkOffset2D hw_viewport_offset = hw_viewport_offsets[MIN2(i, views - 1)];
       VkOffset2D offset = tu_fdm_per_bin_offset(area, bin, common_bin_offset);
-      offset.x -= hw_viewport_offset.x;
-      offset.y -= hw_viewport_offset.y;
 
       tu_cs_emit(cs, area.width);
       tu_cs_emit(cs, area.height);
