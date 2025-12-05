@@ -289,24 +289,23 @@ svga_clear_texture(struct pipe_context *pipe,
       util_format_description(surface->format);
 
    if (util_format_is_depth_or_stencil(surface->format)) {
-      float depth;
-      uint8_t stencil;
+      float   depth = 0.0f;
+      uint8_t stencil = 0;
       unsigned clear_flags = 0;
 
       /* If data is NULL, then set depthValue and stencilValue to zeros */
-      if (data == NULL) {
-         depth = 0.0;
-         stencil = 0;
-      } else {
-         util_format_unpack_z_float(surface->format, &depth, data, 1);
-         util_format_unpack_s_8uint(surface->format, &stencil, data, 1);
-      }
 
       if (util_format_has_depth(desc)) {
          clear_flags |= PIPE_CLEAR_DEPTH;
+         if (data) {
+            util_format_unpack_z_float(surface->format, &depth, data, 1);
+         }
       }
       if (util_format_has_stencil(desc)) {
          clear_flags |= PIPE_CLEAR_STENCIL;
+         if (data) {
+            util_format_unpack_s_8uint(surface->format, &stencil, data, 1);
+         }
       }
 
       /* Setup depth stencil view */
