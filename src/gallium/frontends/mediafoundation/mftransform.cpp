@@ -2500,7 +2500,6 @@ CDX12EncHMFT::ProcessInput( DWORD dwInputStreamIndex, IMFSample *pSample, DWORD 
 {
    HMFT_ETW_EVENT_START( "ProcessInput", this );
    HRESULT hr = S_OK;
-   UINT32 unChromaOnly = 0;
    LPDX12EncodeContext pDX12EncodeContext = nullptr;
    BYTE *qpData = nullptr;
    DWORD qpSize = 0;
@@ -2534,8 +2533,6 @@ CDX12EncHMFT::ProcessInput( DWORD dwInputStreamIndex, IMFSample *pSample, DWORD 
    // We need to know when we have started an encoding session
    //
    m_bEncodingStarted = TRUE;
-
-   (void) pSample->GetUINT32( MFSampleExtension_ChromaOnly, &unChromaOnly );
 
    // setup the source buffer
    CHECKHR_GOTO( PrepareForEncode( pSample, &pDX12EncodeContext ), done );

@@ -481,7 +481,7 @@ CDX12EncHMFT::PrepareForEncode( IMFSample *pSample, LPDX12EncodeContext *ppDX12E
       }
    }
 
-   pDX12EncodeContext->encoderPicInfo = {};
+   // pDX12EncodeContext->encoderPicInfo is initialized to zero in DX12EncodeContext constructor already
    pDX12EncodeContext->encoderPicInfo.base.profile = m_outputPipeProfile;
 
    // Encode region of interest
