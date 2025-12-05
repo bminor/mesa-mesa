@@ -261,8 +261,9 @@ vk_pipeline_hash_shader_stage_blake3(VkPipelineCreateFlags2KHR pipeline_flags,
 
    _mesa_blake3_init(&ctx);
 
-   /* We only care about one of the pipeline flags */
-   pipeline_flags &= VK_PIPELINE_CREATE_2_VIEW_INDEX_FROM_DEVICE_INDEX_BIT_KHR;
+   /* Hash pipeline flags that might affect compilation */
+   pipeline_flags &= (VK_PIPELINE_CREATE_2_VIEW_INDEX_FROM_DEVICE_INDEX_BIT_KHR |
+                      VK_PIPELINE_CREATE_2_UNALIGNED_DISPATCH_BIT_MESA);
    _mesa_blake3_update(&ctx, &pipeline_flags, sizeof(pipeline_flags));
 
    _mesa_blake3_update(&ctx, &info->flags, sizeof(info->flags));
