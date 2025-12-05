@@ -202,6 +202,7 @@ block_check_for_allowed_instrs(nir_block *block, unsigned *count,
          case nir_intrinsic_load_const_ir3:
          case nir_intrinsic_ballot:
          case nir_intrinsic_ballot_relaxed:
+         case nir_intrinsic_mbcnt_amd:
             if (!alu_ok)
                return false;
             break;
