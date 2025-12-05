@@ -828,6 +828,9 @@ if with_gallium_rusticl or with_nouveau_vk or with_tools.contains('etnaviv') or 
     # "Needless lifetimes" might be needless but they're harmless and we
     # prefer being explicit, so allow them.
     '-Aclippy::needless_lifetimes',
+
+    # Being explicit has value, allow it.
+    '-Aclippy::question_mark',
   ]
 
   rust_2024_lint_args = [
