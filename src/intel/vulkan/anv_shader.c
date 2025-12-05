@@ -684,7 +684,7 @@ anv_shader_create(struct anv_device *device,
 
    result = anv_shader_reloc(device, shader_data->code, shader, pAllocator);
    if (result != VK_SUCCESS)
-      goto error_embedded_samplers;
+      goto error_state;
 
    memcpy(shader->kernel.map, shader_data->code,
           shader_data->prog_data.base.program_size);
@@ -701,7 +701,7 @@ anv_shader_create(struct anv_device *device,
       anv_reloc_list_init(&shader->relocs, &device->vk.alloc,
                           device->physical->uses_relocs);
    if (result != VK_SUCCESS)
-      goto error_embedded_samplers;
+      goto error_state;
 
    struct anv_batch batch = {};
    anv_batch_set_storage(&batch, ANV_NULL_ADDRESS,
@@ -714,13 +714,13 @@ anv_shader_create(struct anv_device *device,
 
    return VK_SUCCESS;
 
+ error_state:
+   ANV_DMR_SP_FREE(&device->vk.base, &device->instruction_state_pool, shader->kernel);
+   anv_state_pool_free(&device->instruction_state_pool, shader->kernel);
  error_embedded_samplers:
    for (uint32_t s = 0; s < shader->bind_map.embedded_sampler_count; s++)
       anv_embedded_sampler_unref(device, shader->embedded_samplers[s]);
-   ANV_DMR_SP_FREE(&device->vk.base, &device->instruction_state_pool, shader->kernel);
-   anv_state_pool_free(&device->instruction_state_pool, shader->kernel);
  error_shader:
-   anv_state_pool_free(&device->instruction_state_pool, shader->kernel);
    vk_shader_free(&device->vk, pAllocator, &shader->vk);
    return result;
 }
