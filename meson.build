@@ -824,6 +824,10 @@ if with_gallium_rusticl or with_nouveau_vk or with_tools.contains('etnaviv') or 
     # We want to be able to write `else { if {} }` when it makes more sense than
     # collapsing it into `else if {}`.
     '-Aclippy::collapsible_else_if',
+
+    # "Needless lifetimes" might be needless but they're harmless and we
+    # prefer being explicit, so allow them.
+    '-Aclippy::needless_lifetimes',
   ]
 
   rust_2024_lint_args = [
