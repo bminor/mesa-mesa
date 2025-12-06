@@ -50,11 +50,6 @@ CDX12EncHMFT::PrepareForEncode( IMFSample *pSample, LPDX12EncodeContext *ppDX12E
    ComPtr<IMFDXGIBuffer> spDXGIBuffer;
    HANDLE hTexture = NULL;
    winsys_handle winsysHandle = {};
-   ROI_AREA video_roi_area = {};
-   UINT32 uiROIBlobOutSize = 0;
-   // Get HW Support Surface Alignment to check against input sample
-   const uint32_t surfaceWidthAlignment = 1 << m_EncoderCapabilities.m_HWSupportSurfaceAlignment.bits.log2_width_alignment;
-   const uint32_t surfaceHeightAlignment = 1 << m_EncoderCapabilities.m_HWSupportSurfaceAlignment.bits.log2_height_alignment;
 
    // Check for Discontinuity
    (void) pSample->GetUINT32( MFSampleExtension_Discontinuity, &unDiscontinuity );
@@ -294,11 +289,18 @@ CDX12EncHMFT::PrepareForEncode( IMFSample *pSample, LPDX12EncodeContext *ppDX12E
          pPipeEncoderInputFenceHandle;   // For destruction of the fence later
    }
 
-   // validate texture dimensions with surface alignment here for now, will add handling for non-aligned textures later
-   if( textureWidth % surfaceWidthAlignment != 0 || textureHeight % surfaceHeightAlignment != 0 )
    {
-      assert( false );
+      // Get HW Support Surface Alignment to check against input sample
+      const uint32_t surfaceWidthAlignment = 1 << m_EncoderCapabilities.m_HWSupportSurfaceAlignment.bits.log2_width_alignment;
+      const uint32_t surfaceHeightAlignment = 1 << m_EncoderCapabilities.m_HWSupportSurfaceAlignment.bits.log2_height_alignment;
+
+      // validate texture dimensions with surface alignment here for now, will add handling for non-aligned textures later
+      if( textureWidth % surfaceWidthAlignment != 0 || textureHeight % surfaceHeightAlignment != 0 )
+      {
+         assert( false );
+      }
    }
+
    pDX12EncodeContext->textureWidth = textureWidth;
    pDX12EncodeContext->textureHeight = textureHeight;
 
@@ -371,17 +373,6 @@ CDX12EncHMFT::PrepareForEncode( IMFSample *pSample, LPDX12EncodeContext *ppDX12E
       //
       // Create resources for output GPU frame stats
       //
-      struct pipe_resource templ = {};
-      templ.target = PIPE_TEXTURE_2D;
-      // PIPE_USAGE_STAGING allocates resource in L0 (System Memory) heap
-      // and avoid a bunch of roundtrips for uploading/reading back the bitstream headers
-      // The GPU writes once the slice data (if dGPU over the PCIe bus) and all the other
-      // uploads (e.g bitstream headers from CPU) and readbacks to output MFSamples
-      // happen without moving data between L0/L1 pools
-      templ.usage = PIPE_USAGE_DEFAULT;
-      templ.depth0 = 1;
-      templ.array_size = 1;
-
       if( m_EncoderCapabilities.m_HWSupportStatsSATDMapOutput.bits.supported && m_uiVideoSatdMapBlockSize > 0 )
       {
          if( !m_spSatdStatsBufferPool )
@@ -488,6 +479,7 @@ CDX12EncHMFT::PrepareForEncode( IMFSample *pSample, LPDX12EncodeContext *ppDX12E
    // When m_bVideoROIEnabled, app can (or not) set MFSampleExtension_ROIRectangle on separate frames optionally
    if( m_bVideoROIEnabled )
    {
+      UINT32 uiROIBlobOutSize = 0;
       pSample->GetBlob( MFSampleExtension_ROIRectangle,
                         (UINT8 *) &pDX12EncodeContext->video_roi_area,
                         sizeof( ROI_AREA ),
@@ -498,7 +490,7 @@ CDX12EncHMFT::PrepareForEncode( IMFSample *pSample, LPDX12EncodeContext *ppDX12E
          CHECKBOOL_GOTO( uiROIBlobOutSize == sizeof( ROI_AREA ), MF_E_UNEXPECTED, done );
 
          // When requested QPDelta == 0, just don't enable roi since it won't have any effect
-         if( video_roi_area.QPDelta != 0 )
+         if( pDX12EncodeContext->video_roi_area.QPDelta != 0 )
          {
             // Check for hardware support for delta QP
             CHECKBOOL_GOTO( m_EncoderCapabilities.m_HWSupportsVideoEncodeROI.bits.roi_rc_qp_delta_support == 1,
