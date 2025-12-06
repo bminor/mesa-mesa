@@ -987,8 +987,6 @@ dri_create_image(struct dri_screen *screen,
    if (use & __DRI_IMAGE_USE_LINEAR)
       tex_usage |= PIPE_BIND_LINEAR;
    if (use & __DRI_IMAGE_USE_CURSOR) {
-      if (width != 64 || height != 64)
-         return NULL;
       tex_usage |= PIPE_BIND_CURSOR;
    }
    if (use & __DRI_IMAGE_USE_PROTECTED)
