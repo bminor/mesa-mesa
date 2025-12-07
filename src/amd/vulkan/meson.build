@@ -92,6 +92,7 @@ libradv_files = files(
   'nir/radv_nir_rt_stage_cps.c',
   'nir/radv_nir_rt_stage_monolithic.c',
   'nir/radv_nir_rt_traversal_shader.c',
+  'nir/radv_nir_trim_fs_color_exports.c',
   'radv_acceleration_structure.c',
   'radv_android.c',
   'radv_android.h',

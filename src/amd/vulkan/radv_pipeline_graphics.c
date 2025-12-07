@@ -1857,6 +1857,13 @@ radv_generate_ps_epilog_key(const struct radv_device *device, const struct radv_
 
          cf = radv_choose_spi_color_format(device, fmt, blend_enable, state->need_src_alpha & (1 << i));
 
+         uint32_t comp_used = util_format_colormask(vk_format_description(fmt));
+
+         comp_used &= (state->color_write_mask >> (i * 4));
+         comp_used |= ((state->need_src_alpha >> i) & 0x1) << 3;
+
+         key.colors_needed |= comp_used << (4 * i);
+
          if (format_is_int8(fmt))
             is_int8 |= 1 << i;
          if (format_is_int10(fmt))
@@ -1876,6 +1883,7 @@ radv_generate_ps_epilog_key(const struct radv_device *device, const struct radv_
        */
       col_format |= V_028714_SPI_SHADER_32_AR;
       key.color_map[0] = 0;
+      key.colors_needed |= 0x8;
    }
 
    /* The output for dual source blending should have the same format as the first output. */
@@ -1883,6 +1891,7 @@ radv_generate_ps_epilog_key(const struct radv_device *device, const struct radv_
       assert(!(col_format >> 4));
       col_format |= (col_format & 0xf) << 4;
       key.color_map[1] = 1;
+      key.colors_needed |= (key.colors_needed & 0xf) << 4;
    }
 
    z_format = ac_get_spi_shader_z_format(state->export_depth, state->export_stencil, state->export_sample_mask,
@@ -1893,7 +1902,7 @@ radv_generate_ps_epilog_key(const struct radv_device *device, const struct radv_
    key.color_is_int10 = pdev->info.has_cb_lt16bit_int_clamp_bug ? is_int10 : 0;
    key.enable_mrt_output_nan_fixup = instance->drirc.debug.enable_mrt_output_nan_fixup ? is_float32 : 0;
    key.colors_written = state->colors_written;
-   key.mrt0_is_dual_src = state->mrt0_is_dual_src;
+   key.mrt0_is_dual_src = state->mrt0_is_dual_src && key.colors_needed & 0xf;
    key.export_depth = state->export_depth;
    key.export_stencil = state->export_stencil;
    key.export_sample_mask = state->export_sample_mask;
@@ -2898,6 +2907,19 @@ radv_graphics_shaders_compile(struct radv_device *device, struct vk_pipeline_cac
 
       if (!gfx_state->ps.has_epilog) {
          NIR_PASS(update_info, stages[MESA_SHADER_FRAGMENT].nir, radv_nir_remap_color_attachment, gfx_state);
+
+         /* Lower FS outputs to scalar to allow dce. */
+         NIR_PASS(_, stages[MESA_SHADER_FRAGMENT].nir, nir_lower_io_to_scalar, nir_var_shader_out, NULL, NULL);
+
+         /* TODO it seems like some internal shaders use render target formats with too few components. */
+         if (!stages[MESA_SHADER_FRAGMENT].nir->info.internal) {
+            NIR_PASS(update_info, stages[MESA_SHADER_FRAGMENT].nir, radv_nir_trim_fs_color_exports,
+                     gfx_state->ps.epilog.colors_needed);
+         }
+
+         NIR_PASS(update_info, stages[MESA_SHADER_FRAGMENT].nir, nir_opt_copy_prop);
+         NIR_PASS(update_info, stages[MESA_SHADER_FRAGMENT].nir, nir_opt_dce);
+         NIR_PASS(update_info, stages[MESA_SHADER_FRAGMENT].nir, nir_opt_dead_cf);
       }
 
       NIR_PASS(update_info, stages[MESA_SHADER_FRAGMENT].nir, radv_nir_lower_fs_input_attachment);
