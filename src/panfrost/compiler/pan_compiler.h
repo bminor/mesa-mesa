@@ -366,6 +366,9 @@ struct pan_shader_info {
    };
 };
 
+void pan_shader_update_info(struct pan_shader_info *info, nir_shader *s,
+                            struct pan_compile_inputs *inputs);
+
 void pan_shader_compile(nir_shader *nir, struct pan_compile_inputs *inputs,
                         struct util_dynarray *binary,
                         struct pan_shader_info *info);

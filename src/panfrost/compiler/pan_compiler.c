@@ -163,20 +163,10 @@ pan_lookup_pushed_ubo(struct pan_ubo_push *push, unsigned ubo, unsigned offs)
 }
 
 void
-pan_shader_compile(nir_shader *s, struct pan_compile_inputs *inputs,
-                   struct util_dynarray *binary, struct pan_shader_info *info)
+pan_shader_update_info(struct pan_shader_info *info, nir_shader *s,
+                       struct pan_compile_inputs *inputs)
 {
    unsigned arch = pan_arch(inputs->gpu_id);
-
-   memset(info, 0, sizeof(*info));
-
-   NIR_PASS(_, s, nir_inline_sysval, nir_intrinsic_load_printf_buffer_size,
-            PAN_PRINTF_BUFFER_SIZE - 8);
-
-   if (arch >= 6)
-      bifrost_compile_shader_nir(s, inputs, binary, info);
-   else
-      midgard_compile_shader_nir(s, inputs, binary, info);
 
    info->stage = s->info.stage;
    info->contains_barrier =
@@ -303,6 +293,25 @@ pan_shader_compile(nir_shader *s, struct pan_compile_inputs *inputs,
          info->ftz_fp32 = true;
       }
    }
+}
+
+void
+pan_shader_compile(nir_shader *s, struct pan_compile_inputs *inputs,
+                   struct util_dynarray *binary, struct pan_shader_info *info)
+{
+   unsigned arch = pan_arch(inputs->gpu_id);
+
+   memset(info, 0, sizeof(*info));
+
+   NIR_PASS(_, s, nir_inline_sysval, nir_intrinsic_load_printf_buffer_size,
+            PAN_PRINTF_BUFFER_SIZE - 8);
+
+   if (arch >= 6)
+      bifrost_compile_shader_nir(s, inputs, binary, info);
+   else
+      midgard_compile_shader_nir(s, inputs, binary, info);
+
+   pan_shader_update_info(info, s, inputs);
 }
 
 void
