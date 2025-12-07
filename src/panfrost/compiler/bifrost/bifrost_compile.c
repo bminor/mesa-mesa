@@ -47,7 +47,8 @@
 #include "compiler.h"
 
 static void pan_stats_verbose(FILE *f, const char *prefix, const bi_context *ctx,
-                              const struct pan_stats *stats);
+                              const struct pan_stats *stats,
+                              const struct pan_shader_info *info);
 
 /* clang-format off */
 static const struct debug_named_value bifrost_debug_options[] = {
@@ -6854,7 +6855,7 @@ bi_compile_variant_nir(nir_shader *nir,
        && !skip_internal) {
       const char *prefix = bi_shader_stage_name(ctx);
       if (bifrost_debug & BIFROST_DBG_STATSFULL) {
-         pan_stats_verbose(stderr, prefix, ctx, stats);
+         pan_stats_verbose(stderr, prefix, ctx, stats, pinfo);
       } else {
          pan_stats_fprintf(stderr, prefix, stats);
       }
@@ -7039,6 +7040,7 @@ bifrost_compile_shader_nir(nir_shader *nir,
    }
 
    info->tls_size = nir->scratch_size;
+   info->stage = nir->info.stage;
 
    pan_nir_collect_varyings(nir, info, PAN_MEDIUMP_VARY_32BIT);
 
@@ -7170,7 +7172,8 @@ do_report_pipes(FILE *f, const char *prefix, unsigned n, const char *statname[],
    fprintf(f, " %6s\n", statname[limit_idx]);
 }
 static void
-bifrost_stats_verbose(FILE *f, const bi_context *ctx, const struct bifrost_stats *stats)
+bifrost_stats_verbose(FILE *f, const bi_context *ctx, const struct bifrost_stats *stats,
+                      const struct pan_shader_info *info)
 {
    report_regs(f, stats->registers_used, stats->uniforms_used);
    fprintf(f, "Code size:         %u bytes\n", stats->code_size);
@@ -7193,7 +7196,8 @@ bifrost_stats_verbose(FILE *f, const bi_context *ctx, const struct bifrost_stats
 }
 
 static void
-valhall_stats_verbose(FILE *f, const bi_context *ctx, const struct valhall_stats *stats)
+valhall_stats_verbose(FILE *f, const bi_context *ctx, const struct valhall_stats *stats,
+                      const struct pan_shader_info *info)
 {
    report_regs(f, stats->registers_used, stats->uniforms_used);
    fprintf(f, "Code size:         %u bytes\n", stats->code_size);
@@ -7215,8 +7219,13 @@ valhall_stats_verbose(FILE *f, const bi_context *ctx, const struct valhall_stats
    fprintf(f, "\nA = Arithmetic, LS = Load/Store, V = Varying, T = Texture\n");
 }
 
+static const char *bool_str(bool x) {
+   return x ? "true" : "false";
+}
+
 static void
-pan_stats_verbose(FILE *f, const char *prefix, const bi_context *ctx, const struct pan_stats *stats)
+pan_stats_verbose(FILE *f, const char *prefix, const bi_context *ctx, const struct pan_stats *stats,
+                  const struct pan_shader_info *info)
 {
    const struct pan_model *model = pan_get_model(ctx->inputs->gpu_id, ctx->inputs->gpu_variant);
    unsigned arch = (ctx->arch > 12) ? 0 : ctx->arch;
@@ -7234,15 +7243,26 @@ pan_stats_verbose(FILE *f, const char *prefix, const bi_context *ctx, const stru
       fprintf(f, "Architecture: %s\n", archname[arch]);
    switch (stats->isa) {
    case PAN_STAT_VALHALL:
-      valhall_stats_verbose(f, ctx, &stats->valhall);
+      valhall_stats_verbose(f, ctx, &stats->valhall, info);
       break;
    case PAN_STAT_BIFROST:
-      bifrost_stats_verbose(f, ctx, &stats->bifrost);
+      bifrost_stats_verbose(f, ctx, &stats->bifrost, info);
       break;
    default:
       pan_stats_fprintf(f, prefix, stats);
       break;
    }
    fprintf(f, "\n");
-   fprintf(f, "Shader properties:\n\n");
+   fprintf(f, "Shader properties\n");
+   fprintf(f, "=================\n");
+   fprintf(f, "Contains barrier: %s\n", bool_str(info->contains_barrier));
+   switch (info->stage) {
+   case MESA_SHADER_FRAGMENT:
+      fprintf(f, "Has side-effects: %s\n", bool_str(info->fs.sidefx));
+      fprintf(f, "Modifies coverage: %s\n", bool_str(info->fs.writes_coverage));
+      break;
+   default:
+      break;
+   }
+   fprintf(f, "\n");
 }
