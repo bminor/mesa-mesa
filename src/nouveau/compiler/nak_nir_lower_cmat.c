@@ -962,5 +962,6 @@ nak_nir_lower_cmat(nir_shader *nir, const struct nak_compiler *nak)
          progress = true;
    }
 
+   _mesa_hash_table_destroy(type_mapping, NULL);
    return progress;
 }
