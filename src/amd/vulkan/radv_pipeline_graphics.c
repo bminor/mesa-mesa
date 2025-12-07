@@ -2894,8 +2894,9 @@ radv_graphics_shaders_compile(struct radv_device *device, struct vk_pipeline_cac
          NIR_PASS(update_info, stages[MESA_SHADER_FRAGMENT].nir, nir_lower_poly_line_smooth,
                   RADV_NUM_SMOOTH_AA_SAMPLES);
 
-      if (!gfx_state->ps.has_epilog)
-         radv_nir_remap_color_attachment(stages[MESA_SHADER_FRAGMENT].nir, gfx_state);
+      if (!gfx_state->ps.has_epilog) {
+         NIR_PASS(update_info, stages[MESA_SHADER_FRAGMENT].nir, radv_nir_remap_color_attachment, gfx_state);
+      }
 
       NIR_PASS(update_info, stages[MESA_SHADER_FRAGMENT].nir, radv_nir_lower_fs_input_attachment);
 

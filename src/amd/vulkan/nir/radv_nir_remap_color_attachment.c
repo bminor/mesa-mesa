@@ -1,24 +1,7 @@
 /*
  * Copyright © 2024 Valve Corporation
  *
- * Permission is hereby granted, free of charge, to any person obtaining a
- * copy of this software and associated documentation files (the "Software"),
- * to deal in the Software without restriction, including without limitation
- * the rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons to whom the
- * Software is furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice (including the next
- * paragraph) shall be included in all copies or substantial portions of the
- * Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
- * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
- * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
- * IN THE SOFTWARE.
+ * SPDX-License-Identifier: MIT
  */
 
 #include "nir/nir.h"
@@ -44,10 +27,13 @@ remap_color_attachment(nir_builder *b, nir_intrinsic_instr *intrin, void *state)
    const unsigned location = io_sem.location - FRAG_RESULT_DATA0;
    if (color_remap[location] == MESA_VK_ATTACHMENT_UNUSED) {
       nir_instr_remove(&intrin->instr);
-      return false;
+      return true;
    }
 
    const unsigned new_location = FRAG_RESULT_DATA0 + color_remap[location];
+
+   if (io_sem.location == new_location)
+      return false;
 
    io_sem.location = new_location;
 
@@ -68,5 +54,5 @@ radv_nir_remap_color_attachment(nir_shader *shader, const struct radv_graphics_s
          color_remap[gfx_state->ps.epilog.color_map[i]] = i;
    }
 
-   return nir_shader_intrinsics_pass(shader, remap_color_attachment, nir_metadata_all, &color_remap);
+   return nir_shader_intrinsics_pass(shader, remap_color_attachment, nir_metadata_control_flow, &color_remap);
 }
