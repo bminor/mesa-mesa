@@ -49,6 +49,37 @@ info on what was updated.
 Workarounds
 ===========
 
+KK_WORKAROUND_6
+---------------
+| macOS version: 26.0.1
+| Metal ticket: Not reported
+| Metal ticket status:
+| CTS test failure: ``dEQP-VK.spirv_assembly.instruction.*.float16.opcompositeinsert.*``
+| Comments:
+
+Metal does not respect its own Memory Coherency Model (MSL spec 4.8). From
+the spec:
+``By default, memory in the device address space has threadgroup coherence.``
+
+If we have a single thread compute dispatch so that we do (simplified version):
+
+.. code-block:: c
+
+   for (...) {
+      value = ssbo_data[0]; // ssbo_data is a device buffer
+      ...
+      ssbo_data[0] = new_value;
+   }
+
+``ssbo_data[0]`` will not correctly store/load the values so the value
+written in iteration 0, will not be available in iteration 1. The workaround
+to this issue is marking the device memory pointer through which the memory
+is accessed as coherent so that the value is stored and loaded correctly.
+Hopefully this does not affect performance much.
+
+| Log:
+| 2025-12-08: Workaround implemented and reported to Apple
+
 KK_WORKAROUND_5
 ---------------
 | macOS version: 26.0.1

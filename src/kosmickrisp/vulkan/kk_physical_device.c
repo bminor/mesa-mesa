@@ -74,8 +74,7 @@ kk_get_device_extensions(const struct kk_instance *instance,
       .KHR_separate_depth_stencil_layouts = true,
       .KHR_shader_atomic_int64 = false,
       .KHR_shader_float_controls = true,
-      .KHR_shader_float16_int8 =
-         false, /* TODO_KOSMICKRISP shaderInt8 shaderFloat16 */
+      .KHR_shader_float16_int8 = true,
       .KHR_shader_subgroup_extended_types = true,
       .KHR_spirv_1_4 = true,
       .KHR_timeline_semaphore = true,
@@ -214,25 +213,10 @@ kk_get_device_features(
       .samplerMirrorClampToEdge = true,
       .scalarBlockLayout = true,
       .separateDepthStencilLayouts = true,
-      /* TODO_KOSMICKRISP shaderFloat16
-       * Failing:
-       * dEQP-VK.spirv_assembly.instruction.*.float16.opcompositeinsert.*
-       * dEQP-VK.memory_model.shared.16bit.nested_structs_arrays.*
-       */
-      .shaderFloat16 = false,
+      .shaderFloat16 = true,
       .shaderInputAttachmentArrayDynamicIndexing = true,
       .shaderInputAttachmentArrayNonUniformIndexing = true,
-      /* TODO_KOSMICKRISP shaderInt8
-       * Multiple MSL compiler crashes if we enable shaderInt8, need to
-       * understand why and a workaround:
-       * dEQP-VK.memory_model.shared.8bit.vector_types.9
-       * dEQP-VK.memory_model.shared.8bit.basic_types.8
-       * dEQP-VK.memory_model.shared.8bit.basic_arrays.2
-       * dEQP-VK.memory_model.shared.8bit.arrays_of_arrays.1
-       * dEQP-VK.memory_model.shared.8bit.arrays_of_arrays.8
-       * Probably more
-       */
-      .shaderInt8 = false,
+      .shaderInt8 = true,
       .shaderOutputLayer = true,
       .shaderOutputViewportIndex = true,
       .shaderSampledImageArrayNonUniformIndexing = true,
