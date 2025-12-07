@@ -874,7 +874,9 @@ void pvr_pack_clear_vdm_state(const struct pvr_device_info *const dev_info,
       assert(layer_count);
    } else {
       needs_instance_count = false;
-      assert(layer_count == 1);
+      /* FIXME: CTS dynamic rendering tests need RTA emulation for multi-layered
+       * clears.
+       */
    }
 
    pvr_calculate_vertex_cam_size(dev_info,
