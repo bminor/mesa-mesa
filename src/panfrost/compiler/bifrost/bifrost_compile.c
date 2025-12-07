@@ -6525,10 +6525,17 @@ compare_u32(const void* a, const void* b, void* _)
 static bi_context *
 bi_compile_variant_nir(nir_shader *nir,
                        const struct pan_compile_inputs *inputs,
-                       struct util_dynarray *binary, struct bi_shader_info info,
+                       struct util_dynarray *binary, struct pan_shader_info *pinfo,
                        struct pan_stats *stats, enum bi_idvs_mode idvs)
 {
    bi_context *ctx = rzalloc(NULL, bi_context);
+   struct bi_shader_info info = {
+      .push = &pinfo->push,
+      .bifrost = &pinfo->bifrost,
+      .tls_size = pinfo->tls_size,
+      .push_offset = pinfo->push.count,
+      .init_fau_consts_count = pinfo->fau_consts_count,
+   };
 
    /* There may be another program in the dynarray, start at the end */
    unsigned offset = binary->size;
@@ -6828,14 +6835,6 @@ bi_compile_variant(nir_shader *nir,
                    struct util_dynarray *binary, struct pan_shader_info *info,
                    enum bi_idvs_mode idvs)
 {
-   struct bi_shader_info local_info = {
-      .push = &info->push,
-      .bifrost = &info->bifrost,
-      .tls_size = info->tls_size,
-      .push_offset = info->push.count,
-      .init_fau_consts_count = info->fau_consts_count,
-   };
-
    unsigned offset = binary->size;
 
    /* If there is no position shader (gl_Position is not written), then
@@ -6854,7 +6853,7 @@ bi_compile_variant(nir_shader *nir,
       idvs == BI_IDVS_VARYING ? &info->stats_idvs_varying : &info->stats;
 
    bi_context *ctx =
-      bi_compile_variant_nir(nir, inputs, binary, local_info, stats, idvs);
+      bi_compile_variant_nir(nir, inputs, binary, info, stats, idvs);
 
    info->fau_consts_count = ctx->fau_consts_count;
 
