@@ -3215,8 +3215,24 @@ static void pvr_perform_start_of_render_attachment_clear(
    const struct pvr_renderpass_hwsetup_render *hw_render =
       pvr_pass_info_get_hw_render(info, hw_render_idx);
    VkImageAspectFlags image_aspect;
+   const struct pvr_image *image;
    struct pvr_image_view *iview;
-   uint32_t view_idx;
+   VkFormat vk_format;
+   uint32_t iview_idx;
+
+   if (is_depth_stencil) {
+      assert(hw_render->ds_attach_idx != VK_ATTACHMENT_UNUSED);
+      iview_idx = hw_render->ds_attach_idx;
+   } else {
+      assert(index != VK_ATTACHMENT_UNUSED);
+      iview_idx = hw_render->color_init[index].index;
+   }
+
+   assert(iview_idx != VK_ATTACHMENT_UNUSED);
+
+   iview = info->attachments[iview_idx];
+   image = pvr_image_view_get_image(iview);
+   vk_format = image->vk.format;
 
    if (is_depth_stencil) {
       bool stencil_clear;
@@ -3224,15 +3240,12 @@ static void pvr_perform_start_of_render_attachment_clear(
       bool is_stencil;
       bool is_depth;
 
-      assert(hw_render->ds_attach_idx != VK_ATTACHMENT_UNUSED);
       assert(index == 0);
 
-      view_idx = hw_render->ds_attach_idx;
-
-      is_depth = vk_format_has_depth(pass->attachments[view_idx].vk_format);
-      is_stencil = vk_format_has_stencil(pass->attachments[view_idx].vk_format);
       depth_clear = hw_render->depth_init == VK_ATTACHMENT_LOAD_OP_CLEAR;
       stencil_clear = hw_render->stencil_init == VK_ATTACHMENT_LOAD_OP_CLEAR;
+      is_stencil = vk_format_has_stencil(vk_format);
+      is_depth = vk_format_has_depth(vk_format);
 
       /* Attempt to clear the ds attachment. Do not erroneously discard an
        * attachment that has no depth clear but has a stencil attachment.
@@ -3242,11 +3255,7 @@ static void pvr_perform_start_of_render_attachment_clear(
          return;
    } else if (hw_render->color_init[index].op != VK_ATTACHMENT_LOAD_OP_CLEAR) {
       return;
-   } else {
-      view_idx = hw_render->color_init[index].index;
    }
-
-   iview = info->attachments[view_idx];
 
    /* FIXME: It would be nice if this function and pvr_sub_cmd_gfx_job_init()
     * were doing the same check (even if it's just an assert) to determine if a
@@ -3259,7 +3268,7 @@ static void pvr_perform_start_of_render_attachment_clear(
       return;
    }
 
-   image_aspect = vk_format_aspects(pass->attachments[view_idx].vk_format);
+   image_aspect = vk_format_aspects(vk_format);
    assert((image_aspect & ~dsc_aspect_flags) == 0);
 
    if (image_aspect & VK_IMAGE_ASPECT_DEPTH_BIT &&
@@ -3276,7 +3285,7 @@ static void pvr_perform_start_of_render_attachment_clear(
       VkClearAttachment clear_attachment = {
          .aspectMask = image_aspect,
          .colorAttachment = index,
-         .clearValue = info->clear_values[view_idx],
+         .clearValue = info->clear_values[iview_idx],
       };
       VkClearRect rect = {
          .rect = info->render_area,
@@ -3290,7 +3299,7 @@ static void pvr_perform_start_of_render_attachment_clear(
          .layerCount = info->rstate->layers,
       };
 
-      assert(view_idx < info->clear_value_count);
+      assert(iview_idx < info->clear_value_count);
 
       pvr_clear_attachments_render_init(cmd_buffer, &clear_attachment, &rect);
 
