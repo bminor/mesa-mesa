@@ -1789,6 +1789,14 @@ nir_deref_mode_is_in_set(const nir_deref_instr *deref, nir_variable_mode modes)
 
 static inline nir_deref_instr *nir_src_as_deref(nir_src src);
 
+/** Returns true if deref->arr is valid */
+static inline bool
+nir_deref_instr_is_arr(const nir_deref_instr *deref)
+{
+   return deref->deref_type == nir_deref_type_array ||
+          deref->deref_type == nir_deref_type_ptr_as_array;
+}
+
 static inline nir_deref_instr *
 nir_deref_instr_parent(const nir_deref_instr *instr)
 {
