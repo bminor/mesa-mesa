@@ -1719,14 +1719,17 @@ radv_graphics_shaders_link_varyings(struct radv_shader_stage *stages, enum amd_g
 
       /* Scalarize all I/O, because nir_opt_varyings and nir_opt_vectorize_io expect all I/O to be scalarized. */
       nir_variable_mode sca_mode = nir_var_shader_in;
+      bool sca_progress;
       if (s != MESA_SHADER_FRAGMENT)
          sca_mode |= nir_var_shader_out;
 
-      NIR_PASS(_, shader, nir_lower_io_to_scalar, sca_mode, NULL, NULL);
+      NIR_PASS(sca_progress, shader, nir_lower_io_to_scalar, sca_mode, NULL, NULL);
 
-      /* Eliminate useless vec->mov copies resulting from scalarization. */
-      NIR_PASS(_, shader, nir_opt_copy_prop);
-      NIR_PASS(_, shader, nir_opt_constant_folding);
+      if (sca_progress) {
+         /* Eliminate useless vec->mov copies resulting from scalarization. */
+         NIR_PASS(_, shader, nir_opt_copy_prop);
+         NIR_PASS(_, shader, nir_opt_constant_folding);
+      }
    }
 
    int highest_changed_producer = -1;
