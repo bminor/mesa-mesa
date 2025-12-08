@@ -479,9 +479,171 @@ void panvk_per_arch(cmd_flush_draws)(struct panvk_cmd_buffer *cmdbuf);
          cs_case(__b, SB_ITER(__val))
 #endif
 
-void panvk_per_arch(cs_next_iter_sb)(struct panvk_cmd_buffer *cmdbuf,
-                                     enum panvk_subqueue_id subqueue,
-                                     struct cs_index scratch_regs);
+#if PAN_ARCH >= 11
+struct cs_iter_sb_update_ctx {
+   struct cs_builder *b;
+   uint16_t all_iters_mask;
+
+   struct {
+      struct cs_index next_sb;
+      struct cs_index sb_mask;
+   } regs;
+};
+
+static inline struct cs_iter_sb_update_ctx
+cs_iter_sb_update_start(struct panvk_cmd_buffer *cmdbuf,
+                        enum panvk_subqueue_id subqueue,
+                        struct cs_index scratch_regs)
+{
+   struct panvk_device *dev = to_panvk_device(cmdbuf->vk.base.device);
+   struct cs_builder *b = panvk_get_cs_builder(cmdbuf, subqueue);
+   struct cs_index next_sb = cs_extract32(b, scratch_regs, 0);
+   struct cs_iter_sb_update_ctx ctx = {
+      .b = b,
+      .all_iters_mask = dev->csf.sb.all_iters_mask,
+      .regs = {
+         .next_sb = next_sb,
+         .sb_mask = cs_extract32(b, scratch_regs, 1),
+      },
+   };
+
+   cs_next_sb_entry(b, next_sb, MALI_CS_SCOREBOARD_TYPE_ENDPOINT,
+                    MALI_CS_NEXT_SB_ENTRY_FORMAT_INDEX);
+
+   return ctx;
+}
+
+static inline void
+cs_iter_sb_update_end(struct cs_iter_sb_update_ctx *ctx)
+{
+   struct cs_builder *b = ctx->b;
+   struct cs_index next_sb = ctx->regs.next_sb;
+   struct cs_index sb_mask = ctx->regs.sb_mask;
+   uint16_t all_iters_mask = ctx->all_iters_mask;
+
+   /* Setup indirect scoreboard wait mask now for indirect defer */
+   cs_move32_to(b, sb_mask, 0);
+   cs_bit_set32(b, sb_mask, sb_mask, next_sb);
+   cs_set_state(b, MALI_CS_SET_STATE_TYPE_SB_MASK_WAIT, sb_mask);
+
+   /* Prevent direct re-use of the current SB to avoid conflict between
+    * wait(current),signal(next) (can't wait on an SB we signal).
+    */
+   cs_move32_to(b, sb_mask, all_iters_mask);
+   cs_bit_clear32(b, sb_mask, sb_mask, next_sb);
+   cs_set_state(b, MALI_CS_SET_STATE_TYPE_SB_MASK_STREAM, sb_mask);
+
+   ctx->b = NULL;
+}
+
+#define cs_iter_sb_update(__cmdbuf, __subq, __scratch_regs, __upd_ctx)         \
+   for (struct cs_iter_sb_update_ctx __upd_ctx =                               \
+           cs_iter_sb_update_start(__cmdbuf, __subq, __scratch_regs);          \
+        __upd_ctx.b; cs_iter_sb_update_end(&__upd_ctx))
+
+#else
+struct cs_iter_sb_update_ctx {
+   struct cs_builder *b;
+   uint8_t cur_sb;
+   uint8_t next_sb;
+
+   struct {
+      struct cs_index next_sb;
+      struct cs_index cmp_scratch;
+   } regs;
+};
+
+static inline struct cs_iter_sb_update_ctx
+cs_iter_sb_update_start(struct panvk_cmd_buffer *cmdbuf,
+                        enum panvk_subqueue_id subqueue,
+                        struct cs_index scratch_regs)
+{
+   struct panvk_device *dev = to_panvk_device(cmdbuf->vk.base.device);
+   struct cs_builder *b = panvk_get_cs_builder(cmdbuf, subqueue);
+   struct cs_index next_sb = cs_extract32(b, scratch_regs, 0);
+   struct cs_index cmp_scratch = cs_extract32(b, scratch_regs, 1);
+   struct cs_iter_sb_update_ctx ctx = {
+      .b = b,
+      .regs = {
+         .next_sb = next_sb,
+         .cmp_scratch = cmp_scratch,
+      },
+   };
+
+   cs_load32_to(b, next_sb, cs_subqueue_ctx_reg(b),
+                offsetof(struct panvk_cs_subqueue_context, iter_sb));
+
+   /* Select next scoreboard entry and wrap around if we get past the limit */
+   cs_add32(b, next_sb, next_sb, 1);
+   cs_add32(b, cmp_scratch, next_sb, -SB_ITER(dev->csf.sb.iter_count));
+
+   cs_if(b, MALI_CS_CONDITION_GEQUAL, cmp_scratch) {
+      cs_move32_to(b, next_sb, SB_ITER(0));
+   }
+
+   cs_store32(b, next_sb, cs_subqueue_ctx_reg(b),
+              offsetof(struct panvk_cs_subqueue_context, iter_sb));
+   cs_flush_stores(b);
+
+   return ctx;
+}
+
+static inline void
+cs_iter_sb_update_end(struct cs_iter_sb_update_ctx *ctx)
+{
+   ctx->b = NULL;
+}
+
+static void
+cs_iter_sb_update_first_case(struct cs_iter_sb_update_ctx *ctx)
+{
+   ctx->cur_sb = PANVK_SB_ITER_COUNT - 1;
+   ctx->next_sb = 0;
+}
+
+static void
+cs_iter_sb_update_next_case(struct cs_iter_sb_update_ctx *ctx)
+{
+   ctx->cur_sb = (ctx->cur_sb + 1) % PANVK_SB_ITER_COUNT;
+   ctx->next_sb++;
+}
+
+static inline bool
+cs_iter_sb_update_case_preamble(struct cs_iter_sb_update_ctx *ctx)
+{
+   struct cs_builder *b = ctx->b;
+
+   cs_wait_slot(b, SB_ITER(ctx->next_sb));
+   cs_select_endpoint_sb(b, SB_ITER(ctx->next_sb));
+   return false;
+}
+
+#define cs_iter_sb_update_case(__upd_ctx)                                      \
+   cs_case(__upd_ctx.b, SB_ITER(__upd_ctx.next_sb))                            \
+      for (bool __done = cs_iter_sb_update_case_preamble(&__upd_ctx); !__done; \
+           __done = true)
+
+#define cs_iter_sb_update(__cmdbuf, __subq, __scratch_regs, __upd_ctx)         \
+   for (struct cs_iter_sb_update_ctx __upd_ctx =                               \
+           cs_iter_sb_update_start(__cmdbuf, __subq, __scratch_regs);          \
+        __upd_ctx.b; cs_iter_sb_update_end(&__upd_ctx))                        \
+      cs_match((__upd_ctx).b, __upd_ctx.regs.next_sb,                          \
+               __upd_ctx.regs.cmp_scratch)                                     \
+         for (cs_iter_sb_update_first_case(&__upd_ctx);                        \
+              __upd_ctx.next_sb < PANVK_SB_ITER_COUNT;                         \
+              cs_iter_sb_update_next_case(&__upd_ctx))                         \
+            cs_iter_sb_update_case(__upd_ctx)
+
+#endif
+
+static inline void
+cs_next_iter_sb(struct panvk_cmd_buffer *cmdbuf,
+                enum panvk_subqueue_id subqueue, struct cs_index scratch_regs)
+{
+   cs_iter_sb_update(cmdbuf, subqueue, scratch_regs, _) {
+      /* We only want to move to the new scoreboard, so nothing to do here. */
+   }
+}
 
 enum panvk_barrier_stage {
    PANVK_BARRIER_STAGE_FIRST,

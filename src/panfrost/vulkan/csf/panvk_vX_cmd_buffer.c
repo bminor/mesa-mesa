@@ -768,65 +768,6 @@ panvk_per_arch(CmdPipelineBarrier2)(VkCommandBuffer commandBuffer,
    }
 }
 
-#if PAN_ARCH >= 11
-void
-panvk_per_arch(cs_next_iter_sb)(struct panvk_cmd_buffer *cmdbuf,
-                                enum panvk_subqueue_id subqueue,
-                                struct cs_index scratch_regs)
-{
-   struct panvk_device *dev = to_panvk_device(cmdbuf->vk.base.device);
-   struct cs_builder *b = panvk_get_cs_builder(cmdbuf, subqueue);
-   struct cs_index iter_sb = cs_extract32(b, scratch_regs, 0);
-   struct cs_index sb_mask = cs_extract32(b, scratch_regs, 1);
-
-   /* Wait for scoreboard to be available and select the next scoreboard entry */
-   cs_next_sb_entry(b, iter_sb, MALI_CS_SCOREBOARD_TYPE_ENDPOINT,
-                    MALI_CS_NEXT_SB_ENTRY_FORMAT_INDEX);
-
-   /* Setup indirect scoreboard wait mask now for indirect defer */
-   cs_move32_to(b, sb_mask, 0);
-   cs_bit_set32(b, sb_mask, sb_mask, iter_sb);
-   cs_set_state(b, MALI_CS_SET_STATE_TYPE_SB_MASK_WAIT, sb_mask);
-
-   /* Prevent direct re-use of the current SB to avoid conflict between
-    * wait(current),signal(next) (can't wait on an SB we signal).
-    */
-   cs_move32_to(b, sb_mask, dev->csf.sb.all_iters_mask);
-   cs_bit_clear32(b, sb_mask, sb_mask, iter_sb);
-   cs_set_state(b, MALI_CS_SET_STATE_TYPE_SB_MASK_STREAM, sb_mask);
-}
-#else
-void
-panvk_per_arch(cs_next_iter_sb)(struct panvk_cmd_buffer *cmdbuf,
-                                enum panvk_subqueue_id subqueue,
-                                struct cs_index scratch_regs)
-{
-   struct panvk_device *dev = to_panvk_device(cmdbuf->vk.base.device);
-   struct cs_builder *b = panvk_get_cs_builder(cmdbuf, subqueue);
-   struct cs_index iter_sb = cs_extract32(b, scratch_regs, 0);
-   struct cs_index cmp_scratch = cs_extract32(b, scratch_regs, 1);
-
-   cs_load32_to(b, iter_sb, cs_subqueue_ctx_reg(b),
-                offsetof(struct panvk_cs_subqueue_context, iter_sb));
-
-   /* Select next scoreboard entry and wrap around if we get past the limit */
-   cs_add32(b, iter_sb, iter_sb, 1);
-   cs_add32(b, cmp_scratch, iter_sb, -SB_ITER(dev->csf.sb.iter_count));
-   cs_if(b, MALI_CS_CONDITION_GEQUAL, cmp_scratch) {
-      cs_move32_to(b, iter_sb, SB_ITER(0));
-   }
-
-   cs_match_iter_sb(b, x, iter_sb, cmp_scratch) {
-      cs_wait_slot(b, SB_ITER(x));
-      cs_select_endpoint_sb(b, SB_ITER(x));
-   }
-
-   cs_store32(b, iter_sb, cs_subqueue_ctx_reg(b),
-              offsetof(struct panvk_cs_subqueue_context, iter_sb));
-   cs_flush_stores(b);
-}
-#endif
-
 static struct cs_buffer
 alloc_cs_buffer(void *cookie)
 {

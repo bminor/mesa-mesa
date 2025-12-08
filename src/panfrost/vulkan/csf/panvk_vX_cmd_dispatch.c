@@ -277,9 +277,8 @@ cmd_dispatch(struct panvk_cmd_buffer *cmdbuf, struct panvk_dispatch_info *info)
       }
    }
 
-   struct cs_index next_iter_sb_scratch = cs_scratch_reg_tuple(b, 0, 2);
-   panvk_per_arch(cs_next_iter_sb)(cmdbuf, PANVK_SUBQUEUE_COMPUTE,
-                                   next_iter_sb_scratch);
+   cs_next_iter_sb(cmdbuf, PANVK_SUBQUEUE_COMPUTE,
+                   cs_scratch_reg_tuple(b, 0, 2));
 
    if (indirect) {
       /* Use run_compute with a set task axis instead of run_compute_indirect as
