@@ -223,17 +223,14 @@ lvp_CreateImage(VkDevice _device,
                 const VkAllocationCallbacks *pAllocator,
                 VkImage *pImage)
 {
-#if !DETECT_OS_ANDROID
    VK_FROM_HANDLE(lvp_device, device, _device);
-   const VkImageSwapchainCreateInfoKHR *swapchain_info =
-      vk_find_struct_const(pCreateInfo->pNext, IMAGE_SWAPCHAIN_CREATE_INFO_KHR);
-   if (swapchain_info && swapchain_info->swapchain != VK_NULL_HANDLE) {
+
+   if (wsi_common_is_swapchain_image(pCreateInfo)) {
       return wsi_common_create_swapchain_image(&lvp_device_physical(device)->wsi_device,
                                                pCreateInfo,
-                                               swapchain_info->swapchain,
                                                pImage);
    }
-#endif
+
    return lvp_image_create(_device, pCreateInfo, pAllocator,
                            pImage);
 }

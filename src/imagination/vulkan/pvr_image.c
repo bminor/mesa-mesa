@@ -162,16 +162,11 @@ VkResult pvr_CreateImage(VkDevice _device,
    VK_FROM_HANDLE(pvr_device, device, _device);
    struct pvr_image *image;
 
-#if defined(PVR_USE_WSI_PLATFORM)
-   const VkImageSwapchainCreateInfoKHR *swapchain_info =
-      vk_find_struct_const(pCreateInfo->pNext, IMAGE_SWAPCHAIN_CREATE_INFO_KHR);
-   if (swapchain_info && swapchain_info->swapchain != VK_NULL_HANDLE) {
+   if (wsi_common_is_swapchain_image(pCreateInfo)) {
       return wsi_common_create_swapchain_image(&device->pdevice->wsi_device,
                                                pCreateInfo,
-                                               swapchain_info->swapchain,
                                                pImage);
    }
-#endif
 
    image =
       vk_image_create(&device->vk, pCreateInfo, pAllocator, sizeof(*image));

@@ -309,7 +309,6 @@ wsi_common_is_swapchain_image(const VkImageCreateInfo *pCreateInfo)
 VkResult
 wsi_common_create_swapchain_image(const struct wsi_device *wsi,
                                   const VkImageCreateInfo *pCreateInfo,
-                                  VkSwapchainKHR _swapchain,
                                   VkImage *pImage);
 
 VkImageUsageFlags

@@ -604,18 +604,8 @@ kk_CreateImage(VkDevice _device, const VkImageCreateInfo *pCreateInfo,
    struct kk_image *image;
    VkResult result;
 
-#ifdef KK_USE_WSI_PLATFORM
-   /* Ignore swapchain creation info on Android. Since we don't have an
-    * implementation in Mesa, we're guaranteed to access an Android object
-    * incorrectly.
-    */
-   const VkImageSwapchainCreateInfoKHR *swapchain_info =
-      vk_find_struct_const(pCreateInfo->pNext, IMAGE_SWAPCHAIN_CREATE_INFO_KHR);
-   if (swapchain_info && swapchain_info->swapchain != VK_NULL_HANDLE) {
-      return wsi_common_create_swapchain_image(
-         &pdev->wsi_device, pCreateInfo, swapchain_info->swapchain, pImage);
-   }
-#endif
+   if (wsi_common_is_swapchain_image(pCreateInfo))
+      return wsi_common_create_swapchain_image(&pdev->wsi_device, pCreateInfo, pImage);
 
    image = vk_zalloc2(&dev->vk.alloc, pAllocator, sizeof(*image), 8,
                       VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);

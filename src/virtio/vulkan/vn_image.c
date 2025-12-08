@@ -689,7 +689,7 @@ vn_CreateImage(VkDevice device,
 #else
       result = wsi_common_create_swapchain_image(
          &dev->physical_device->wsi_device, pCreateInfo,
-         swapchain_info->swapchain, (VkImage *)&img);
+         (VkImage *)&img);
 #endif
    } else {
       struct vn_image_create_info local_info;
