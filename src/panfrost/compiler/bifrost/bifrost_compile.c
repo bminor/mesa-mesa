@@ -46,7 +46,7 @@
 #include "bifrost_nir.h"
 #include "compiler.h"
 
-static void pan_stats_verbose(FILE *f, const char *prefix, const bi_context *ctx,
+static void pan_stats_verbose(FILE *f, const char *prefix, bi_context *ctx,
                               const struct pan_stats *stats,
                               const struct pan_shader_info *info);
 
@@ -5411,17 +5411,10 @@ bi_gather_stats(bi_context *ctx, unsigned size, struct bifrost_stats *out)
 }
 
 static void
-va_gather_stats(bi_context *ctx, unsigned size, struct valhall_stats *out)
+va_count_stats(bi_context *ctx, unsigned nr_ins, unsigned size,
+               const struct va_stats *counts,
+               struct valhall_stats *out)
 {
-   unsigned nr_ins = 0;
-   struct va_stats counts = {0};
-
-   /* Count instructions */
-   bi_foreach_instr_global(ctx, I) {
-      nr_ins++;
-      va_count_instr_stats(I, &counts);
-   }
-
    const struct pan_model *model =
       pan_get_model(ctx->inputs->gpu_id, ctx->inputs->gpu_variant);
 
@@ -5434,19 +5427,19 @@ va_gather_stats(bi_context *ctx, unsigned size, struct valhall_stats *out)
    struct valhall_stats stats_abs = {
       .instrs = nr_ins,
       .code_size = size,
-      .fma = ((float)counts.fma),
-      .cvt = ((float)counts.cvt),
-      .sfu = ((float)counts.sfu),
-      .v = ((float)counts.v),
-      .t = ((float)counts.t),
-      .ls = ((float)counts.ls),
+      .fma = ((float)counts->fma),
+      .cvt = ((float)counts->cvt),
+      .sfu = ((float)counts->sfu),
+      .v = ((float)counts->v),
+      .t = ((float)counts->t),
+      .ls = ((float)counts->ls),
       .threads = (ctx->info.work_reg_count <= 32) ? 2 : 1,
       .loops = ctx->loop_count,
       .spills = ctx->spills,
       .fills = ctx->fills,
       .spill_cost = ctx->spill_cost,
-      .registers_used = util_bitcount64(counts.reg_mask),
-      .uniforms_used = counts.nr_fau_uniforms,
+      .registers_used = util_bitcount64(counts->reg_mask),
+      .uniforms_used = counts->nr_fau_uniforms,
    };
    struct valhall_stats stats = stats_abs;
    stats.fma /= model->rates.fma;
@@ -5462,6 +5455,118 @@ va_gather_stats(bi_context *ctx, unsigned size, struct valhall_stats *out)
    /* Calculate the bound */
    out->cycles = MAX2(MAX3(stats.fma, stats.cvt, stats.sfu),
                       MAX3(stats.v, stats.t, stats.ls));
+}
+
+static unsigned
+va_gather_stats_block(bi_block *block, struct va_stats *counts)
+{
+   unsigned nr_ins = 0;
+
+   bi_foreach_instr_in_block(block, I) {
+      nr_ins++;
+      va_count_instr_stats(I, counts);
+   }
+   return nr_ins;
+}
+
+/*
+ * Gather stats for a minimum length path through the shader.
+ */
+static unsigned
+va_gather_min_path_stats(bi_block *block, struct va_stats *counts)
+{
+   struct va_stats min_counts;
+   struct va_stats save_counts = *counts;
+   unsigned min_ins = 0;
+   unsigned nr_ins;
+
+   bi_foreach_successor(block, next) {
+      // if following a path leads to a loop, do not do it
+      if (bi_block_dominates(next, block)) {
+         continue;
+      }
+      nr_ins = va_gather_min_path_stats(next, counts);
+      if (min_ins == 0 || nr_ins < min_ins) {
+         min_ins = nr_ins;
+         min_counts = *counts;
+      }
+      *counts = save_counts;
+   }
+   if (min_ins != 0) {
+      *counts = min_counts;
+   }
+   nr_ins = min_ins + va_gather_stats_block(block, counts);
+   return nr_ins;
+}
+
+/*
+ * Gather stats for a maximum length path through the shader.
+ * This is slightly tricky because we do want to count loops,
+ * but at most once. If we see we've visited a block already,
+ * bail out.
+ */
+static unsigned
+va_gather_max_path_stats(bi_block *block, struct va_stats *counts, BITSET_WORD *visited)
+{
+   struct va_stats max_counts;
+   struct va_stats save_counts = *counts;
+   unsigned max_ins = 0;
+   unsigned nr_ins;
+
+   BITSET_SET(visited, block->index);
+   bi_foreach_successor(block, next) {
+      // if we've already visited this block, skip it
+      if (BITSET_TEST(visited, next->index)) {
+         continue;
+      }
+      nr_ins = va_gather_max_path_stats(next, counts, visited);
+      if (nr_ins > max_ins) {
+         max_ins = nr_ins;
+         max_counts = *counts;
+      }
+      *counts = save_counts;
+   }
+   if (max_ins != 0) {
+      *counts = max_counts;
+   }
+   nr_ins = max_ins + va_gather_stats_block(block, counts);
+   return nr_ins;
+}
+
+enum gather_stats_mode {
+   GATHER_STATS_FULL = 0,
+   GATHER_STATS_MIN,
+   GATHER_STATS_MAX
+};
+
+static void
+va_gather_stats(bi_context *ctx, unsigned size, struct valhall_stats *out,
+                enum gather_stats_mode mode)
+{
+   unsigned nr_ins = 0;
+   struct va_stats counts = {0};
+   bi_block *first_block = bi_start_block(&ctx->blocks);
+   BITSET_WORD *visited;
+
+   /* Count instructions */
+   switch (mode) {
+   case GATHER_STATS_FULL:
+      bi_foreach_instr_global(ctx, I) {
+         nr_ins++;
+         va_count_instr_stats(I, &counts);
+      }
+      break;
+   case GATHER_STATS_MIN:
+      nr_ins = va_gather_min_path_stats(first_block, &counts);
+      break;
+   case GATHER_STATS_MAX:
+      visited = BITSET_RZALLOC(NULL, ctx->num_blocks);
+      nr_ins = va_gather_max_path_stats(first_block, &counts, visited);
+      ralloc_free(visited);
+      break;
+   }
+   /* convert to stats */
+   va_count_stats(ctx, nr_ins, size, &counts, out);
 }
 
 /*
@@ -6843,13 +6948,17 @@ bi_compile_variant_nir(nir_shader *nir,
       fflush(stdout);
    }
 
+   /* gather instruction statistics */
    if (ctx->arch >= 9) {
       stats->isa = PAN_STAT_VALHALL;
-      va_gather_stats(ctx, binary->size - offset, &stats->valhall);
+      va_gather_stats(ctx, binary->size - offset, &stats->valhall, GATHER_STATS_FULL);
    } else {
       stats->isa = PAN_STAT_BIFROST;
       bi_gather_stats(ctx, binary->size - offset, &stats->bifrost);
    }
+
+   /* update info struct */
+   pan_shader_update_info(pinfo, ctx->nir, inputs);
 
    if ((bifrost_debug & (BIFROST_DBG_SHADERDB|BIFROST_DBG_STATSFULL))
        && !skip_internal) {
@@ -7167,12 +7276,24 @@ do_report_pipes(FILE *f, const char *prefix, unsigned n, const char *statname[],
       fprintf(f, " %6.3f", statval[i]);
       if (statval[i] > limit_val) {
          limit_idx = i;
+         limit_val = statval[i];
       }
    }
-   fprintf(f, " %6s\n", statname[limit_idx]);
+   /* print the first thing that matches the bound */
+   char bound_str[256];
+   unsigned max_str = sizeof(bound_str) - 1; /* leave room for trailing 0 */
+   strncpy(bound_str, statname[limit_idx], max_str);
+   /* now print any others that match */
+   for (unsigned i = limit_idx + 1; i < n; i++) {
+      if (statval[i] == limit_val) {
+         strncat(bound_str, ", ", max_str);
+         strncat(bound_str, statname[i], max_str);
+      }
+   }
+   fprintf(f, " %6s\n", bound_str);
 }
 static void
-bifrost_stats_verbose(FILE *f, const bi_context *ctx, const struct bifrost_stats *stats,
+bifrost_stats_verbose(FILE *f, bi_context *ctx, const struct bifrost_stats *stats,
                       const struct pan_shader_info *info)
 {
    report_regs(f, stats->registers_used, stats->uniforms_used);
@@ -7182,13 +7303,15 @@ bifrost_stats_verbose(FILE *f, const bi_context *ctx, const struct bifrost_stats
    fprintf(f, "Stack size:        %u bytes\n", ctx->info.tls_size);
 
    /* now print instruction statistics */
-   unsigned n = 4;
-   static const char *statname[4] = {
+   static const char *statname[] = {
       "A", "LS", "V", "T"
    };
-   float statval[4] = {
+   float statval[] = {
       stats->arith, stats->ldst, stats->v, stats->t,
    };
+   unsigned n = ARRAY_SIZE(statname);
+   assert(n == ARRAY_SIZE(statval));
+
    /* special case, empty prefix prints column headings */
    do_report_pipes(f, "", n, statname, statval);
    do_report_pipes(f, "Total instruction cycles:", n, statname, statval);
@@ -7196,27 +7319,47 @@ bifrost_stats_verbose(FILE *f, const bi_context *ctx, const struct bifrost_stats
 }
 
 static void
-valhall_stats_verbose(FILE *f, const bi_context *ctx, const struct valhall_stats *stats,
+valhall_stats_verbose(FILE *f, bi_context *ctx, const struct valhall_stats *stats,
                       const struct pan_shader_info *info)
 {
+   struct valhall_stats min_stats = { 0 };
+   struct valhall_stats max_stats = { 0 };
+
    report_regs(f, stats->registers_used, stats->uniforms_used);
    fprintf(f, "Code size:         %u bytes\n", stats->code_size);
    fprintf(f, "Loops:             %u\n", stats->loops);
    fprintf(f, "Spills/fills:      %u/%u\n", stats->spills, stats->fills);
    fprintf(f, "Stack size:        %u bytes\n", ctx->info.tls_size);
 
+   va_gather_stats(ctx, stats->code_size, &min_stats, GATHER_STATS_MIN);
+   va_gather_stats(ctx, stats->code_size, &max_stats, GATHER_STATS_MAX);
+
    /* now print instruction statistics */
    float arith = MAX3(stats->fma, stats->sfu, stats->cvt);
-   unsigned n = 4;
-   static const char *statname[4] = {
-      "A", "LS", "V", "T"
+   float min_arith = MAX3(min_stats.fma, min_stats.sfu, min_stats.cvt);
+   float max_arith = MAX3(max_stats.fma, max_stats.sfu, max_stats.cvt);
+   static const char *statname[] = {
+      "A", "FMA", "CVT", "SFU", "LS", "V", "T"
    };
-   float statval[4] = {
-      arith, stats->ls, stats->v, stats->t,
+   float statval[] = {
+      arith, stats->fma, stats->cvt, stats->sfu, stats->ls, stats->v, stats->t,
    };
+   float min_statval[] = {
+      min_arith, min_stats.fma, min_stats.cvt, min_stats.sfu,
+      min_stats.ls, min_stats.v, min_stats.t,
+   };
+   float max_statval[] = {
+      max_arith, max_stats.fma, max_stats.cvt, max_stats.sfu,
+      max_stats.ls, max_stats.v, max_stats.t,
+   };
+   unsigned n = ARRAY_SIZE(statval);
+   assert(n == ARRAY_SIZE(statname));
    do_report_pipes(f, "", n, statname, statval);
    do_report_pipes(f, "Total instruction cycles:", n, statname, statval);
-   fprintf(f, "\nA = Arithmetic, LS = Load/Store, V = Varying, T = Texture\n");
+   do_report_pipes(f, "Shortest path cycles:", n, statname, min_statval);
+   do_report_pipes(f, "Longest path cycles:", n, statname, max_statval);
+   fprintf(f, "\nA = Arithmetic, FMA = Arith FMA, CVT = Arith CVT, SFU = Arith SFU\n");
+   fprintf(f, "LS = Load/Store, V = Varying, T = Texture\n");
 }
 
 static const char *bool_str(bool x) {
@@ -7224,7 +7367,7 @@ static const char *bool_str(bool x) {
 }
 
 static void
-pan_stats_verbose(FILE *f, const char *prefix, const bi_context *ctx, const struct pan_stats *stats,
+pan_stats_verbose(FILE *f, const char *prefix, bi_context *ctx, const struct pan_stats *stats,
                   const struct pan_shader_info *info)
 {
    const struct pan_model *model = pan_get_model(ctx->inputs->gpu_id, ctx->inputs->gpu_variant);
@@ -7260,6 +7403,7 @@ pan_stats_verbose(FILE *f, const char *prefix, const bi_context *ctx, const stru
    case MESA_SHADER_FRAGMENT:
       fprintf(f, "Has side-effects: %s\n", bool_str(info->fs.sidefx));
       fprintf(f, "Modifies coverage: %s\n", bool_str(info->fs.writes_coverage));
+      fprintf(f, "Reads color buffer: %s\n", bool_str(info->fs.outputs_read != 0));
       break;
    default:
       break;

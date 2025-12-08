@@ -164,7 +164,7 @@ pan_lookup_pushed_ubo(struct pan_ubo_push *push, unsigned ubo, unsigned offs)
 
 void
 pan_shader_update_info(struct pan_shader_info *info, nir_shader *s,
-                       struct pan_compile_inputs *inputs)
+                       const struct pan_compile_inputs *inputs)
 {
    unsigned arch = pan_arch(inputs->gpu_id);
 
@@ -306,12 +306,13 @@ pan_shader_compile(nir_shader *s, struct pan_compile_inputs *inputs,
    NIR_PASS(_, s, nir_inline_sysval, nir_intrinsic_load_printf_buffer_size,
             PAN_PRINTF_BUFFER_SIZE - 8);
 
-   if (arch >= 6)
+   if (arch >= 6) {
       bifrost_compile_shader_nir(s, inputs, binary, info);
-   else
+      /* pan_shader_update_info done in the compile */
+   } else {
       midgard_compile_shader_nir(s, inputs, binary, info);
-
-   pan_shader_update_info(info, s, inputs);
+      pan_shader_update_info(info, s, inputs);
+   }
 }
 
 void
