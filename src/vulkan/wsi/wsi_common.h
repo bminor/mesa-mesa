@@ -30,6 +30,7 @@
 #include "vk_alloc.h"
 #include "vk_dispatch_table.h"
 #include "vk_internal_exts.h"
+#include "vk_util.h"
 #include <vulkan/vulkan.h>
 #include <vulkan/vk_icd.h>
 
@@ -292,6 +293,18 @@ VkResult
 wsi_common_queue_present(const struct wsi_device *wsi,
                          struct vk_queue *queue,
                          const VkPresentInfoKHR *pPresentInfo);
+
+static inline bool
+wsi_common_is_swapchain_image(const VkImageCreateInfo *pCreateInfo)
+{
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
+   return false;
+# else
+   const VkImageSwapchainCreateInfoKHR *swapchain_info =
+      vk_find_struct_const(pCreateInfo->pNext, IMAGE_SWAPCHAIN_CREATE_INFO_KHR);
+   return swapchain_info && swapchain_info->swapchain != VK_NULL_HANDLE;
+#endif
+}
 
 VkResult
 wsi_common_create_swapchain_image(const struct wsi_device *wsi,
