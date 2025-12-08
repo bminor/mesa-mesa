@@ -1683,11 +1683,16 @@ tex_to_msl(struct nir_to_msl_ctx *ctx, nir_tex_instr *tex)
          P(ctx, ", ");
          src_to_msl(ctx, comparator);
       }
-      P(ctx, ", ");
-      if (offset)
+
+      /* SPIR-V does not allow offsets for cube samplers (neither does MSL).
+       * nir_opt_constant_folding will remove offsets that are 0, so we need to
+       * add them here. */
+      if (offset) {
+         P(ctx, ", ");
          src_to_msl(ctx, offset);
-      else
-         P(ctx, "int2(0)");
+      } else if (tex->sampler_dim != GLSL_SAMPLER_DIM_CUBE) {
+         P(ctx, ", int2(0)");
+      }
 
       /* Non-depth textures require component */
       if (!comparator) {
