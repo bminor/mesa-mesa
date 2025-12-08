@@ -386,6 +386,7 @@ svga_init_screen_caps(struct svga_screen *svgascreen)
    caps->occlusion_query = true;
    caps->texture_buffer_objects = sws->have_vgpu10;
    caps->texture_buffer_offset_alignment = sws->have_vgpu10 ? 16 : 0;
+   caps->texture_mirror_clamp_to_edge = sws->have_vgpu10;
 
    caps->texture_swizzle = true;
    caps->constant_buffer_offset_alignment = 256;
