@@ -1374,11 +1374,6 @@ radv_link_shaders(const struct radv_device *device, struct radv_shader_stage *pr
        (producer->info.stage == MESA_SHADER_VERTEX && has_geom_or_tess) ||
        (producer->info.stage == MESA_SHADER_TESS_EVAL && merged_gs)) {
       NIR_PASS(_, producer, nir_opt_vectorize_io_vars, nir_var_shader_out);
-
-      if (producer->info.stage == MESA_SHADER_TESS_CTRL)
-         NIR_PASS(_, producer, nir_lower_tess_level_array_vars_to_vec);
-
-      NIR_PASS(_, producer, nir_opt_combine_stores, nir_var_shader_out);
    }
 
    if (consumer->info.stage == MESA_SHADER_GEOMETRY || consumer->info.stage == MESA_SHADER_TESS_CTRL ||
