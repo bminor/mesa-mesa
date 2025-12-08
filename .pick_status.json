@@ -1,5 +1,485 @@
 [
     {
+        "sha": "f912db3f8dc0c0cb8cb2358e6ec79dd03b7a875d",
+        "description": "util/driconf/asahi: Override GL renderer for web browsers",
+        "nominated": true,
+        "nomination_type": 4,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6246b7be103416b86ba2f375cdbcefa810ebe1d6",
+        "description": "r600: improve cayman scissor 1x1 workaround",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "87a5b07f9013536d5a0de66ffc2d9141b02190c5",
+        "notes": null
+    },
+    {
+        "sha": "7f6bd8b0030c94fb99fa0d1a2111f13ddcb3421e",
+        "description": "nir/peephole_select: allow mbcnt_amd",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "005cc4110cd1284c89c26b07dc183232635ae94a",
+        "description": "nir/peephole_select: allow ballot",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "077b654cc71ddf9eb309008791e947cbc99193e9",
+        "description": "nir: don't sink alu that uses ballot(true)",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "96662cd459e573690bc8bec1543958d15b8991ec",
+        "description": "nak/cmat: free the type mapping hash table.",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6b67ca2e8faf4fcfb7f8cabccb69e8a02ebef48b",
+        "description": "pan/bi: Keep vectorized phis",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d3a890a58e722e22b8e8d2550603273fd12d82d1",
+        "description": "pan/bi: Handle small vectors in bi_src_index()",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a051d4ee6b223d908754e514e6456577dfc04453",
+        "description": "nir/lower_io_vars: don't insert output stores for unrelated streams before emits",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0ac9ccb4b4fb11933a224ba3d15f29a59535d3eb",
+        "description": "d3d12: Only try to compute scaled point size for stream 0",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0df8aa940c0d2167e9c7ecb558347373b958da7d",
+        "description": "nir: Use nir_shader_intrinsics_pass in nir_lower_io_to_scalar",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e9ad86db08de33409cabf4f288094f7cae04aa3d",
+        "description": "tu: support driconf option force_vk_vendor",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c0e6b0aca02e45b7d1158f3f34b602df004a63fe",
+        "description": "zink/ci: update fixed tests",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ae36b9e3459766a953fe6318545463f9a773d119",
+        "description": "radeonsi: enable 64K x 64K textures",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6feb3e49f8511fe30775a47f6090baee938524f4",
+        "description": "st/mesa: remove bogus framebuffer state assertions",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f46b6042aba68e61ee9008a721b8f685d5b5c78b",
+        "description": "radeonsi: allow 64K viewports",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f6bf120d02f3539f34beb2bb488e310d422ad801",
+        "description": "radeonsi: reject textures that don't fit in the CPU address space",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "566c666d575f090a0cee3edb3c58f89924b0fae2",
+        "description": "radeonsi: fix a few non-critical 64-bit integer overflows",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "07d2ab29b68770e30c75e85feb128b138f13d00d",
+        "description": "st/mesa: disallow the PBO upload fragment shader",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "bd839d4bfceeafcc5883fa9254d51b19bd41499e",
+        "description": "st/mesa: don't use the PBO GetTexImage compute shader for 64K textures",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "72a14518ae645be814772366d44d4588653244e4",
+        "description": "mesa: raise MAX_TEXTURE_LEVELS to 17 to allow 64K mipmap textures",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "610bdf5e9e8a07e4120f0bdff6c2e922f0de679f",
+        "description": "mesa: bump MAX_TEXTURE_RECT_SIZE, MAX_RENDERBUFFER_SIZE",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "24ba57259f6e456f46b06854763c10a4f6097a4c",
+        "description": "mesa: remove MaxTextureMbytes, use the cap instead",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "00f5f0980aab99ff47b1b752ee230bf912444465",
+        "description": "mesa: use size_t for image address computations",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3dc2582172c0b7e7b3a87859268dbe8893f9db11",
+        "description": "mesa: merge mostly duplicated mesa_format_image_size & mesa_format_image_size64",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6507e8ec650c8f4b38467e526e0039c4bdef1bd7",
+        "description": "mesa: remove unused make_null_texture",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4fba07f74ea2cfc67889936593bf8b86d1597241",
+        "description": "mesa: remove unused mesa_store_cleartexsubimage, _mesa_store_compressed_teximage",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "30b5d5f9b368331b4e0456eef515de7f176fcbab",
+        "description": "mesa: remove unused _mesa_total_texture_memory",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "88b6e46ee3cb88be6b8c55c7a3816cd92c2d8773",
+        "description": "mesa: remove unused image debug code",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4529693e72000391b9eed5d7d458b8aa1a340c52",
+        "description": "gallium/u_blitter: change width/height parameters to 32-bit integer",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7621b2d56debfc92d6c0194a6b5563b9451616dc",
+        "description": "gallium: declare pipe_resource::height0 as 32-bit integer for 64K textures",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3c6477812ea1b4ab784e89f1bea3cc45b54014f1",
+        "description": "gallium: change pipe_framebuffer_state width/height to 32-bit integer",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "bc1a6b0a4121d09cab70506ad0addf70a18730bf",
+        "description": "gallium: change pipe_scissor_state to 32 bit integer",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "832594bbe28c0cf75c6b2174dc242d9f642b6da4",
+        "description": "panfrost: don't expose 32K textures because st/mesa doesn't support them",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "193e494e6aac4691ba1c8128cd4a15295fcb458f",
+        "description": "iris: add struct iris_scissor_state because pipe_scissor_state will be changed",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5c63446b94e20fa6eb07143ca5177f8ca0fc7aec",
+        "description": "panfrost: add earlyzs FPK condition for v6-",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "c43882ad544af3cddd55278212f11cbd4686da63",
+        "notes": null
+    },
+    {
+        "sha": "43c06b5a7a15bb9fa2acedb783504483d7ed95b9",
+        "description": "panvk: set allow_forward_pixel_to_be_killed for draws",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a071e917255fcf830427360ea3c5f7da8618825b",
+        "description": "ir3/legalize: run dbg nop/sync sched later",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a4b615826078b62e6b0ca7ac19922920cceefa95",
+        "description": "pvr: Fix missing frees in error exit paths",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ca1916804e2ae5e12ad9af7b9a9ecb395576c274",
+        "description": "pvr: Fix staging buffer realloc usage",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8d39ce7bce249f9f6bd87ba175cf4b215f83defe",
+        "description": "panfrost: add benchmarking documentation",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d5bf0b0df75c5d2a0acda91fe14f49501344041f",
+        "description": "pan: fix pan_blend_reads_dest to consider special min/max funcs",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ea77f60c0ed79224101d3028fef447c35c715cc0",
+        "description": "llvmpipe, virgl: update CI traces",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "cc1c0b7cf4bebebc2dca5cc47d3bca6c47fe0053",
+        "description": "llvmpipe: lerp rounding test",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "9745aab4cdf7d6c1b62b8dfb1f4ce0a17c697992",
+        "description": "llvmpipe: fix 64bit unpack on x86",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c200b18e876468b51fe80d9660f612dc03a5138e",
+        "description": "llvmpipe: use half-even rounding in lerp",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "34b34c2462284a650e15059b3500646eca9432b2",
+        "description": "llvmpipe: use half-even rounding in norm and fixed mul",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4f3de8b956b6e29ec84530365ea8bdf200c66375",
+        "description": "llvmpipe: doc fixes",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
         "sha": "0104b3df414bddeab37ae6cf116c532410134bc0",
         "description": "kk: Expose shader storage image read/write without format",
         "nominated": false,
