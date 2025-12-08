@@ -151,7 +151,7 @@ nir_opt_ray_queries(nir_shader *shader)
  *
  * 1. Store all the ray queries we will consider into an array for
  *    convenient access. Ignore arrays since it would be really complex
- *    to handle and will be rare in praxis.
+ *    to handle and will be rare in practise.
  *
  * 2. Count the number of ray query ranges and allocate the required ranges.
  *
