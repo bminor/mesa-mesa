@@ -1703,29 +1703,30 @@ radv_graphics_shaders_link_varyings(struct radv_shader_stage *stages, enum amd_g
    /* Prepare shaders before running nir_opt_varyings. */
    for (int i = 0; i < ARRAY_SIZE(graphics_shader_order); ++i) {
       const mesa_shader_stage s = graphics_shader_order[i];
-      const mesa_shader_stage next = stages[s].info.next_stage;
-      if (!stages[s].nir || next == MESA_SHADER_NONE || !stages[next].nir)
+      if (!stages[s].nir)
          continue;
 
-      if (stages[s].key.optimisations_disabled || stages[next].key.optimisations_disabled)
+      if (stages[s].key.optimisations_disabled)
          continue;
 
-      nir_shader *producer = stages[s].nir;
-      nir_shader *consumer = stages[next].nir;
+      nir_shader *shader = stages[s].nir;
 
       /* It is expected by nir_opt_varyings that no undefined stores are present in the shader. */
-      NIR_PASS(_, producer, nir_opt_undef);
+      NIR_PASS(_, shader, nir_opt_undef);
 
       /* Update load/store alignments because inter-stage code motion may move instructions used to deduce this info. */
-      NIR_PASS(_, consumer, nir_opt_load_store_update_alignments);
+      NIR_PASS(_, shader, nir_opt_load_store_update_alignments);
 
       /* Scalarize all I/O, because nir_opt_varyings and nir_opt_vectorize_io expect all I/O to be scalarized. */
-      NIR_PASS(_, producer, nir_lower_io_to_scalar, nir_var_shader_out, NULL, NULL);
-      NIR_PASS(_, consumer, nir_lower_io_to_scalar, nir_var_shader_in, NULL, NULL);
+      nir_variable_mode sca_mode = nir_var_shader_in;
+      if (s != MESA_SHADER_FRAGMENT)
+         sca_mode |= nir_var_shader_out;
+
+      NIR_PASS(_, shader, nir_lower_io_to_scalar, sca_mode, NULL, NULL);
 
       /* Eliminate useless vec->mov copies resulting from scalarization. */
-      NIR_PASS(_, producer, nir_opt_copy_prop);
-      NIR_PASS(_, producer, nir_opt_constant_folding);
+      NIR_PASS(_, shader, nir_opt_copy_prop);
+      NIR_PASS(_, shader, nir_opt_constant_folding);
    }
 
    int highest_changed_producer = -1;
@@ -1787,36 +1788,56 @@ radv_graphics_shaders_link_varyings(struct radv_shader_stage *stages, enum amd_g
    /* Run optimizations and fixups after linking. */
    for (int i = 0; i < ARRAY_SIZE(graphics_shader_order); ++i) {
       const mesa_shader_stage s = graphics_shader_order[i];
-      const mesa_shader_stage next = stages[s].info.next_stage;
       if (!stages[s].nir)
          continue;
 
-      nir_shader *producer = stages[s].nir;
+      nir_shader *shader = stages[s].nir;
 
-      /* Re-vectorize I/O for stages that output to memory (LDS or VRAM).
-       * Don't vectorize FS inputs, doing so just regresses shader stats without any benefit.
-       * There is also no benefit from re-vectorizing the outputs of the last pre-rasterization
-       * stage here, because ac_nir_lower_ngg/legacy already takes care of that.
+      /* Re-vectorize I/O for stages that use memory for I/O (LDS or VRAM).
+       * Don't vectorize FS I/O, doing so just regresses shader stats without any benefit.
        */
-      if (next != MESA_SHADER_NONE && stages[next].nir && next != MESA_SHADER_FRAGMENT &&
-          !stages[s].key.optimisations_disabled && !stages[next].key.optimisations_disabled) {
-         nir_shader *consumer = stages[next].nir;
-         NIR_PASS(_, producer, nir_opt_vectorize_io, nir_var_shader_out, false);
-         NIR_PASS(_, consumer, nir_opt_vectorize_io, nir_var_shader_in, false);
+      if (s != MESA_SHADER_FRAGMENT && !stages[s].key.optimisations_disabled) {
+         /* Delete dead instructions to prevent them from being vectorized. */
+         NIR_PASS(_, shader, nir_opt_dce);
+
+         /* Vectorize inputs. Non-FS inputs are always read from memory. */
+         nir_variable_mode vec_mode = nir_var_shader_in;
+
+         /* There is also no benefit from re-vectorizing the outputs of the last pre-rasterization
+          * stage here, because ac_nir_lower_ngg/legacy already takes care of that.
+          */
+         if (!radv_is_last_vgt_stage(&stages[s]))
+            vec_mode |= nir_var_shader_out;
+
+         /* Scalarize and revectorize VS inputs to make sure every VS input is loaded by a
+          * single *_load_format_* instruction. Those instructions can't skip loading unused
+          * components before the last used component, so loading X, Y, Z, W separately
+          * actually loads X, XY, XYZ, XYZW, which unnecessarily increases VMEM return data
+          * transfers between the VMEM cache and the SIMDs, which wastes SIMD<->VMEM cache bandwidth.
+          * By allowing holes during VS input vectorization, VS input loads loading different
+          * components are always merged, so that no used or unused component is ever loaded twice.
+          */
+         if (s == MESA_SHADER_VERTEX) {
+            NIR_PASS(_, shader, nir_opt_vectorize_io, nir_var_shader_in, true);
+            vec_mode &= ~nir_var_shader_in;
+         }
+
+         if (vec_mode)
+            NIR_PASS(_, shader, nir_opt_vectorize_io, vec_mode, false);
       }
 
       /* Gather shader info; at least the I/O info likely changed
        * and changes to only the I/O info are not reflected in nir_opt_varyings_progress.
        */
-      nir_shader_gather_info(producer, nir_shader_get_entrypoint(producer));
+      nir_shader_gather_info(shader, nir_shader_get_entrypoint(shader));
 
       /* Recompute intrinsic bases of PS inputs in order to remove gaps. */
       if (s == MESA_SHADER_FRAGMENT)
-         radv_recompute_fs_input_bases(producer);
+         radv_recompute_fs_input_bases(shader);
 
       /* Recreate XFB info from intrinsics (nir_opt_varyings may have changed it). */
-      if (producer->xfb_info) {
-         nir_gather_xfb_info_from_intrinsics(producer);
+      if (shader->xfb_info) {
+         nir_gather_xfb_info_from_intrinsics(shader);
       }
    }
 
