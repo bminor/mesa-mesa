@@ -415,11 +415,12 @@ static inline void pvr_border_color_swizzle_to_tex_format(
    *color = swizzled_color;
 }
 
-VkResult
-pvr_border_color_table_init(struct pvr_device *const device)
+VkResult pvr_border_color_table_init(struct pvr_device *const device)
 {
    struct pvr_border_color_table *table = device->border_color_table =
-      vk_zalloc(&device->vk.alloc, sizeof(struct pvr_border_color_table), 8,
+      vk_zalloc(&device->vk.alloc,
+                sizeof(struct pvr_border_color_table),
+                8,
                 VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
    if (!table)
       return vk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);
@@ -469,8 +470,7 @@ err_out:
    return result;
 }
 
-void
-pvr_border_color_table_finish(struct pvr_device *const device)
+void pvr_border_color_table_finish(struct pvr_device *const device)
 {
 #if MESA_DEBUG
    BITSET_SET_RANGE_INSIDE_WORD(device->border_color_table->unused_entries,

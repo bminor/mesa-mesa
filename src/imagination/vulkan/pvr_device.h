@@ -164,15 +164,13 @@ static inline struct pvr_device *vk_to_pvr_device(struct vk_device *device)
    return container_of(device, struct pvr_device, vk);
 }
 
-VkResult
-pvr_create_device(struct pvr_physical_device *pdevice,
-                  const VkDeviceCreateInfo *pCreateInfo,
-                  const VkAllocationCallbacks *pAllocator,
-                  VkDevice *pDevice);
+VkResult pvr_create_device(struct pvr_physical_device *pdevice,
+                           const VkDeviceCreateInfo *pCreateInfo,
+                           const VkAllocationCallbacks *pAllocator,
+                           VkDevice *pDevice);
 
-void
-pvr_destroy_device(struct pvr_device *device,
-                   const VkAllocationCallbacks *pAllocator);
+void pvr_destroy_device(struct pvr_device *device,
+                        const VkAllocationCallbacks *pAllocator);
 
 uint32_t pvr_calc_fscommon_size_and_tiles_in_flight(
    const struct pvr_device_info *dev_info,

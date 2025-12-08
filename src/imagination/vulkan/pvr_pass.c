@@ -635,9 +635,8 @@ static inline VkResult pvr_hw_render_load_ops_setup(
    VkResult result;
 
    if (hw_render->tile_buffers_count) {
-      result = pvr_device_tile_buffer_ensure_cap(
-         device,
-         hw_render->tile_buffers_count);
+      result = pvr_device_tile_buffer_ensure_cap(device,
+                                                 hw_render->tile_buffers_count);
       if (result != VK_SUCCESS)
          return result;
    }
@@ -927,12 +926,13 @@ VkResult pvr_CreateRenderPass2(VkDevice _device,
 
          if (index != VK_ATTACHMENT_UNUSED) {
             const VkFormat format = pCreateInfo->pAttachments[index].format;
-            const bool stencil_has_store = vk_format_has_stencil(format) &&
+            const bool stencil_has_store =
+               vk_format_has_stencil(format) &&
                (pass->attachments[index].stencil_store_op ==
                 VK_ATTACHMENT_STORE_OP_STORE);
             const bool depth_has_store = vk_format_has_depth(format) &&
-               (pass->attachments[index].store_op ==
-                VK_ATTACHMENT_STORE_OP_STORE);
+                                         (pass->attachments[index].store_op ==
+                                          VK_ATTACHMENT_STORE_OP_STORE);
 
             if (stencil_has_store || depth_has_store) {
                subpass->stencil_resolve_mode = resolve_desc->stencilResolveMode;

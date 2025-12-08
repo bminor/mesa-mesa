@@ -749,8 +749,7 @@ pvr_get_tile_buffer_size_per_core(const struct pvr_device *device)
 /**
  * Gets the amount of memory to allocate for a tile buffer on the current BVNC.
  */
-static uint32_t
-pvr_get_tile_buffer_size(const struct pvr_device *device)
+static uint32_t pvr_get_tile_buffer_size(const struct pvr_device *device)
 {
    /* On a multicore system duplicate the buffer for each core. */
    /* TODO: Optimise tile buffer size to use core_count, not max_num_cores. */
@@ -828,11 +827,10 @@ static void pvr_device_init_default_sampler_state(struct pvr_device *device)
    }
 }
 
-VkResult
-pvr_create_device(struct pvr_physical_device *pdevice,
-                  const VkDeviceCreateInfo *pCreateInfo,
-                  const VkAllocationCallbacks *pAllocator,
-                  VkDevice *pDevice)
+VkResult pvr_create_device(struct pvr_physical_device *pdevice,
+                           const VkDeviceCreateInfo *pCreateInfo,
+                           const VkAllocationCallbacks *pAllocator,
+                           VkDevice *pDevice)
 {
    uint32_t initial_free_list_size = PVR_GLOBAL_FREE_LIST_INITIAL_SIZE;
    struct pvr_instance *instance = pdevice->instance;
@@ -1091,9 +1089,8 @@ void pvr_rstate_entry_remove(struct pvr_device *device,
    simple_mtx_unlock(&device->rs_mtx);
 }
 
-void
-pvr_destroy_device(struct pvr_device *device,
-                   const VkAllocationCallbacks *pAllocator)
+void pvr_destroy_device(struct pvr_device *device,
+                        const VkAllocationCallbacks *pAllocator)
 {
    if (!device)
       return;
@@ -1968,8 +1965,7 @@ void pvr_render_state_cleanup(struct pvr_device *device,
       pvr_spm_finish_bgobj_state(device,
                                  &rstate->spm_bgobj_state_per_render[i]);
 
-      pvr_spm_finish_eot_state(device,
-                               &rstate->spm_eot_state_per_render[i]);
+      pvr_spm_finish_eot_state(device, &rstate->spm_eot_state_per_render[i]);
    }
 
    pvr_spm_scratch_buffer_release(device, rstate->scratch_buffer);
@@ -1979,12 +1975,12 @@ void pvr_render_state_cleanup(struct pvr_device *device,
    vk_free(&device->vk.alloc, rstate->render_targets);
 }
 
-VkResult pvr_render_state_setup(
-   struct pvr_device *device,
-   const VkAllocationCallbacks *pAllocator,
-   struct pvr_render_state *rstate,
-   uint32_t render_count,
-   const struct pvr_renderpass_hwsetup_render *renders)
+VkResult
+pvr_render_state_setup(struct pvr_device *device,
+                       const VkAllocationCallbacks *pAllocator,
+                       struct pvr_render_state *rstate,
+                       uint32_t render_count,
+                       const struct pvr_renderpass_hwsetup_render *renders)
 {
    struct pvr_spm_bgobj_state *spm_bgobj_state_per_render;
    struct pvr_spm_eot_state *spm_eot_state_per_render;
@@ -2018,8 +2014,7 @@ VkResult pvr_render_state_setup(
 
    rstate->render_targets = render_targets;
    rstate->render_targets_count = render_targets_count;
-   if (!pvr_render_targets_init(rstate->render_targets,
-                                render_targets_count)) {
+   if (!pvr_render_targets_init(rstate->render_targets, render_targets_count)) {
       result = vk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);
       goto err_free_render_targets;
    }
@@ -2140,9 +2135,7 @@ VkResult pvr_CreateFramebuffer(VkDevice _device,
    rstate->height = pCreateInfo->height;
    rstate->layers = pCreateInfo->layers;
    rstate->scratch_buffer_size =
-      pvr_render_pass_get_scratch_buffer_size(device,
-                                              pass,
-                                              rstate);
+      pvr_render_pass_get_scratch_buffer_size(device, pass, rstate);
 
    result = pvr_render_state_setup(device,
                                    pAllocator,

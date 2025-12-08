@@ -65,11 +65,12 @@ struct pvr_framebuffer {
 struct pvr_device;
 struct pvr_renderpass_hwsetup_render;
 
-VkResult pvr_render_state_setup(struct pvr_device *device,
-                                const VkAllocationCallbacks *pAllocator,
-                                struct pvr_render_state *rstate,
-                                uint32_t render_count,
-                                const struct pvr_renderpass_hwsetup_render *renders);
+VkResult
+pvr_render_state_setup(struct pvr_device *device,
+                       const VkAllocationCallbacks *pAllocator,
+                       struct pvr_render_state *rstate,
+                       uint32_t render_count,
+                       const struct pvr_renderpass_hwsetup_render *renders);
 
 void pvr_render_state_cleanup(struct pvr_device *device,
                               const struct pvr_render_state *rstate);

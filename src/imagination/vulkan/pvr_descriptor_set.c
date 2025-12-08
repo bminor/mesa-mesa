@@ -400,9 +400,8 @@ write_sampler(const struct pvr_descriptor_set *set,
               const struct pvr_descriptor_set_layout_binding *binding,
               uint32_t elem);
 
-static void
-write_immutable_samplers(struct pvr_descriptor_set_layout *layout,
-                         struct pvr_descriptor_set *set)
+static void write_immutable_samplers(struct pvr_descriptor_set_layout *layout,
+                                     struct pvr_descriptor_set *set)
 {
    for (unsigned u = 0; u < layout->binding_count; ++u) {
       const struct pvr_descriptor_set_layout_binding *binding =

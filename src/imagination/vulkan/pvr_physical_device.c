@@ -36,10 +36,9 @@
 
 #define VK_VENDOR_ID_IMAGINATION 0x1010
 
-void
-pvr_physical_device_dump_info(const struct pvr_physical_device *pdevice,
-                              char *const *comp_display,
-                              char *const *comp_render)
+void pvr_physical_device_dump_info(const struct pvr_physical_device *pdevice,
+                                   char *const *comp_display,
+                                   char *const *comp_render)
 {
    drmVersionPtr version_display = NULL, version_render;
    struct pvr_device_dump_info info = { 0 };
@@ -76,8 +75,7 @@ pvr_physical_device_dump_info(const struct pvr_physical_device *pdevice,
    drmFreeVersion(version_render);
 }
 
-void
-pvr_physical_device_destroy(struct vk_physical_device *vk_pdevice)
+void pvr_physical_device_destroy(struct vk_physical_device *vk_pdevice)
 {
    struct pvr_physical_device *pdevice =
       container_of(vk_pdevice, struct pvr_physical_device, vk);
@@ -105,8 +103,8 @@ pvr_physical_device_destroy(struct vk_physical_device *vk_pdevice)
    vk_free(&pdevice->vk.instance->alloc, pdevice);
 }
 
-void
-pvr_physical_device_free_pipeline_cache(struct pvr_physical_device *const pdevice)
+void pvr_physical_device_free_pipeline_cache(
+   struct pvr_physical_device *const pdevice)
 {
 #ifdef ENABLE_SHADER_CACHE
    if (!pdevice->vk.disk_cache)

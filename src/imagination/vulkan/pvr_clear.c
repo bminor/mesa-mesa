@@ -478,7 +478,8 @@ VkResult pvr_device_init_graphics_static_clear_state(struct pvr_device *device)
 
    struct pvr_device_static_clear_state *state = device->static_clear_state =
       vk_zalloc(&device->vk.alloc,
-                sizeof(struct pvr_device_static_clear_state), 8,
+                sizeof(struct pvr_device_static_clear_state),
+                8,
                 VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
    if (!state)
       return vk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);

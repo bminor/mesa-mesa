@@ -54,10 +54,9 @@ static uint32_t pvr_get_accum_format_bitsize(VkFormat vk_format)
  * Check if there is space in a buffer for storing a render target of a
  * specified size.
  */
-static int32_t
-pvr_mrt_alloc_from_buffer(const struct pvr_device_info *dev_info,
-                          struct pvr_mrt_alloc_mask *buffer,
-                          uint32_t pixel_size)
+static int32_t pvr_mrt_alloc_from_buffer(const struct pvr_device_info *dev_info,
+                                         struct pvr_mrt_alloc_mask *buffer,
+                                         uint32_t pixel_size)
 {
    const uint32_t max_out_regs = rogue_get_max_output_regs_per_pixel(dev_info);
    uint32_t alignment = 1U;
@@ -80,8 +79,7 @@ pvr_mrt_alloc_from_buffer(const struct pvr_device_info *dev_info,
    return -1;
 }
 
-void
-pvr_init_mrt_desc(VkFormat format, struct usc_mrt_desc *desc)
+void pvr_init_mrt_desc(VkFormat format, struct usc_mrt_desc *desc)
 {
    uint32_t pixel_size_in_chunks;
    uint32_t pixel_size_in_bits;
@@ -141,8 +139,7 @@ static VkResult pvr_alloc_mrt(const struct pvr_device_info *dev_info,
 
       unsigned tib = 0;
       for (; tib < alloc->tile_buffers_count; tib++) {
-         struct pvr_mrt_alloc_mask *tib_alloc =
-            &alloc->tile_buffers[tib];
+         struct pvr_mrt_alloc_mask *tib_alloc = &alloc->tile_buffers[tib];
 
          const int32_t tile_buffer_offset =
             pvr_mrt_alloc_from_buffer(dev_info, tib_alloc, pixel_size);
@@ -207,7 +204,8 @@ pvr_init_usc_mrt_setup(struct pvr_device *device,
 
    setup->mrt_resources =
       vk_alloc(&device->vk.alloc,
-               sizeof(*setup->mrt_resources) * attachment_count, 8U,
+               sizeof(*setup->mrt_resources) * attachment_count,
+               8U,
                VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
    if (!setup->mrt_resources)
       return vk_error(NULL, VK_ERROR_OUT_OF_HOST_MEMORY);
@@ -232,9 +230,8 @@ fail:
    return result;
 }
 
-void
-pvr_destroy_mrt_setup(const struct pvr_device *device,
-                      struct usc_mrt_setup *setup)
+void pvr_destroy_mrt_setup(const struct pvr_device *device,
+                           struct usc_mrt_setup *setup)
 {
    if (!setup)
       return;
@@ -331,10 +328,9 @@ static void pvr_load_op_destroy(struct pvr_device *device,
    vk_free2(&device->vk.alloc, allocator, load_op);
 }
 
-void
-pvr_mrt_load_op_state_cleanup(const struct pvr_device *device,
-                              const VkAllocationCallbacks *alloc,
-                              struct pvr_load_op_state *state)
+void pvr_mrt_load_op_state_cleanup(const struct pvr_device *device,
+                                   const VkAllocationCallbacks *alloc,
+                                   struct pvr_load_op_state *state)
 {
    if (!state)
       return;
@@ -394,12 +390,11 @@ err_load_op_state_cleanup:
 /* TODO: Can we gaurantee that if we have at least one render target there will
  * be a render target allocated as a REG?
  */
-static inline bool pvr_needs_output_register_writes(
-   const struct usc_mrt_setup *setup)
+static inline bool
+pvr_needs_output_register_writes(const struct usc_mrt_setup *setup)
 {
    for (uint32_t i = 0; i < setup->num_render_targets; i++) {
-      struct usc_mrt_resource *mrt_resource =
-         &setup->mrt_resources[i];
+      struct usc_mrt_resource *mrt_resource = &setup->mrt_resources[i];
 
       if (mrt_resource->type == USC_MRT_RESOURCE_TYPE_OUTPUT_REG)
          return true;
@@ -408,9 +403,9 @@ static inline bool pvr_needs_output_register_writes(
    return false;
 }
 
-static inline VkResult pvr_mrt_add_missing_output_register_write(
-   struct usc_mrt_setup *setup,
-   const VkAllocationCallbacks *alloc)
+static inline VkResult
+pvr_mrt_add_missing_output_register_write(struct usc_mrt_setup *setup,
+                                          const VkAllocationCallbacks *alloc)
 {
    const uint32_t last = setup->num_render_targets;
    struct usc_mrt_resource *mrt_resources;
@@ -420,12 +415,12 @@ static inline VkResult pvr_mrt_add_missing_output_register_write(
 
    setup->num_render_targets++;
 
-   mrt_resources = vk_realloc(alloc,
-                              setup->mrt_resources,
-                              setup->num_render_targets *
-                                 sizeof(*mrt_resources),
-                              8U,
-                              VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
+   mrt_resources =
+      vk_realloc(alloc,
+                 setup->mrt_resources,
+                 setup->num_render_targets * sizeof(*mrt_resources),
+                 8U,
+                 VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
 
    if (!mrt_resources)
       return VK_ERROR_OUT_OF_HOST_MEMORY;
@@ -469,8 +464,7 @@ VkResult pvr_mrt_load_ops_setup(struct pvr_cmd_buffer *cmd_buffer,
       return VK_SUCCESS;
 
    result =
-      pvr_mrt_add_missing_output_register_write(dr_info->mrt_setup,
-                                                alloc);
+      pvr_mrt_add_missing_output_register_write(dr_info->mrt_setup, alloc);
    if (result != VK_SUCCESS)
       return result;
 
@@ -597,10 +591,9 @@ static VkResult pvr_pds_fragment_program_create_and_upload(
    return VK_SUCCESS;
 }
 
-VkResult
-pvr_load_op_shader_generate(struct pvr_device *device,
-                            const VkAllocationCallbacks *allocator,
-                            struct pvr_load_op *load_op)
+VkResult pvr_load_op_shader_generate(struct pvr_device *device,
+                                     const VkAllocationCallbacks *allocator,
+                                     struct pvr_load_op *load_op)
 {
    const struct pvr_device_info *dev_info = &device->pdevice->dev_info;
    const uint32_t cache_line_size = pvr_get_slc_cache_line_size(dev_info);
@@ -658,4 +651,3 @@ err_free_usc_frag_prog_bo:
 
    return result;
 }
-

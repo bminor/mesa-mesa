@@ -234,4 +234,3 @@ void pvr_DestroySampler(VkDevice _device,
 
    vk_sampler_destroy(&device->vk, pAllocator, &sampler->vk);
 }
-

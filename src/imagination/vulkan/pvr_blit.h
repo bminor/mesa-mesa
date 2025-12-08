@@ -43,14 +43,14 @@ pvr_copy_or_resolve_color_image_region(struct pvr_cmd_buffer *cmd_buffer,
                                        const struct pvr_image *dst,
                                        const VkImageCopy2 *region);
 
-VkResult
-pvr_copy_or_resolve_depth_stencil_region(struct pvr_cmd_buffer *cmd_buffer,
-                                         const struct pvr_image *src,
-                                         const struct pvr_image *dst,
-                                         int resolve_op,
-                                         bool clear_complement,
-                                         const VkClearDepthStencilValue *ds_clear_values,
-                                         const VkImageCopy2 *region);
+VkResult pvr_copy_or_resolve_depth_stencil_region(
+   struct pvr_cmd_buffer *cmd_buffer,
+   const struct pvr_image *src,
+   const struct pvr_image *dst,
+   int resolve_op,
+   bool clear_complement,
+   const VkClearDepthStencilValue *ds_clear_values,
+   const VkImageCopy2 *region);
 
 VkResult
 pvr_copy_buffer_to_image_region_format(struct pvr_cmd_buffer *cmd_buffer,

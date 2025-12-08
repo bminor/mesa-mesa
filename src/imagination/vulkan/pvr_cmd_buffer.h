@@ -274,9 +274,9 @@ struct pvr_sub_cmd {
    enum pvr_sub_cmd_type type;
 
    struct {
-      /* True if the sub_cmd is owned by this command buffer. False if taken from
-       * a secondary command buffer, in that case we are not supposed to free any
-       * resources associated with the sub_cmd.
+      /* True if the sub_cmd is owned by this command buffer. False if taken
+       * from a secondary command buffer, in that case we are not supposed to
+       * free any resources associated with the sub_cmd.
        */
       bool owned : 1;
       bool is_dynamic_render : 1;

@@ -98,9 +98,8 @@ pvr_init_usc_mrt_setup(struct pvr_device *device,
                        const VkFormat attachment_formats[attachment_count],
                        struct usc_mrt_setup *setup);
 
-void
-pvr_destroy_mrt_setup(const struct pvr_device *device,
-                      struct usc_mrt_setup *setup);
+void pvr_destroy_mrt_setup(const struct pvr_device *device,
+                           struct usc_mrt_setup *setup);
 
 void pvr_init_mrt_desc(VkFormat format, struct usc_mrt_desc *desc);
 
@@ -175,10 +174,9 @@ VkResult pvr_pds_unitex_state_program_create_and_upload(
    uint32_t uniform_kicks,
    struct pvr_pds_upload *const pds_upload_out);
 
-VkResult pvr_load_op_shader_generate(
-   struct pvr_device *device,
-   const VkAllocationCallbacks *allocator,
-   struct pvr_load_op *load_op);
+VkResult pvr_load_op_shader_generate(struct pvr_device *device,
+                                     const VkAllocationCallbacks *allocator,
+                                     struct pvr_load_op *load_op);
 
 struct pvr_load_op_state {
    uint32_t load_op_count;
@@ -195,9 +193,8 @@ struct pvr_cmd_buffer;
 VkResult pvr_mrt_load_ops_setup(struct pvr_cmd_buffer *cmd_buffer,
                                 const VkAllocationCallbacks *alloc,
                                 struct pvr_load_op_state **state);
-void
-pvr_mrt_load_op_state_cleanup(const struct pvr_device *device,
-                              const VkAllocationCallbacks *alloc,
-                              struct pvr_load_op_state *state);
+void pvr_mrt_load_op_state_cleanup(const struct pvr_device *device,
+                                   const VkAllocationCallbacks *alloc,
+                                   struct pvr_load_op_state *state);
 
 #endif

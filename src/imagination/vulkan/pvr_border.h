@@ -59,11 +59,9 @@ struct pvr_border_color_table {
    struct pvr_bo *table;
 };
 
-VkResult
-pvr_border_color_table_init(struct pvr_device *const device);
+VkResult pvr_border_color_table_init(struct pvr_device *const device);
 
-void
-pvr_border_color_table_finish(struct pvr_device *device);
+void pvr_border_color_table_finish(struct pvr_device *device);
 
 VkResult
 pvr_border_color_table_get_or_create_entry(struct pvr_device *device,

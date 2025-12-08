@@ -974,7 +974,12 @@ static VkResult pvr_compute_pipeline_compile(
 
    pvr_early_init_shader_data(&shader_data, nir, pCreateInfo);
    pco_preprocess_nir(pco_ctx, nir);
-   pvr_preprocess_shader_data(&shader_data, nir, pCreateInfo, layout, NULL, NULL);
+   pvr_preprocess_shader_data(&shader_data,
+                              nir,
+                              pCreateInfo,
+                              layout,
+                              NULL,
+                              NULL);
    pco_lower_nir(pco_ctx, nir, &shader_data);
    pco_postprocess_nir(pco_ctx, nir, &shader_data);
    pvr_postprocess_shader_data(&shader_data, nir, pCreateInfo, layout, NULL);
@@ -1923,10 +1928,9 @@ pvr_init_fs_outputs(pco_data *data,
    }
 }
 
-static void
-pvr_init_fs_outputs_mrt(pco_data *data,
-                        const struct vk_render_pass_state *rp,
-                        const struct usc_mrt_setup *setup)
+static void pvr_init_fs_outputs_mrt(pco_data *data,
+                                    const struct vk_render_pass_state *rp,
+                                    const struct usc_mrt_setup *setup)
 {
    unsigned u;
    pco_fs_data *fs = &data->fs;
@@ -2019,10 +2023,9 @@ pvr_setup_fs_outputs(pco_data *data,
    assert(!outputs_written);
 }
 
-static void
-pvr_setup_fs_outputs_mrt(pco_data *data,
-                         nir_shader *nir,
-                         const struct usc_mrt_setup *setup)
+static void pvr_setup_fs_outputs_mrt(pco_data *data,
+                                     nir_shader *nir,
+                                     const struct usc_mrt_setup *setup)
 {
    uint64_t outputs_written = nir->info.outputs_written;
    pco_fs_data *fs = &data->fs;
@@ -2098,10 +2101,10 @@ static void pvr_init_fs_input_attachments(
    }
 }
 
-static void pvr_init_fs_input_attachments_mrt(
-   pco_data *data,
-   const struct vk_render_pass_state *rp,
-   const struct usc_mrt_setup *setup)
+static void
+pvr_init_fs_input_attachments_mrt(pco_data *data,
+                                  const struct vk_render_pass_state *rp,
+                                  const struct usc_mrt_setup *setup)
 {
    pco_fs_data *fs = &data->fs;
    for (unsigned u = 0; u < rp->color_attachment_count; u++) {
@@ -2204,10 +2207,9 @@ static void pvr_setup_fs_input_attachments(
    }
 }
 
-static void pvr_setup_fs_input_attachments_mrt(
-   pco_data *data,
-   nir_shader *nir,
-   struct usc_mrt_setup *setup)
+static void pvr_setup_fs_input_attachments_mrt(pco_data *data,
+                                               nir_shader *nir,
+                                               struct usc_mrt_setup *setup)
 {
    pco_fs_data *fs = &data->fs;
    for (unsigned u = 0; u < setup->num_render_targets; ++u) {
@@ -2732,9 +2734,9 @@ pvr_graphics_pipeline_compile(struct pvr_device *const device,
       const struct vk_render_pass_state *rp = state->rp;
 
       result = pvr_init_usc_mrt_setup(device,
-                                     rp->color_attachment_count,
-                                     rp->color_attachment_formats,
-                                     &mrt_setup);
+                                      rp->color_attachment_count,
+                                      rp->color_attachment_formats,
+                                      &mrt_setup);
       if (result != VK_SUCCESS)
          return result;
    }
@@ -2975,14 +2977,13 @@ pvr_rendering_info_setup(const VkGraphicsPipelineCreateInfo *const info,
                          struct vk_render_pass_state *rp)
 {
    const VkPipelineRenderingCreateInfo *ri =
-      vk_find_struct_const(info->pNext,
-                           PIPELINE_RENDERING_CREATE_INFO);
+      vk_find_struct_const(info->pNext, PIPELINE_RENDERING_CREATE_INFO);
 
    if (!ri) {
       /* From the Vulkan spec for VkPipelineRenderingCreateInfo:
        *
-       *    "if this structure is not specified, and the pipeline does not include
-       *     a VkRenderPass, viewMask and colorAttachmentCount are 0, and
+       *    "if this structure is not specified, and the pipeline does not
+       * include a VkRenderPass, viewMask and colorAttachmentCount are 0, and
        *     depthAttachmentFormat and stencilAttachmentFormat are
        *     VK_FORMAT_UNDEFINED.
        */

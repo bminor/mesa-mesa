@@ -1896,7 +1896,8 @@ static VkResult pvr_add_deferred_rta_clear(struct pvr_cmd_buffer *cmd_buffer,
    image = vk_to_pvr_image(image_view->vk.image);
 
    for (uint32_t i = 0; i < rect->layerCount; i++) {
-      struct pvr_transfer_cmd *transfer_cmd = pvr_transfer_cmd_alloc(cmd_buffer);
+      struct pvr_transfer_cmd *transfer_cmd =
+         pvr_transfer_cmd_alloc(cmd_buffer);
 
       list_addtail(&transfer_cmd->link, &cmd_buffer->deferred_clears);
 
@@ -2003,8 +2004,8 @@ static void pvr_clear_attachments(struct pvr_cmd_buffer *cmd_buffer,
          hw_render =
             pvr_pass_info_get_hw_render(&cmd_buffer->state.render_pass_info, 0);
 
-         /* TODO: verify that the hw_render if is_render_init is true is exclusive to
-          * a non dynamic rendering path.
+         /* TODO: verify that the hw_render if is_render_init is true is
+          * exclusive to a non dynamic rendering path.
           */
          if (is_render_init) {
             mrt_resource =
@@ -2021,7 +2022,8 @@ static void pvr_clear_attachments(struct pvr_cmd_buffer *cmd_buffer,
             global_attachment_idx =
                dr_info->color_attachments[local_attachment_idx].index_color;
          } else {
-            struct pvr_render_subpass *sub_pass = &pass->subpasses[hw_pass->index];
+            struct pvr_render_subpass *sub_pass =
+               &pass->subpasses[hw_pass->index];
 
             mrt_resource = &hw_pass->setup.mrt_resources[local_attachment_idx];
 
@@ -2171,7 +2173,6 @@ static void pvr_clear_attachments(struct pvr_cmd_buffer *cmd_buffer,
 
          if (!PVR_HAS_FEATURE(dev_info, gs_rta_support) &&
              (clear_rect->baseArrayLayer != 0 || clear_rect->layerCount > 1)) {
-
             if (pass_info->attachments) {
                result = pvr_add_deferred_rta_clear(cmd_buffer,
                                                    attachment,
@@ -2182,7 +2183,8 @@ static void pvr_clear_attachments(struct pvr_cmd_buffer *cmd_buffer,
 
                continue;
             } else {
-               pvr_finishme("incomplete support for deferred (emulated) RTA clears");
+               pvr_finishme(
+                  "incomplete support for deferred (emulated) RTA clears");
             }
          }
 

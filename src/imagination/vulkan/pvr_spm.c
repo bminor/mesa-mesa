@@ -109,8 +109,7 @@ uint64_t pvr_spm_scratch_buffer_calc_required_size(
       nr_output_regs = MAX2(nr_output_regs, hw_render->output_regs_count);
    }
 
-   dwords_per_pixel =
-      (uint64_t)sample_count * nr_output_regs * nr_tile_buffers;
+   dwords_per_pixel = (uint64_t)sample_count * nr_output_regs * nr_tile_buffers;
 
    buffer_size = ALIGN_POT((uint64_t)framebuffer_width,
                            ROGUE_CR_PBE_WORD0_MRT0_LINESTRIDE_ALIGNMENT);

@@ -518,7 +518,6 @@ static VkResult pvr_ctx_sr_programs_setup(struct pvr_device *device,
    /* USC state update: SR state load. */
    precomp_data = (pco_precomp_data *)pco_usclib_common[CS_LOAD_SR_256_COMMON];
 
-
    if (target == PVR_CTX_SR_COMPUTE_TARGET && PVR_HAS_QUIRK(dev_info, 62269))
       pvr_finishme("Missing support for brn62269");
 

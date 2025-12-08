@@ -93,8 +93,7 @@ void pvr_spm_finish_scratch_buffer_store(struct pvr_device *device);
  *    VK_ATTACHMENT_STORE_OP_NONE, not currently supported) or lazily allocated
  *    attachments with no backing.
  */
-uint64_t
-pvr_spm_scratch_buffer_calc_required_size(
+uint64_t pvr_spm_scratch_buffer_calc_required_size(
    const struct pvr_renderpass_hwsetup_render *renders,
    uint32_t render_count,
    uint32_t sample_count,
