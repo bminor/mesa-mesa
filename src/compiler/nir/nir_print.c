@@ -1221,6 +1221,18 @@ print_alu_type(nir_alu_type type, print_state *state)
       fprintf(fp, "%s", name);
 }
 
+static const char *sampler_dim_name[] = {
+   [GLSL_SAMPLER_DIM_1D] = "1D",
+   [GLSL_SAMPLER_DIM_2D] = "2D",
+   [GLSL_SAMPLER_DIM_3D] = "3D",
+   [GLSL_SAMPLER_DIM_CUBE] = "Cube",
+   [GLSL_SAMPLER_DIM_RECT] = "Rect",
+   [GLSL_SAMPLER_DIM_BUF] = "Buf",
+   [GLSL_SAMPLER_DIM_MS] = "2D-MSAA",
+   [GLSL_SAMPLER_DIM_SUBPASS] = "Subpass",
+   [GLSL_SAMPLER_DIM_SUBPASS_MS] = "Subpass-MSAA",
+};
+
 static void
 print_intrinsic_instr(nir_intrinsic_instr *instr, print_state *state)
 {
@@ -1342,20 +1354,9 @@ print_intrinsic_instr(nir_intrinsic_instr *instr, print_state *state)
       }
 
       case NIR_INTRINSIC_IMAGE_DIM: {
-         static const char *dim_name[] = {
-            [GLSL_SAMPLER_DIM_1D] = "1D",
-            [GLSL_SAMPLER_DIM_2D] = "2D",
-            [GLSL_SAMPLER_DIM_3D] = "3D",
-            [GLSL_SAMPLER_DIM_CUBE] = "Cube",
-            [GLSL_SAMPLER_DIM_RECT] = "Rect",
-            [GLSL_SAMPLER_DIM_BUF] = "Buf",
-            [GLSL_SAMPLER_DIM_MS] = "2D-MSAA",
-            [GLSL_SAMPLER_DIM_SUBPASS] = "Subpass",
-            [GLSL_SAMPLER_DIM_SUBPASS_MS] = "Subpass-MSAA",
-         };
          enum glsl_sampler_dim dim = nir_intrinsic_image_dim(instr);
-         assert(dim < ARRAY_SIZE(dim_name) && dim_name[dim]);
-         fprintf(fp, "image_dim=%s", dim_name[dim]);
+         assert(dim < ARRAY_SIZE(sampler_dim_name) && sampler_dim_name[dim]);
+         fprintf(fp, "image_dim=%s", sampler_dim_name[dim]);
          break;
       }
 
@@ -2041,6 +2042,8 @@ print_tex_instr(nir_tex_instr *instr, print_state *state)
    if (instr->backend_flags) {
       fprintf(fp, ", backend_flags=0x%X", instr->backend_flags);
    }
+
+   fprintf(fp, ", %s", sampler_dim_name[instr->sampler_dim]);
 }
 
 static void
