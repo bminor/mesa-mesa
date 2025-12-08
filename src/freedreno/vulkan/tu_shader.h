@@ -158,6 +158,12 @@ tu6_emit_xs(struct tu_cs *cs,
             const struct tu_pvtmem_config *pvtmem,
             uint64_t binary_iova);
 
+void
+tu6_emit_xs_constants(struct tu_cs *cs,
+                      mesa_shader_stage stage,
+                      const struct ir3_shader_variant *xs,
+                      uint64_t binary_iova);
+
 template <chip CHIP>
 void
 tu6_emit_vs(struct tu_cs *cs, const struct ir3_shader_variant *vs,

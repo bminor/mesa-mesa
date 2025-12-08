@@ -1662,6 +1662,17 @@ tu6_emit_xs(struct tu_cs *cs,
       tu_cs_emit_pkt4(cs, cfg->reg_sp_xs_vgpr_config, 1);
       tu_cs_emit(cs, 0);
    }
+}
+
+void
+tu6_emit_xs_constants(
+   struct tu_cs *cs,
+   mesa_shader_stage stage, /* xs->type, but xs may be NULL */
+   const struct ir3_shader_variant *xs,
+   uint64_t binary_iova)
+{
+   if (!xs)
+      return;
 
    if (cs->device->physical_device->info->chip == A6XX) {
       uint32_t shader_preload_size =
@@ -1778,6 +1789,7 @@ tu6_emit_cs_config(struct tu_cs *cs,
       tu6_emit_xs_config<CHIP>(crb, MESA_SHADER_COMPUTE, v);
    }
    tu6_emit_xs(cs, MESA_SHADER_COMPUTE, v, pvtmem, binary_iova);
+   tu6_emit_xs_constants(cs, MESA_SHADER_COMPUTE, v, binary_iova);
 
    tu_crb crb = cs->crb(0);
 
@@ -2409,6 +2421,8 @@ tu6_emit_variant(struct tu_cs *cs,
    default:
       UNREACHABLE("unknown shader stage");
    }
+
+   tu6_emit_xs_constants(cs, stage, xs, binary_iova);
 }
 
 static VkResult

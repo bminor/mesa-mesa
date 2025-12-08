@@ -883,6 +883,9 @@ r3d_common(struct tu_cmd_buffer *cmd, struct tu_cs *cs, enum r3d_type type,
    tu6_emit_xs(cs, MESA_SHADER_VERTEX, vs, &pvtmem, vs_iova);
    tu6_emit_xs(cs, MESA_SHADER_FRAGMENT, fs, &pvtmem, fs_iova);
 
+   tu6_emit_xs_constants(cs, MESA_SHADER_VERTEX, vs, vs_iova);
+   tu6_emit_xs_constants(cs, MESA_SHADER_FRAGMENT, fs, fs_iova);
+
    tu_cs_emit_regs(cs, PC_CNTL(CHIP));
    if (CHIP == A7XX) {
       tu_cs_emit_regs(cs, VPC_PC_CNTL(CHIP));
