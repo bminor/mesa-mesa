@@ -3616,6 +3616,220 @@ static VkResult pvr_cs_write_load_op(struct pvr_cmd_buffer *cmd_buffer,
    return VK_SUCCESS;
 }
 
+static inline enum pvr_resolve_op
+pvr_resolve_mode_to_op(enum VkResolveModeFlagBits mode)
+{
+   switch (mode) {
+   default:
+      UNREACHABLE("invalid resolve mode");
+      FALLTHROUGH;
+   case VK_RESOLVE_MODE_AVERAGE_BIT:
+      return PVR_RESOLVE_BLEND;
+   case VK_RESOLVE_MODE_SAMPLE_ZERO_BIT:
+      return PVR_RESOLVE_SAMPLE0;
+   case VK_RESOLVE_MODE_MIN_BIT:
+      return PVR_RESOLVE_MIN;
+   case VK_RESOLVE_MODE_MAX_BIT:
+      return PVR_RESOLVE_MAX;
+   }
+}
+
+static inline void
+pvr_resolve_subresource_layer_init(const struct pvr_image_view *const iview,
+                                   VkImageSubresourceLayers *subresource)
+{
+   *subresource = (VkImageSubresourceLayers){
+      .mipLevel = iview->vk.base_mip_level,
+      .baseArrayLayer = iview->vk.base_array_layer,
+      .layerCount = iview->vk.layer_count,
+   };
+}
+
+static inline void
+pvr_resolve_offset_init(const struct pvr_render_pass_info *const info,
+                        VkOffset3D *offset)
+{
+   *offset = (VkOffset3D){
+      .x = info->render_area.offset.x,
+      .y = info->render_area.offset.y,
+   };
+}
+
+/* clang-format off */
+static inline void
+pvr_resolve_image_copy_region_init(const struct pvr_image_view *const src_view,
+                                   const struct pvr_image_view *const dst_view,
+                                   const struct pvr_render_pass_info *const info,
+                                   VkImageCopy2 *region)
+{
+   pvr_resolve_subresource_layer_init(src_view, &region->srcSubresource);
+   pvr_resolve_subresource_layer_init(dst_view, &region->dstSubresource);
+   pvr_resolve_offset_init(info, &region->srcOffset);
+   pvr_resolve_offset_init(info, &region->dstOffset);
+
+   region->extent = (VkExtent3D){
+      .width = info->render_area.extent.width,
+      .height = info->render_area.extent.height,
+      .depth = 1
+   };
+}
+/* clang-format on */
+
+static VkResult
+pvr_resolve_unemitted_resolve_attachments(struct pvr_cmd_buffer *cmd_buffer,
+                                          struct pvr_render_pass_info *info)
+{
+   struct pvr_cmd_buffer_state *state = &cmd_buffer->state;
+   const struct pvr_renderpass_hwsetup_render *hw_render =
+      pvr_pass_info_get_hw_render(&state->render_pass_info, info->current_hw_subpass);
+
+   for (uint32_t i = 0U; i < hw_render->eot_surface_count; i++) {
+      const struct pvr_renderpass_hwsetup_eot_surface *surface =
+         &hw_render->eot_surfaces[i];
+      const uint32_t color_attach_idx = surface->src_attachment_idx;
+      const uint32_t resolve_attach_idx = surface->attachment_idx;
+      struct pvr_image_view *dst_view;
+      struct pvr_image_view *src_view;
+      VkFormat src_format;
+      VkFormat dst_format;
+      VkImageCopy2 region;
+      VkResult result;
+
+      if (!surface->need_resolve ||
+          surface->resolve_type != PVR_RESOLVE_TYPE_TRANSFER) {
+         continue;
+      }
+
+      dst_view = info->attachments[resolve_attach_idx];
+      src_view = info->attachments[color_attach_idx];
+
+      pvr_resolve_image_copy_region_init(src_view, dst_view, info, &region);
+      region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+      region.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+
+      /* TODO: if ERN_46863 is supported, Depth and stencil are sampled
+       * separately from images with combined depth+stencil. Add logic here to
+       * handle it using appropriate format from image view.
+       */
+      src_format = src_view->vk.image->format;
+      dst_format = dst_view->vk.image->format;
+      src_view->vk.image->format = src_view->vk.format;
+      dst_view->vk.image->format = dst_view->vk.format;
+
+      result = pvr_copy_or_resolve_color_image_region(
+         cmd_buffer,
+         vk_to_pvr_image(src_view->vk.image),
+         vk_to_pvr_image(dst_view->vk.image),
+         &region);
+
+      src_view->vk.image->format = src_format;
+      dst_view->vk.image->format = dst_format;
+
+      state->current_sub_cmd->transfer.serialize_with_frag = true;
+
+      if (result != VK_SUCCESS)
+         return result;
+   }
+
+   if (hw_render->stencil_resolve_mode || hw_render->depth_resolve_mode) {
+      const struct pvr_image_view *dst_view =
+         info->attachments[hw_render->ds_attach_resolve_idx];
+      const struct pvr_image_view *src_view =
+         info->attachments[hw_render->ds_attach_idx];
+      const VkClearValue *resolve_clear_values =
+         &state->render_pass_info.clear_values[hw_render->ds_attach_resolve_idx];
+      const bool both_stencil = vk_format_has_stencil(dst_view->vk.format) &&
+                                vk_format_has_stencil(src_view->vk.format);
+      const bool both_depth = vk_format_has_depth(dst_view->vk.format) &&
+                              vk_format_has_depth(src_view->vk.format);
+      struct pvr_render_pass_attachment resolve_attachment;
+      bool clear_depth = false, clear_stencil = false;
+      VkClearDepthStencilValue clear_values;
+      VkImageCopy2 region;
+
+      pvr_resolve_image_copy_region_init(src_view, dst_view, info, &region);
+
+      resolve_attachment =
+         info->pass->attachments[hw_render->ds_attach_resolve_idx];
+
+      if (both_depth && !hw_render->depth_resolve_mode &&
+          resolve_attachment.store_op == VK_ATTACHMENT_STORE_OP_STORE &&
+          resolve_attachment.load_op == VK_ATTACHMENT_LOAD_OP_CLEAR) {
+         clear_values.depth = resolve_clear_values->depthStencil.depth;
+         clear_depth = true;
+      }
+
+      if (both_stencil && !hw_render->stencil_resolve_mode &&
+          resolve_attachment.stencil_store_op ==
+          VK_ATTACHMENT_STORE_OP_STORE &&
+          resolve_attachment.stencil_load_op ==
+          VK_ATTACHMENT_LOAD_OP_CLEAR) {
+         clear_values.stencil = resolve_clear_values->depthStencil.stencil;
+         clear_stencil = true;
+      }
+
+      /* Resolve depth and if it can clear stencil */
+      if (both_depth && hw_render->depth_resolve_mode) {
+         region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+         region.dstSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+
+         pvr_copy_or_resolve_depth_stencil_region(
+            cmd_buffer,
+            vk_to_pvr_image(src_view->vk.image),
+            vk_to_pvr_image(dst_view->vk.image),
+            pvr_resolve_mode_to_op(hw_render->depth_resolve_mode),
+            clear_stencil,
+            &clear_values,
+            &region);
+
+         state->current_sub_cmd->transfer.serialize_with_frag = true;
+         clear_stencil = false;
+      }
+
+      /* Resolve stencil and if it can clear depth */
+      if (both_stencil && hw_render->stencil_resolve_mode) {
+         region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
+         region.dstSubresource.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
+
+         pvr_copy_or_resolve_depth_stencil_region(
+            cmd_buffer,
+            vk_to_pvr_image(src_view->vk.image),
+            vk_to_pvr_image(dst_view->vk.image),
+            pvr_resolve_mode_to_op(hw_render->stencil_resolve_mode),
+            clear_depth,
+            &clear_values,
+            &region);
+
+         state->current_sub_cmd->transfer.serialize_with_frag = true;
+         clear_depth = false;
+      }
+
+      /* Clear what it couldn't be cleared yet */
+      if (clear_stencil || clear_depth) {
+         const VkImageAspectFlagBits aspect =
+            (clear_depth ? VK_IMAGE_ASPECT_DEPTH_BIT : 0) |
+            (clear_stencil ? VK_IMAGE_ASPECT_STENCIL_BIT : 0);
+         VkImageSubresourceRange range = (VkImageSubresourceRange){
+            .aspectMask = aspect,
+            .baseMipLevel = dst_view->vk.base_mip_level,
+            .levelCount = 1,
+            .baseArrayLayer = dst_view->vk.base_array_layer,
+            .layerCount = dst_view->vk.layer_count,
+         };
+
+         pvr_clear_depth_stencil_image(cmd_buffer,
+                                       vk_to_pvr_image(dst_view->vk.image),
+                                       &clear_values,
+                                       1,
+                                       &range);
+
+         state->current_sub_cmd->transfer.serialize_with_frag = true;
+      }
+   }
+
+   return pvr_cmd_buffer_end_sub_cmd(cmd_buffer);
+}
+
 void pvr_CmdBeginRenderPass2(VkCommandBuffer commandBuffer,
                              const VkRenderPassBeginInfo *pRenderPassBeginInfo,
                              const VkSubpassBeginInfo *pSubpassBeginInfo)
@@ -7312,218 +7526,6 @@ void pvr_CmdDrawIndirect(VkCommandBuffer commandBuffer,
                            offset,
                            drawCount,
                            stride);
-}
-
-static inline enum pvr_resolve_op
-pvr_resolve_mode_to_op(enum VkResolveModeFlagBits mode)
-{
-   switch (mode) {
-   default:
-      UNREACHABLE("invalid resolve mode");
-      FALLTHROUGH;
-   case VK_RESOLVE_MODE_AVERAGE_BIT:
-      return PVR_RESOLVE_BLEND;
-   case VK_RESOLVE_MODE_SAMPLE_ZERO_BIT:
-      return PVR_RESOLVE_SAMPLE0;
-   case VK_RESOLVE_MODE_MIN_BIT:
-      return PVR_RESOLVE_MIN;
-   case VK_RESOLVE_MODE_MAX_BIT:
-      return PVR_RESOLVE_MAX;
-   }
-}
-
-static inline void
-pvr_resolve_subresource_layer_init(const struct pvr_image_view *const iview,
-                                   VkImageSubresourceLayers *subresource)
-{
-   *subresource = (VkImageSubresourceLayers){
-      .mipLevel = iview->vk.base_mip_level,
-      .baseArrayLayer = iview->vk.base_array_layer,
-      .layerCount = iview->vk.layer_count,
-   };
-}
-
-static inline void
-pvr_resolve_offset_init(const struct pvr_render_pass_info *const info,
-                        VkOffset3D *offset)
-{
-   *offset = (VkOffset3D){
-      .x = info->render_area.offset.x,
-      .y = info->render_area.offset.y,
-   };
-}
-
-/* clang-format off */
-static inline void
-pvr_resolve_image_copy_region_init(const struct pvr_image_view *const src_view,
-                                   const struct pvr_image_view *const dst_view,
-                                   const struct pvr_render_pass_info *const info,
-                                   VkImageCopy2 *region)
-{
-   pvr_resolve_subresource_layer_init(src_view, &region->srcSubresource);
-   pvr_resolve_subresource_layer_init(dst_view, &region->dstSubresource);
-   pvr_resolve_offset_init(info, &region->srcOffset);
-   pvr_resolve_offset_init(info, &region->dstOffset);
-
-   region->extent = (VkExtent3D){
-      .width = info->render_area.extent.width,
-      .height = info->render_area.extent.height,
-      .depth = 1
-   };
-}
-/* clang-format on */
-
-static VkResult
-pvr_resolve_unemitted_resolve_attachments(struct pvr_cmd_buffer *cmd_buffer,
-                                          struct pvr_render_pass_info *info)
-{
-   struct pvr_cmd_buffer_state *state = &cmd_buffer->state;
-   const struct pvr_renderpass_hwsetup_render *hw_render =
-      pvr_pass_info_get_hw_render(&state->render_pass_info, info->current_hw_subpass);
-
-   for (uint32_t i = 0U; i < hw_render->eot_surface_count; i++) {
-      const struct pvr_renderpass_hwsetup_eot_surface *surface =
-         &hw_render->eot_surfaces[i];
-      const uint32_t color_attach_idx = surface->src_attachment_idx;
-      const uint32_t resolve_attach_idx = surface->attachment_idx;
-      struct pvr_image_view *dst_view;
-      struct pvr_image_view *src_view;
-      VkFormat src_format;
-      VkFormat dst_format;
-      VkImageCopy2 region;
-      VkResult result;
-
-      if (!surface->need_resolve ||
-          surface->resolve_type != PVR_RESOLVE_TYPE_TRANSFER) {
-         continue;
-      }
-
-      dst_view = info->attachments[resolve_attach_idx];
-      src_view = info->attachments[color_attach_idx];
-
-      pvr_resolve_image_copy_region_init(src_view, dst_view, info, &region);
-      region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-      region.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-
-      /* TODO: if ERN_46863 is supported, Depth and stencil are sampled
-       * separately from images with combined depth+stencil. Add logic here to
-       * handle it using appropriate format from image view.
-       */
-      src_format = src_view->vk.image->format;
-      dst_format = dst_view->vk.image->format;
-      src_view->vk.image->format = src_view->vk.format;
-      dst_view->vk.image->format = dst_view->vk.format;
-
-      result = pvr_copy_or_resolve_color_image_region(
-         cmd_buffer,
-         vk_to_pvr_image(src_view->vk.image),
-         vk_to_pvr_image(dst_view->vk.image),
-         &region);
-
-      src_view->vk.image->format = src_format;
-      dst_view->vk.image->format = dst_format;
-
-      state->current_sub_cmd->transfer.serialize_with_frag = true;
-
-      if (result != VK_SUCCESS)
-         return result;
-   }
-
-   if (hw_render->stencil_resolve_mode || hw_render->depth_resolve_mode) {
-      const struct pvr_render_pass_attachment resolve_attachment =
-         info->pass->attachments[hw_render->ds_attach_resolve_idx];
-      const struct pvr_image_view *dst_view =
-         info->attachments[hw_render->ds_attach_resolve_idx];
-      const struct pvr_image_view *src_view =
-         info->attachments[hw_render->ds_attach_idx];
-      const VkClearValue *resolve_clear_values =
-         &state->render_pass_info.clear_values[hw_render->ds_attach_resolve_idx];
-      const bool both_stencil = vk_format_has_stencil(dst_view->vk.format) &&
-                                vk_format_has_stencil(src_view->vk.format);
-      const bool both_depth = vk_format_has_depth(dst_view->vk.format) &&
-                              vk_format_has_depth(src_view->vk.format);
-      bool clear_depth = false, clear_stencil = false;
-      VkClearDepthStencilValue clear_values;
-      VkImageCopy2 region;
-
-      pvr_resolve_image_copy_region_init(src_view, dst_view, info, &region);
-
-      if (both_depth &&
-          !hw_render->depth_resolve_mode &&
-          resolve_attachment.store_op == VK_ATTACHMENT_STORE_OP_STORE &&
-          resolve_attachment.load_op == VK_ATTACHMENT_LOAD_OP_CLEAR) {
-         clear_values.depth = resolve_clear_values->depthStencil.depth;
-         clear_depth = true;
-      }
-
-      if (both_stencil &&
-          !hw_render->stencil_resolve_mode &&
-          resolve_attachment.stencil_store_op == VK_ATTACHMENT_STORE_OP_STORE &&
-          resolve_attachment.stencil_load_op == VK_ATTACHMENT_LOAD_OP_CLEAR) {
-         clear_values.stencil = resolve_clear_values->depthStencil.stencil;
-         clear_stencil = true;
-      }
-
-      /* Resolve depth and if it can clear stencil */
-      if (both_depth && hw_render->depth_resolve_mode) {
-         region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-         region.dstSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-
-         pvr_copy_or_resolve_depth_stencil_region(
-            cmd_buffer,
-            vk_to_pvr_image(src_view->vk.image),
-            vk_to_pvr_image(dst_view->vk.image),
-            pvr_resolve_mode_to_op(hw_render->depth_resolve_mode),
-            clear_stencil,
-            &clear_values,
-            &region);
-
-         state->current_sub_cmd->transfer.serialize_with_frag = true;
-         clear_stencil = false;
-      }
-
-      /* Resolve stencil and if it can clear depth */
-      if (both_stencil && hw_render->stencil_resolve_mode) {
-         region.srcSubresource.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
-         region.dstSubresource.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
-
-         pvr_copy_or_resolve_depth_stencil_region(
-            cmd_buffer,
-            vk_to_pvr_image(src_view->vk.image),
-            vk_to_pvr_image(dst_view->vk.image),
-            pvr_resolve_mode_to_op(hw_render->stencil_resolve_mode),
-            clear_depth,
-            &clear_values,
-            &region);
-
-         state->current_sub_cmd->transfer.serialize_with_frag = true;
-         clear_depth = false;
-      }
-
-      /* Clear what it couldn't be cleared yet */
-      if (clear_stencil || clear_depth) {
-         const VkImageAspectFlagBits aspect =
-            (clear_depth ? VK_IMAGE_ASPECT_DEPTH_BIT : 0) |
-            (clear_stencil ? VK_IMAGE_ASPECT_STENCIL_BIT : 0);
-         VkImageSubresourceRange range = (VkImageSubresourceRange){
-            .aspectMask = aspect,
-            .baseMipLevel = dst_view->vk.base_mip_level,
-            .levelCount = 1,
-            .baseArrayLayer = dst_view->vk.base_array_layer,
-            .layerCount = dst_view->vk.layer_count,
-         };
-
-         pvr_clear_depth_stencil_image(cmd_buffer,
-                                       vk_to_pvr_image(dst_view->vk.image),
-                                       &clear_values,
-                                       1,
-                                       &range);
-
-         state->current_sub_cmd->transfer.serialize_with_frag = true;
-      }
-   }
-
-   return pvr_cmd_buffer_end_sub_cmd(cmd_buffer);
 }
 
 void pvr_CmdEndRenderPass2(VkCommandBuffer commandBuffer,
