@@ -495,6 +495,8 @@ static bool lower_resource_tex(nir_builder *b, nir_tex_instr *tex,
    nir_deref_instr *sampler_deref = NULL;
    nir_def *texture_handle = NULL;
    nir_def *sampler_handle = NULL;
+   bool has_sampler = tex->sampler_dim != GLSL_SAMPLER_DIM_BUF &&
+                      tex->sampler_dim != GLSL_SAMPLER_DIM_MS;
 
    for (unsigned i = 0; i < tex->num_srcs; i++) {
       switch (tex->src[i].src_type) {
@@ -502,13 +504,23 @@ static bool lower_resource_tex(nir_builder *b, nir_tex_instr *tex,
          texture_deref = nir_src_as_deref(tex->src[i].src);
          break;
       case nir_tex_src_sampler_deref:
-         sampler_deref = nir_src_as_deref(tex->src[i].src);
+         if (has_sampler) {
+            sampler_deref = nir_src_as_deref(tex->src[i].src);
+         } else {
+            nir_tex_instr_remove_src(tex, i);
+            i--;
+         }
          break;
       case nir_tex_src_texture_handle:
          texture_handle = tex->src[i].src.ssa;
          break;
       case nir_tex_src_sampler_handle:
-         sampler_handle = tex->src[i].src.ssa;
+         if (has_sampler) {
+            sampler_handle = tex->src[i].src.ssa;
+         } else {
+            nir_tex_instr_remove_src(tex, i);
+            i--;
+         }
          break;
       default:
          break;
@@ -532,6 +544,7 @@ static bool lower_resource_tex(nir_builder *b, nir_tex_instr *tex,
    }
 
    if (tex->op == nir_texop_sampler_descriptor_amd) {
+      assert(has_sampler);
       nir_def *sampler;
       if (sampler_deref)
          sampler = load_deref_sampler_desc(b, sampler_deref, AC_DESC_SAMPLER, s, true);
