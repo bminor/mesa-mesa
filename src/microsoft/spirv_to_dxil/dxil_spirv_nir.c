@@ -30,6 +30,7 @@
 #include "spirv/spirv_info.h"
 #include "util/blob.h"
 #include "dxil_spirv_nir.h"
+#include "nir_xfb_info.h"
 
 #include "git_sha1.h"
 #include "vulkan/vulkan.h"
@@ -142,6 +143,18 @@ dxil_spirv_nir_prep(nir_shader *nir)
               nir_var_shader_in | nir_var_shader_out | nir_var_system_value |
               nir_var_shader_call_data | nir_var_ray_hit_attrib,
               NULL);
+   
+   /* This needs to happen after remove_dead_vars because GLSLang likes to
+    * insert dead clip/cull vars and we don't want to clip/cull based on
+    * uninitialized garbage.
+    */
+   nir_gather_clip_cull_distance_sizes_from_vars(nir);
+   NIR_PASS(_, nir, nir_merge_clip_cull_distance_vars);
+
+   if (nir->info.stage == MESA_SHADER_VERTEX ||
+       nir->info.stage == MESA_SHADER_TESS_EVAL ||
+       nir->info.stage == MESA_SHADER_GEOMETRY)
+      nir_shader_gather_xfb_info(nir);
 
    NIR_PASS(_, nir, nir_propagate_invariant, false);
 }
@@ -1028,8 +1041,6 @@ dxil_spirv_nir_passes(nir_shader *nir,
 
    NIR_PASS(_, nir, dxil_nir_lower_int_cubemaps, false);
 
-   nir_gather_clip_cull_distance_sizes_from_vars(nir);
-   NIR_PASS(_, nir, nir_merge_clip_cull_distance_vars);
    NIR_PASS(_, nir, nir_lower_io_vars_to_temporaries, nir_shader_get_entrypoint(nir),
             nir_var_shader_out | nir_var_shader_in);
    NIR_PASS(_, nir, nir_lower_global_vars_to_local);
