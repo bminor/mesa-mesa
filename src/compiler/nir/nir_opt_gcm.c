@@ -281,8 +281,7 @@ pin_intrinsic(nir_intrinsic_instr *intrin)
                                 nir_var_mem_push_const)) {
       nir_deref_instr *deref = nir_src_as_deref(intrin->src[0]);
       while (deref->deref_type != nir_deref_type_var) {
-         if ((deref->deref_type == nir_deref_type_array ||
-              deref->deref_type == nir_deref_type_ptr_as_array) &&
+         if (nir_deref_instr_is_arr(deref) &&
              !nir_src_is_always_uniform(deref->arr.index)) {
             instr->pass_flags = GCM_INSTR_PINNED;
             return;

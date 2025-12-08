@@ -1144,8 +1144,7 @@ print_deref_instr(nir_deref_instr *instr, print_state *state)
               instr->cast.align_mul, instr->cast.align_offset);
    }
 
-   if (instr->deref_type == nir_deref_type_array ||
-       instr->deref_type == nir_deref_type_ptr_as_array) {
+   if (nir_deref_instr_is_arr(instr)) {
       if (instr->arr.in_bounds)
          fprintf(fp, "  (in bounds)");
    }

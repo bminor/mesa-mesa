@@ -129,8 +129,7 @@ nir_deref_instr_has_indirect(nir_deref_instr *instr)
       if (instr->deref_type == nir_deref_type_cast)
          return true;
 
-      if ((instr->deref_type == nir_deref_type_array ||
-           instr->deref_type == nir_deref_type_ptr_as_array) &&
+      if (nir_deref_instr_is_arr(instr) &&
           !nir_src_is_const(instr->arr.index))
          return true;
 

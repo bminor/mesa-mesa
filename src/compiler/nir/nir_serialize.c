@@ -915,8 +915,7 @@ write_deref(write_ctx *ctx, const nir_deref_instr *deref)
          header.deref_var.object_idx = var_idx;
    }
 
-   if (deref->deref_type == nir_deref_type_array ||
-       deref->deref_type == nir_deref_type_ptr_as_array) {
+   if (nir_deref_instr_is_arr(deref)) {
       header.deref.packed_src_ssa_16bit = are_object_ids_16bit(ctx);
 
       header.deref.in_bounds = deref->arr.in_bounds;

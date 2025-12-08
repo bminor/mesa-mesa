@@ -838,8 +838,7 @@ is_indirect_load(nir_instr *instr)
          if (!nir_deref_mode_may_be(deref, mem_modes))
             return false;
          while (deref) {
-            if ((deref->deref_type == nir_deref_type_array ||
-                 deref->deref_type == nir_deref_type_ptr_as_array) &&
+            if (nir_deref_instr_is_arr(deref) &&
                 !nir_src_is_const(deref->arr.index)) {
                return true;
             }
