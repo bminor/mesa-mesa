@@ -6287,9 +6287,16 @@ lookup_ps_epilog(struct radv_cmd_buffer *cmd_buffer)
 
       state.color_attachment_formats[i] = render->color_att[i].format;
 
+      const uint32_t blend_src1_alpha =
+         pdev->info.gfx_level >= GFX11 ? V_028780_BLEND_SRC1_ALPHA_GFX11 : V_028780_BLEND_SRC1_ALPHA_GFX6;
+      const uint32_t blend_inv_src1_alpha =
+         pdev->info.gfx_level >= GFX11 ? V_028780_BLEND_INV_SRC1_ALPHA_GFX11 : V_028780_BLEND_INV_SRC1_ALPHA_GFX6;
+
       if (src_blend == V_028780_BLEND_SRC_ALPHA || src_blend == V_028780_BLEND_ONE_MINUS_SRC_ALPHA ||
-          src_blend == V_028780_BLEND_SRC_ALPHA_SATURATE || dst_blend == V_028780_BLEND_SRC_ALPHA ||
-          dst_blend == V_028780_BLEND_ONE_MINUS_SRC_ALPHA || dst_blend == V_028780_BLEND_SRC_ALPHA_SATURATE)
+          src_blend == V_028780_BLEND_SRC_ALPHA_SATURATE || src_blend == blend_src1_alpha ||
+          src_blend == blend_inv_src1_alpha || dst_blend == V_028780_BLEND_SRC_ALPHA ||
+          dst_blend == V_028780_BLEND_ONE_MINUS_SRC_ALPHA || dst_blend == V_028780_BLEND_SRC_ALPHA_SATURATE ||
+          dst_blend == blend_src1_alpha || dst_blend == blend_inv_src1_alpha)
          state.need_src_alpha |= 1 << i;
 
       state.color_attachment_mappings[i] = d->vk.cal.color_map[i];
