@@ -1644,7 +1644,7 @@
         "description": "anv: Don't allow STORAGE + CCS for Y_TILED mod",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "01c4ea771cd6c091320c918553fd7de3f2b9940e",
         "notes": null

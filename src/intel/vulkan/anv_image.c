@@ -506,8 +506,7 @@ anv_formats_ccs_e_compatible(const struct anv_physical_device *physical_device,
          return false;
    }
 
-   if ((vk_usage & VK_IMAGE_USAGE_STORAGE_BIT) &&
-       vk_tiling != VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
+   if (vk_usage & VK_IMAGE_USAGE_STORAGE_BIT) {
       /* Only color */
       assert((vk_format_aspects(vk_format) & ~VK_IMAGE_ASPECT_ANY_COLOR_BIT_ANV) == 0);
       if (devinfo->ver == 12) {
@@ -523,8 +522,13 @@ anv_formats_ccs_e_compatible(const struct anv_physical_device *physical_device,
           * On gfx12.0, compression is not supported with atomic
           * operations. On gfx12.5, the support is there, but it's slow
           * (see HSD 1406337848).
+          *
+          * We only care about the non-modifier case. Modifier capabilities
+          * are exposed via the standard interfaces and unlike prior
+          * platforms, we don't enable compression for uncompressed modifiers.
           */
-         if (image_may_use_r32_view(create_flags, vk_format, fmt_list))
+         if (vk_tiling != VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT &&
+             image_may_use_r32_view(create_flags, vk_format, fmt_list))
             return false;
 
       } else if (devinfo->ver <= 11) {
