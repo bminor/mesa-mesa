@@ -117,6 +117,10 @@ static unsigned
 io_base_slot(nir_intrinsic_instr *io,
              const struct brw_lower_urb_cb_data *cb_data)
 {
+   if (io->intrinsic == nir_intrinsic_load_task_payload ||
+       io->intrinsic == nir_intrinsic_store_task_payload)
+      return nir_intrinsic_base(io) / 16; /* bytes to vec4 slots */
+
    const nir_io_semantics io_sem = nir_intrinsic_io_semantics(io);
 
    if (is_per_primitive(io)) {
@@ -435,6 +439,46 @@ brw_nir_lower_outputs_to_urb_intrinsics(nir_shader *nir,
 {
    return nir_shader_intrinsics_pass(nir, lower_urb_outputs,
                                      nir_metadata_control_flow, (void *) cd);
+}
+
+static bool
+lower_task_payload_to_urb(nir_builder *b, nir_intrinsic_instr *io, void *data)
+{
+   const struct brw_lower_urb_cb_data *cb_data = data;
+   const enum mesa_shader_stage stage = b->shader->info.stage;
+
+   if (io->intrinsic != nir_intrinsic_load_task_payload &&
+       io->intrinsic != nir_intrinsic_store_task_payload)
+      return false;
+
+   b->cursor = nir_before_instr(&io->instr);
+   b->constant_fold_alu = true;
+
+   /* Convert byte offset to dword offset */
+   nir_def *offset = nir_ishr_imm(b, nir_get_io_offset_src(io)->ssa, 2);
+
+   if (io->intrinsic == nir_intrinsic_store_task_payload) {
+      store_urb(b, cb_data, io, output_handle(b), offset);
+      nir_instr_remove(&io->instr);
+   } else {
+      const bool input = stage == MESA_SHADER_MESH;
+      nir_def *handle = input ? input_handle(b, io) : output_handle(b);
+      nir_def *load = load_urb(b, cb_data, io, handle, offset,
+                               ACCESS_CAN_REORDER |
+                               (input ? ACCESS_NON_WRITEABLE : 0));
+      nir_def_replace(&io->def, load);
+   }
+
+   return true;
+}
+
+static bool
+lower_task_payload_to_urb_intrinsics(nir_shader *nir,
+                                     const struct intel_device_info *devinfo)
+{
+   struct brw_lower_urb_cb_data cb_data = { .devinfo = devinfo };
+   return nir_shader_intrinsics_pass(nir, lower_task_payload_to_urb,
+                                     nir_metadata_control_flow, &cb_data);
 }
 
 static bool
@@ -2559,6 +2603,12 @@ brw_postprocess_nir_opts(nir_shader *nir, const struct brw_compiler *compiler,
 
    brw_vectorize_lower_mem_access(nir, compiler, robust_flags);
 
+   /* Do this after lowering memory access bit-sizes */
+   if (nir->info.stage == MESA_SHADER_MESH ||
+       nir->info.stage == MESA_SHADER_TASK) {
+      OPT(lower_task_payload_to_urb_intrinsics, devinfo);
+   }
+
    /* Needs to be prior int64 lower because it generates 64bit address
     * manipulations
     */
@@ -2767,15 +2817,6 @@ brw_postprocess_nir_out_of_ssa(nir_shader *nir,
 
    if (OPT(nir_opt_rematerialize_compares))
       OPT(nir_opt_dce);
-
-   /* The mesh stages require this pass to be called at the last minute,
-    * but if anything is done by it, it will also constant fold, and that
-    * undoes the work done by nir_trivialize_registers, so call it right
-    * before that one instead.
-    */
-   if (nir->info.stage == MESA_SHADER_MESH ||
-       nir->info.stage == MESA_SHADER_TASK)
-      brw_nir_adjust_payload(nir);
 
    nir_trivialize_registers(nir);
 

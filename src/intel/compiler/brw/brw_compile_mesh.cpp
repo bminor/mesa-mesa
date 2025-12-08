@@ -134,63 +134,6 @@ brw_print_tue_map(FILE *fp, const struct brw_tue_map *map)
 }
 
 static bool
-brw_nir_adjust_task_payload_offsets_instr(struct nir_builder *b,
-                                          nir_intrinsic_instr *intrin,
-                                          void *data)
-{
-   switch (intrin->intrinsic) {
-   case nir_intrinsic_store_task_payload:
-   case nir_intrinsic_load_task_payload: {
-      nir_src *offset_src = nir_get_io_offset_src(intrin);
-
-      if (nir_src_is_const(*offset_src))
-         assert(nir_src_as_uint(*offset_src) % 4 == 0);
-
-      b->cursor = nir_before_instr(&intrin->instr);
-
-      /* Regular I/O uses dwords while explicit I/O used for task payload uses
-       * bytes.  Normalize it to dwords.
-       *
-       * TODO(mesh): Figure out how to handle 8-bit, 16-bit.
-       */
-
-      nir_def *offset = nir_ishr_imm(b, offset_src->ssa, 2);
-      nir_src_rewrite(offset_src, offset);
-
-      unsigned base = nir_intrinsic_base(intrin);
-      assert(base % 4 == 0);
-      nir_intrinsic_set_base(intrin, base / 4);
-
-      return true;
-   }
-
-   default:
-      return false;
-   }
-}
-
-static bool
-brw_nir_adjust_task_payload_offsets(nir_shader *nir)
-{
-   return nir_shader_intrinsics_pass(nir,
-                                       brw_nir_adjust_task_payload_offsets_instr,
-                                       nir_metadata_control_flow,
-                                       NULL);
-}
-
-void
-brw_nir_adjust_payload(nir_shader *shader)
-{
-   /* Adjustment of task payload offsets must be performed *after* last pass
-    * which interprets them as bytes, because it changes their unit.
-    */
-   bool adjusted = false;
-   NIR_PASS(adjusted, shader, brw_nir_adjust_task_payload_offsets);
-   if (adjusted) /* clean up the mess created by offset adjustments */
-      NIR_PASS(_, shader, nir_opt_constant_folding);
-}
-
-static bool
 brw_nir_align_launch_mesh_workgroups_instr(nir_builder *b,
                                            nir_intrinsic_instr *intrin,
                                            void *data)

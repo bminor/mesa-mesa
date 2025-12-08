@@ -374,8 +374,6 @@ void brw_nir_quick_pressure_estimate(nir_shader *nir,
 const struct glsl_type *brw_nir_get_var_type(const struct nir_shader *nir,
                                              nir_variable *var);
 
-void brw_nir_adjust_payload(nir_shader *shader);
-
 static inline nir_variable_mode
 brw_nir_no_indirect_mask(const struct brw_compiler *compiler,
                          mesa_shader_stage stage)
