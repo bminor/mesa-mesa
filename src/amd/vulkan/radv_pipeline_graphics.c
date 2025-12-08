@@ -1342,15 +1342,6 @@ radv_link_shaders(const struct radv_device *device, struct radv_shader_stage *pr
    if (gfx_state->enable_remove_point_size)
       radv_remove_point_size(gfx_state, producer, consumer);
 
-   if (nir_link_opt_varyings(producer, consumer)) {
-      nir_validate_shader(producer, "after nir_link_opt_varyings");
-      nir_validate_shader(consumer, "after nir_link_opt_varyings");
-
-      NIR_PASS(_, consumer, nir_opt_constant_folding);
-      NIR_PASS(_, consumer, nir_opt_algebraic);
-      NIR_PASS(_, consumer, nir_opt_dce);
-   }
-
    NIR_PASS(_, producer, nir_remove_dead_variables, nir_var_shader_out, NULL);
    NIR_PASS(_, consumer, nir_remove_dead_variables, nir_var_shader_in, NULL);
 
