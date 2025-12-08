@@ -500,21 +500,11 @@ tu6_setup_streamout(struct tu_cs *cs,
 
    /* no streamout: */
    if (info->num_outputs == 0) {
-      unsigned sizedw = 4;
+      tu_crb crb = cs->crb(3);
+      crb.add(VPC_SO_MAPPING_WPTR(CHIP, 0));
+      crb.add(VPC_SO_CNTL(CHIP, 0));
       if (has_pc_dgen_so_cntl)
-         sizedw += 2;
-
-      tu_cs_emit_pkt7(cs, CP_CONTEXT_REG_BUNCH, sizedw);
-      tu_cs_emit(cs, VPC_SO_MAPPING_WPTR(CHIP).reg);
-      tu_cs_emit(cs, 0);
-      tu_cs_emit(cs, VPC_SO_CNTL(CHIP).reg);
-      tu_cs_emit(cs, 0);
-
-      if (has_pc_dgen_so_cntl) {
-         tu_cs_emit(cs, REG_A6XX_PC_DGEN_SO_CNTL);
-         tu_cs_emit(cs, 0);
-      }
-
+         crb.add(PC_DGEN_SO_CNTL(CHIP, 0));
       return;
    }
 
@@ -563,32 +553,24 @@ tu6_setup_streamout(struct tu_cs *cs,
       prog_count += end - start + 1;
    }
 
-   if (has_pc_dgen_so_cntl)
-      prog_count += 1;
+   tu_crb crb = cs->crb(6 + prog_count);
 
-   tu_cs_emit_pkt7(cs, CP_CONTEXT_REG_BUNCH, 10 + 2 * prog_count);
-   fd_reg_pair reg = VPC_SO_CNTL(
+   crb.add(VPC_SO_CNTL(
       CHIP,
       .buf0_stream = info->stride[0] > 0 ? 1 + info->buffer_to_stream[0] : 0,
       .buf1_stream = info->stride[1] > 0 ? 1 + info->buffer_to_stream[1] : 0,
       .buf2_stream = info->stride[2] > 0 ? 1 + info->buffer_to_stream[2] : 0,
       .buf3_stream = info->stride[3] > 0 ? 1 + info->buffer_to_stream[3] : 0,
-      .stream_enable = info->streams_written);
-   tu_cs_emit(cs, reg.reg);
-   tu_cs_emit(cs, reg.value);
+      .stream_enable = info->streams_written));
    for (uint32_t i = 0; i < 4; i++) {
-      tu_cs_emit(cs, VPC_SO_BUFFER_STRIDE(CHIP, i).reg);
-      tu_cs_emit(cs, info->stride[i]);
+      crb.add(VPC_SO_BUFFER_STRIDE(CHIP, i, info->stride[i]));
    }
    bool first = true;
    BITSET_FOREACH_RANGE(start, end, valid_dwords,
                         A6XX_SO_PROG_DWORDS * IR3_MAX_SO_STREAMS) {
-      tu_cs_emit(cs, REG_A6XX_VPC_SO_MAPPING_WPTR);
-      tu_cs_emit(cs, COND(first, A6XX_VPC_SO_MAPPING_WPTR_RESET) |
-                     A6XX_VPC_SO_MAPPING_WPTR_ADDR(start));
+      crb.add(VPC_SO_MAPPING_WPTR(CHIP, .addr = start, .reset = first));
       for (unsigned i = start; i < end; i++) {
-         tu_cs_emit(cs, REG_A6XX_VPC_SO_MAPPING_PORT);
-         tu_cs_emit(cs, prog[i]);
+         crb.add(VPC_SO_MAPPING_PORT(CHIP, .dword = prog[i]));
       }
       first = false;
    }
@@ -597,8 +579,7 @@ tu6_setup_streamout(struct tu_cs *cs,
       /* When present, setting this register makes sure that degenerate primitives
        * are included in the stream output and not discarded.
        */
-      tu_cs_emit(cs, REG_A6XX_PC_DGEN_SO_CNTL);
-      tu_cs_emit(cs, A6XX_PC_DGEN_SO_CNTL_STREAM_ENABLE(info->streams_written));
+      crb.add(PC_DGEN_SO_CNTL(CHIP, .stream_enable = info->streams_written));
    }
 }
 
