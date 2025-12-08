@@ -2856,7 +2856,6 @@ anv_vp9_decode_video(struct anv_cmd_buffer *cmd_buffer,
    const StdVideoVP9Segmentation *segmentation = std_pic->pSegmentation;
    const StdVideoVP9LoopFilter *loop_filter = std_pic->pLoopFilter;
 
-   const bool key_frame = std_pic->frame_type == STD_VIDEO_VP9_FRAME_TYPE_KEY;
    const bool key_frame_or_intra_only =
       std_pic->flags.intra_only || std_pic->frame_type == STD_VIDEO_VP9_FRAME_TYPE_KEY;
 
@@ -3316,33 +3315,46 @@ anv_vp9_decode_video(struct anv_cmd_buffer *cmd_buffer,
    }
 
    anv_batch_emit(&cmd_buffer->batch, GENX(HCP_VP9_PIC_STATE), pic) {
-      if (std_pic->flags.segmentation_enabled)
-         assert(segmentation != NULL);
       pic.FrameWidth = align(frame_width, 8) - 1;
       pic.FrameHeight = align(frame_height, 8) - 1;
       /* STD_VIDEO_VP9_FRAME_TYPE_KEY == VP9_Key_frmae
        * STD_VIDEO_VP9_FRAME_TYPE_NON_KEY == VP9_InterFrame
        */
       pic.FrameType = std_pic->frame_type;
-      pic.AdaptProbabilities = !std_pic->flags.error_resilient_mode && !std_pic->flags.frame_parallel_decoding_mode;
+      pic.AdaptProbabilities = !std_pic->flags.error_resilient_mode &&
+                               !std_pic->flags.frame_parallel_decoding_mode;
       pic.IntraOnly = std_pic->flags.intra_only;
       pic.RefreshFrameContextEnable = std_pic->flags.refresh_frame_context;
       pic.ErrorResilientModeEnable = std_pic->flags.error_resilient_mode;
       pic.FrameParallelDecodingModeEnable = std_pic->flags.frame_parallel_decoding_mode;
-      pic.FilterLevel = std_pic->pLoopFilter->loop_filter_level;
-      pic.SharpnessLevel = std_pic->pLoopFilter->loop_filter_sharpness;
-      pic.SegmentationEnable = std_pic->flags.segmentation_enabled;
-      pic.SegmentationUpdateMap = segmentation && segmentation->flags.segmentation_update_map;
-      pic.LosslessMode = (std_pic->base_q_idx == 0) && (std_pic->delta_q_y_dc == 0) &&
-                         (std_pic->delta_q_uv_dc == 0) && (std_pic->delta_q_uv_ac == 0);
-      pic.SegmentIDStreamOutEnable = pic.SegmentationUpdateMap;
+      pic.FilterLevel = loop_filter->loop_filter_level;
+      pic.SharpnessLevel = loop_filter->loop_filter_sharpness;
 
+      pic.LosslessMode = (std_pic->base_q_idx == 0) &&
+                         (std_pic->delta_q_y_dc == 0) &&
+                         (std_pic->delta_q_uv_dc == 0) &&
+                         (std_pic->delta_q_uv_ac == 0);
 
-      pic.SegmentIDStreamInEnable = key_frame_or_intra_only ||
-         (std_pic->flags.segmentation_enabled &&
-            (!segmentation->flags.segmentation_update_map || segmentation->flags.segmentation_temporal_update)) ||
-         std_pic->flags.error_resilient_mode ||
-         is_scaling;
+      if (std_pic->flags.segmentation_enabled) {
+         assert(segmentation != NULL);
+
+         pic.SegmentationEnable = true;
+         pic.SegmentationUpdateMap = segmentation->flags.segmentation_update_map;
+         pic.SegmentIDStreamOutEnable = pic.SegmentationUpdateMap;
+
+         if (!segmentation->flags.segmentation_update_map)
+            pic.SegmentIDStreamInEnable = true;
+         else if (segmentation->flags.segmentation_temporal_update)
+            pic.SegmentIDStreamInEnable = true;
+
+         pic.SegmentIDStreamOutEnable = segmentation->flags.segmentation_update_map;
+         pic.SegmentIDStreamInEnable = !segmentation->flags.segmentation_update_map ||
+                                       segmentation->flags.segmentation_temporal_update;
+      }
+
+      pic.SegmentIDStreamInEnable |= key_frame_or_intra_only ||
+                                     std_pic->flags.error_resilient_mode ||
+                                     is_scaling;
 
       pic.Log2TileColumn = std_pic->tile_cols_log2;
       pic.Log2TileRow = std_pic->tile_rows_log2;
@@ -3365,10 +3377,11 @@ anv_vp9_decode_video(struct anv_cmd_buffer *cmd_buffer,
       pic.FirstPartitionSize = vp9_pic_info->tilesOffset - vp9_pic_info->compressedHeaderOffset;
       pic.MotionCompScalingEnable = true;
 
-      if (!key_frame) {
+      if (!key_frame_or_intra_only) {
          pic.AllowHiPrecisionMV = std_pic->flags.allow_high_precision_mv;
          pic.MotionCompensationFilterType = std_pic->interpolation_filter;
-         pic.SegmentationTemporalUpdate = key_frame_or_intra_only || !segmentation ? 0 : segmentation->flags.segmentation_temporal_update;
+         pic.SegmentationTemporalUpdate =pic.SegmentationUpdateMap ?
+            segmentation->flags.segmentation_temporal_update : 0;
 
          bool use_pre_frame_mvs = !((std_pic->flags.error_resilient_mode) ||
                                    (frame_width != vid->vp9_last_frame.width) ||
@@ -3379,16 +3392,16 @@ anv_vp9_decode_video(struct anv_cmd_buffer *cmd_buffer,
          if (is_scaling)
             use_pre_frame_mvs = false;
 
-         pic.ReferenceFrameSignBias  = std_pic->ref_frame_sign_bias_mask >> 1;
+         pic.ReferenceFrameSignBias = std_pic->ref_frame_sign_bias_mask >> 1;
          pic.LastFrameType = vid->vp9_last_frame.frame_type;
          pic.UsePrevinFindMVReferences = use_pre_frame_mvs;
 
          pic.HorizontalScaleFactorforLAST = (last_frame_width << ANV_VP9_SCALE_FACTOR_SHIFT) / frame_width;
          pic.VerticalScaleFactorforLAST = (last_frame_height << ANV_VP9_SCALE_FACTOR_SHIFT) / frame_height;
          pic.HorizontalScaleFactorforGOLDEN = (golden_frame_width << ANV_VP9_SCALE_FACTOR_SHIFT) / frame_width;
-         pic.VerticalScaleFactorforGOLDEN = (golden_frame_height << ANV_VP9_SCALE_FACTOR_SHIFT) / frame_height;;
+         pic.VerticalScaleFactorforGOLDEN = (golden_frame_height << ANV_VP9_SCALE_FACTOR_SHIFT) / frame_height;
          pic.HorizontalScaleFactorforALTREF = (altref_frame_width << ANV_VP9_SCALE_FACTOR_SHIFT) / frame_width;
-         pic.VerticalScaleFactorforALTREF = (altref_frame_height << ANV_VP9_SCALE_FACTOR_SHIFT) / frame_height;;
+         pic.VerticalScaleFactorforALTREF = (altref_frame_height << ANV_VP9_SCALE_FACTOR_SHIFT) / frame_height;
 
          pic.LastFrameWidth = last_frame_width == 0 ? 0 : last_frame_width - 1;
          pic.LastFrameHeight = last_frame_height == 0 ? 0 : last_frame_height - 1;
@@ -3396,9 +3409,7 @@ anv_vp9_decode_video(struct anv_cmd_buffer *cmd_buffer,
          pic.GoldenFrameHeight = golden_frame_height == 0 ? 0 : golden_frame_height - 1;
          pic.AltrefFrameWidth = altref_frame_width == 0 ? 0 : altref_frame_width - 1;
          pic.AltrefFrameHeight = altref_frame_height == 0 ? 0 : altref_frame_height - 1;
-
       }
-
    }
 
    vid->vp9_last_frame.frame_type = std_pic->frame_type;
