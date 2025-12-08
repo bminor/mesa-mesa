@@ -3306,11 +3306,14 @@ anv_vp9_decode_video(struct anv_cmd_buffer *cmd_buffer,
       pic.Log2TileColumn = std_pic->tile_cols_log2;
       pic.Log2TileRow = std_pic->tile_rows_log2;
 
-      if (std_pic->pColorConfig->subsampling_x == 1 || std_pic->pColorConfig->subsampling_y == 1) {
+      if (std_pic->pColorConfig->subsampling_x == 1 &&
+          std_pic->pColorConfig->subsampling_y == 1) {
          pic.ChromaSamplingFormat = Format_420;
-      } else if (std_pic->pColorConfig->subsampling_x == 1 || std_pic->pColorConfig->subsampling_y == 0) {
+      } else if (std_pic->pColorConfig->subsampling_x == 1 &&
+                 std_pic->pColorConfig->subsampling_y == 0) {
          pic.ChromaSamplingFormat = Format_422;
-      } else if (std_pic->pColorConfig->subsampling_x == 0 || std_pic->pColorConfig->subsampling_y == 0) {
+      } else if (std_pic->pColorConfig->subsampling_x == 0 &&
+                 std_pic->pColorConfig->subsampling_y == 0) {
          pic.ChromaSamplingFormat = Format_444;
       }
 

@@ -34,7 +34,7 @@
         "description": "anv/video: fix VP9 chroma subsampling format detection",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "314de7af063ff7f40c10df8cd022f35e5eb7fa1a",
         "notes": null
