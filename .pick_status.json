@@ -4,7 +4,7 @@
         "description": "radv/video: Always end ref pic modification list",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "2e21eec921f6a854085e37fe1200e243d611fa1e",
         "notes": null
