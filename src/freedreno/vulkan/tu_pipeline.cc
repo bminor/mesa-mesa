@@ -2400,10 +2400,10 @@ tu6_emit_vertex_stride(struct tu_cs *cs, const struct vk_vertex_input_state *vi)
 {
    if (vi->bindings_valid) {
       unsigned bindings_count = util_last_bit(vi->bindings_valid);
-      tu_cs_emit_pkt7(cs, CP_CONTEXT_REG_BUNCH, 2 * bindings_count);
+      tu_crb crb = cs->crb(bindings_count);
       for (unsigned i = 0; i < bindings_count; i++) {
-         tu_cs_emit(cs, REG_A6XX_VFD_VERTEX_BUFFER_STRIDE(i));
-         tu_cs_emit(cs, vi->bindings[i].stride);
+         crb.add(A6XX_VFD_VERTEX_BUFFER_STRIDE(
+            i, .vfd_vertex_buffer_stride = vi->bindings[i].stride));
       }
    }
 }
@@ -2424,10 +2424,10 @@ tu6_emit_vertex_stride_dyn(struct tu_cs *cs, const uint16_t *vi_binding_stride,
 {
    if (bindings_valid) {
       unsigned bindings_count = util_last_bit(bindings_valid);
-      tu_cs_emit_pkt7(cs, CP_CONTEXT_REG_BUNCH, 2 * bindings_count);
+      tu_crb crb = cs->crb(bindings_count);
       for (unsigned i = 0; i < bindings_count; i++) {
-         tu_cs_emit(cs, REG_A6XX_VFD_VERTEX_BUFFER_STRIDE(i));
-         tu_cs_emit(cs, vi_binding_stride[i]);
+         crb.add(A6XX_VFD_VERTEX_BUFFER_STRIDE(
+            i, .vfd_vertex_buffer_stride = vi_binding_stride[i]));
       }
    }
 }
