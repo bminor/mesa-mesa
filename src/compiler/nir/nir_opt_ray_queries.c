@@ -300,6 +300,19 @@ nir_opt_ray_query_ranges(nir_shader *shader)
 
          struct hash_entry *index_entry =
             _mesa_hash_table_search(range_indices, ray_query_deref->var);
+         if (!index_entry) {
+            /* The range doesn't exist yet which means that the first instruction
+             * isn't the initialize. Ignore it.
+             */
+            for (uint32_t i = 0; i < ray_query_count; i++) {
+               if (ray_queries[i] == ray_query_deref->var) {
+                  ray_queries[i] = NULL;
+                  break;
+               }
+            }
+            continue;
+         }
+
          struct rq_range *range = ranges + (uintptr_t)index_entry->data;
 
          if (intrinsic->intrinsic != nir_intrinsic_rq_initialize) {
