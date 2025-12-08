@@ -1502,142 +1502,18 @@ tu_xs_get_additional_cs_size_dwords(const struct ir3_shader_variant *xs)
    return size;
 }
 
-static const struct xs_config {
-   uint16_t reg_sp_xs_config;
-   uint16_t reg_sp_xs_instrlen;
-   uint16_t reg_sp_xs_first_exec_offset;
-   uint16_t reg_sp_xs_pvt_mem_hw_stack_offset;
-   uint16_t reg_sp_xs_vgpr_config;
-} xs_config[] = {
-   [MESA_SHADER_VERTEX] = {
-      REG_A6XX_SP_VS_CONFIG,
-      REG_A6XX_SP_VS_INSTR_SIZE,
-      REG_A6XX_SP_VS_PROGRAM_COUNTER_OFFSET,
-      REG_A6XX_SP_VS_PVT_MEM_STACK_OFFSET,
-      REG_A7XX_SP_VS_VGS_CNTL,
-   },
-   [MESA_SHADER_TESS_CTRL] = {
-      REG_A6XX_SP_HS_CONFIG,
-      REG_A6XX_SP_HS_INSTR_SIZE,
-      REG_A6XX_SP_HS_PROGRAM_COUNTER_OFFSET,
-      REG_A6XX_SP_HS_PVT_MEM_STACK_OFFSET,
-      REG_A7XX_SP_HS_VGS_CNTL,
-   },
-   [MESA_SHADER_TESS_EVAL] = {
-      REG_A6XX_SP_DS_CONFIG,
-      REG_A6XX_SP_DS_INSTR_SIZE,
-      REG_A6XX_SP_DS_PROGRAM_COUNTER_OFFSET,
-      REG_A6XX_SP_DS_PVT_MEM_STACK_OFFSET,
-      REG_A7XX_SP_DS_VGS_CNTL,
-   },
-   [MESA_SHADER_GEOMETRY] = {
-      REG_A6XX_SP_GS_CONFIG,
-      REG_A6XX_SP_GS_INSTR_SIZE,
-      REG_A6XX_SP_GS_PROGRAM_COUNTER_OFFSET,
-      REG_A6XX_SP_GS_PVT_MEM_STACK_OFFSET,
-      REG_A7XX_SP_GS_VGS_CNTL,
-   },
-   [MESA_SHADER_FRAGMENT] = {
-      REG_A6XX_SP_PS_CONFIG,
-      REG_A6XX_SP_PS_INSTR_SIZE,
-      REG_A6XX_SP_PS_PROGRAM_COUNTER_OFFSET,
-      REG_A6XX_SP_PS_PVT_MEM_STACK_OFFSET,
-      REG_A7XX_SP_PS_VGS_CNTL,
-   },
-   [MESA_SHADER_COMPUTE] = {
-      REG_A6XX_SP_CS_CONFIG,
-      REG_A6XX_SP_CS_INSTR_SIZE,
-      REG_A6XX_SP_CS_PROGRAM_COUNTER_OFFSET,
-      REG_A6XX_SP_CS_PVT_MEM_STACK_OFFSET,
-      REG_A7XX_SP_CS_VGS_CNTL,
-   },
-};
-
 void
-tu6_emit_xs(struct tu_cs *cs,
+tu6_emit_xs(struct tu_crb &crb,
+            struct tu_device *device,
             mesa_shader_stage stage, /* xs->type, but xs may be NULL */
             const struct ir3_shader_variant *xs,
             const struct tu_pvtmem_config *pvtmem,
             uint64_t binary_iova)
 {
-   const struct xs_config *cfg = &xs_config[stage];
-
    if (!xs) {
       /* shader stage disabled */
       return;
    }
-
-   enum a6xx_threadsize thrsz =
-      xs->info.double_threadsize ? THREAD128 : THREAD64;
-   switch (stage) {
-   case MESA_SHADER_VERTEX:
-      tu_cs_emit_regs(cs, A6XX_SP_VS_CNTL_0(
-               .halfregfootprint = xs->info.max_half_reg + 1,
-               .fullregfootprint = xs->info.max_reg + 1,
-               .branchstack = ir3_shader_branchstack_hw(xs),
-               .mergedregs = xs->mergedregs,
-               .earlypreamble = xs->early_preamble,
-      ));
-      break;
-   case MESA_SHADER_TESS_CTRL:
-      tu_cs_emit_regs(cs, A6XX_SP_HS_CNTL_0(
-               .halfregfootprint = xs->info.max_half_reg + 1,
-               .fullregfootprint = xs->info.max_reg + 1,
-               .branchstack = ir3_shader_branchstack_hw(xs),
-               .earlypreamble = xs->early_preamble,
-      ));
-      break;
-   case MESA_SHADER_TESS_EVAL:
-      tu_cs_emit_regs(cs, A6XX_SP_DS_CNTL_0(
-               .halfregfootprint = xs->info.max_half_reg + 1,
-               .fullregfootprint = xs->info.max_reg + 1,
-               .branchstack = ir3_shader_branchstack_hw(xs),
-               .earlypreamble = xs->early_preamble,
-      ));
-      break;
-   case MESA_SHADER_GEOMETRY:
-      tu_cs_emit_regs(cs, A6XX_SP_GS_CNTL_0(
-               .halfregfootprint = xs->info.max_half_reg + 1,
-               .fullregfootprint = xs->info.max_reg + 1,
-               .branchstack = ir3_shader_branchstack_hw(xs),
-               .earlypreamble = xs->early_preamble,
-      ));
-      break;
-   case MESA_SHADER_FRAGMENT:
-      tu_cs_emit_regs(cs, A6XX_SP_PS_CNTL_0(
-               .halfregfootprint = xs->info.max_half_reg + 1,
-               .fullregfootprint = xs->info.max_reg + 1,
-               .branchstack = ir3_shader_branchstack_hw(xs),
-               .threadsize = thrsz,
-               .varying = xs->total_in != 0,
-               .lodpixmask = xs->need_full_quad,
-               /* inoutregoverlap had no effect on perf in anholt's testing:
-                * https://gitlab.freedesktop.org/anholt/mesa/-/commits/tu-inout-reg
-                */
-               .inoutregoverlap = true,
-               .pixlodenable = xs->need_pixlod,
-               .earlypreamble = xs->early_preamble,
-               .mergedregs = xs->mergedregs,
-      ));
-      break;
-   case MESA_SHADER_COMPUTE:
-      thrsz = cs->device->physical_device->info->props
-            .supports_double_threadsize ? thrsz : THREAD128;
-      tu_cs_emit_regs(cs, A6XX_SP_CS_CNTL_0(
-               .halfregfootprint = xs->info.max_half_reg + 1,
-               .fullregfootprint = xs->info.max_reg + 1,
-               .branchstack = ir3_shader_branchstack_hw(xs),
-               .threadsize = thrsz,
-               .earlypreamble = xs->early_preamble,
-               .mergedregs = xs->mergedregs,
-      ));
-      break;
-   default:
-      UNREACHABLE("bad shader stage");
-   }
-
-   tu_cs_emit_pkt4(cs, cfg->reg_sp_xs_instrlen, 1);
-   tu_cs_emit(cs, xs->instrlen);
 
    /* emit program binary & private memory layout
     * binary_iova should be aligned to 1 instrlen unit (128 bytes)
@@ -1646,21 +1522,140 @@ tu6_emit_xs(struct tu_cs *cs,
    assert((binary_iova & 0x7f) == 0);
    assert((pvtmem->iova & 0x1f) == 0);
 
-   tu_cs_emit_pkt4(cs, cfg->reg_sp_xs_first_exec_offset, 7);
-   tu_cs_emit(cs, 0);
-   tu_cs_emit_qw(cs, binary_iova);
-   tu_cs_emit(cs,
-              A6XX_SP_VS_PVT_MEM_PARAM_MEMSIZEPERITEM(pvtmem->per_fiber_size));
-   tu_cs_emit_qw(cs, pvtmem->iova);
-   tu_cs_emit(cs, A6XX_SP_VS_PVT_MEM_SIZE_TOTALPVTMEMSIZE(pvtmem->per_sp_size) |
-                  COND(pvtmem->per_wave, A6XX_SP_VS_PVT_MEM_SIZE_PERWAVEMEMLAYOUT));
+   enum a6xx_threadsize thrsz =
+      xs->info.double_threadsize ? THREAD128 : THREAD64;
+   switch (stage) {
+   case MESA_SHADER_VERTEX:
+      crb.add(A6XX_SP_VS_CNTL_0(.halfregfootprint = xs->info.max_half_reg + 1,
+                                .fullregfootprint = xs->info.max_reg + 1,
+                                .branchstack = ir3_shader_branchstack_hw(xs),
+                                .mergedregs = xs->mergedregs,
+                                .earlypreamble = xs->early_preamble, ));
+      crb.add(A6XX_SP_VS_INSTR_SIZE(xs->instrlen));
+      crb.add(A6XX_SP_VS_PROGRAM_COUNTER_OFFSET(0));
+      crb.add(A6XX_SP_VS_BASE(.qword = binary_iova));
+      crb.add(
+         A6XX_SP_VS_PVT_MEM_PARAM(.memsizeperitem = pvtmem->per_fiber_size));
+      crb.add(A6XX_SP_VS_PVT_MEM_BASE(.qword = pvtmem->iova));
+      crb.add(
+         A6XX_SP_VS_PVT_MEM_SIZE(.totalpvtmemsize = pvtmem->per_sp_size,
+                                 .perwavememlayout = xs->pvtmem_per_wave));
+      crb.add(A6XX_SP_VS_PVT_MEM_STACK_OFFSET(.offset = pvtmem->per_sp_size));
+      if (device->physical_device->info->chip >= A7XX)
+         crb.add(SP_VS_VGS_CNTL(A7XX, 0));
+      break;
 
-   tu_cs_emit_pkt4(cs, cfg->reg_sp_xs_pvt_mem_hw_stack_offset, 1);
-   tu_cs_emit(cs, A6XX_SP_VS_PVT_MEM_STACK_OFFSET_OFFSET(pvtmem->per_sp_size));
+   case MESA_SHADER_TESS_CTRL:
+      crb.add(A6XX_SP_HS_CNTL_0(.halfregfootprint = xs->info.max_half_reg + 1,
+                                .fullregfootprint = xs->info.max_reg + 1,
+                                .branchstack = ir3_shader_branchstack_hw(xs),
+                                .earlypreamble = xs->early_preamble, ));
+      crb.add(A6XX_SP_HS_INSTR_SIZE(xs->instrlen));
+      crb.add(A6XX_SP_HS_PROGRAM_COUNTER_OFFSET(0));
+      crb.add(A6XX_SP_HS_BASE(.qword = binary_iova));
+      crb.add(
+         A6XX_SP_HS_PVT_MEM_PARAM(.memsizeperitem = pvtmem->per_fiber_size));
+      crb.add(A6XX_SP_HS_PVT_MEM_BASE(.qword = pvtmem->iova));
+      crb.add(
+         A6XX_SP_HS_PVT_MEM_SIZE(.totalpvtmemsize = pvtmem->per_sp_size,
+                                 .perwavememlayout = xs->pvtmem_per_wave));
+      crb.add(A6XX_SP_HS_PVT_MEM_STACK_OFFSET(.offset = pvtmem->per_sp_size));
+      if (device->physical_device->info->chip >= A7XX)
+         crb.add(SP_HS_VGS_CNTL(A7XX, 0));
 
-   if (cs->device->physical_device->info->chip >= A7XX) {
-      tu_cs_emit_pkt4(cs, cfg->reg_sp_xs_vgpr_config, 1);
-      tu_cs_emit(cs, 0);
+      break;
+
+   case MESA_SHADER_TESS_EVAL:
+      crb.add(A6XX_SP_DS_CNTL_0(.halfregfootprint = xs->info.max_half_reg + 1,
+                                .fullregfootprint = xs->info.max_reg + 1,
+                                .branchstack = ir3_shader_branchstack_hw(xs),
+                                .earlypreamble = xs->early_preamble, ));
+      crb.add(A6XX_SP_DS_INSTR_SIZE(xs->instrlen));
+      crb.add(A6XX_SP_DS_PROGRAM_COUNTER_OFFSET(0));
+      crb.add(A6XX_SP_DS_BASE(.qword = binary_iova));
+      crb.add(
+         A6XX_SP_DS_PVT_MEM_PARAM(.memsizeperitem = pvtmem->per_fiber_size));
+      crb.add(A6XX_SP_DS_PVT_MEM_BASE(.qword = pvtmem->iova));
+      crb.add(
+         A6XX_SP_DS_PVT_MEM_SIZE(.totalpvtmemsize = pvtmem->per_sp_size,
+                                 .perwavememlayout = xs->pvtmem_per_wave));
+      crb.add(A6XX_SP_DS_PVT_MEM_STACK_OFFSET(.offset = pvtmem->per_sp_size));
+      if (device->physical_device->info->chip >= A7XX)
+         crb.add(SP_DS_VGS_CNTL(A7XX, 0));
+      break;
+
+   case MESA_SHADER_GEOMETRY:
+      crb.add(A6XX_SP_GS_CNTL_0(.halfregfootprint = xs->info.max_half_reg + 1,
+                                .fullregfootprint = xs->info.max_reg + 1,
+                                .branchstack = ir3_shader_branchstack_hw(xs),
+                                .earlypreamble = xs->early_preamble, ));
+      crb.add(A6XX_SP_GS_INSTR_SIZE(xs->instrlen));
+      crb.add(A6XX_SP_GS_PROGRAM_COUNTER_OFFSET(0));
+      crb.add(A6XX_SP_GS_BASE(.qword = binary_iova));
+      crb.add(
+         A6XX_SP_GS_PVT_MEM_PARAM(.memsizeperitem = pvtmem->per_fiber_size));
+      crb.add(A6XX_SP_GS_PVT_MEM_BASE(.qword = pvtmem->iova));
+      crb.add(
+         A6XX_SP_GS_PVT_MEM_SIZE(.totalpvtmemsize = pvtmem->per_sp_size,
+                                 .perwavememlayout = xs->pvtmem_per_wave));
+      crb.add(A6XX_SP_GS_PVT_MEM_STACK_OFFSET(.offset = pvtmem->per_sp_size));
+      if (device->physical_device->info->chip >= A7XX)
+         crb.add(SP_GS_VGS_CNTL(A7XX, 0));
+      break;
+
+   case MESA_SHADER_FRAGMENT:
+      crb.add(A6XX_SP_PS_CNTL_0(
+            .halfregfootprint = xs->info.max_half_reg + 1,
+            .fullregfootprint = xs->info.max_reg + 1,
+            .branchstack = ir3_shader_branchstack_hw(xs), .threadsize = thrsz,
+            .varying = xs->total_in != 0, .lodpixmask = xs->need_full_quad,
+            /* inoutregoverlap had no effect on perf in anholt's testing:
+             * https://gitlab.freedesktop.org/anholt/mesa/-/commits/tu-inout-reg
+             */
+            .inoutregoverlap = true, .pixlodenable = xs->need_pixlod,
+            .earlypreamble = xs->early_preamble,
+            .mergedregs = xs->mergedregs, ));
+      crb.add(A6XX_SP_PS_INSTR_SIZE(xs->instrlen));
+      crb.add(A6XX_SP_PS_PROGRAM_COUNTER_OFFSET(0));
+      crb.add(A6XX_SP_PS_BASE(.qword = binary_iova));
+      crb.add(
+         A6XX_SP_PS_PVT_MEM_PARAM(.memsizeperitem = pvtmem->per_fiber_size));
+      crb.add(A6XX_SP_PS_PVT_MEM_BASE(.qword = pvtmem->iova));
+      crb.add(
+         A6XX_SP_PS_PVT_MEM_SIZE(.totalpvtmemsize = pvtmem->per_sp_size,
+                                 .perwavememlayout = xs->pvtmem_per_wave));
+      crb.add(A6XX_SP_PS_PVT_MEM_STACK_OFFSET(.offset = pvtmem->per_sp_size));
+      if (device->physical_device->info->chip >= A7XX)
+         crb.add(SP_PS_VGS_CNTL(A7XX, 0));
+
+      break;
+
+   case MESA_SHADER_COMPUTE:
+      thrsz = device->physical_device->info->props.supports_double_threadsize
+                 ? thrsz
+                 : THREAD128;
+      crb.add(A6XX_SP_CS_CNTL_0(.halfregfootprint = xs->info.max_half_reg + 1,
+                                .fullregfootprint = xs->info.max_reg + 1,
+                                .branchstack = ir3_shader_branchstack_hw(xs),
+                                .threadsize = thrsz,
+                                .earlypreamble = xs->early_preamble,
+                                .mergedregs = xs->mergedregs, ));
+      crb.add(A6XX_SP_CS_INSTR_SIZE(xs->instrlen));
+      crb.add(A6XX_SP_CS_PROGRAM_COUNTER_OFFSET(0));
+      crb.add(A6XX_SP_CS_BASE(.qword = binary_iova));
+      crb.add(
+         A6XX_SP_CS_PVT_MEM_PARAM(.memsizeperitem = pvtmem->per_fiber_size));
+      crb.add(A6XX_SP_CS_PVT_MEM_BASE(.qword = pvtmem->iova));
+      crb.add(
+         A6XX_SP_CS_PVT_MEM_SIZE(.totalpvtmemsize = pvtmem->per_sp_size,
+                                 .perwavememlayout = xs->pvtmem_per_wave));
+      crb.add(A6XX_SP_CS_PVT_MEM_STACK_OFFSET(.offset = pvtmem->per_sp_size));
+      if (device->physical_device->info->chip >= A7XX)
+         crb.add(SP_CS_VGS_CNTL(A7XX, 0));
+      break;
+
+   default:
+      UNREACHABLE("bad shader stage");
    }
 }
 
@@ -1787,8 +1782,8 @@ tu6_emit_cs_config(struct tu_cs *cs,
       crb.add(SP_UPDATE_CNTL(CHIP, .cs_state = true, .cs_uav = true,
                              .cs_shared_const = shared_consts_enable));
       tu6_emit_xs_config<CHIP>(crb, MESA_SHADER_COMPUTE, v);
+      tu6_emit_xs(crb, cs->device, MESA_SHADER_COMPUTE, v, pvtmem, binary_iova);
    }
-   tu6_emit_xs(cs, MESA_SHADER_COMPUTE, v, pvtmem, binary_iova);
    tu6_emit_xs_constants(cs, MESA_SHADER_COMPUTE, v, binary_iova);
 
    tu_crb crb = cs->crb(0);
@@ -2400,7 +2395,9 @@ tu6_emit_variant(struct tu_cs *cs,
       return;
    }
 
-   tu6_emit_xs(cs, stage, xs, pvtmem_config, binary_iova);
+   with_crb(cs) {
+      tu6_emit_xs(crb, cs->device, stage, xs, pvtmem_config, binary_iova);
+   }
 
    switch (stage) {
    case MESA_SHADER_VERTEX:

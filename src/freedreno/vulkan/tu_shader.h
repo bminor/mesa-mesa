@@ -152,7 +152,8 @@ tu_spirv_to_nir(struct tu_device *dev,
                 mesa_shader_stage stage);
 
 void
-tu6_emit_xs(struct tu_cs *cs,
+tu6_emit_xs(struct tu_crb &crb,
+            struct tu_device *device,
             mesa_shader_stage stage,
             const struct ir3_shader_variant *xs,
             const struct tu_pvtmem_config *pvtmem,

@@ -871,17 +871,16 @@ r3d_common(struct tu_cmd_buffer *cmd, struct tu_cs *cs, enum r3d_type type,
          .cs_bindless = CHIP == A6XX ? 0x1f : 0xff,
          .gfx_bindless = CHIP == A6XX ? 0x1f : 0xff,));
 
-   tu_crb crb = cs->crb(2 * 5);
+   tu_crb crb = cs->crb(2 * 5 + 2 * 11);
    tu6_emit_xs_config<CHIP>(crb, MESA_SHADER_VERTEX, vs);
    tu6_emit_xs_config<CHIP>(crb, MESA_SHADER_TESS_CTRL, NULL);
    tu6_emit_xs_config<CHIP>(crb, MESA_SHADER_TESS_EVAL, NULL);
    tu6_emit_xs_config<CHIP>(crb, MESA_SHADER_GEOMETRY, NULL);
    tu6_emit_xs_config<CHIP>(crb, MESA_SHADER_FRAGMENT, fs);
-   crb.flush();
-
    struct tu_pvtmem_config pvtmem = {};
-   tu6_emit_xs(cs, MESA_SHADER_VERTEX, vs, &pvtmem, vs_iova);
-   tu6_emit_xs(cs, MESA_SHADER_FRAGMENT, fs, &pvtmem, fs_iova);
+   tu6_emit_xs(crb, cs->device, MESA_SHADER_VERTEX, vs, &pvtmem, vs_iova);
+   tu6_emit_xs(crb, cs->device, MESA_SHADER_FRAGMENT, fs, &pvtmem, fs_iova);
+   crb.flush();
 
    tu6_emit_xs_constants(cs, MESA_SHADER_VERTEX, vs, vs_iova);
    tu6_emit_xs_constants(cs, MESA_SHADER_FRAGMENT, fs, fs_iova);
