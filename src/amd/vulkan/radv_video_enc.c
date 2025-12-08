@@ -945,8 +945,9 @@ radv_enc_slice_header(struct radv_cmd_buffer *cmd_buffer, const VkVideoEncodeInf
 
       radv_enc_code_fixed_bits(cmd_buffer, ref_lists->flags.ref_pic_list_modification_flag_l0, 1);
       if (ref_lists->flags.ref_pic_list_modification_flag_l0) {
+         const StdVideoEncodeH264RefListModEntry *entry = NULL;
          for (unsigned op = 0; op < MIN2(ref_lists->refList0ModOpCount, 1); op++) {
-            const StdVideoEncodeH264RefListModEntry *entry = &ref_lists->pRefList0ModOperations[op];
+            entry = &ref_lists->pRefList0ModOperations[op];
 
             radv_enc_code_ue(cmd_buffer, entry->modification_of_pic_nums_idc);
             if (entry->modification_of_pic_nums_idc ==
@@ -956,13 +957,17 @@ radv_enc_slice_header(struct radv_cmd_buffer *cmd_buffer, const VkVideoEncodeInf
             else if (entry->modification_of_pic_nums_idc == STD_VIDEO_H264_MODIFICATION_OF_PIC_NUMS_IDC_LONG_TERM)
                radv_enc_code_ue(cmd_buffer, entry->long_term_pic_num);
          }
+
+         if (entry && entry->modification_of_pic_nums_idc != STD_VIDEO_H264_MODIFICATION_OF_PIC_NUMS_IDC_END)
+            radv_enc_code_ue(cmd_buffer, STD_VIDEO_H264_MODIFICATION_OF_PIC_NUMS_IDC_END);
       }
 
       if (pic->primary_pic_type == STD_VIDEO_H264_PICTURE_TYPE_B) {
          radv_enc_code_fixed_bits(cmd_buffer, ref_lists->flags.ref_pic_list_modification_flag_l1, 1);
          if (ref_lists->flags.ref_pic_list_modification_flag_l1) {
+            const StdVideoEncodeH264RefListModEntry *entry = NULL;
             for (unsigned op = 0; op < MIN2(ref_lists->refList1ModOpCount, 1); op++) {
-               const StdVideoEncodeH264RefListModEntry *entry = &ref_lists->pRefList1ModOperations[op];
+               entry = &ref_lists->pRefList1ModOperations[op];
 
                radv_enc_code_ue(cmd_buffer, entry->modification_of_pic_nums_idc);
                if (entry->modification_of_pic_nums_idc ==
@@ -972,6 +977,9 @@ radv_enc_slice_header(struct radv_cmd_buffer *cmd_buffer, const VkVideoEncodeInf
                else if (entry->modification_of_pic_nums_idc == STD_VIDEO_H264_MODIFICATION_OF_PIC_NUMS_IDC_LONG_TERM)
                   radv_enc_code_ue(cmd_buffer, entry->long_term_pic_num);
             }
+
+            if (entry && entry->modification_of_pic_nums_idc != STD_VIDEO_H264_MODIFICATION_OF_PIC_NUMS_IDC_END)
+               radv_enc_code_ue(cmd_buffer, STD_VIDEO_H264_MODIFICATION_OF_PIC_NUMS_IDC_END);
          }
       }
    }
