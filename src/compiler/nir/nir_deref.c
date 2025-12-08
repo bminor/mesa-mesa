@@ -791,52 +791,18 @@ rematerialize_deref_in_block(nir_deref_instr *deref,
       return deref;
 
    nir_builder *b = &state->builder;
-   nir_deref_instr *new_deref =
-      nir_deref_instr_create(b->shader, deref->deref_type);
-   new_deref->modes = deref->modes;
-   new_deref->type = deref->type;
+   nir_instr *new_instr = nir_instr_clone(b->shader, &deref->instr);
+   nir_deref_instr *new_deref = nir_instr_as_deref(new_instr);
 
-   if (deref->deref_type == nir_deref_type_var) {
-      new_deref->var = deref->var;
-   } else {
+   if (deref->deref_type != nir_deref_type_var) {
       nir_deref_instr *parent = nir_src_as_deref(deref->parent);
       if (parent) {
          parent = rematerialize_deref_in_block(parent, state);
          new_deref->parent = nir_src_for_ssa(&parent->def);
-      } else {
-         new_deref->parent = nir_src_for_ssa(deref->parent.ssa);
       }
    }
 
-   switch (deref->deref_type) {
-   case nir_deref_type_var:
-   case nir_deref_type_array_wildcard:
-      /* Nothing more to do */
-      break;
-
-   case nir_deref_type_cast:
-      new_deref->cast.ptr_stride = deref->cast.ptr_stride;
-      new_deref->cast.align_mul = deref->cast.align_mul;
-      new_deref->cast.align_offset = deref->cast.align_offset;
-      break;
-
-   case nir_deref_type_array:
-   case nir_deref_type_ptr_as_array:
-      assert(!nir_src_as_deref(deref->arr.index));
-      new_deref->arr.index = nir_src_for_ssa(deref->arr.index.ssa);
-      break;
-
-   case nir_deref_type_struct:
-      new_deref->strct.index = deref->strct.index;
-      break;
-
-   default:
-      UNREACHABLE("Invalid deref instruction type");
-   }
-
-   nir_def_init(&new_deref->instr, &new_deref->def,
-                deref->def.num_components, deref->def.bit_size);
-   nir_builder_instr_insert(b, &new_deref->instr);
+   nir_builder_instr_insert(b, new_instr);
 
    return new_deref;
 }
