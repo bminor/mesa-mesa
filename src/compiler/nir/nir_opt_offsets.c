@@ -291,6 +291,13 @@ process_instr(nir_builder *b, nir_instr *instr, void *s)
       return try_fold_load_store(b, intrin, state, 2, get_max(state, intrin, state->options->buffer_max), need_nuw);
    case nir_intrinsic_store_ssbo_ir3:
       return try_fold_load_store(b, intrin, state, 3, get_max(state, intrin, state->options->buffer_max), need_nuw);
+   case nir_intrinsic_load_urb_lsc_intel:
+      return try_fold_load_store(b, intrin, state, 0, UINT32_MAX, false);
+   case nir_intrinsic_store_urb_lsc_intel:
+   case nir_intrinsic_load_urb_vec4_intel:
+      return try_fold_load_store(b, intrin, state, 1, UINT32_MAX, false);
+   case nir_intrinsic_store_urb_vec4_intel:
+      return try_fold_load_store(b, intrin, state, 2, UINT32_MAX, false);
    default:
       return false;
    }
