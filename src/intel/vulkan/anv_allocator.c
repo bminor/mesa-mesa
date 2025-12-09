@@ -1387,8 +1387,6 @@ anv_scratch_pool_alloc(struct anv_device *device, struct anv_scratch_pool *pool,
    unsigned bucket = scratch_size_log2 - 11;
    assert(bucket < 16);
 
-   assert(stage < ARRAY_SIZE(pool->bos[0]));
-
    const struct intel_device_info *devinfo = device->info;
 
    /* On GFX version 12.5, scratch access changed to a surface-based model.
@@ -1399,6 +1397,7 @@ anv_scratch_pool_alloc(struct anv_device *device, struct anv_scratch_pool *pool,
    if (devinfo->verx10 >= 125)
       stage = MESA_SHADER_COMPUTE;
 
+   assert(stage < ARRAY_SIZE(pool->bos[0]));
    struct anv_bo *bo = p_atomic_read(&pool->bos[bucket][stage]);
 
    if (bo != NULL)

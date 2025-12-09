@@ -164,7 +164,7 @@
         "description": "anv: Fix misplaced assertion in anv_scratch_pool_alloc",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "ee42a48984d0ce17ac5d1d4c2218e789d6b6a9f0",
         "notes": null
