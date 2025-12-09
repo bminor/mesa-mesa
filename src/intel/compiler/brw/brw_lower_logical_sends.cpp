@@ -32,6 +32,11 @@
 
 #include "util/bitpack_helpers.h"
 
+static void
+setup_lsc_surface_descriptors(const brw_builder &bld, brw_send_inst *send,
+                              uint32_t desc, const brw_reg &surface,
+                              int32_t base_offset);
+
 static inline brw_send_inst *
 brw_transform_inst_to_send(const brw_builder &bld, brw_inst *inst)
 {
@@ -91,6 +96,7 @@ lower_urb_read_logical_send_xe2(const brw_builder &bld, brw_urb_inst *urb)
 
    /* Get the logical send arguments. */
    const brw_reg handle = urb->src[URB_LOGICAL_SRC_HANDLE];
+   const unsigned offset = urb->offset;
 
    /* Calculate the total number of components of the payload. */
    const unsigned dst_comps = urb->size_written / (REG_SIZE * reg_unit(devinfo));
@@ -98,14 +104,6 @@ lower_urb_read_logical_send_xe2(const brw_builder &bld, brw_urb_inst *urb)
    brw_reg payload = bld.vgrf(BRW_TYPE_UD);
 
    bld.MOV(payload, handle);
-
-   /* The low 24-bits of the URB handle is a byte offset into the URB area.
-    * Add the byte offset of the write to this value.
-    */
-   if (urb->offset) {
-      bld.ADD(payload, payload, brw_imm_ud(urb->offset));
-      urb->offset = 0;
-   }
 
    brw_reg offsets = urb->src[URB_LOGICAL_SRC_PER_SLOT_OFFSETS];
    if (offsets.file != BAD_FILE) {
@@ -132,8 +130,8 @@ lower_urb_read_logical_send_xe2(const brw_builder &bld, brw_urb_inst *urb)
    send->has_side_effects = true;
    send->is_volatile = false;
 
-   send->src[SEND_SRC_DESC]     = brw_imm_ud(0);
-   send->src[SEND_SRC_EX_DESC]  = brw_imm_ud(0);
+   setup_lsc_surface_descriptors(bld, send, send->desc, brw_reg(), offset);
+
    send->src[SEND_SRC_PAYLOAD1] = payload;
    send->src[SEND_SRC_PAYLOAD2] = brw_reg();
 }
@@ -211,6 +209,7 @@ lower_urb_write_logical_send_xe2(const brw_builder &bld, brw_urb_inst *urb)
    const brw_reg src = urb->components_read(URB_LOGICAL_SRC_DATA) ?
       urb->src[URB_LOGICAL_SRC_DATA] : brw_reg(brw_imm_ud(0));
    assert(brw_type_size_bytes(src.type) == 4);
+   const unsigned offset = urb->offset;
 
    /* Calculate the total number of components of the payload. */
    const unsigned src_comps = MAX2(1, urb->components_read(URB_LOGICAL_SRC_DATA));
@@ -219,14 +218,6 @@ lower_urb_write_logical_send_xe2(const brw_builder &bld, brw_urb_inst *urb)
    brw_reg payload = bld.vgrf(BRW_TYPE_UD);
 
    bld.MOV(payload, handle);
-
-   /* The low 24-bits of the URB handle is a byte offset into the URB area.
-    * Add the byte offset of the write to this value.
-    */
-   if (urb->offset) {
-      bld.ADD(payload, payload, brw_imm_ud(urb->offset));
-      urb->offset = 0;
-   }
 
    brw_reg offsets = urb->src[URB_LOGICAL_SRC_PER_SLOT_OFFSETS];
    if (offsets.file != BAD_FILE) {
@@ -262,6 +253,7 @@ lower_urb_write_logical_send_xe2(const brw_builder &bld, brw_urb_inst *urb)
                              false /* transpose */,
                              LSC_CACHE(devinfo, STORE, L1UC_L3UC));
 
+   setup_lsc_surface_descriptors(bld, send, send->desc, brw_reg(), offset);
 
    send->mlen = lsc_msg_addr_len(devinfo, LSC_ADDR_SIZE_A32, send->exec_size);
    send->ex_mlen = ex_mlen;
@@ -270,7 +262,6 @@ lower_urb_write_logical_send_xe2(const brw_builder &bld, brw_urb_inst *urb)
    send->is_volatile = false;
 
    send->src[SEND_SRC_DESC]     = desc;
-   send->src[SEND_SRC_EX_DESC]  = brw_imm_ud(0);
    send->src[SEND_SRC_PAYLOAD1] = payload;
    send->src[SEND_SRC_PAYLOAD2] = payload2;
 }
