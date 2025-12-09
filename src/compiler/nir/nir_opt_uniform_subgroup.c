@@ -21,7 +21,6 @@ ballot_bit_count(nir_builder *b, nir_def *ballot)
 
 static nir_def *
 count_active_invocations(nir_builder *b, nir_def *value, bool inclusive,
-                         bool has_mbcnt_amd,
                          const nir_lower_subgroups_options *options)
 {
    /* For the non-inclusive case, the two paths are functionally the same.
@@ -39,7 +38,7 @@ count_active_invocations(nir_builder *b, nir_def *value, bool inclusive,
     * When those conditions are met, the inclusive count is the exclusive
     * count plus one.
     */
-   if (has_mbcnt_amd) {
+   if (options->lower_ballot_bit_count_to_mbcnt_amd) {
       return nir_mbcnt_amd(b, value, nir_imm_int(b, (int)inclusive));
    } else {
       nir_def *mask =
@@ -116,7 +115,7 @@ opt_uniform_subgroup_instr(nir_builder *b, nir_intrinsic_instr *intrin, void *_s
          } else {
             count = count_active_invocations(b, ballot,
                                              intrin->intrinsic == nir_intrinsic_inclusive_scan,
-                                             false, options);
+                                             options);
          }
 
          const unsigned bit_size = intrin->src[0].ssa->bit_size;
