@@ -5731,8 +5731,6 @@ template <chip CHIP>
 static void
 tu_emit_subpass_begin(struct tu_cmd_buffer *cmd)
 {
-   tu_fill_render_pass_state(&cmd->state.vk_rp, cmd->state.pass, cmd->state.subpass);
-
    struct tu_resolve_group resolve_group = {};
 
    tu_emit_subpass_begin_gmem<CHIP>(cmd, &resolve_group);
@@ -5831,6 +5829,7 @@ tu_CmdBeginRenderPass2(VkCommandBuffer commandBuffer,
 
    tu_lrz_begin_renderpass<CHIP>(cmd);
 
+   tu_fill_render_pass_state(&cmd->state.vk_rp, pass, cmd->state.subpass);
    tu_emit_renderpass_begin(cmd);
    tu_emit_subpass_begin<CHIP>(cmd);
 
@@ -5973,6 +5972,8 @@ tu_CmdBeginRendering(VkCommandBuffer commandBuffer,
       cmd->state.suspended_pass.clear_values = cmd->state.clear_values;
       cmd->state.suspended_pass.gmem_layout = cmd->state.gmem_layout;
    }
+
+   tu_fill_render_pass_state(&cmd->state.vk_rp, cmd->state.pass, cmd->state.subpass);
 
    if (!resuming) {
       tu_emit_renderpass_begin(cmd);
@@ -6155,6 +6156,7 @@ tu_CmdNextSubpass2(VkCommandBuffer commandBuffer,
          TU_CMD_FLAG_WAIT_FOR_IDLE;
    }
 
+   tu_fill_render_pass_state(&cmd->state.vk_rp, cmd->state.pass, new_subpass);
    tu_emit_subpass_begin<CHIP>(cmd);
 }
 TU_GENX(tu_CmdNextSubpass2);
