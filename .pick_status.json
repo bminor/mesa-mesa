@@ -1634,7 +1634,7 @@
         "description": "anv: fix internal representations of shaders",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "8f4c2bd56629eef21d4010138d869017bbb54a4a",
         "notes": null

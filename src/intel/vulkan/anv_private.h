@@ -1225,6 +1225,8 @@ struct anv_gfx_state_ptr {
 struct anv_shader {
    struct vk_shader vk;
 
+   void *code;
+
    struct anv_state kernel;
 
    const struct brw_stage_prog_data *prog_data;
@@ -1233,7 +1235,6 @@ struct anv_shader {
    uint32_t num_stats;
 
    char *nir_str;
-   char *asm_str;
 
    struct nir_xfb_info *xfb_info;
 
