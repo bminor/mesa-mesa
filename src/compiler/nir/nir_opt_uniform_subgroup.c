@@ -47,7 +47,8 @@ opt_uniform_subgroup_filter(const nir_instr *instr, const void *_state)
       case nir_op_iadd:
       case nir_op_fadd:
       case nir_op_ixor:
-         return true;
+         return !nir_intrinsic_has_cluster_size(intrin) ||
+                nir_intrinsic_cluster_size(intrin) == 0;
 
       case nir_op_imin:
       case nir_op_umin:
