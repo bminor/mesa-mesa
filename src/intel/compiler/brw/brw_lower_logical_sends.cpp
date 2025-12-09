@@ -100,7 +100,7 @@ lower_urb_read_logical_send_xe2(const brw_builder &bld, brw_urb_inst *urb)
    bld.MOV(payload, handle);
 
    /* The low 24-bits of the URB handle is a byte offset into the URB area.
-    * Add the (OWord) offset of the write to this value.
+    * Add the byte offset of the write to this value.
     */
    if (urb->offset) {
       bld.ADD(payload, payload, brw_imm_ud(urb->offset));
@@ -221,7 +221,7 @@ lower_urb_write_logical_send_xe2(const brw_builder &bld, brw_urb_inst *urb)
    bld.MOV(payload, handle);
 
    /* The low 24-bits of the URB handle is a byte offset into the URB area.
-    * Add the (OWord) offset of the write to this value.
+    * Add the byte offset of the write to this value.
     */
    if (urb->offset) {
       bld.ADD(payload, payload, brw_imm_ud(urb->offset));
