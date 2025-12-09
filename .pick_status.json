@@ -84,7 +84,7 @@
         "description": "nir/divergence_analysis: fix swizzle_amd without fetch inactive",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "ad5be403039bea8d0b6937fee14c1dfb60604fba",
         "notes": null

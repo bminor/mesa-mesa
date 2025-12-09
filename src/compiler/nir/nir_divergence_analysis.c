@@ -672,6 +672,13 @@ visit_intrinsic(nir_intrinsic_instr *instr, struct divergence_state *state)
       is_divergent = src_divergent(instr->src[0], state);
       break;
 
+   case nir_intrinsic_quad_swizzle_amd:
+   case nir_intrinsic_masked_swizzle_amd:
+      /* Without fetch inactive, reads for inactive lanes have to return 0. */
+      is_divergent = !nir_intrinsic_fetch_inactive(instr) ||
+                     src_divergent(instr->src[0], state);
+      break;
+
    /* Intrinsics with divergence depending on sources */
    case nir_intrinsic_convert_alu_types:
    case nir_intrinsic_ddx:
@@ -728,8 +735,6 @@ visit_intrinsic(nir_intrinsic_instr *instr, struct divergence_state *state)
    case nir_intrinsic_load_input_attachment_conv_pan:
    case nir_intrinsic_atomic_counter_read:
    case nir_intrinsic_atomic_counter_read_deref:
-   case nir_intrinsic_quad_swizzle_amd:
-   case nir_intrinsic_masked_swizzle_amd:
    case nir_intrinsic_is_sparse_texels_resident:
    case nir_intrinsic_is_sparse_resident_zink:
    case nir_intrinsic_sparse_residency_code_and:
