@@ -104,7 +104,7 @@
         "description": "nir/opt_uniform_subgroup: don't try to optimize non trivial clustered reduce",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "535caaf3e027963536e48fa5bbb59dc779523e00",
         "notes": null
