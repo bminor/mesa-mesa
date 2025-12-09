@@ -28,3 +28,21 @@ dEQP-VK.dynamic_state.monolithic.compute_transfer.single.compute.vertex_input_bi
 
 # New fails in 1.4.1.1
 dEQP-VK.pipeline.pipeline_library.bind_buffers_2.maintenance5.robustness2.triangle_list.buffers9.stride_offset_rnd654.true_size.beyond_size,Fail
+
+# New fails from nightly job
+dEQP-VK.image.queue_transfer.3d.4x3x1.r64g64b64a64_sint,Crash
+dEQP-VK.image.subresource_layout.2d.1_level.r64g64b64a64_sint_offset,Crash
+dEQP-VK.image.subresource_layout.3d.2_levels.r64g64b64a64_sint,Crash
+dEQP-VK.pipeline.pipeline_library.extended_dynamic_state.two_draws_static.tess_domain_origin_upper_left,Fail
+dEQP-VK.pipeline.shader_object_unlinked_binary.bind_buffers_2.maintenance5.robustness2.triangle_list.buffers9.stride_offset_rnd654.true_size.beyond_size,Fail
+dEQP-VK.pipeline.shader_object_unlinked_spirv.bind_buffers_2.maintenance5.robustness2.triangle_list.buffers5.stride_offset_rnd654.true_size.beyond_size,Fail
+dEQP-VK.shader_object.misc.state.pipeline.vert_tess_frag.depth.clamp,Fail
+dEQP-VK.shader_object.misc.state.pipeline.vert_tess_geom_frag.rasterization_discard.disabled,Fail
+
+# New failures with VKCTS 1.4.4.0
+dEQP-VK.pipeline.monolithic.extended_dynamic_state.cmd_buffer_start.large_stride_with_offset_and_padding,Fail
+dEQP-VK.pipeline.pipeline_library.extended_dynamic_state.before_good_static.tess_domain_origin_upper_left,Fail
+dEQP-VK.pipeline.shader_object_linked_binary.multisample.sample_rate_a2c.dynamic_a2c,Fail
+dEQP-VK.pipeline.shader_object_linked_spirv.bind_buffers_2.maintenance5.robustness2.triangle_list.buffers9.stride_offset_rnd654.true_size.beyond_size,Fail
+dEQP-VK.pipeline.shader_object_unlinked_spirv.extended_dynamic_state.cmd_buffer_start.stride_with_offset_and_padding,Fail
+dEQP-VK.shader_object.misc.state.pipeline.vert_tess_frag.color_write.true,Fail

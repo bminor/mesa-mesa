@@ -31,10 +31,19 @@ lavapipe-vkcts-asan:
     GPU_VERSION: lvp-asan
     DEQP_FORCE_ASAN: 1
     S3_ARTIFACT_NAME: mesa-x86_64-asan-debugoptimized
+    DEQP_FRACTION: 1000
   needs:
     - job: debian/x86_64_test-vk
       optional: true
     - job: debian-x86_64-asan
+
+lavapipe-vkcts-asan-full:
+  extends:
+    - lavapipe-vkcts-asan
+    - .lavapipe-manual-rules
+  timeout: 2h
+  variables:
+    DEQP_FRACTION: 40
 
 lavapipe-vkd3d:
   extends:
