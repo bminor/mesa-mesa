@@ -344,14 +344,6 @@ export_fs_mrtz(isel_context* ctx, const struct aco_ps_epilog_info* info, Temp de
       }
    }
 
-   /* GFX6 (except OLAND and HAINAN) has a bug that it only looks at the X
-    * writemask component.
-    */
-   if (ctx->options->gfx_level == GFX6 && ctx->options->family != CHIP_OLAND &&
-       ctx->options->family != CHIP_HAINAN) {
-      enabled_channels |= 0x1;
-   }
-
    bld.exp(aco_opcode::exp, values[0], values[1], values[2], values[3], enabled_channels,
            V_008DFC_SQ_EXP_MRTZ, compr);
 }

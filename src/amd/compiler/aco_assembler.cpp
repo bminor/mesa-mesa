@@ -999,6 +999,15 @@ emit_exp_instruction(asm_context& ctx, std::vector<uint32_t>& out, const Instruc
    encoding |= exp.done ? 0b1 << 11 : 0;
    encoding |= exp.dest << 4;
    encoding |= exp.enabled_mask;
+
+   /* GFX6 (except OLAND and HAINAN) has a bug that it only looks at the X
+    * writemask component.
+    */
+   if (ctx.gfx_level == GFX6 && ctx.program->family != CHIP_OLAND &&
+       ctx.program->family != CHIP_HAINAN && exp.enabled_mask && exp.dest <= V_008DFC_SQ_EXP_MRTZ) {
+      encoding |= 0x1;
+   }
+
    out.push_back(encoding);
    encoding = reg(ctx, exp.operands[0], 8);
    encoding |= reg(ctx, exp.operands[1], 8) << 8;
