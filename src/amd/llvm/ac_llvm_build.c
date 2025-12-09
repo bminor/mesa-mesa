@@ -1466,8 +1466,18 @@ void ac_build_export(struct ac_llvm_context *ctx, struct ac_export_args *a)
 {
    LLVMValueRef args[9];
 
+   /* GFX6 (except OLAND and HAINAN) has a bug that it only looks at the
+    * X writemask component.
+    */
+   unsigned enabled_channels = a->enabled_channels;
+   if (ctx->gfx_level == GFX6 && ctx->info->family != CHIP_OLAND &&
+       ctx->info->family  != CHIP_HAINAN && enabled_channels &&
+       a->target <= V_008DFC_SQ_EXP_MRTZ) {
+      enabled_channels |= 1;
+   }
+
    args[0] = LLVMConstInt(ctx->i32, a->target, 0);
-   args[1] = LLVMConstInt(ctx->i32, a->enabled_channels, 0);
+   args[1] = LLVMConstInt(ctx->i32, enabled_channels, 0);
 
    if (a->compr) {
       assert(ctx->gfx_level < GFX11);
@@ -3552,13 +3562,6 @@ void ac_export_mrt_z(struct ac_llvm_context *ctx, LLVMValueRef depth, LLVMValueR
          }
       }
    }
-
-   /* GFX6 (except OLAND and HAINAN) has a bug that it only looks
-    * at the X writemask component. */
-   if (ctx->gfx_level == GFX6 &&
-       ctx->info->family != CHIP_OLAND &&
-       ctx->info->family != CHIP_HAINAN)
-      mask |= 0x1;
 
    /* Specify which components to enable */
    args->enabled_channels = mask;
