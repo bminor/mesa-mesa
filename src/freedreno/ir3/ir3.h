@@ -3352,10 +3352,9 @@ regmask_get(regmask_t *regmask, struct ir3_register *reg)
 }
 
 static inline bool
-regmask_get_any_gpr(regmask_t *regmask)
+regmask_get_any_shared(regmask_t *regmask)
 {
-   return BITSET_TEST_RANGE(regmask->full, 0, GPR_REG_SIZE * 2) ||
-      BITSET_TEST_RANGE(regmask->half, 0, GPR_REG_SIZE);
+   return BITSET_TEST_RANGE(regmask->shared, 0, 2 * SHARED_REG_SIZE);
 }
 /* ************************************************************************* */
 

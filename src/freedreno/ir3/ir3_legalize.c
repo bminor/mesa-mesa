@@ -754,8 +754,10 @@ legalize_block(struct ir3_legalize_ctx *ctx, struct ir3_block *block)
             n->flags |= IR3_INSTR_U;
       }
 
+      /* Ensure no pending uGPR writes before EP ends: */
       if ((n->opc == OPC_SHPE) && (ctx->compiler->gen >= 8) &&
-          regmask_get_any_gpr(&state->needs_sy)) {
+          block->in_early_preamble &&
+          regmask_get_any_shared(&state->needs_sy)) {
          last_n = insert_nop_flags(ctx, state, last_n, &build, IR3_INSTR_SY);
       }
 
