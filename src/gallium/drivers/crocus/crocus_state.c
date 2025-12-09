@@ -3252,19 +3252,19 @@ crocus_set_sample_mask(struct pipe_context *ctx, unsigned sample_mask)
 static void
 crocus_fill_scissor_rect(struct crocus_context *ice,
                          int idx,
-                         struct pipe_scissor_state *ss)
+                         struct crocus_scissor_state *ss)
 {
    struct pipe_framebuffer_state *cso_fb = &ice->state.framebuffer;
    struct pipe_rasterizer_state *cso_state = &ice->state.cso_rast->cso;
    const struct pipe_viewport_state *vp = &ice->state.viewports[idx];
-   struct pipe_scissor_state scissor = (struct pipe_scissor_state) {
+   struct crocus_scissor_state scissor = (struct crocus_scissor_state) {
       .minx = MAX2(-fabsf(vp->scale[0]) + vp->translate[0], 0),
       .maxx = MIN2( fabsf(vp->scale[0]) + vp->translate[0], cso_fb->width) - 1,
       .miny = MAX2(-fabsf(vp->scale[1]) + vp->translate[1], 0),
       .maxy = MIN2( fabsf(vp->scale[1]) + vp->translate[1], cso_fb->height) - 1,
    };
    if (cso_state->scissor) {
-      struct pipe_scissor_state *s = &ice->state.scissors[idx];
+      struct crocus_scissor_state *s = &ice->state.scissors[idx];
       scissor.minx = MAX2(scissor.minx, s->minx);
       scissor.miny = MAX2(scissor.miny, s->miny);
       scissor.maxx = MIN2(scissor.maxx, s->maxx);
@@ -3295,11 +3295,11 @@ crocus_set_scissor_states(struct pipe_context *ctx,
           * a min > max scissor inside the bounds, which produces the expected
           * no rendering.
           */
-         ice->state.scissors[start_slot + i] = (struct pipe_scissor_state) {
+         ice->state.scissors[start_slot + i] = (struct crocus_scissor_state) {
             .minx = 1, .maxx = 0, .miny = 1, .maxy = 0,
          };
       } else {
-         ice->state.scissors[start_slot + i] = (struct pipe_scissor_state) {
+         ice->state.scissors[start_slot + i] = (struct crocus_scissor_state) {
             .minx = rects[i].minx,     .miny = rects[i].miny,
             .maxx = rects[i].maxx - 1, .maxy = rects[i].maxy - 1,
          };
@@ -6006,7 +6006,7 @@ crocus_upload_dirty_render_state(struct crocus_context *ice,
             vp.ViewportMatrixElementm31 = state->translate[1];
             vp.ViewportMatrixElementm32 = state->translate[2];
 #if GFX_VER < 6
-            struct pipe_scissor_state scissor;
+            struct crocus_scissor_state scissor;
             crocus_fill_scissor_rect(ice, 0, &scissor);
             vp.ScissorRectangle.ScissorRectangleXMin = scissor.minx;
             vp.ScissorRectangle.ScissorRectangleXMax = scissor.maxx;
@@ -7438,11 +7438,11 @@ crocus_upload_dirty_render_state(struct crocus_context *ice,
    if (dirty & CROCUS_DIRTY_GEN6_SCISSOR_RECT) {
       /* Align to 64-byte boundary as per anv. */
       uint32_t scissor_offset;
-      struct pipe_scissor_state *scissor_map = (void *)
-         stream_state(batch, sizeof(struct pipe_scissor_state) * ice->state.num_viewports,
+      struct crocus_scissor_state *scissor_map = (void *)
+         stream_state(batch, sizeof(struct crocus_scissor_state) * ice->state.num_viewports,
                       64, &scissor_offset);
       for (int i = 0; i < ice->state.num_viewports; i++) {
-         struct pipe_scissor_state scissor;
+         struct crocus_scissor_state scissor;
          crocus_fill_scissor_rect(ice, i, &scissor);
          scissor_map[i] = scissor;
       }
@@ -9319,7 +9319,7 @@ genX(crocus_init_state)(struct crocus_context *ice)
 
    /* Default all scissor rectangles to be empty regions. */
    for (int i = 0; i < CROCUS_MAX_VIEWPORTS; i++) {
-      ice->state.scissors[i] = (struct pipe_scissor_state) {
+      ice->state.scissors[i] = (struct crocus_scissor_state) {
          .minx = 1, .maxx = 0, .miny = 1, .maxy = 0,
       };
    }
