@@ -11,68 +11,6 @@
 #include "nir/nir.h"
 #include "nir/nir_builder.h"
 
-static bool
-opt_uniform_subgroup_filter(const nir_instr *instr, const void *_state)
-{
-   if (instr->type != nir_instr_type_intrinsic)
-      return false;
-
-   nir_intrinsic_instr *intrin = nir_instr_as_intrinsic(instr);
-
-   switch (intrin->intrinsic) {
-   case nir_intrinsic_quad_swizzle_amd:
-   case nir_intrinsic_masked_swizzle_amd:
-      if (!nir_intrinsic_fetch_inactive(intrin))
-         return false;
-      FALLTHROUGH;
-   case nir_intrinsic_shuffle:
-   case nir_intrinsic_read_invocation:
-   case nir_intrinsic_read_first_invocation:
-   case nir_intrinsic_quad_broadcast:
-   case nir_intrinsic_quad_swap_horizontal:
-   case nir_intrinsic_quad_swap_vertical:
-   case nir_intrinsic_quad_swap_diagonal:
-   case nir_intrinsic_vote_all:
-   case nir_intrinsic_vote_any:
-   case nir_intrinsic_vote_feq:
-   case nir_intrinsic_vote_ieq:
-      return !nir_src_is_divergent(&intrin->src[0]);
-
-   case nir_intrinsic_reduce:
-   case nir_intrinsic_exclusive_scan:
-   case nir_intrinsic_inclusive_scan: {
-      if (nir_src_is_divergent(&intrin->src[0]))
-         return false;
-
-      const nir_op reduction_op = (nir_op)nir_intrinsic_reduction_op(intrin);
-
-      switch (reduction_op) {
-      case nir_op_iadd:
-      case nir_op_fadd:
-      case nir_op_ixor:
-         return !nir_intrinsic_has_cluster_size(intrin) ||
-                nir_intrinsic_cluster_size(intrin) == 0;
-
-      case nir_op_imin:
-      case nir_op_umin:
-      case nir_op_fmin:
-      case nir_op_imax:
-      case nir_op_umax:
-      case nir_op_fmax:
-      case nir_op_iand:
-      case nir_op_ior:
-         return intrin->intrinsic != nir_intrinsic_exclusive_scan;
-
-      default:
-         return false;
-      }
-   }
-
-   default:
-      return false;
-   }
-}
-
 static nir_def *
 ballot_bit_count(nir_builder *b, nir_def *ballot)
 {
@@ -114,20 +52,60 @@ count_active_invocations(nir_builder *b, nir_def *value, bool inclusive,
    }
 }
 
-static nir_def *
-opt_uniform_subgroup_instr(nir_builder *b, nir_instr *instr, void *_state)
+static bool
+opt_uniform_subgroup_instr(nir_builder *b, nir_intrinsic_instr *intrin, void *_state)
 {
    const nir_lower_subgroups_options *options = (nir_lower_subgroups_options *)_state;
-   nir_intrinsic_instr *intrin = nir_instr_as_intrinsic(instr);
 
-   if (intrin->intrinsic == nir_intrinsic_reduce ||
-       intrin->intrinsic == nir_intrinsic_inclusive_scan ||
-       intrin->intrinsic == nir_intrinsic_exclusive_scan) {
+   b->cursor = nir_before_instr(&intrin->instr);
+
+   nir_def *replacement = NULL;
+   switch (intrin->intrinsic) {
+   case nir_intrinsic_quad_swizzle_amd:
+   case nir_intrinsic_masked_swizzle_amd:
+      if (!nir_intrinsic_fetch_inactive(intrin))
+         return false;
+      FALLTHROUGH;
+   case nir_intrinsic_shuffle:
+   case nir_intrinsic_read_invocation:
+   case nir_intrinsic_read_first_invocation:
+   case nir_intrinsic_quad_broadcast:
+   case nir_intrinsic_quad_swap_horizontal:
+   case nir_intrinsic_quad_swap_vertical:
+   case nir_intrinsic_quad_swap_diagonal:
+   case nir_intrinsic_vote_all:
+   case nir_intrinsic_vote_any:
+   case nir_intrinsic_vote_feq:
+   case nir_intrinsic_vote_ieq:
+      if (nir_src_is_divergent(&intrin->src[0]))
+         return false;
+
+      if (intrin->intrinsic == nir_intrinsic_vote_feq) {
+         nir_def *x = intrin->src[0].ssa;
+         b->exact = true;
+         replacement = nir_feq(b, x, x);
+         b->exact = false;
+      } else if (intrin->intrinsic == nir_intrinsic_vote_ieq) {
+         replacement = nir_imm_true(b);
+      } else {
+         replacement = intrin->src[0].ssa;
+      }
+      break;
+
+   case nir_intrinsic_reduce:
+   case nir_intrinsic_exclusive_scan:
+   case nir_intrinsic_inclusive_scan: {
+      if (nir_src_is_divergent(&intrin->src[0]))
+         return false;
+
       const nir_op reduction_op = (nir_op)nir_intrinsic_reduction_op(intrin);
 
-      if (reduction_op == nir_op_iadd ||
-          reduction_op == nir_op_fadd ||
-          reduction_op == nir_op_ixor) {
+      switch (reduction_op) {
+      case nir_op_iadd:
+      case nir_op_fadd:
+      case nir_op_ixor: {
+         if (nir_intrinsic_has_cluster_size(intrin) && nir_intrinsic_cluster_size(intrin))
+            return false;
          nir_def *count;
 
          nir_def *ballot = nir_ballot(b, options->ballot_components,
@@ -144,29 +122,45 @@ opt_uniform_subgroup_instr(nir_builder *b, nir_instr *instr, void *_state)
          const unsigned bit_size = intrin->src[0].ssa->bit_size;
 
          if (reduction_op == nir_op_iadd) {
-            return nir_imul(b,
-                            nir_u2uN(b, count, bit_size),
-                            intrin->src[0].ssa);
+            replacement = nir_imul(b, nir_u2uN(b, count, bit_size),
+                                   intrin->src[0].ssa);
          } else if (reduction_op == nir_op_fadd) {
-            return nir_fmul(b,
-                            nir_u2fN(b, count, bit_size),
-                            intrin->src[0].ssa);
+            replacement = nir_fmul(b, nir_u2fN(b, count, bit_size),
+                                   intrin->src[0].ssa);
          } else {
-            return nir_imul(b,
-                            nir_u2uN(b,
-                                     nir_iand(b, count, nir_imm_int(b, 1)),
-                                     bit_size),
-                            intrin->src[0].ssa);
+            replacement = nir_imul(b,
+                                   nir_u2uN(b,
+                                            nir_iand(b, count, nir_imm_int(b, 1)),
+                                            bit_size),
+                                   intrin->src[0].ssa);
          }
+         break;
       }
-   } else if (intrin->intrinsic == nir_intrinsic_vote_feq) {
-      nir_def *x = intrin->src[0].ssa;
-      return nir_feq(b, x, x);
-   } else if (intrin->intrinsic == nir_intrinsic_vote_ieq) {
-      return nir_imm_true(b);
+
+      case nir_op_imin:
+      case nir_op_umin:
+      case nir_op_fmin:
+      case nir_op_imax:
+      case nir_op_umax:
+      case nir_op_fmax:
+      case nir_op_iand:
+      case nir_op_ior:
+         if (intrin->intrinsic == nir_intrinsic_exclusive_scan)
+            return false;
+         replacement = intrin->src[0].ssa;
+         break;
+
+      default:
+         return false;
+      }
+      break;
+   }
+   default:
+      return false;
    }
 
-   return intrin->src[0].ssa;
+   nir_def_replace(&intrin->def, replacement);
+   return true;
 }
 
 bool
@@ -175,10 +169,8 @@ nir_opt_uniform_subgroup(nir_shader *shader,
 {
    nir_divergence_analysis(shader);
 
-   bool progress = nir_shader_lower_instructions(shader,
-                                                 opt_uniform_subgroup_filter,
-                                                 opt_uniform_subgroup_instr,
-                                                 (void *)options);
-
-   return progress;
+   return nir_shader_intrinsics_pass(shader,
+                                     opt_uniform_subgroup_instr,
+                                     nir_metadata_control_flow,
+                                     (void *)options);
 }
