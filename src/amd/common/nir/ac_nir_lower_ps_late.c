@@ -252,15 +252,6 @@ emit_ps_mrtz_export(nir_builder *b, lower_ps_state *s, nir_def *mrtz_alpha)
       }
    }
 
-   /* GFX6 (except OLAND and HAINAN) has a bug that it only looks at the
-    * X writemask component.
-    */
-   if (s->options->gfx_level == GFX6 &&
-       s->options->family != CHIP_OLAND &&
-       s->options->family != CHIP_HAINAN) {
-      write_mask |= 0x1;
-   }
-
    s->exp[s->exp_num++] = nir_export_amd(b, nir_vec(b, outputs, 4),
                                          .base = V_008DFC_SQ_EXP_MRTZ,
                                          .write_mask = write_mask,
