@@ -20,6 +20,11 @@ opt_uniform_subgroup_filter(const nir_instr *instr, const void *_state)
    nir_intrinsic_instr *intrin = nir_instr_as_intrinsic(instr);
 
    switch (intrin->intrinsic) {
+   case nir_intrinsic_quad_swizzle_amd:
+   case nir_intrinsic_masked_swizzle_amd:
+      if (!nir_intrinsic_fetch_inactive(intrin))
+         return false;
+      FALLTHROUGH;
    case nir_intrinsic_shuffle:
    case nir_intrinsic_read_invocation:
    case nir_intrinsic_read_first_invocation:
@@ -27,8 +32,6 @@ opt_uniform_subgroup_filter(const nir_instr *instr, const void *_state)
    case nir_intrinsic_quad_swap_horizontal:
    case nir_intrinsic_quad_swap_vertical:
    case nir_intrinsic_quad_swap_diagonal:
-   case nir_intrinsic_quad_swizzle_amd:
-   case nir_intrinsic_masked_swizzle_amd:
    case nir_intrinsic_vote_all:
    case nir_intrinsic_vote_any:
    case nir_intrinsic_vote_feq:
