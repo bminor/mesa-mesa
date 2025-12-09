@@ -106,8 +106,7 @@ anv_shader_serialize(struct vk_device *device,
    blob_write_uint32(blob, vk_shader->stage);
 
    blob_write_uint32(blob, shader->prog_data->program_size);
-   blob_write_bytes(blob, shader->kernel.map,
-                    shader->prog_data->program_size);
+   blob_write_bytes(blob, shader->code, shader->prog_data->program_size);
 
    union brw_any_prog_data prog_data;
    memcpy(&prog_data, shader->prog_data, brw_prog_data_size(vk_shader->stage));
@@ -255,14 +254,125 @@ write_ir_text(VkPipelineExecutableInternalRepresentationKHR* ir,
    return true;
 }
 
+static char *
+get_shader_bind_map_text(const struct anv_shader *shader)
+{
+   char *stream_data = NULL;
+   size_t stream_size = 0;
+   FILE *stream = open_memstream(&stream_data, &stream_size);
+
+   const struct anv_pipeline_bind_map *bind_map = &shader->bind_map;
+   uint32_t push_size = 0;
+   for (unsigned i = 0; i < 4; i++)
+      push_size += bind_map->push_ranges[i].length;
+   if (push_size > 0) {
+      fprintf(stream, "Push constant ranges:\n");
+      for (unsigned i = 0; i < 4; i++) {
+         if (bind_map->push_ranges[i].length == 0)
+            continue;
+
+         fprintf(stream, "    RANGE%d (%dB): ", i,
+                 bind_map->push_ranges[i].length * 32);
+
+         switch (bind_map->push_ranges[i].set) {
+         case ANV_DESCRIPTOR_SET_NULL:
+            fprintf(stream, "NULL");
+            break;
+
+         case ANV_DESCRIPTOR_SET_PUSH_CONSTANTS:
+            fprintf(stream, "Vulkan push constants and API params");
+            break;
+
+         case ANV_DESCRIPTOR_SET_DESCRIPTORS_BUFFER:
+            fprintf(stream, "Descriptor buffer (desc buffer) for set %d (start=%dB)",
+                    bind_map->push_ranges[i].index,
+                    bind_map->push_ranges[i].start * 32);
+            break;
+
+         case ANV_DESCRIPTOR_SET_DESCRIPTORS:
+            fprintf(stream, "Descriptor buffer for set %d (start=%dB)",
+                    bind_map->push_ranges[i].index,
+                    bind_map->push_ranges[i].start * 32);
+            break;
+
+         case ANV_DESCRIPTOR_SET_COLOR_ATTACHMENTS:
+            UNREACHABLE("Color attachments can't be pushed");
+
+         case ANV_DESCRIPTOR_SET_PER_PRIM_PADDING:
+            fprintf(stream, "Per primitive alignment (gfx libs & mesh)");
+            break;
+
+         default:
+            fprintf(stream, "UBO (set=%d binding=%d start=%dB)",
+                    bind_map->push_ranges[i].set,
+                    bind_map->push_ranges[i].index,
+                    bind_map->push_ranges[i].start * 32);
+            break;
+         }
+         fprintf(stream, "\n");
+      }
+      fprintf(stream, "\n");
+
+   }
+
+   fclose(stream);
+
+   if (stream_size == 0) {
+      free(stream_data);
+      return NULL;
+   }
+
+   return stream_data;
+}
+
+static char *
+get_shader_isa_text(struct anv_device *device,
+                    const struct anv_shader *shader,
+                    uint32_t executable_index)
+{
+   char *stream_data = NULL;
+   size_t stream_size = 0;
+   FILE *stream = open_memstream(&stream_data, &stream_size);
+
+   if (shader->vk.stage == MESA_SHADER_FRAGMENT) {
+      const struct brw_wm_prog_data *wm_prog_data = get_shader_wm_prog_data(shader);
+
+      int simd8_index = (wm_prog_data->dispatch_8 || wm_prog_data->dispatch_multi) ? 0 : -1;
+      int simd16_index = wm_prog_data->dispatch_16 ? (simd8_index + 1) : -1;
+      int simd32_index = wm_prog_data->dispatch_32 ? (MAX2(simd8_index, simd16_index) + 1) : -1;
+
+      if (executable_index == simd8_index) {
+         brw_disassemble_with_errors(&device->physical->compiler->isa,
+                                     shader->code, 0, NULL, stream);
+      } else if (executable_index == simd16_index) {
+         brw_disassemble_with_errors(&device->physical->compiler->isa,
+                                     shader->code,
+                                     wm_prog_data->prog_offset_16, NULL, stream);
+      } else if (executable_index == simd32_index) {
+         brw_disassemble_with_errors(&device->physical->compiler->isa,
+                                     shader->code,
+                                     wm_prog_data->prog_offset_32, NULL, stream);
+      }
+   } else {
+      brw_disassemble_with_errors(&device->physical->compiler->isa,
+                                  shader->code, 0, NULL, stream);
+   }
+
+   fclose(stream);
+
+   return stream_data;
+}
+
 static VkResult
 anv_shader_get_executable_internal_representations(
-   struct vk_device *device,
+   struct vk_device *vk_device,
    const struct vk_shader *vk_shader,
    uint32_t executable_index,
    uint32_t *internal_representation_count,
    VkPipelineExecutableInternalRepresentationKHR *internal_representations)
 {
+   struct anv_device *device =
+      container_of(vk_device, struct anv_device, vk);
    VK_OUTARRAY_MAKE_TYPED(VkPipelineExecutableInternalRepresentationKHR, out,
                           internal_representations,
                           internal_representation_count);
@@ -282,16 +392,30 @@ anv_shader_get_executable_internal_representations(
       }
    }
 
-   if (shader->asm_str) {
+   char *bind_map_text = get_shader_bind_map_text(shader);
+   if (bind_map_text != NULL) {
+      vk_outarray_append_typed(VkPipelineExecutableInternalRepresentationKHR, &out, ir) {
+         VK_COPY_STR(ir->name, "Shader push map");
+         VK_COPY_STR(ir->description, "Map of push constant data provided to the shader");
+
+         if (!write_ir_text(ir, bind_map_text))
+            incomplete_text = true;
+      }
+   }
+   free(bind_map_text);
+
+   char *isa_text = get_shader_isa_text(device, shader, executable_index);
+   if (isa_text != NULL) {
       vk_outarray_append_typed(VkPipelineExecutableInternalRepresentationKHR, &out, ir) {
          VK_COPY_STR(ir->name, "GEN Assembly");
          VK_COPY_STR(ir->description,
                      "Final GEN assembly for the generated shader binary");
 
-         if (!write_ir_text(ir, shader->asm_str))
+         if (!write_ir_text(ir, isa_text))
             incomplete_text = true;
       }
    }
+   free(isa_text);
 
    return incomplete_text ? VK_INCOMPLETE : vk_outarray_status(&out);
 }
@@ -426,8 +550,6 @@ anv_shader_reloc(struct anv_device *device,
 struct internal_representation {
    char *nir_str;
    uint32_t nir_str_len;
-   char *asm_str;
-   uint32_t asm_str_len;
 };
 
 static void
@@ -440,102 +562,6 @@ get_internal_representation_data(struct internal_representation *output,
 
    output->nir_str = nir_shader_as_str(shader_data->info->nir, mem_ctx);
    output->nir_str_len = strlen(output->nir_str) + 1;
-
-   char *stream_data = NULL;
-   size_t stream_size = 0;
-   FILE *stream = open_memstream(&stream_data, &stream_size);
-
-   const struct anv_pipeline_bind_map *bind_map = &shader_data->bind_map;
-   uint32_t push_size = 0;
-   for (unsigned i = 0; i < 4; i++)
-      push_size += bind_map->push_ranges[i].length;
-   if (push_size > 0) {
-      fprintf(stream, "Push constant ranges:\n");
-      for (unsigned i = 0; i < 4; i++) {
-         if (bind_map->push_ranges[i].length == 0)
-            continue;
-
-         fprintf(stream, "    RANGE%d (%dB): ", i,
-                 bind_map->push_ranges[i].length * 32);
-
-         switch (bind_map->push_ranges[i].set) {
-         case ANV_DESCRIPTOR_SET_NULL:
-            fprintf(stream, "NULL");
-            break;
-
-         case ANV_DESCRIPTOR_SET_PUSH_CONSTANTS:
-            fprintf(stream, "Vulkan push constants and API params");
-            break;
-
-         case ANV_DESCRIPTOR_SET_DESCRIPTORS_BUFFER:
-            fprintf(stream, "Descriptor buffer (desc buffer) for set %d (start=%dB)",
-                    bind_map->push_ranges[i].index,
-                    bind_map->push_ranges[i].start * 32);
-            break;
-
-         case ANV_DESCRIPTOR_SET_DESCRIPTORS:
-            fprintf(stream, "Descriptor buffer for set %d (start=%dB)",
-                    bind_map->push_ranges[i].index,
-                    bind_map->push_ranges[i].start * 32);
-               break;
-
-         case ANV_DESCRIPTOR_SET_COLOR_ATTACHMENTS:
-            UNREACHABLE("Color attachments can't be pushed");
-
-         case ANV_DESCRIPTOR_SET_PER_PRIM_PADDING:
-            fprintf(stream, "Per primitive alignment (gfx libs & mesh)");
-            break;
-
-         default:
-            fprintf(stream, "UBO (set=%d binding=%d start=%dB)",
-                    bind_map->push_ranges[i].set,
-                    bind_map->push_ranges[i].index,
-                    bind_map->push_ranges[i].start * 32);
-            break;
-            }
-         fprintf(stream, "\n");
-      }
-      fprintf(stream, "\n");
-
-   }
-
-   /* Creating this is far cheaper than it looks.  It's perfectly fine to
-    * do it for every binary.
-    */
-   if (shader_data->info->stage == MESA_SHADER_FRAGMENT) {
-      const struct brw_wm_prog_data *wm_prog_data = &shader_data->prog_data.wm;
-
-      if (wm_prog_data->dispatch_8 ||
-          wm_prog_data->dispatch_multi) {
-         brw_disassemble_with_errors(&device->physical->compiler->isa,
-                                     shader_data->code, 0, NULL, stream);
-      }
-
-      if (wm_prog_data->dispatch_16) {
-         brw_disassemble_with_errors(&device->physical->compiler->isa,
-                                     shader_data->code,
-                                     wm_prog_data->prog_offset_16, NULL, stream);
-      }
-
-      if (wm_prog_data->dispatch_32) {
-         brw_disassemble_with_errors(&device->physical->compiler->isa,
-                                     shader_data->code,
-                                     wm_prog_data->prog_offset_32, NULL, stream);
-      }
-   } else {
-      brw_disassemble_with_errors(&device->physical->compiler->isa,
-                                  shader_data->code, 0, NULL, stream);
-   }
-
-   fclose(stream);
-
-   /* Copy it to a ralloc'd thing */
-   output->asm_str = ralloc_size(mem_ctx, stream_size + 1);
-   memcpy(output->asm_str, stream_data, stream_size);
-   output->asm_str[stream_size] = 0;
-   output->asm_str_len = stream_size + 1;
-
-   free(stream_data);
 }
 
 VkResult
@@ -574,6 +600,7 @@ anv_shader_create(struct anv_device *device,
                            shader_data->xfb_info == NULL ? 0 :
                            nir_xfb_info_size(shader_data->xfb_info->output_count));
 
+   VK_MULTIALLOC_DECL(&ma, void, code, shader_data->prog_data.base.program_size);
    VK_MULTIALLOC_DECL(&ma, struct anv_pipeline_binding, surface_to_descriptor,
                       shader_data->bind_map.surface_count);
    VK_MULTIALLOC_DECL(&ma, struct anv_pipeline_binding, sampler_to_descriptor,
@@ -584,7 +611,6 @@ anv_shader_create(struct anv_device *device,
    VK_MULTIALLOC_DECL(&ma, struct anv_embedded_sampler *, embedded_samplers,
                       shader_data->bind_map.embedded_sampler_count);
    VK_MULTIALLOC_DECL(&ma, char, nir_str, internal_representations.nir_str_len);
-   VK_MULTIALLOC_DECL(&ma, char, asm_str, internal_representations.asm_str_len);
 
    if (!vk_shader_multizalloc(&device->vk, &ma, &anv_shader_ops,
                               stage, pAllocator))
@@ -599,6 +625,10 @@ anv_shader_create(struct anv_device *device,
          goto error_shader;
    }
 
+   shader->code = code;
+   memcpy(shader->code, shader_data->code,
+          shader_data->prog_data.base.program_size);
+
    shader->kernel =
       anv_state_pool_alloc(&device->instruction_state_pool,
                            shader_data->prog_data.base.program_size, 64);
@@ -611,9 +641,6 @@ anv_shader_create(struct anv_device *device,
       shader->nir_str = nir_str;
       memcpy(shader->nir_str, internal_representations.nir_str,
              internal_representations.nir_str_len);
-      shader->asm_str = asm_str;
-      memcpy(shader->asm_str, internal_representations.asm_str,
-             internal_representations.asm_str_len);
    }
 
    memcpy(prog_data, &shader_data->prog_data, brw_prog_data_size(stage));
