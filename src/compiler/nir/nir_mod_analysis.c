@@ -132,7 +132,11 @@ nir_mod_analysis(nir_scalar val, nir_alu_type val_type, unsigned div, unsigned *
                return true;
             }
             nir_alu_type type0 = nir_alu_src_type(alu, 0);
-            return nir_mod_analysis(nir_alu_arg(alu, 0, val.comp), type0, div >> shift, mod);
+            if (!nir_mod_analysis(nir_alu_arg(alu, 0, val.comp), type0, div >> shift, mod))
+               return false;
+
+            *mod <<= shift;
+            return true;
          }
          break;
       }

@@ -444,7 +444,7 @@
         "description": "nir: Fix mod analysis of ishl to shift the recursive result",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "2255375c4db6efb0024b06c14c4024c1ab76d0f5",
         "notes": null
