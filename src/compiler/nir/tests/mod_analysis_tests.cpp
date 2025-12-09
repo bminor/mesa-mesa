@@ -331,3 +331,20 @@ TEST_F(nir_mod_analysis_test, const_shr_const_overflow)
       }
    }
 }
+
+TEST_F(nir_mod_analysis_test, const_shl_const)
+{
+   /* (const << const) % const_mod should always be known */
+   for (unsigned const_mod = 1; const_mod <= 1024; const_mod *= 2) {
+      for (unsigned i = 0; i < 50; ++i) {
+         for (unsigned j = 0; j < 6; ++j) {
+            nir_def *shl = nir_ishl(b, v[i], v[j]);
+
+            unsigned mod = INT32_MAX;
+
+            EXPECT_TRUE(nir_mod_analysis_comp0(shl, nir_type_uint, const_mod, &mod));
+            EXPECT_EQ(mod, (i << j) % const_mod);
+         }
+      }
+   }
+}
