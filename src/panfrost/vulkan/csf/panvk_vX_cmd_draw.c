@@ -1191,7 +1191,7 @@ get_tiler_desc(struct panvk_cmd_buffer *cmdbuf)
    cs_next_iter_sb(cmdbuf, PANVK_SUBQUEUE_VERTEX_TILER,
                    cs_scratch_reg_tuple(b, 0, 2));
 
-   cs_heap_operation(b, MALI_CS_HEAP_OPERATION_VERTEX_TILER_STARTED, cs_now());
+   cs_vt_start(b, cs_now());
    return VK_SUCCESS;
 }
 
@@ -2958,8 +2958,7 @@ flush_tiling(struct panvk_cmd_buffer *cmdbuf)
                 offsetof(struct panvk_cs_subqueue_context, syncobjs));
 
    cs_move64_to(b, add_val, 1);
-   cs_heap_operation(b, MALI_CS_HEAP_OPERATION_VERTEX_TILER_COMPLETED,
-                     cs_defer_indirect());
+   cs_vt_end(b, cs_defer_indirect());
    panvk_instr_sync64_add(cmdbuf, PANVK_SUBQUEUE_VERTEX_TILER, true,
                           MALI_CS_SYNC_SCOPE_CSG, add_val, sync_addr,
                           cs_defer_indirect());
@@ -2976,8 +2975,7 @@ flush_tiling(struct panvk_cmd_buffer *cmdbuf)
    cs_move64_to(b, add_val, 1);
 
    cs_match_iter_sb(b, x, iter_sb, cmp_scratch) {
-      cs_heap_operation(b, MALI_CS_HEAP_OPERATION_VERTEX_TILER_COMPLETED,
-                        cs_defer(SB_WAIT_ITER(x), SB_ID(DEFERRED_SYNC)));
+      cs_vt_end(b, cs_defer(SB_WAIT_ITER(x), SB_ID(DEFERRED_SYNC)));
       panvk_instr_sync64_add(cmdbuf, PANVK_SUBQUEUE_VERTEX_TILER, true,
                              MALI_CS_SYNC_SCOPE_CSG, add_val, sync_addr,
                              cs_defer(SB_WAIT_ITER(x), SB_ID(DEFERRED_SYNC)));
