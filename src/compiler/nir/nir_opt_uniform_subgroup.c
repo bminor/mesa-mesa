@@ -66,6 +66,9 @@ opt_uniform_subgroup_instr(nir_builder *b, nir_intrinsic_instr *intrin, void *_s
          return false;
       FALLTHROUGH;
    case nir_intrinsic_shuffle:
+   case nir_intrinsic_shuffle_up:
+   case nir_intrinsic_shuffle_down:
+   case nir_intrinsic_rotate:
    case nir_intrinsic_read_invocation:
    case nir_intrinsic_read_first_invocation:
    case nir_intrinsic_quad_broadcast:
@@ -74,6 +77,8 @@ opt_uniform_subgroup_instr(nir_builder *b, nir_intrinsic_instr *intrin, void *_s
    case nir_intrinsic_quad_swap_diagonal:
    case nir_intrinsic_vote_all:
    case nir_intrinsic_vote_any:
+   case nir_intrinsic_quad_vote_all:
+   case nir_intrinsic_quad_vote_any:
    case nir_intrinsic_vote_feq:
    case nir_intrinsic_vote_ieq:
       if (nir_src_is_divergent(&intrin->src[0]))
