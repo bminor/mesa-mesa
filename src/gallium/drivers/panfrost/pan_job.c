@@ -281,15 +281,15 @@ panfrost_batch_update_access(struct panfrost_batch *batch,
    if (writes) {
       unsigned i;
       foreach_batch(ctx, i) {
-         struct panfrost_batch *batch = &ctx->batches.slots[i];
-
          /* Skip the entry if this our batch. */
          if (i == batch_idx)
             continue;
 
+         struct panfrost_batch *other_batch = &ctx->batches.slots[i];
+
          /* Submit if it's a user */
-         if (panfrost_batch_uses_resource(batch, rsrc))
-            panfrost_batch_submit(ctx, batch);
+         if (panfrost_batch_uses_resource(other_batch, rsrc))
+            panfrost_batch_submit(ctx, other_batch);
       }
    }
 }
