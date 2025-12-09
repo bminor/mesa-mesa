@@ -1534,7 +1534,7 @@
         "description": "tu: Fill render pass state when resuming",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "cb0f414b2aed88f48b2593dad833844be2f5f42b",
         "notes": null
