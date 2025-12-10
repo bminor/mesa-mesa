@@ -1451,8 +1451,13 @@ anv_shader_lower_nir(struct anv_device *device,
    uint32_t dynamic_descriptors_offsets[MAX_SETS] = {};
    for (uint32_t i = 0; i < set_layout_count; i++) {
       dynamic_descriptors_offsets[i] = dynamic_descriptors_offset;
-      dynamic_descriptors_offset += set_layouts[i] != NULL ?
-         set_layouts[i]->vk.dynamic_descriptor_count : 0;
+      if (set_layouts[i] != NULL) {
+         shader_data->bind_map.binding_mask |= ANV_PIPELINE_BIND_MASK_SET(i);
+         const uint32_t dyn_desc_count =
+            set_layouts[i]->vk.dynamic_descriptor_count;
+         shader_data->bind_map.dynamic_descriptors[i] = dyn_desc_count;
+         dynamic_descriptors_offset += dyn_desc_count;
+      }
    }
 
    /* Apply the actual pipeline layout to UBOs, SSBOs, and textures */
