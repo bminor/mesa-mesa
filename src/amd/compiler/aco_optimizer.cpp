@@ -1855,6 +1855,7 @@ smem_combine(opt_ctx& ctx, aco_ptr<Instruction>& instr)
                new_instr->definitions[0] = smem.definitions[0];
             new_instr->smem().sync = smem.sync;
             new_instr->smem().cache = smem.cache;
+            new_instr->pass_flags = instr->pass_flags;
             instr.reset(new_instr);
          }
       }
@@ -2624,9 +2625,11 @@ label_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
          }
       } else {
          Definition def = instr->definitions[0];
+         uint32_t exec_id = instr->pass_flags;
          instr.reset(
             create_instruction(aco_opcode::p_create_vector, Format::PSEUDO, ops.size(), 1));
          instr->definitions[0] = def;
+         instr->pass_flags = exec_id;
       }
 
       for (unsigned i = 0; i < ops.size(); i++)
@@ -2739,6 +2742,7 @@ label_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
          instr.reset(create_instruction(aco_opcode::p_create_vector, Format::PSEUDO,
                                         vec->operands.size(), 1));
          instr->definitions[0] = old_copy->definitions[0];
+         instr->pass_flags = old_copy->pass_flags;
          std::copy(vec->operands.begin(), vec->operands.end(), instr->operands.begin());
          for (unsigned i = 0; i < vec->operands.size(); i++) {
             Operand& op = instr->operands[i];
@@ -4633,6 +4637,7 @@ select_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
                create_instruction(aco_opcode::p_parallelcopy, Format::PSEUDO, 1, 1)};
             copy->operands[0] = op;
             copy->definitions[0] = instr->definitions[idx];
+            copy->pass_flags = instr->pass_flags;
             instr = std::move(copy);
             ctx.info[instr->definitions[0].tempId()].parent_instr = instr.get();
 
@@ -4649,6 +4654,7 @@ select_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
          extract->operands[1] =
             Operand::c32((uint32_t)split_offset / instr->definitions[idx].bytes());
          extract->definitions[0] = instr->definitions[idx];
+         extract->pass_flags = instr->pass_flags;
          instr = std::move(extract);
          ctx.info[instr->definitions[0].tempId()].parent_instr = instr.get();
       }
@@ -4827,6 +4833,7 @@ select_instruction(opt_ctx& ctx, aco_ptr<Instruction>& instr)
       fma->operands[1] = Operand::c32(fui(1.0f));
       fma->operands[2] = Operand::zero();
       fma->valu().neg[2] = true;
+      fma->pass_flags = instr->pass_flags;
       instr.reset(fma);
       ctx.info[instr->definitions[0].tempId()].label = 0;
       ctx.info[instr->definitions[0].tempId()].parent_instr = instr.get();
