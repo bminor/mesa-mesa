@@ -225,8 +225,8 @@ static void pvr_setup_transfer_surface(struct pvr_device *device,
    }
 }
 
-void pvr_CmdBlitImage2(VkCommandBuffer commandBuffer,
-                       const VkBlitImageInfo2 *pBlitImageInfo)
+void pvr_rogue_CmdBlitImage2(VkCommandBuffer commandBuffer,
+                             const VkBlitImageInfo2 *pBlitImageInfo)
 {
    VK_FROM_HANDLE(pvr_cmd_buffer, cmd_buffer, commandBuffer);
    VK_FROM_HANDLE(pvr_image, src, pBlitImageInfo->srcImage);
@@ -744,8 +744,8 @@ static bool pvr_can_merge_ds_regions(const VkImageCopy2 *pRegionA,
    return true;
 }
 
-void pvr_CmdCopyImage2(VkCommandBuffer commandBuffer,
-                       const VkCopyImageInfo2 *pCopyImageInfo)
+void pvr_rogue_CmdCopyImage2(VkCommandBuffer commandBuffer,
+                             const VkCopyImageInfo2 *pCopyImageInfo)
 {
    VK_FROM_HANDLE(pvr_cmd_buffer, cmd_buffer, commandBuffer);
    VK_FROM_HANDLE(pvr_image, src, pCopyImageInfo->srcImage);
@@ -949,7 +949,7 @@ pvr_copy_buffer_to_image_region(struct pvr_cmd_buffer *const cmd_buffer,
                                                  flags);
 }
 
-void pvr_CmdCopyBufferToImage2(
+void pvr_rogue_CmdCopyBufferToImage2(
    VkCommandBuffer commandBuffer,
    const VkCopyBufferToImageInfo2 *pCopyBufferToImageInfo)
 {
@@ -1147,7 +1147,7 @@ pvr_copy_image_to_buffer_region(struct pvr_cmd_buffer *const cmd_buffer,
                                                  dst_format);
 }
 
-void pvr_CmdCopyImageToBuffer2(
+void pvr_rogue_CmdCopyImageToBuffer2(
    VkCommandBuffer commandBuffer,
    const VkCopyImageToBufferInfo2 *pCopyImageToBufferInfo)
 {
@@ -1245,12 +1245,12 @@ static VkResult pvr_clear_image_range(struct pvr_cmd_buffer *cmd_buffer,
    return VK_SUCCESS;
 }
 
-void pvr_CmdClearColorImage(VkCommandBuffer commandBuffer,
-                            VkImage _image,
-                            VkImageLayout imageLayout,
-                            const VkClearColorValue *pColor,
-                            uint32_t rangeCount,
-                            const VkImageSubresourceRange *pRanges)
+void pvr_rogue_CmdClearColorImage(VkCommandBuffer commandBuffer,
+                                  VkImage _image,
+                                  VkImageLayout imageLayout,
+                                  const VkClearColorValue *pColor,
+                                  uint32_t rangeCount,
+                                  const VkImageSubresourceRange *pRanges)
 {
    VK_FROM_HANDLE(pvr_cmd_buffer, cmd_buffer, commandBuffer);
    VK_FROM_HANDLE(pvr_image, image, _image);
@@ -1297,12 +1297,13 @@ void pvr_clear_depth_stencil_image(struct pvr_cmd_buffer *cmd_buffer,
    }
 }
 
-void pvr_CmdClearDepthStencilImage(VkCommandBuffer commandBuffer,
-                                   VkImage _image,
-                                   VkImageLayout imageLayout,
-                                   const VkClearDepthStencilValue *pDepthStencil,
-                                   uint32_t rangeCount,
-                                   const VkImageSubresourceRange *pRanges)
+void pvr_rogue_CmdClearDepthStencilImage(
+   VkCommandBuffer commandBuffer,
+   VkImage _image,
+   VkImageLayout imageLayout,
+   const VkClearDepthStencilValue *pDepthStencil,
+   uint32_t rangeCount,
+   const VkImageSubresourceRange *pRanges)
 {
    VK_FROM_HANDLE(pvr_cmd_buffer, cmd_buffer, commandBuffer);
    VK_FROM_HANDLE(pvr_image, image, _image);
@@ -1418,11 +1419,11 @@ static VkResult pvr_cmd_copy_buffer_region(struct pvr_cmd_buffer *cmd_buffer,
    return VK_SUCCESS;
 }
 
-void pvr_CmdUpdateBuffer(VkCommandBuffer commandBuffer,
-                         VkBuffer dstBuffer,
-                         VkDeviceSize dstOffset,
-                         VkDeviceSize dataSize,
-                         const void *pData)
+void pvr_rogue_CmdUpdateBuffer(VkCommandBuffer commandBuffer,
+                               VkBuffer dstBuffer,
+                               VkDeviceSize dstOffset,
+                               VkDeviceSize dataSize,
+                               const void *pData)
 {
    VK_FROM_HANDLE(pvr_cmd_buffer, cmd_buffer, commandBuffer);
    VK_FROM_HANDLE(pvr_buffer, dst, dstBuffer);
@@ -1445,8 +1446,8 @@ void pvr_CmdUpdateBuffer(VkCommandBuffer commandBuffer,
                               false);
 }
 
-void pvr_CmdCopyBuffer2(VkCommandBuffer commandBuffer,
-                        const VkCopyBufferInfo2 *pCopyBufferInfo)
+void pvr_rogue_CmdCopyBuffer2(VkCommandBuffer commandBuffer,
+                              const VkCopyBufferInfo2 *pCopyBufferInfo)
 {
    VK_FROM_HANDLE(pvr_buffer, src, pCopyBufferInfo->srcBuffer);
    VK_FROM_HANDLE(pvr_buffer, dst, pCopyBufferInfo->dstBuffer);
@@ -1469,11 +1470,11 @@ void pvr_CmdCopyBuffer2(VkCommandBuffer commandBuffer,
    }
 }
 
-void pvr_CmdFillBuffer(VkCommandBuffer commandBuffer,
-                       VkBuffer dstBuffer,
-                       VkDeviceSize dstOffset,
-                       VkDeviceSize fillSize,
-                       uint32_t data)
+void pvr_rogue_CmdFillBuffer(VkCommandBuffer commandBuffer,
+                             VkBuffer dstBuffer,
+                             VkDeviceSize dstOffset,
+                             VkDeviceSize fillSize,
+                             uint32_t data)
 {
    VK_FROM_HANDLE(pvr_cmd_buffer, cmd_buffer, commandBuffer);
    VK_FROM_HANDLE(pvr_buffer, dst, dstBuffer);
@@ -2284,11 +2285,11 @@ void pvr_clear_attachments_render_init(struct pvr_cmd_buffer *cmd_buffer,
    pvr_clear_attachments(cmd_buffer, 1, attachment, 1, rect, true);
 }
 
-void pvr_CmdClearAttachments(VkCommandBuffer commandBuffer,
-                             uint32_t attachmentCount,
-                             const VkClearAttachment *pAttachments,
-                             uint32_t rectCount,
-                             const VkClearRect *pRects)
+void pvr_rogue_CmdClearAttachments(VkCommandBuffer commandBuffer,
+                                   uint32_t attachmentCount,
+                                   const VkClearAttachment *pAttachments,
+                                   uint32_t rectCount,
+                                   const VkClearRect *pRects)
 {
    VK_FROM_HANDLE(pvr_cmd_buffer, cmd_buffer, commandBuffer);
    struct pvr_cmd_buffer_state *state = &cmd_buffer->state;
@@ -2361,8 +2362,8 @@ void pvr_CmdClearAttachments(VkCommandBuffer commandBuffer,
                          false);
 }
 
-void pvr_CmdResolveImage2(VkCommandBuffer commandBuffer,
-                          const VkResolveImageInfo2 *pResolveImageInfo)
+void pvr_rogue_CmdResolveImage2(VkCommandBuffer commandBuffer,
+                                const VkResolveImageInfo2 *pResolveImageInfo)
 {
    VK_FROM_HANDLE(pvr_image, src, pResolveImageInfo->srcImage);
    VK_FROM_HANDLE(pvr_image, dst, pResolveImageInfo->dstImage);
