@@ -1434,7 +1434,7 @@
         "description": "panfrost/ci: Fix GitLab rules after YAML split",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "c793f612fce5f60a2e68ba8de480396852d01d9d",
         "notes": null
