@@ -654,7 +654,8 @@ hw_select_create_gs(struct st_context *st, union state_key state)
 }
 
 bool
-st_draw_hw_select_prepare_common(struct gl_context *ctx)
+st_draw_hw_select_prepare_common(struct gl_context *ctx,
+                                 struct pipe_resource **releasebuf)
 {
    struct st_context *st = st_context(ctx);
    if (ctx->GeometryProgram._Current ||
@@ -692,7 +693,7 @@ st_draw_hw_select_prepare_common(struct gl_context *ctx)
    cb.buffer_size = sizeof(consts) - (MAX_CLIP_PLANES - num_planes) * 4 * sizeof(float);
 
    struct pipe_context *pipe = st->pipe;
-   pipe_upload_constant_buffer0(pipe, MESA_SHADER_GEOMETRY, &cb);
+   pipe_upload_constant_buffer0(pipe, MESA_SHADER_GEOMETRY, &cb, releasebuf);
 
    struct pipe_shader_buffer buffer;
    memset(&buffer, 0, sizeof(buffer));

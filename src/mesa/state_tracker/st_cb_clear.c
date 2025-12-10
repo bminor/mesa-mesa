@@ -107,13 +107,14 @@ st_destroy_clear(struct st_context *st)
  * Helper function to set the clear color fragment shader.
  */
 static void
-set_clearcolor_fs(struct st_context *st, union pipe_color_union *color)
+set_clearcolor_fs(struct st_context *st, union pipe_color_union *color,
+                  struct pipe_resource **releasebuf)
 {
    struct pipe_constant_buffer cb = {
       .user_buffer = color->f,
       .buffer_size = 4 * sizeof(float),
    };
-   pipe_upload_constant_buffer0(st->pipe, MESA_SHADER_FRAGMENT, &cb);
+   pipe_upload_constant_buffer0(st->pipe, MESA_SHADER_FRAGMENT, &cb, releasebuf);
 
    if (!st->clear.fs) {
       st->clear.fs = st_nir_make_clearcolor_shader(st);
@@ -294,7 +295,8 @@ clear_with_quad(struct gl_context *ctx, unsigned clear_buffers)
                          _mesa_fb_orientation(fb) == Y_0_TOP);
 
    /* Set constant buffer */
-   set_clearcolor_fs(st, (union pipe_color_union*)&ctx->Color.ClearColor);
+   struct pipe_resource *releasebuf = NULL;
+   set_clearcolor_fs(st, (union pipe_color_union*)&ctx->Color.ClearColor, &releasebuf);
    cso_set_tessctrl_shader_handle(cso, NULL);
    cso_set_tesseval_shader_handle(cso, NULL);
    cso_set_mesh_shader_handle(cso, NULL);
@@ -319,6 +321,8 @@ clear_with_quad(struct gl_context *ctx, unsigned clear_buffers)
                      num_layers)) {
       _mesa_error(ctx, GL_OUT_OF_MEMORY, "glClear");
    }
+
+   pipe_resource_release(cso->pipe, releasebuf);
 
    /* Restore pipe state */
    cso_restore_state(cso, 0);

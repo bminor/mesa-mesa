@@ -106,18 +106,20 @@ hud_draw_colored_prims(struct hud_context *hud, unsigned prim,
    hud->constants.translate[1] = (float) (yoffset * hud_scale);
    hud->constants.scale[0] = hud_scale;
    hud->constants.scale[1] = yscale * hud_scale;
-   pipe_upload_constant_buffer0(pipe, MESA_SHADER_VERTEX, &hud->constbuf);
+   struct pipe_resource *cb_releasebuf = NULL;
+   pipe_upload_constant_buffer0(pipe, MESA_SHADER_VERTEX, &hud->constbuf, &cb_releasebuf);
 
-   struct pipe_resource *releasebuf = NULL;
+   struct pipe_resource *vb_releasebuf = NULL;
    u_upload_data(hud->pipe->stream_uploader, 0,
                  num_vertices * 2 * sizeof(float), 16, buffer,
-                 &vbuffer.buffer_offset, &vbuffer.buffer.resource, &releasebuf);
+                 &vbuffer.buffer_offset, &vbuffer.buffer.resource, &vb_releasebuf);
    u_upload_unmap(hud->pipe->stream_uploader);
 
    cso_set_vertex_buffers(cso, 1, &vbuffer);
    cso_set_fragment_shader_handle(hud->cso, hud->fs_color);
    cso_draw_arrays(cso, prim, 0, num_vertices);
-   pipe_resource_release(hud->pipe, releasebuf);
+   pipe_resource_release(hud->pipe, vb_releasebuf);
+   pipe_resource_release(hud->pipe, cb_releasebuf);
 }
 
 static void
@@ -493,6 +495,7 @@ hud_draw_results(struct hud_context *hud, struct pipe_resource *tex)
    const struct pipe_sampler_state *sampler_states[] =
          { &hud->font_sampler_state };
    struct hud_pane *pane;
+   struct pipe_resource *releasebuf[3] = {};
 
    if (!huds_visible)
       return;
@@ -580,7 +583,7 @@ hud_draw_results(struct hud_context *hud, struct pipe_resource *tex)
    pipe->set_sampler_views(pipe, MESA_SHADER_FRAGMENT, 0, 1, 0,
                            &hud->font_sampler_view);
    cso_set_samplers(cso, MESA_SHADER_FRAGMENT, 1, sampler_states);
-   pipe_upload_constant_buffer0(pipe, MESA_SHADER_VERTEX, &hud->constbuf);
+   pipe_upload_constant_buffer0(pipe, MESA_SHADER_VERTEX, &hud->constbuf, &releasebuf[0]);
 
    /* draw accumulated vertices for background quads */
    cso_set_blend(cso, &hud->alpha_blend);
@@ -596,7 +599,7 @@ hud_draw_results(struct hud_context *hud, struct pipe_resource *tex)
       hud->constants.scale[0] = hud_scale;
       hud->constants.scale[1] = hud_scale;
 
-      pipe_upload_constant_buffer0(pipe, MESA_SHADER_VERTEX, &hud->constbuf);
+      pipe_upload_constant_buffer0(pipe, MESA_SHADER_VERTEX, &hud->constbuf, &releasebuf[1]);
 
       cso_set_vertex_buffers(cso, 1, &hud->bg.vbuf);
       cso_draw_arrays(cso, MESA_PRIM_QUADS, 0, hud->bg.num_vertices);
@@ -628,7 +631,7 @@ hud_draw_results(struct hud_context *hud, struct pipe_resource *tex)
    hud->constants.translate[1] = 0;
    hud->constants.scale[0] = hud_scale;
    hud->constants.scale[1] = hud_scale;
-   pipe_upload_constant_buffer0(pipe, MESA_SHADER_VERTEX, &hud->constbuf);
+   pipe_upload_constant_buffer0(pipe, MESA_SHADER_VERTEX, &hud->constbuf, &releasebuf[2]);
 
    if (hud->whitelines.num_vertices) {
       cso_set_vertex_shader_handle(cso, hud->vs_color);
@@ -647,6 +650,9 @@ hud_draw_results(struct hud_context *hud, struct pipe_resource *tex)
    }
 
 done:
+   pipe_resource_release(pipe, releasebuf[2]);
+   pipe_resource_release(pipe, releasebuf[1]);
+   pipe_resource_release(pipe, releasebuf[0]);
    cso_restore_state(cso, CSO_UNBIND_FS_SAMPLERVIEW0 | CSO_UNBIND_VS_CONSTANTS);
 
    /* restore states not restored by cso */

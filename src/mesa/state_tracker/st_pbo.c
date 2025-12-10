@@ -217,7 +217,7 @@ st_pbo_draw(struct st_context *st, const struct st_pbo_addresses *addr,
    cso_set_mesh_shader_handle(cso, NULL);
 
    /* Upload vertices */
-   struct pipe_resource *releasebuf = NULL;
+   struct pipe_resource *vb_releasebuf = NULL;
    {
       struct pipe_vertex_buffer vbo = {0};
       struct cso_velems_state velem;
@@ -230,7 +230,7 @@ st_pbo_draw(struct st_context *st, const struct st_pbo_addresses *addr,
       float *verts = NULL;
 
       u_upload_alloc(st->pipe->stream_uploader, 0, 8 * sizeof(float), 4,
-                     &vbo.buffer_offset, &vbo.buffer.resource, &releasebuf, (void **) &verts);
+                     &vbo.buffer_offset, &vbo.buffer.resource, &vb_releasebuf, (void **) &verts);
       if (!verts)
          return false;
 
@@ -258,6 +258,7 @@ st_pbo_draw(struct st_context *st, const struct st_pbo_addresses *addr,
    }
 
    /* Upload constants */
+   struct pipe_resource *cb_releasebuf = NULL;
    {
       struct pipe_constant_buffer cb;
 
@@ -266,7 +267,7 @@ st_pbo_draw(struct st_context *st, const struct st_pbo_addresses *addr,
       cb.buffer_offset = 0;
       cb.buffer_size = sizeof(addr->constants);
 
-      pipe_upload_constant_buffer0(st->pipe, MESA_SHADER_FRAGMENT, &cb);
+      pipe_upload_constant_buffer0(st->pipe, MESA_SHADER_FRAGMENT, &cb, &cb_releasebuf);
    }
 
    /* Rasterizer state */
@@ -281,7 +282,8 @@ st_pbo_draw(struct st_context *st, const struct st_pbo_addresses *addr,
       cso_draw_arrays_instanced(cso, MESA_PRIM_TRIANGLE_STRIP,
                                 0, 4, 0, addr->depth);
    }
-   pipe_resource_release(st->pipe, releasebuf);
+   pipe_resource_release(st->pipe, cb_releasebuf);
+   pipe_resource_release(st->pipe, vb_releasebuf);
 
    return true;
 }
