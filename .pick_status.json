@@ -874,7 +874,7 @@
         "description": "ir3: Fix condition for using uniform predicates",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "2a8c5ebc77f563c98ae4f4f1775128d4cb30c13f",
         "notes": null
