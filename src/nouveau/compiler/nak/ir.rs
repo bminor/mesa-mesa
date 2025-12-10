@@ -9412,13 +9412,13 @@ impl ShaderModel for ShaderModelInfo {
     }
 }
 
+pub const fn prev_multiple_of(x: u32, y: u32) -> u32 {
+    (x / y) * y
+}
+
 /// For compute shaders, large values of local_size impose an additional limit
 /// on the number of GPRs per thread
 pub fn gpr_limit_from_local_size(local_size: &[u16; 3]) -> u32 {
-    fn prev_multiple_of(x: u32, y: u32) -> u32 {
-        (x / y) * y
-    }
-
     let local_size = local_size[0] * local_size[1] * local_size[2];
     // Warps are allocated in multiples of 4
     // Multiply that by 32 threads/warp
@@ -9432,10 +9432,6 @@ pub fn gpr_limit_from_local_size(local_size: &[u16; 3]) -> u32 {
 }
 
 pub fn max_warps_per_sm(sm: &ShaderModelInfo, gprs: u32) -> u32 {
-    fn prev_multiple_of(x: u32, y: u32) -> u32 {
-        (x / y) * y
-    }
-
     // TODO: Take local_size and shared mem limit into account for compute
     let total_regs: u32 = 65536;
     // GPRs are allocated in multiples of 8
