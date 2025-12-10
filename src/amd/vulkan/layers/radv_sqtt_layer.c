@@ -1388,7 +1388,8 @@ radv_fill_code_object_record(struct radv_device *device, struct rgp_shader_data 
    memset(shader_data->rt_shader_name, 0, sizeof(shader_data->rt_shader_name));
    shader_data->hash[0] = (uint64_t)(uintptr_t)shader;
    shader_data->hash[1] = (uint64_t)(uintptr_t)shader >> 32;
-   shader_data->code_size = shader->code_size;
+   shader_data->code_size =
+      shader->exec_size; /* Only include executable size so RGP doesn't try to disassemble constant data. */
    shader_data->code = shader->code;
    shader_data->vgpr_count = shader->config.num_vgprs;
    shader_data->sgpr_count = shader->config.num_sgprs;
