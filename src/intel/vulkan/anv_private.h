@@ -1158,8 +1158,18 @@ struct anv_push_range {
 };
 
 enum anv_pipeline_bind_mask {
-   ANV_PIPELINE_BIND_MASK_USES_NUM_WORKGROUP = BITFIELD_BIT(0),
+   ANV_PIPELINE_BIND_MASK_SET0               = BITFIELD_BIT(0),
+   ANV_PIPELINE_BIND_MASK_SET1               = BITFIELD_BIT(1),
+   ANV_PIPELINE_BIND_MASK_SET2               = BITFIELD_BIT(2),
+   ANV_PIPELINE_BIND_MASK_SET3               = BITFIELD_BIT(3),
+   ANV_PIPELINE_BIND_MASK_SET4               = BITFIELD_BIT(4),
+   ANV_PIPELINE_BIND_MASK_SET5               = BITFIELD_BIT(5),
+   ANV_PIPELINE_BIND_MASK_SET6               = BITFIELD_BIT(6),
+   ANV_PIPELINE_BIND_MASK_SET7               = BITFIELD_BIT(7),
+   ANV_PIPELINE_BIND_MASK_USES_NUM_WORKGROUP = BITFIELD_BIT(8),
 };
+
+#define ANV_PIPELINE_BIND_MASK_SET(i) (ANV_PIPELINE_BIND_MASK_SET0 << i)
 
 struct anv_pipeline_bind_map {
    unsigned char                                surface_sha1[20];

@@ -1588,10 +1588,12 @@ bind_graphics_shaders(struct anv_cmd_buffer *cmd_buffer,
             set_dirty_for_bind_map(cmd_buffer, s, &shader->bind_map);
 
          for (uint32_t i = 0; i < MAX_SETS; i++) {
-            assert(dynamic_descriptors[i] == 0 ||
-                   dynamic_descriptors[i] ==
-                   shader->bind_map.dynamic_descriptors[i]);
-            dynamic_descriptors[i] = shader->bind_map.dynamic_descriptors[i];
+            if (shader->bind_map.binding_mask & ANV_PIPELINE_BIND_MASK_SET(i)) {
+               assert(dynamic_descriptors[i] == 0 ||
+                      dynamic_descriptors[i] ==
+                      shader->bind_map.dynamic_descriptors[i]);
+               dynamic_descriptors[i] = shader->bind_map.dynamic_descriptors[i];
+            }
          }
       }
 
