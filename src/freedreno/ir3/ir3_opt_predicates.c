@@ -43,13 +43,6 @@ cat2_needs_scalar_alu(struct ir3_instruction *instr)
    return cat2_all_srcs_have_flag(instr, IR3_REG_CONST | IR3_REG_SHARED);
 }
 
-static bool
-cat2_may_use_scalar_alu(struct ir3_instruction *instr)
-{
-   return cat2_all_srcs_have_flag(
-      instr, IR3_REG_CONST | IR3_REG_SHARED | IR3_REG_IMMED);
-}
-
 static struct ir3_instruction *
 clone_with_predicate_dst(struct opt_predicates_ctx *ctx,
                          struct ir3_instruction *instr)
@@ -67,7 +60,7 @@ clone_with_predicate_dst(struct opt_predicates_ctx *ctx,
    clone->dsts[0]->flags &= ~(IR3_REG_HALF | IR3_REG_SHARED);
 
    if (ctx->ir->compiler->has_scalar_predicates && opc_cat(instr->opc) == 2 &&
-       cat2_may_use_scalar_alu(instr)) {
+       (instr->dsts[0]->flags & IR3_REG_SHARED)) {
       clone->dsts[0]->flags |= IR3_REG_UNIFORM;
    }
 
