@@ -1577,10 +1577,10 @@ pvr_is_render_area_tile_aligned(const struct pvr_cmd_buffer *cmd_buffer,
           render_area->extent.width == iview->vk.extent.width;
 }
 
-static VkResult
-pvr_render_targets_init(struct pvr_device *device,
-                        struct pvr_render_state *rstate,
-                        const struct pvr_renderpass_hwsetup_render *hw_render);
+static VkResult pvr_render_targets_dataset_init(
+   struct pvr_device *device,
+   struct pvr_render_state *rstate,
+   const struct pvr_renderpass_hwsetup_render *hw_render);
 
 static VkResult pvr_sub_cmd_gfx_job_init(const struct pvr_device_info *dev_info,
                                          struct pvr_cmd_buffer *cmd_buffer,
@@ -1736,7 +1736,7 @@ static VkResult pvr_sub_cmd_gfx_job_init(const struct pvr_device_info *dev_info,
    job->view_state.rt_datasets = &render_target->rt_dataset[0];
 
    if (cmd_buffer->state.current_sub_cmd->is_dynamic_render) {
-      result = pvr_render_targets_init(cmd_buffer->device, rstate, hw_render);
+      result = pvr_render_targets_dataset_init(cmd_buffer->device, rstate, hw_render);
       if (result != VK_SUCCESS) {
          vk_command_buffer_set_error(&cmd_buffer->vk, result);
          return result;
@@ -3220,10 +3220,10 @@ static inline VkResult pvr_render_targets_datasets_create(
    return VK_SUCCESS;
 }
 
-static VkResult
-pvr_render_targets_init(struct pvr_device *device,
-                        struct pvr_render_state *rstate,
-                        const struct pvr_renderpass_hwsetup_render *hw_render)
+static VkResult pvr_render_targets_dataset_init(
+   struct pvr_device *device,
+   struct pvr_render_state *rstate,
+   const struct pvr_renderpass_hwsetup_render *hw_render)
 {
    struct pvr_render_target *render_target =
       pvr_get_render_target(hw_render, rstate);
@@ -3244,9 +3244,9 @@ pvr_render_targets_init_for_render(struct pvr_device *device,
          &pass->hw_setup->renders[i];
       VkResult result;
 
-      result = pvr_render_targets_init(device,
-                                       framebuffer->rstate,
-                                       hw_render);
+      result = pvr_render_targets_dataset_init(device,
+                                               framebuffer->rstate,
+                                               hw_render);
       if (result != VK_SUCCESS)
          return result;
    }
