@@ -1,5 +1,395 @@
 [
     {
+        "sha": "095c2acf0180a1cbe7d60b6ffbfcd14e35724e22",
+        "description": "meson: do not reconstruct ICD paths",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "be4ad5c8199d2ccf71306aa4ad466266cef814cd",
+        "description": "meson: Remove VK_ICD_FILENAMES totally from source tree.",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "938fb7703e7f869ae54931cc5556a27993ef322a",
+        "description": "anv/video: Cast intentional read past end of struct member to void*",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "314de7af063ff7f40c10df8cd022f35e5eb7fa1a",
+        "notes": null
+    },
+    {
+        "sha": "c9bc373f7c5463684a90a137bd7f98466e7e9f03",
+        "description": "crocus: add struct crocus_scissor_state to clamp values to 16bit",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "bc1a6b0a4121d09cab70506ad0addf70a18730bf",
+        "notes": null
+    },
+    {
+        "sha": "c56543874c0835ca17c8119f5ffa6eb6170f51bd",
+        "description": "zink/ci: Document recent Turnip flakes",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "621465e417512aec22a3124408b8ac3946791076",
+        "description": "nir/opt_uniform_subgroup: handle more trivial shuffles/votes",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e648e551c157e6482af9b21e16b78d17899b9acc",
+        "description": "nir/opt_uniform_subgroup: wire up mbcnt_amd path",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5778436e992b65959253d9bffaa064a151f60605",
+        "description": "nir/opt_uniform_subgroup: use nir_shader_intrinsics_pass",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5f28bb72a79f9d2dfbac3f6169d670f7cb7a9a09",
+        "description": "nir/divergence_analysis: fix swizzle_amd without fetch inactive",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "ad5be403039bea8d0b6937fee14c1dfb60604fba",
+        "notes": null
+    },
+    {
+        "sha": "1fc38d85395fc19b5747ba5c1eb8012b82135543",
+        "description": "nir/opt_uniform_subgroup: fix swizzle_amd without fetch_inactive",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "ad5be403039bea8d0b6937fee14c1dfb60604fba",
+        "notes": null
+    },
+    {
+        "sha": "e11d7f06d07ba194500f26a1bc74bd817cb58449",
+        "description": "nir/opt_uniform_subgroup: don't try to optimize non trivial clustered reduce",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "535caaf3e027963536e48fa5bbb59dc779523e00",
+        "notes": null
+    },
+    {
+        "sha": "a265cdaa18237a654c50abf001efe4bd355621ee",
+        "description": "ci/deqp: Backport Android logcat commit",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4cbf5062b75047561d6924095bf9a56de3809bdb",
+        "description": "ci: Uprev GL & GLES CTS",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a65a7dbac9a8b1d133b3ee7ef7dfdfbc3c2ade55",
+        "description": "ci: Uprev VKCTS",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3bb98804680017e2b1dfbaf9ccba42a4420f9e21",
+        "description": "anv/ci: Increase timeout for nightly JSL job",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "bb58ba20758c6e60e7179892ebab084682900acf",
+        "description": "aco/optimizer: propagate salu fabs",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "04037c7af34a0f68458eb74db0909d65f6f45810",
+        "description": "aco/optimizer: propagate salu fneg",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8b1340a52c01328d627a8b1b401dc423c64df0ae",
+        "description": "aco/optimizer: validate uses",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ad3add311c8a24f7e9246c701724ca8faf9115e8",
+        "description": "aco/optimizer: fix uses in to_uniform_bool_instr",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3b4d2c41f016dec572f3061678e07cb300a08e77",
+        "description": "pan: add support for float-formats",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b925c4be4ac2c71f572000b5cf2ab57aee29e4be",
+        "description": "pan: make S8_UINT code behave like the rest",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6e92720eceb8f835f3ba1834eaa412992059df4c",
+        "description": "anv/brw: drop cs_prog_key::lower_unaligned_dispatch usage",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c1197d88e2a2f5cf8f369dae3a15dcc9d0f84270",
+        "description": "vulkan/runtime: include unaligned dispatch bit in hashing",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0330b19b86f20d6f9ced31b91129bbe026ca4a14",
+        "description": "spirv2dxil: Move clip/cull merging from common passes to just spirv2dxil passes",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0c400fbed91e7f4d91ff808a33900fa9ed0f20db",
+        "description": "nir: give nir_lower_clip_cull_distance_array_vars a better name",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "74995eb64d24f98da254d9130130a8a1dc65baa1",
+        "description": "nir: split gathering array sizes from nir_lower_clip_cull_distance_array_vars",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "bdcb7bc674ae9794a9956496435009d4b2f4b9bc",
+        "description": "nir/gather_info: clear clip/cull_distance_array_size if the IO is not present",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a03b686805ae33af88237536489c62d73e901f8d",
+        "description": "kk: Enable fragmentStoresAndAtomics",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ff3589b460f1a2f7641ba8d9220d4ac0a21a50ed",
+        "description": "anv: Enable compression on importing Android buffers (xe2)",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0c523b66619616493233dddf5b28bd2140884a4f",
+        "description": "anv: Use gralloc helper to get tiling",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7dbff29de15ef3e4ece29d7b084b82cf635515a4",
+        "description": "anv: Replace ANV_MAX_PLANES with ISL_MODIFIER_MAX_PLANES",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "33074e3ebe179d9cdd8066c9bb25a65529257b2a",
+        "description": "isl: Add a macro for number of maximum planes of modifiers",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "fa8f98138a3f23fe0cc3ac3fae91058fc861a7a3",
+        "description": "anv: And a new function to consolidate import paths",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4b63535d3cce80ebb8f5e3990e0c50352efada01",
+        "description": "svga: Fix vertex-fallbacks Piglit test",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6beb92a0d4bbd914bd5ff78d4f9a511ee9e84252",
+        "description": "svga: Enable GL_ARB_texture_mirror_clamp_to_edge",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5ced623fdf438ffb20146c47334561ab8c11036e",
+        "description": "nir: print nir_tex_instr::backend_flags if present",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b5063953caac18d90ca6fff67445599c9b39b2c3",
+        "description": "people: update Marek's email",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0735551b0888861e086e12a7f8b29bd46b70184e",
+        "description": "anv/video: Read the right source for memcpy",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "314de7af063ff7f40c10df8cd022f35e5eb7fa1a",
+        "notes": null
+    },
+    {
+        "sha": "26aba9dc9faadc8eb9822e417611e26f9f5dfff1",
+        "description": "anv/video: void cast array we intentionally read off the end of",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
         "sha": "72b43c0595d41c233d039c32f63120e0c3c27f59",
         "description": "radv/video: Always end ref pic modification list",
         "nominated": true,
