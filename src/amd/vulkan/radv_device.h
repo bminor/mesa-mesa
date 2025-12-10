@@ -308,6 +308,8 @@ struct radv_device {
    simple_mtx_t pso_cache_stats_mtx;
    struct radv_pso_cache_stats pso_cache_stats[RADV_PIPELINE_TYPE_COUNT];
 
+   simple_mtx_t blit_queue_mtx;
+
    struct radv_address_binding_tracker *addr_binding_tracker;
 };
 

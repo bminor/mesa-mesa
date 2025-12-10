@@ -1133,6 +1133,7 @@ radv_destroy_device(struct radv_device *device, const VkAllocationCallbacks *pAl
    simple_mtx_destroy(&device->trace_mtx);
    simple_mtx_destroy(&device->rt_handles_mtx);
    simple_mtx_destroy(&device->pso_cache_stats_mtx);
+   simple_mtx_destroy(&device->blit_queue_mtx);
 
    radv_destroy_shader_arenas(device);
    if (device->capture_replay_arena_vas)
@@ -1190,6 +1191,7 @@ radv_CreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCr
    simple_mtx_init(&device->pstate_mtx, mtx_plain);
    simple_mtx_init(&device->rt_handles_mtx, mtx_plain);
    simple_mtx_init(&device->pso_cache_stats_mtx, mtx_plain);
+   simple_mtx_init(&device->blit_queue_mtx, mtx_plain);
 
    device->rt_handles = _mesa_hash_table_create(NULL, _mesa_hash_u32, _mesa_key_u32_equal);
 
