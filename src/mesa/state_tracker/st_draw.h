@@ -100,7 +100,8 @@ st_indirect_draw_vbo(struct gl_context *ctx,
                      GLsizei draw_count, GLsizei stride);
 
 bool
-st_draw_hw_select_prepare_common(struct gl_context *ctx);
+st_draw_hw_select_prepare_common(struct gl_context *ctx,
+                                 struct pipe_resource **releasebuf);
 bool
 st_draw_hw_select_prepare_mode(struct gl_context *ctx, struct pipe_draw_info *info);
 void

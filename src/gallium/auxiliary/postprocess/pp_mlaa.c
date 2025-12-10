@@ -73,6 +73,8 @@ pp_jimenezmlaa_run(struct pp_queue_t *ppq, struct pipe_resource *in,
 
    const struct pipe_stencil_ref ref = { {1} };
 
+   struct pipe_resource *releasebuf[2] = {};
+
    /* Insufficient initialization checks. */
    assert(p);
    assert(ppq);
@@ -104,8 +106,8 @@ pp_jimenezmlaa_run(struct pp_queue_t *ppq, struct pipe_resource *in,
    cb.user_buffer = constants;
 
    struct pipe_context *pipe = ppq->p->pipe;
-   pipe_upload_constant_buffer0(pipe, MESA_SHADER_VERTEX, &cb);
-   pipe_upload_constant_buffer0(pipe, MESA_SHADER_FRAGMENT, &cb);
+   pipe_upload_constant_buffer0(pipe, MESA_SHADER_VERTEX, &cb, &releasebuf[0]);
+   pipe_upload_constant_buffer0(pipe, MESA_SHADER_FRAGMENT, &cb, &releasebuf[1]);
 
    mstencil.stencil[0].enabled = 1;
    mstencil.stencil[0].valuemask = mstencil.stencil[0].writemask = ~0;
@@ -212,6 +214,9 @@ pp_jimenezmlaa_run(struct pp_queue_t *ppq, struct pipe_resource *in,
 
    p->blend.rt[0].blend_enable = 0;
    memset(&p->framebuffer.zsbuf, 0, sizeof(p->framebuffer.zsbuf));
+
+   pipe_resource_release(pipe, releasebuf[1]);
+   pipe_resource_release(pipe, releasebuf[0]);
 }
 
 /** The init function of the MLAA filter. */

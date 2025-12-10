@@ -371,15 +371,18 @@ st_hw_select_draw_gallium(struct gl_context *ctx,
                           unsigned num_draws)
 {
    struct st_context *st = st_context(ctx);
+   struct pipe_resource *releasebuf = NULL;
    enum mesa_prim old_mode = info->mode;
 
-   if (st_draw_hw_select_prepare_common(ctx) &&
+   if (st_draw_hw_select_prepare_common(ctx, &releasebuf) &&
        /* Removing "const" is fine because we restore the changed mode
         * at the end. */
        st_draw_hw_select_prepare_mode(ctx, ((struct pipe_draw_info*)info))) {
       cso_draw_vbo(st->cso_context, info, drawid_offset, indirect, draws,
                    num_draws);
    }
+
+   pipe_resource_release(st->pipe, releasebuf);
 
    ((struct pipe_draw_info*)info)->mode = old_mode;
 }
@@ -392,9 +395,10 @@ st_hw_select_draw_gallium_multimode(struct gl_context *ctx,
                                     unsigned num_draws)
 {
    struct st_context *st = st_context(ctx);
+   struct pipe_resource *releasebuf = NULL;
 
-   if (!st_draw_hw_select_prepare_common(ctx))
-      return;
+   if (!st_draw_hw_select_prepare_common(ctx, &releasebuf))
+      goto out;
 
    unsigned i, first;
    struct cso_context *cso = st->cso_context;
@@ -410,6 +414,9 @@ st_hw_select_draw_gallium_multimode(struct gl_context *ctx,
          first = i;
       }
    }
+
+out:
+   pipe_resource_release(st->pipe, releasebuf);
 }
 
 void
