@@ -10,6 +10,7 @@
       when: on_success
     - changes: &panfrost_common_file_list
         - src/panfrost/ci/gitlab-ci.yml
+        - src/panfrost/ci/gitlab-ci-inc.yml
         - src/panfrost/ci/deqp-$DEQP_SUITE.toml
         - src/panfrost/ci/$GPU_VERSION-fails.txt
         - src/panfrost/ci/$GPU_VERSION-flakes.txt
