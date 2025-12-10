@@ -1004,7 +1004,8 @@ download_texture_compute(struct st_context *st,
    assert(cs);
    struct cso_context *cso = st->cso_context;
 
-   pipe_upload_constant_buffer0(st->pipe, MESA_SHADER_COMPUTE, &cb);
+   struct pipe_resource *releasebuf = NULL;
+   pipe_upload_constant_buffer0(st->pipe, MESA_SHADER_COMPUTE, &cb, &releasebuf);
 
    cso_save_compute_state(cso, CSO_BIT_COMPUTE_SHADER | CSO_BIT_COMPUTE_SAMPLERS);
    cso_set_compute_shader_handle(cso, cs);
@@ -1173,6 +1174,8 @@ fail:
 
    ST_SET_STATE3(st->ctx->NewDriverState, ST_NEW_CS_CONSTANTS,
                  ST_NEW_CS_SSBOS, ST_NEW_CS_SAMPLER_VIEWS);
+
+   pipe_resource_release(pipe, releasebuf);
 
    return dst;
 }
