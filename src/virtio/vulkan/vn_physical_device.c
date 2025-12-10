@@ -1962,7 +1962,7 @@ unlock:
 
 /* physical device commands */
 
-VkResult
+VKAPI_ATTR VkResult VKAPI_CALL
 vn_EnumeratePhysicalDevices(VkInstance _instance,
                             uint32_t *pPhysicalDeviceCount,
                             VkPhysicalDevice *pPhysicalDevices)
@@ -1986,7 +1986,7 @@ vn_EnumeratePhysicalDevices(VkInstance _instance,
    return vk_outarray_status(&out);
 }
 
-VkResult
+VKAPI_ATTR VkResult VKAPI_CALL
 vn_EnumeratePhysicalDeviceGroups(
    VkInstance _instance,
    uint32_t *pPhysicalDeviceGroupCount,
@@ -2011,7 +2011,7 @@ vn_EnumeratePhysicalDeviceGroups(
    return vk_outarray_status(&out);
 }
 
-VkResult
+VKAPI_ATTR VkResult VKAPI_CALL
 vn_EnumerateDeviceExtensionProperties(VkPhysicalDevice physicalDevice,
                                       const char *pLayerName,
                                       uint32_t *pPropertyCount,
@@ -2037,7 +2037,7 @@ vn_EnumerateDeviceExtensionProperties(VkPhysicalDevice physicalDevice,
    return vk_outarray_status(&out);
 }
 
-VkResult
+VKAPI_ATTR VkResult VKAPI_CALL
 vn_EnumerateDeviceLayerProperties(VkPhysicalDevice physicalDevice,
                                   uint32_t *pPropertyCount,
                                   VkLayerProperties *pProperties)
@@ -2046,7 +2046,7 @@ vn_EnumerateDeviceLayerProperties(VkPhysicalDevice physicalDevice,
    return VK_SUCCESS;
 }
 
-void
+VKAPI_ATTR void VKAPI_CALL
 vn_GetPhysicalDeviceProperties2(VkPhysicalDevice physicalDevice,
                                 VkPhysicalDeviceProperties2 *pProperties)
 {
@@ -2096,7 +2096,7 @@ vn_GetPhysicalDeviceProperties2(VkPhysicalDevice physicalDevice,
    }
 }
 
-void
+VKAPI_ATTR void VKAPI_CALL
 vn_GetPhysicalDeviceQueueFamilyProperties2(
    VkPhysicalDevice physicalDevice,
    uint32_t *pQueueFamilyPropertyCount,
@@ -2126,7 +2126,7 @@ vn_GetPhysicalDeviceQueueFamilyProperties2(
    }
 }
 
-void
+VKAPI_ATTR void VKAPI_CALL
 vn_GetPhysicalDeviceMemoryProperties2(
    VkPhysicalDevice physicalDevice,
    VkPhysicalDeviceMemoryProperties2 *pMemoryProperties)
@@ -2198,7 +2198,7 @@ vn_sanitize_format_properties(VkFormat format,
    }
 }
 
-void
+VKAPI_ATTR void VKAPI_CALL
 vn_GetPhysicalDeviceFormatProperties2(VkPhysicalDevice physicalDevice,
                                       VkFormat format,
                                       VkFormatProperties2 *pFormatProperties)
@@ -2732,7 +2732,7 @@ vn_get_ahb_image_props(struct vn_physical_device *physical_dev,
    return VK_SUCCESS;
 }
 
-VkResult
+VKAPI_ATTR VkResult VKAPI_CALL
 vn_GetPhysicalDeviceImageFormatProperties2(
    VkPhysicalDevice physicalDevice,
    const VkPhysicalDeviceImageFormatInfo2 *pImageFormatInfo,
@@ -2841,7 +2841,7 @@ vn_GetPhysicalDeviceImageFormatProperties2(
    return vn_result(physical_dev->instance, result);
 }
 
-void
+VKAPI_ATTR void VKAPI_CALL
 vn_GetPhysicalDeviceSparseImageFormatProperties2(
    VkPhysicalDevice physicalDevice,
    const VkPhysicalDeviceSparseImageFormatInfo2 *pFormatInfo,
@@ -2866,7 +2866,7 @@ vn_GetPhysicalDeviceSparseImageFormatProperties2(
       ring, physicalDevice, pFormatInfo, pPropertyCount, pProperties);
 }
 
-void
+VKAPI_ATTR void VKAPI_CALL
 vn_GetPhysicalDeviceExternalBufferProperties(
    VkPhysicalDevice physicalDevice,
    const VkPhysicalDeviceExternalBufferInfo *pExternalBufferInfo,
@@ -2924,7 +2924,7 @@ vn_GetPhysicalDeviceExternalBufferProperties(
          : 0;
 }
 
-void
+VKAPI_ATTR void VKAPI_CALL
 vn_GetPhysicalDeviceExternalFenceProperties(
    VkPhysicalDevice physicalDevice,
    const VkPhysicalDeviceExternalFenceInfo *pExternalFenceInfo,
@@ -2949,7 +2949,7 @@ vn_GetPhysicalDeviceExternalFenceProperties(
    }
 }
 
-void
+VKAPI_ATTR void VKAPI_CALL
 vn_GetPhysicalDeviceExternalSemaphoreProperties(
    VkPhysicalDevice physicalDevice,
    const VkPhysicalDeviceExternalSemaphoreInfo *pExternalSemaphoreInfo,
@@ -2980,7 +2980,7 @@ vn_GetPhysicalDeviceExternalSemaphoreProperties(
    }
 }
 
-VkResult
+VKAPI_ATTR VkResult VKAPI_CALL
 vn_GetPhysicalDeviceCalibrateableTimeDomainsKHR(
    VkPhysicalDevice physicalDevice,
    uint32_t *pTimeDomainCount,
@@ -2994,7 +2994,7 @@ vn_GetPhysicalDeviceCalibrateableTimeDomainsKHR(
       ring, physicalDevice, pTimeDomainCount, pTimeDomains);
 }
 
-VkResult
+VKAPI_ATTR VkResult VKAPI_CALL
 vn_GetPhysicalDeviceCooperativeMatrixPropertiesKHR(
    VkPhysicalDevice physicalDevice,
    uint32_t *pPropertyCount,
@@ -3008,7 +3008,7 @@ vn_GetPhysicalDeviceCooperativeMatrixPropertiesKHR(
       ring, physicalDevice, pPropertyCount, pProperties);
 }
 
-VkResult
+VKAPI_ATTR VkResult VKAPI_CALL
 vn_GetPhysicalDeviceFragmentShadingRatesKHR(
    VkPhysicalDevice physicalDevice,
    uint32_t *pFragmentShadingRateCount,
@@ -3022,7 +3022,7 @@ vn_GetPhysicalDeviceFragmentShadingRatesKHR(
       ring, physicalDevice, pFragmentShadingRateCount, pFragmentShadingRates);
 }
 
-void
+VKAPI_ATTR void VKAPI_CALL
 vn_GetPhysicalDeviceMultisamplePropertiesEXT(
    VkPhysicalDevice physicalDevice,
    VkSampleCountFlagBits samples,

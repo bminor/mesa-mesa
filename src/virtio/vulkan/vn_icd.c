@@ -12,7 +12,7 @@
 
 #include "vn_instance.h"
 
-PFN_vkVoidFunction
+VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL
 vk_icdGetInstanceProcAddr(VkInstance instance, const char *pName)
 {
    return vn_GetInstanceProcAddr(instance, pName);

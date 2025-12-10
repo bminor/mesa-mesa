@@ -342,7 +342,7 @@ vn_buffer_fix_create_info(
    return &local_info->create;
 }
 
-VkResult
+VKAPI_ATTR VkResult VKAPI_CALL
 vn_CreateBuffer(VkDevice device,
                 const VkBufferCreateInfo *pCreateInfo,
                 const VkAllocationCallbacks *pAllocator,
@@ -374,7 +374,7 @@ vn_CreateBuffer(VkDevice device,
    return VK_SUCCESS;
 }
 
-void
+VKAPI_ATTR void VKAPI_CALL
 vn_DestroyBuffer(VkDevice device,
                  VkBuffer buffer,
                  const VkAllocationCallbacks *pAllocator)
@@ -393,7 +393,7 @@ vn_DestroyBuffer(VkDevice device,
    vk_free(alloc, buf);
 }
 
-VkDeviceAddress
+VKAPI_ATTR VkDeviceAddress VKAPI_CALL
 vn_GetBufferDeviceAddress(VkDevice device,
                           const VkBufferDeviceAddressInfo *pInfo)
 {
@@ -402,7 +402,7 @@ vn_GetBufferDeviceAddress(VkDevice device,
    return vn_call_vkGetBufferDeviceAddress(dev->primary_ring, device, pInfo);
 }
 
-uint64_t
+VKAPI_ATTR uint64_t VKAPI_CALL
 vn_GetBufferOpaqueCaptureAddress(VkDevice device,
                                  const VkBufferDeviceAddressInfo *pInfo)
 {
@@ -412,7 +412,7 @@ vn_GetBufferOpaqueCaptureAddress(VkDevice device,
                                                   pInfo);
 }
 
-void
+VKAPI_ATTR void VKAPI_CALL
 vn_GetBufferMemoryRequirements2(VkDevice device,
                                 const VkBufferMemoryRequirementsInfo2 *pInfo,
                                 VkMemoryRequirements2 *pMemoryRequirements)
@@ -423,7 +423,7 @@ vn_GetBufferMemoryRequirements2(VkDevice device,
                                       pMemoryRequirements);
 }
 
-VkResult
+VKAPI_ATTR VkResult VKAPI_CALL
 vn_BindBufferMemory2(VkDevice device,
                      uint32_t bindInfoCount,
                      const VkBindBufferMemoryInfo *pBindInfos)
@@ -444,7 +444,7 @@ vn_BindBufferMemory2(VkDevice device,
 
 /* buffer view commands */
 
-VkResult
+VKAPI_ATTR VkResult VKAPI_CALL
 vn_CreateBufferView(VkDevice device,
                     const VkBufferViewCreateInfo *pCreateInfo,
                     const VkAllocationCallbacks *pAllocator,
@@ -471,7 +471,7 @@ vn_CreateBufferView(VkDevice device,
    return VK_SUCCESS;
 }
 
-void
+VKAPI_ATTR void VKAPI_CALL
 vn_DestroyBufferView(VkDevice device,
                      VkBufferView bufferView,
                      const VkAllocationCallbacks *pAllocator)
@@ -490,7 +490,7 @@ vn_DestroyBufferView(VkDevice device,
    vk_free(alloc, view);
 }
 
-void
+VKAPI_ATTR void VKAPI_CALL
 vn_GetDeviceBufferMemoryRequirements(
    VkDevice device,
    const VkDeviceBufferMemoryRequirements *pInfo,

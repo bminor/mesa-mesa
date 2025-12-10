@@ -10,7 +10,7 @@
 
 #include "vn_device.h"
 
-VkResult
+VKAPI_ATTR VkResult VKAPI_CALL
 vn_TransitionImageLayout(VkDevice device,
                          uint32_t transitionCount,
                          const VkHostImageLayoutTransitionInfo *pTransitions)
@@ -23,7 +23,7 @@ vn_TransitionImageLayout(VkDevice device,
    return VK_SUCCESS;
 }
 
-VkResult
+VKAPI_ATTR VkResult VKAPI_CALL
 vn_CopyImageToImage(VkDevice device,
                     const VkCopyImageToImageInfo *pCopyImageToImageInfo)
 {
@@ -120,7 +120,7 @@ vn_get_copy_size(VkImage img_handle,
    return last_row_size + last_row_offset;
 }
 
-VkResult
+VKAPI_ATTR VkResult VKAPI_CALL
 vn_CopyImageToMemory(VkDevice device,
                      const VkCopyImageToMemoryInfo *pCopyImageToMemoryInfo)
 {
@@ -165,7 +165,7 @@ vn_CopyImageToMemory(VkDevice device,
    return VK_SUCCESS;
 }
 
-VkResult
+VKAPI_ATTR VkResult VKAPI_CALL
 vn_CopyMemoryToImage(VkDevice device,
                      const VkCopyMemoryToImageInfo *pCopyMemoryToImageInfo)
 {

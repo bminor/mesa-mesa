@@ -618,7 +618,7 @@ vn_image_fix_create_info(
    return &local_info->create;
 }
 
-VkResult
+VKAPI_ATTR VkResult VKAPI_CALL
 vn_CreateImage(VkDevice device,
                const VkImageCreateInfo *pCreateInfo,
                const VkAllocationCallbacks *pAllocator,
@@ -709,7 +709,7 @@ vn_CreateImage(VkDevice device,
    return VK_SUCCESS;
 }
 
-void
+VKAPI_ATTR void VKAPI_CALL
 vn_DestroyImage(VkDevice device,
                 VkImage image,
                 const VkAllocationCallbacks *pAllocator)
@@ -736,7 +736,7 @@ vn_DestroyImage(VkDevice device,
    vk_image_destroy(&dev->base.vk, alloc, &img->base.vk);
 }
 
-void
+VKAPI_ATTR void VKAPI_CALL
 vn_GetImageMemoryRequirements2(VkDevice device,
                                const VkImageMemoryRequirementsInfo2 *pInfo,
                                VkMemoryRequirements2 *pMemoryRequirements)
@@ -753,7 +753,7 @@ vn_GetImageMemoryRequirements2(VkDevice device,
    vn_image_fill_reqs(&img->requirements[plane], pMemoryRequirements);
 }
 
-void
+VKAPI_ATTR void VKAPI_CALL
 vn_GetImageSparseMemoryRequirements2(
    VkDevice device,
    const VkImageSparseMemoryRequirementsInfo2 *pInfo,
@@ -817,7 +817,7 @@ vn_image_bind_wsi_memory(struct vn_device *dev,
    return VK_SUCCESS;
 }
 
-VkResult
+VKAPI_ATTR VkResult VKAPI_CALL
 vn_BindImageMemory2(VkDevice device,
                     uint32_t bindInfoCount,
                     const VkBindImageMemoryInfo *pBindInfos)
@@ -842,7 +842,7 @@ vn_BindImageMemory2(VkDevice device,
    return VK_SUCCESS;
 }
 
-VkResult
+VKAPI_ATTR VkResult VKAPI_CALL
 vn_GetImageDrmFormatModifierPropertiesEXT(
    VkDevice device,
    VkImage image,
@@ -877,7 +877,7 @@ vn_image_get_aspect(struct vn_image *img, VkImageAspectFlags aspect)
    UNREACHABLE("unexpected aspect");
 }
 
-void
+VKAPI_ATTR void VKAPI_CALL
 vn_GetImageSubresourceLayout(VkDevice device,
                              VkImage image,
                              const VkImageSubresource *pSubresource,
@@ -903,7 +903,7 @@ vn_GetImageSubresourceLayout(VkDevice device,
 
 /* image view commands */
 
-VkResult
+VKAPI_ATTR VkResult VKAPI_CALL
 vn_CreateImageView(VkDevice device,
                    const VkImageViewCreateInfo *pCreateInfo,
                    const VkAllocationCallbacks *pAllocator,
@@ -941,7 +941,7 @@ vn_CreateImageView(VkDevice device,
    return VK_SUCCESS;
 }
 
-void
+VKAPI_ATTR void VKAPI_CALL
 vn_DestroyImageView(VkDevice device,
                     VkImageView imageView,
                     const VkAllocationCallbacks *pAllocator)
@@ -962,7 +962,7 @@ vn_DestroyImageView(VkDevice device,
 
 /* sampler commands */
 
-VkResult
+VKAPI_ATTR VkResult VKAPI_CALL
 vn_CreateSampler(VkDevice device,
                  const VkSamplerCreateInfo *pCreateInfo,
                  const VkAllocationCallbacks *pAllocator,
@@ -989,7 +989,7 @@ vn_CreateSampler(VkDevice device,
    return VK_SUCCESS;
 }
 
-void
+VKAPI_ATTR void VKAPI_CALL
 vn_DestroySampler(VkDevice device,
                   VkSampler _sampler,
                   const VkAllocationCallbacks *pAllocator)
@@ -1010,7 +1010,7 @@ vn_DestroySampler(VkDevice device,
 
 /* sampler YCbCr conversion commands */
 
-VkResult
+VKAPI_ATTR VkResult VKAPI_CALL
 vn_CreateSamplerYcbcrConversion(
    VkDevice device,
    const VkSamplerYcbcrConversionCreateInfo *pCreateInfo,
@@ -1057,7 +1057,7 @@ vn_CreateSamplerYcbcrConversion(
    return VK_SUCCESS;
 }
 
-void
+VKAPI_ATTR void VKAPI_CALL
 vn_DestroySamplerYcbcrConversion(VkDevice device,
                                  VkSamplerYcbcrConversion ycbcrConversion,
                                  const VkAllocationCallbacks *pAllocator)
@@ -1078,7 +1078,7 @@ vn_DestroySamplerYcbcrConversion(VkDevice device,
    vk_free(alloc, conv);
 }
 
-void
+VKAPI_ATTR void VKAPI_CALL
 vn_GetDeviceImageMemoryRequirements(
    VkDevice device,
    const VkDeviceImageMemoryRequirements *pInfo,
@@ -1135,7 +1135,7 @@ vn_GetDeviceImageMemoryRequirements(
    }
 }
 
-void
+VKAPI_ATTR void VKAPI_CALL
 vn_GetDeviceImageSparseMemoryRequirements(
    VkDevice device,
    const VkDeviceImageMemoryRequirements *pInfo,
@@ -1156,7 +1156,7 @@ vn_GetDeviceImageSparseMemoryRequirements(
       pSparseMemoryRequirements);
 }
 
-void
+VKAPI_ATTR void VKAPI_CALL
 vn_GetDeviceImageSubresourceLayout(VkDevice device,
                                    const VkDeviceImageSubresourceInfo *pInfo,
                                    VkSubresourceLayout2 *pLayout)
@@ -1168,7 +1168,7 @@ vn_GetDeviceImageSubresourceLayout(VkDevice device,
                                              pLayout);
 }
 
-void
+VKAPI_ATTR void VKAPI_CALL
 vn_GetImageSubresourceLayout2(VkDevice device,
                               VkImage image,
                               const VkImageSubresource2 *pSubresource,

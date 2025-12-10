@@ -18,7 +18,7 @@
 
 /* query pool commands */
 
-VkResult
+VKAPI_ATTR VkResult VKAPI_CALL
 vn_CreateQueryPool(VkDevice device,
                    const VkQueryPoolCreateInfo *pCreateInfo,
                    const VkAllocationCallbacks *pAllocator,
@@ -152,7 +152,7 @@ vn_CreateQueryPool(VkDevice device,
    return VK_SUCCESS;
 }
 
-void
+VKAPI_ATTR void VKAPI_CALL
 vn_DestroyQueryPool(VkDevice device,
                     VkQueryPool queryPool,
                     const VkAllocationCallbacks *pAllocator)
@@ -177,7 +177,7 @@ vn_DestroyQueryPool(VkDevice device,
    vk_free(alloc, pool);
 }
 
-void
+VKAPI_ATTR void VKAPI_CALL
 vn_ResetQueryPool(VkDevice device,
                   VkQueryPool queryPool,
                   uint32_t firstQuery,
@@ -299,7 +299,7 @@ vn_query_feedback_wait_ready(struct vn_device *dev,
    vn_relax_fini(&relax_state);
 }
 
-VkResult
+VKAPI_ATTR VkResult VKAPI_CALL
 vn_GetQueryPoolResults(VkDevice device,
                        VkQueryPool queryPool,
                        uint32_t firstQuery,
