@@ -14,7 +14,7 @@
         "description": "ac/nir: fix calculation of aligned_new_size",
         "nominated": true,
         "nomination_type": 4,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null

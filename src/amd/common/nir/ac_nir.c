@@ -542,8 +542,9 @@ ac_nir_mem_vectorize_callback(unsigned align_mul, unsigned align_offset, unsigne
 
    /* Align the size to what the hw supports. */
    unsigned unaligned_new_size = num_components * bit_size;
-   unsigned aligned_new_size = align_load_store_size(config->gfx_level, unaligned_new_size,
-                                                     uses_smem, is_shared);
+   unsigned aligned_new_size = nir_round_up_components(num_components) * bit_size;
+   aligned_new_size = align_load_store_size(config->gfx_level, aligned_new_size,
+                                            uses_smem, is_shared);
 
    if (uses_smem) {
       /* Maximize SMEM vectorization except for LLVM, which suffers from SGPR and VGPR spilling.
