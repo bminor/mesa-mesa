@@ -16,6 +16,7 @@
    S_0286D0_LINEAR_SAMPLE_ENA(1) |              \
    S_0286D0_LINEAR_CENTER_ENA(1) |              \
    S_0286D0_LINEAR_CENTROID_ENA(1) |            \
+   S_0286D0_LINE_STIPPLE_TEX_ENA(1) |           \
    S_0286D0_FRONT_FACE_ENA(1) |                 \
    S_0286D0_ANCILLARY_ENA(1) |                  \
    S_0286D0_SAMPLE_COVERAGE_ENA(1) |            \

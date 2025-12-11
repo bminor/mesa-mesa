@@ -423,7 +423,15 @@ void si_fixup_spi_ps_input_config(struct si_shader *shader)
       shader->config.spi_ps_input_ena |= S_0286CC_PERSP_SAMPLE_ENA(1);
    }
 
-   /* At least one pair of interpolation weights must be enabled. */
-   if (!(shader->config.spi_ps_input_ena & 0x7f))
-      shader->config.spi_ps_input_ena |= S_0286CC_PERSP_SAMPLE_ENA(1);
+   /* At least one pair of barycentric coordinates or LINE_STIPPLE_TEX_ENA must be enabled.
+    * Since LINE_STIPPLE_TEX_ENA is the only one that loads only 1 VGPR, use it.
+    */
+   if (!(shader->config.spi_ps_input_ena & 0x7f) &&
+       !G_0286CC_LINE_STIPPLE_TEX_ENA(shader->config.spi_ps_input_ena)) {
+      /* LLVM sets PERSP_SAMPLE_ENA in this case, so we have to do the same. */
+      if (shader->selector->info.base.use_aco_amd)
+         shader->config.spi_ps_input_ena |= S_0286CC_LINE_STIPPLE_TEX_ENA(1);
+      else
+         shader->config.spi_ps_input_ena |= S_0286CC_PERSP_SAMPLE_ENA(1);
+   }
 }
