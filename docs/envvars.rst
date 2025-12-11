@@ -1504,6 +1504,8 @@ RADV driver environment variables
       Use bvh4 encoding on GPUs that support bvh8 encoding.
    ``validatevas``
       Enable tracking of VA ranges for radv_build_is_valid_va.
+   ``vm``
+      add a gap between all VA allocations to check for page faults
 
 .. envvar:: RADV_FORCE_VRS
 
