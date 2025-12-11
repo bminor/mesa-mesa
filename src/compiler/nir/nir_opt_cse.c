@@ -52,18 +52,19 @@
  *
  * Case 1. Copy propagation of movs without swizzles:
  *    32x4 %2 = (any instruction)
- *    32x4 %3 = mov %2.xyzw   // eliminated since it's equal to %2
+ *    32x4 %3 = mov %2.xyzw                 // eliminated since it's equal to %2
+ *   OR
+ *    32x4 %3 = vec4 %2.x, %2.y, %2.z, %2.w // eliminated since it's equal to %2
  *
  * Case 2. Copy propagation of movs with swizzles:
  *    32x2 %2 = (any instruction)
- *    32x3 %3 = mov %2.yxx    // eliminated conditionally
+ *    32x3 %3 = mov %2.yxx                // eliminated conditionally
+ *   OR
+ *    32x3 %3 = vec3 %2.y, %2.x, %2.x     // eliminated conditionally
  *       All %3 uses that are ALU will absorb the swizzle and are changed
- *       to use %2, and those uses that are not ALU will keep the mov.
- *
- * While vecN is possible to occur here instead, NIR should always create
- * swizzled mov instead of vecN when all components use the same def, and
- * nir_validate should assert that, so this should never occur:
- *    32x4 %2 = vec4 %1.?, %1.?, %1.?, %1.?
+ *       to use %2, and those uses that are not ALU will keep vecN or replace
+ *       mov with equivalent vecN while eliminating components not used by
+ *       the remaining uses (nir_opt_copy_prop always does that).
  */
 
 #include "nir.h"
