@@ -995,11 +995,6 @@ fd_screen_create(int fd,
    screen->dev_info = info;
    screen->info = &screen->dev_info;
 
-   if (screen->gen == 8) {
-      /* gen8 TODO */
-      fd_mesa_debug |= FD_DBG_NOLRZ;
-   }
-
    switch (screen->gen) {
    case 2:
       fd2_screen_init(pscreen);

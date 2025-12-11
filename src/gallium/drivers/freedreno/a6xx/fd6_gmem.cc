@@ -237,7 +237,7 @@ emit_lrz(fd_cs &cs, struct fd_batch *batch, struct fd_batch_subpass *subpass)
    struct pipe_framebuffer_state *pfb = &batch->framebuffer;
 
    if (!subpass->lrz) {
-      fd_crb crb(cs, 8);
+      fd_crb crb(cs, 9);
 
       crb.add(GRAS_LRZ_BUFFER_BASE(CHIP));
       crb.add(GRAS_LRZ_BUFFER_PITCH(CHIP));
@@ -247,6 +247,10 @@ emit_lrz(fd_cs &cs, struct fd_batch *batch, struct fd_batch_subpass *subpass)
       if (CHIP >= A7XX) {
          crb.add(GRAS_LRZ_DEPTH_BUFFER_INFO(CHIP));
          crb.add(GRAS_LRZ_CNTL2(CHIP));
+      }
+
+      if (CHIP >= A8XX) {
+         crb.add(GRAS_LRZ_BUFFER_SLICE_PITCH(CHIP));
       }
 
       return;
@@ -260,7 +264,7 @@ emit_lrz(fd_cs &cs, struct fd_batch *batch, struct fd_batch_subpass *subpass)
     */
    fd6_event_write<CHIP>(batch->ctx, cs, FD_LRZ_FLUSH);
 
-   fd_crb crb(cs, 8);
+   fd_crb crb(cs, 9);
 
    struct fd_resource *zsbuf = fd_resource(pfb->zsbuf.texture);
 
@@ -288,6 +292,12 @@ emit_lrz(fd_cs &cs, struct fd_batch *batch, struct fd_batch_subpass *subpass)
       crb.add(GRAS_LRZ_CNTL2(CHIP,
          .disable_on_wrong_dir = false,
          .fc_enable = lrzfc_enabled<CHIP>(zsbuf),
+      ));
+   }
+
+   if (CHIP >= A8XX) {
+      crb.add(GRAS_LRZ_BUFFER_SLICE_PITCH(CHIP,
+         zsbuf->lrz_layout.lrz_slice_pitch
       ));
    }
 }
