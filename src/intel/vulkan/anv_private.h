@@ -4035,20 +4035,21 @@ enum anv_query_bits {
    ANV_QUERY_WRITES_DATA_FLUSH    = (1 << 3),
 };
 
-/* It's not clear why DG2 doesn't have issues with L3/CS coherency. But it's
- * likely related to performance workaround 14015868140.
+/* It's not clear why DG2/Xe2+ doesn't have issues with L3/CS coherency. But
+ * it's likely related to performance workaround 14015868140.
  *
- * For now we enable this only on DG2 and platform prior to Gfx12 where there
- * is no tile cache.
+ * For now we enable this only on DG2/Xe2+ and platform prior to Gfx12 where
+ * there is no tile cache.
  */
 #define ANV_DEVINFO_HAS_COHERENT_L3_CS(devinfo) \
-   (intel_device_info_is_dg2(devinfo))
+   (intel_device_info_is_dg2(devinfo) || (devinfo)->ver >= 20)
 
 /* Things we need to flush before accessing query data using the command
  * streamer.
  *
- * Prior to DG2 experiments show that the command streamer is not coherent
- * with the tile cache so we need to flush it to make any data visible to CS.
+ * Prior to DG2/Xe2+ experiments show that the command streamer is not
+ * coherent with the tile cache so we need to flush it to make any data
+ * visible to CS.
  *
  * Otherwise we want to flush the RT cache which is where blorp writes, either
  * for clearing the query buffer or for clearing the destination buffer in
