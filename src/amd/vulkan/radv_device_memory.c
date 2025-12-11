@@ -134,7 +134,7 @@ radv_alloc_memory(struct radv_device *device, const VkMemoryAllocateInfo *pAlloc
        * as uncached.
        */
       if (mem->buffer)
-         flags |= RADEON_FLAG_VA_UNCACHED;
+         flags |= RADEON_FLAG_GL2_BYPASS;
    }
 
    float priority_float = 0.5;

@@ -190,7 +190,7 @@ radv_init_trace(struct radv_device *device)
 
    result = radv_bo_create(
       device, NULL, sizeof(struct radv_trace_data), 8, RADEON_DOMAIN_VRAM,
-      RADEON_FLAG_CPU_ACCESS | RADEON_FLAG_NO_INTERPROCESS_SHARING | RADEON_FLAG_ZERO_VRAM | RADEON_FLAG_VA_UNCACHED,
+      RADEON_FLAG_CPU_ACCESS | RADEON_FLAG_NO_INTERPROCESS_SHARING | RADEON_FLAG_ZERO_VRAM | RADEON_FLAG_GL2_BYPASS,
       RADV_BO_PRIORITY_UPLOAD_BUFFER, 0, true, &device->trace_bo);
    if (result != VK_SUCCESS)
       return false;

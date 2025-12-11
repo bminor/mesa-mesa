@@ -52,7 +52,7 @@ radv_create_event(struct radv_device *device, const VkEventCreateInfo *pCreateIn
    }
 
    result = radv_bo_create(device, &event->base, 8, 8, bo_domain,
-                           RADEON_FLAG_VA_UNCACHED | RADEON_FLAG_NO_INTERPROCESS_SHARING | bo_flags,
+                           RADEON_FLAG_GL2_BYPASS | RADEON_FLAG_NO_INTERPROCESS_SHARING | bo_flags,
                            RADV_BO_PRIORITY_FENCE, 0, is_internal, &event->bo);
    if (result != VK_SUCCESS) {
       radv_destroy_event(device, pAllocator, event);

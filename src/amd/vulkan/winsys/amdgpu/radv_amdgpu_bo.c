@@ -40,7 +40,7 @@ radv_amdgpu_bo_va_op(struct radv_amdgpu_winsys *ws, uint32_t bo_handle, uint64_t
    if (bo_handle) {
       flags = AMDGPU_VM_PAGE_READABLE | AMDGPU_VM_PAGE_EXECUTABLE;
 
-      if ((bo_flags & RADEON_FLAG_VA_UNCACHED) && ws->info.gfx_level >= GFX9)
+      if ((bo_flags & RADEON_FLAG_GL2_BYPASS) && ws->info.gfx_level >= GFX9)
          flags |= AMDGPU_VM_MTYPE_UC;
 
       if (!(bo_flags & RADEON_FLAG_READ_ONLY))

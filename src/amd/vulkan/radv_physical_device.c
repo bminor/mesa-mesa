@@ -548,7 +548,7 @@ radv_physical_device_init_mem_types(struct radv_physical_device *pdev)
                                                    VK_MEMORY_PROPERTY_DEVICE_UNCACHED_BIT_AMD;
 
             pdev->memory_domains[type_count] = pdev->memory_domains[i];
-            pdev->memory_flags[type_count] = pdev->memory_flags[i] | RADEON_FLAG_VA_UNCACHED;
+            pdev->memory_flags[type_count] = pdev->memory_flags[i] | RADEON_FLAG_GL2_BYPASS;
             pdev->memory_properties.memoryTypes[type_count++] = (VkMemoryType){
                .propertyFlags = property_flags,
                .heapIndex = mem_type.heapIndex,
