@@ -433,7 +433,7 @@ fn nak_compile_shader_internal(
         Some(unsafe { &*fs_key })
     };
 
-    let sm = ShaderModelInfo::new(nak.sm);
+    let sm = ShaderModelInfo::new(nak.sm, nak.warps_per_sm);
     let mut s = nak_shader_from_nir(nak, nir, &sm);
 
     if DEBUG.print() {

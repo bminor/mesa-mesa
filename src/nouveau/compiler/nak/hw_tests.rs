@@ -37,7 +37,8 @@ impl RunSingleton {
 
             let run = Runner::new(dev_id);
             let sm_nr = run.dev_info().sm;
-            let sm = ShaderModelInfo::new(sm_nr);
+            let sm =
+                ShaderModelInfo::new(sm_nr, run.dev_info().max_warps_per_mp);
             RunSingleton { sm, run }
         })
     }

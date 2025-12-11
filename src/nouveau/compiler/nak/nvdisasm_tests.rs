@@ -87,7 +87,7 @@ fn disassemble_instrs(instrs: Vec<Instr>, sm: u8) -> Vec<String> {
         io: ShaderIoInfo::None,
     };
 
-    let sm = ShaderModelInfo::new(sm);
+    let sm = ShaderModelInfo::new(sm, 0);
     let s = Shader {
         sm: &sm,
         info: info,

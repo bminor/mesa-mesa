@@ -9305,11 +9305,12 @@ pub trait ShaderModel {
 
 pub struct ShaderModelInfo {
     sm: u8,
+    warps_per_sm: u8,
 }
 
 impl ShaderModelInfo {
-    pub fn new(sm: u8) -> Self {
-        ShaderModelInfo { sm }
+    pub fn new(sm: u8, warps_per_sm: u8) -> Self {
+        ShaderModelInfo { sm, warps_per_sm }
     }
 }
 
@@ -9430,7 +9431,7 @@ pub fn gpr_limit_from_local_size(local_size: &[u16; 3]) -> u32 {
     min(out, 255)
 }
 
-pub fn max_warps_per_sm(gprs: u32) -> u32 {
+pub fn max_warps_per_sm(sm: &ShaderModelInfo, gprs: u32) -> u32 {
     fn prev_multiple_of(x: u32, y: u32) -> u32 {
         (x / y) * y
     }
@@ -9440,7 +9441,7 @@ pub fn max_warps_per_sm(gprs: u32) -> u32 {
     // GPRs are allocated in multiples of 8
     let gprs = gprs.next_multiple_of(8);
     let max_warps = prev_multiple_of((total_regs / 32) / gprs, 4);
-    min(max_warps, 48)
+    min(max_warps, sm.warps_per_sm.into())
 }
 
 pub struct Shader<'a> {
@@ -9600,6 +9601,7 @@ impl Shader<'_> {
         self.info.uses_fp64 = uses_fp64;
 
         self.info.max_warps_per_sm = max_warps_per_sm(
+            self.sm,
             self.info.num_gprs as u32 + self.sm.hw_reserved_gprs(),
         );
 
