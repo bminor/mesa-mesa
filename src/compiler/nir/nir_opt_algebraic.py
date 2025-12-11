@@ -2580,6 +2580,11 @@ optimizations.extend([
    (('ine', ('ubfe(is_used_once)', a, '#b', '#c'), 0), ('ine', ('iand', a, ('ishl', ('ushr', 0xffffffff, ('ineg', c)), b)), 0)),
    (('ieq', ('ubfe(is_used_once)', a, '#b', '#c'), 0), ('ieq', ('iand', a, ('ishl', ('ushr', 0xffffffff, ('ineg', c)), b)), 0)),
 
+   (('ine', ('iand(is_used_once)', ('ushr', a, '#b'), '#c'), 0), ('ine', ('iand', a, ('ishl', c, b)), 0)),
+   (('ine', ('iand(is_used_once)', ('ishl', a, '#b'), '#c'), 0), ('ine', ('iand', a, ('ushr', c, b)), 0)),
+   (('ieq', ('iand(is_used_once)', ('ushr', a, '#b'), '#c'), 0), ('ieq', ('iand', a, ('ishl', c, b)), 0)),
+   (('ieq', ('iand(is_used_once)', ('ishl', a, '#b'), '#c'), 0), ('ieq', ('iand', a, ('ushr', c, b)), 0)),
+
    (('ifind_msb', 'value'),
     ('ufind_msb', ('bcsel', ('ilt', 'value', 0), ('inot', 'value'), 'value')),
     'options->lower_ifind_msb && !options->has_find_msb_rev && !options->has_uclz'),
