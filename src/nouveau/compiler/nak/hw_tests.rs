@@ -21,7 +21,7 @@ use nv_push_rs::Push as NvPush;
 use nvidia_headers::classes::cl90b5::mthd as cl90b5;
 
 struct RunSingleton {
-    sm: Box<ShaderModelInfo>,
+    sm: ShaderModelInfo,
     run: Runner,
 }
 
@@ -37,7 +37,7 @@ impl RunSingleton {
 
             let run = Runner::new(dev_id);
             let sm_nr = run.dev_info().sm;
-            let sm = Box::new(ShaderModelInfo::new(sm_nr));
+            let sm = ShaderModelInfo::new(sm_nr);
             RunSingleton { sm, run }
         })
     }
@@ -273,7 +273,7 @@ impl SSABuilder for TestShaderBuilder<'_> {
 #[test]
 fn test_sanity() {
     let run = RunSingleton::get();
-    let b = TestShaderBuilder::new(run.sm.as_ref());
+    let b = TestShaderBuilder::new(&run.sm);
     let bin = b.compile();
     unsafe {
         run.run
@@ -309,7 +309,7 @@ pub fn test_foldable_op_with(
     mut rand_u32: impl FnMut(usize) -> u32,
 ) {
     let run = RunSingleton::get();
-    let mut b = TestShaderBuilder::new(run.sm.as_ref());
+    let mut b = TestShaderBuilder::new(&run.sm);
 
     let mut comps = 0_u16;
     let mut fold_src = Vec::new();
@@ -494,7 +494,7 @@ pub fn test_foldable_op_with(
             srcs: &fold_src,
             dsts: &mut fold_dst,
         };
-        op.fold(&*run.sm, &mut fold);
+        op.fold(&run.sm, &mut fold);
 
         debug_assert!(fold_dst.len() == op.dsts_as_slice().len());
         for (i, dst) in fold_dst.iter().enumerate() {
@@ -839,7 +839,7 @@ fn test_lea64() {
     let invocations = 100;
 
     for shift in 0..64 {
-        let mut b = TestShaderBuilder::new(run.sm.as_ref());
+        let mut b = TestShaderBuilder::new(&run.sm);
 
         let x = Src::from([
             b.ld_test_data(0, MemType::B32)[0],
@@ -1081,7 +1081,7 @@ fn test_plop2() {
 
     for op in logic_ops {
         for (x_mod, y_mod) in mods {
-            let mut b = TestShaderBuilder::new(run.sm.as_ref());
+            let mut b = TestShaderBuilder::new(&run.sm);
 
             let x = b.ld_test_data(0, MemType::B32)[0];
             let y = b.ld_test_data(4, MemType::B32)[0];
@@ -1145,7 +1145,7 @@ fn test_iadd64() {
     ];
 
     for (x_mod, y_mod) in cases {
-        let mut b = TestShaderBuilder::new(run.sm.as_ref());
+        let mut b = TestShaderBuilder::new(&run.sm);
 
         let mut x = Src::from([
             b.ld_test_data(0, MemType::B32)[0],
@@ -1356,7 +1356,7 @@ fn test_ineg64() {
     let run = RunSingleton::get();
     let invocations = 100;
 
-    let mut b = TestShaderBuilder::new(run.sm.as_ref());
+    let mut b = TestShaderBuilder::new(&run.sm);
 
     let x = SSARef::from([
         b.ld_test_data(0, MemType::B32)[0],
@@ -1400,7 +1400,7 @@ fn test_isetp64() {
     ];
 
     for i in 0..(ops.len() * 2) {
-        let mut b = TestShaderBuilder::new(run.sm.as_ref());
+        let mut b = TestShaderBuilder::new(&run.sm);
 
         let cmp_type = types[i % 2];
         let cmp_op = ops[i / 2];
@@ -1491,7 +1491,7 @@ fn test_shl64() {
 
     let invocations = 100;
 
-    let mut b = TestShaderBuilder::new(run.sm.as_ref());
+    let mut b = TestShaderBuilder::new(&run.sm);
 
     let srcs = SSARef::from([
         b.ld_test_data(0, MemType::B32)[0],
@@ -1532,7 +1532,7 @@ fn test_shr64() {
     let cases = [true, false];
 
     for signed in cases {
-        let mut b = TestShaderBuilder::new(run.sm.as_ref());
+        let mut b = TestShaderBuilder::new(&run.sm);
 
         let srcs = SSARef::from([
             b.ld_test_data(0, MemType::B32)[0],
@@ -1573,7 +1573,7 @@ fn test_f2fp_pack_ab() {
         return;
     }
 
-    let mut b = TestShaderBuilder::new(run.sm.as_ref());
+    let mut b = TestShaderBuilder::new(&run.sm);
 
     let srcs = SSARef::from([
         b.ld_test_data(0, MemType::B32)[0],
@@ -1626,7 +1626,7 @@ fn test_f2fp_pack_ab() {
 #[test]
 pub fn test_gpr_limit_from_local_size() {
     let run = RunSingleton::get();
-    let b = TestShaderBuilder::new(run.sm.as_ref());
+    let b = TestShaderBuilder::new(&run.sm);
     let mut bin = b.compile();
 
     for local_size in 1..=1024 {
@@ -1652,7 +1652,7 @@ fn test_op_ldsm() {
         return;
     }
 
-    let mut b = TestShaderBuilder::new(run.sm.as_ref());
+    let mut b = TestShaderBuilder::new(&run.sm);
 
     // First load the test data and store it inside shared memory. Each thread handles 8 elements.
     let input = b.ld_test_data(0, MemType::B128)[0];

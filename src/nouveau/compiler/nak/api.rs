@@ -433,8 +433,8 @@ fn nak_compile_shader_internal(
         Some(unsafe { &*fs_key })
     };
 
-    let sm = Box::new(ShaderModelInfo::new(nak.sm));
-    let mut s = nak_shader_from_nir(nak, nir, sm.as_ref());
+    let sm = ShaderModelInfo::new(nak.sm);
+    let mut s = nak_shader_from_nir(nak, nir, &sm);
 
     if DEBUG.print() {
         eprintln!("NAK IR:\n{}", &s);
@@ -472,8 +472,7 @@ fn nak_compile_shader_internal(
     }
 
     let code = sm.encode_shader(&s);
-    let bin =
-        Box::new(ShaderBin::new(sm.as_ref(), &s.info, fs_key, code, &asm));
+    let bin = Box::new(ShaderBin::new(&sm, &s.info, fs_key, code, &asm));
     Box::into_raw(bin) as *mut nak_shader_bin
 }
 
