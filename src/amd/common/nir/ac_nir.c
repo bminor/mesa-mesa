@@ -573,8 +573,8 @@ ac_nir_mem_vectorize_callback(unsigned align_mul, unsigned align_offset, unsigne
                                    low->intrinsic == nir_intrinsic_load_global ? NIR_ALIGN_MUL_MAX : 4;
          uint32_t page_size = 4096;
          uint32_t mul = MIN3(align_mul, page_size, resource_align);
-         unsigned end = (align_offset + unaligned_new_size / 8u) & (mul - 1);
-         if ((aligned_new_size - unaligned_new_size) / 8u > (mul - end))
+         unsigned end = (align_offset + unaligned_new_size / 8u);
+         if ((aligned_new_size - unaligned_new_size) / 8u > (align(end, mul) - end))
             return false;
       }
 
