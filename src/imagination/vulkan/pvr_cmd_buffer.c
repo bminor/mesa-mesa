@@ -56,6 +56,7 @@
 #include "pvr_physical_device.h"
 #include "pvr_pipeline.h"
 #include "pvr_query.h"
+#include "pvr_rt_dataset.h"
 #include "pvr_tex_state.h"
 #include "pvr_types.h"
 #include "pvr_usc.h"

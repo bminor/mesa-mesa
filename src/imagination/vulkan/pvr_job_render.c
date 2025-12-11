@@ -45,6 +45,7 @@
 #include "pvr_physical_device.h"
 #include "pvr_query.h"
 #include "pvr_rogue_fw.h"
+#include "pvr_rt_dataset.h"
 #include "pvr_types.h"
 #include "pvr_winsys.h"
 #include "util/compiler.h"
@@ -80,46 +81,6 @@ static_assert(ROGUE_NUM_CR_PDS_BGRND_WORDS == 3,
 #define ROGUE_NUM_PD_ENTRIES_PER_PAGE 0x200U
 
 #define ROGUE_NUM_PT_ENTRIES_PER_PAGE 0x200U
-
-struct pvr_rt_dataset {
-   struct pvr_device *device;
-
-   /* RT dataset information */
-   uint32_t width;
-   uint32_t height;
-   uint32_t samples;
-   uint32_t layers;
-
-   struct pvr_free_list *global_free_list;
-   struct pvr_free_list *local_free_list;
-
-   struct pvr_bo *vheap_rtc_bo;
-   pvr_dev_addr_t vheap_dev_addr;
-   pvr_dev_addr_t rtc_dev_addr;
-
-   struct pvr_bo *tpc_bo;
-   uint64_t tpc_stride;
-   uint64_t tpc_size;
-
-   struct pvr_winsys_rt_dataset *ws_rt_dataset;
-
-   /* RT data information */
-   struct pvr_bo *mta_bo;
-   struct pvr_bo *mlist_bo;
-
-   struct pvr_bo *rgn_headers_bo;
-   uint64_t rgn_headers_stride;
-
-   bool need_frag;
-
-   uint8_t rt_data_idx;
-
-   struct {
-      pvr_dev_addr_t mta_dev_addr;
-      pvr_dev_addr_t mlist_dev_addr;
-      pvr_dev_addr_t rgn_headers_dev_addr;
-   } rt_datas[ROGUE_NUM_RTDATAS];
-};
 
 static inline void pvr_get_samples_in_xy(uint32_t samples,
                                          uint32_t *const x_out,
@@ -286,14 +247,6 @@ static VkResult pvr_rt_vheap_rtc_data_init(struct pvr_device *device,
    return VK_SUCCESS;
 }
 
-static void pvr_rt_vheap_rtc_data_fini(struct pvr_rt_dataset *rt_dataset)
-{
-   rt_dataset->rtc_dev_addr = PVR_DEV_ADDR_INVALID;
-
-   pvr_bo_free(rt_dataset->device, rt_dataset->vheap_rtc_bo);
-   rt_dataset->vheap_rtc_bo = NULL;
-}
-
 static void
 pvr_rt_get_tail_ptr_stride_size(const struct pvr_device *device,
                                 const struct pvr_rt_mtile_info *mtile_info,
@@ -359,12 +312,6 @@ static VkResult pvr_rt_tpc_data_init(struct pvr_device *device,
                        ROGUE_CR_TE_TPC_ADDR_BASE_ALIGNMENT,
                        PVR_BO_ALLOC_FLAG_GPU_UNCACHED,
                        &rt_dataset->tpc_bo);
-}
-
-static void pvr_rt_tpc_data_fini(struct pvr_rt_dataset *rt_dataset)
-{
-   pvr_bo_free(rt_dataset->device, rt_dataset->tpc_bo);
-   rt_dataset->tpc_bo = NULL;
 }
 
 static uint32_t
@@ -480,18 +427,6 @@ static VkResult pvr_rt_mta_data_init(struct pvr_device *device,
    return VK_SUCCESS;
 }
 
-static void pvr_rt_mta_data_fini(struct pvr_rt_dataset *rt_dataset)
-{
-   if (rt_dataset->mta_bo == NULL)
-      return;
-
-   for (uint32_t i = 0; i < ARRAY_SIZE(rt_dataset->rt_datas); i++)
-      rt_dataset->rt_datas[i].mta_dev_addr = PVR_DEV_ADDR_INVALID;
-
-   pvr_bo_free(rt_dataset->device, rt_dataset->mta_bo);
-   rt_dataset->mta_bo = NULL;
-}
-
 static VkResult
 pvr_rt_mlist_data_init(struct pvr_device *device,
                        struct pvr_rt_dataset *rt_dataset,
@@ -525,15 +460,6 @@ pvr_rt_mlist_data_init(struct pvr_device *device,
    }
 
    return VK_SUCCESS;
-}
-
-static void pvr_rt_mlist_data_fini(struct pvr_rt_dataset *rt_dataset)
-{
-   for (uint32_t i = 0; i < ARRAY_SIZE(rt_dataset->rt_datas); i++)
-      rt_dataset->rt_datas[i].mlist_dev_addr = PVR_DEV_ADDR_INVALID;
-
-   pvr_bo_free(rt_dataset->device, rt_dataset->mlist_bo);
-   rt_dataset->mlist_bo = NULL;
 }
 
 static VkResult
@@ -572,15 +498,6 @@ pvr_rt_rgn_headers_data_init(struct pvr_device *device,
    return VK_SUCCESS;
 }
 
-static void pvr_rt_rgn_headers_data_fini(struct pvr_rt_dataset *rt_dataset)
-{
-   for (uint32_t i = 0; i < ARRAY_SIZE(rt_dataset->rt_datas); i++)
-      rt_dataset->rt_datas[i].rgn_headers_dev_addr = PVR_DEV_ADDR_INVALID;
-
-   pvr_bo_free(rt_dataset->device, rt_dataset->rgn_headers_bo);
-   rt_dataset->rgn_headers_bo = NULL;
-}
-
 static VkResult pvr_rt_datas_init(struct pvr_device *device,
                                   struct pvr_rt_dataset *rt_dataset,
                                   const struct pvr_free_list *global_free_list,
@@ -615,13 +532,6 @@ err_pvr_rt_mta_data_fini:
    pvr_rt_mta_data_fini(rt_dataset);
 
    return result;
-}
-
-static void pvr_rt_datas_fini(struct pvr_rt_dataset *rt_dataset)
-{
-   pvr_rt_rgn_headers_data_fini(rt_dataset);
-   pvr_rt_mlist_data_fini(rt_dataset);
-   pvr_rt_mta_data_fini(rt_dataset);
 }
 
 static void pvr_rt_dataset_ws_create_info_init(
@@ -805,21 +715,6 @@ err_vk_free_rt_dataset:
    vk_free(&device->vk.alloc, rt_dataset);
 
    return result;
-}
-
-void pvr_render_target_dataset_destroy(struct pvr_rt_dataset *rt_dataset)
-{
-   struct pvr_device *device = rt_dataset->device;
-
-   device->ws->ops->render_target_dataset_destroy(rt_dataset->ws_rt_dataset);
-
-   pvr_rt_datas_fini(rt_dataset);
-   pvr_rt_tpc_data_fini(rt_dataset);
-   pvr_rt_vheap_rtc_data_fini(rt_dataset);
-
-   pvr_free_list_destroy(rt_dataset->local_free_list);
-
-   vk_free(&device->vk.alloc, rt_dataset);
 }
 
 static void pvr_geom_state_stream_init(struct pvr_render_ctx *ctx,

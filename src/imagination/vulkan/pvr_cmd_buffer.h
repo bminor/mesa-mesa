@@ -637,20 +637,6 @@ void pvr_compute_update_kernel_private(
 VkResult pvr_add_query_program(struct pvr_cmd_buffer *cmd_buffer,
                                const struct pvr_query_info *query_info);
 
-static inline void
-pvr_render_targets_datasets_destroy(struct pvr_render_target *render_target)
-{
-   u_foreach_bit (valid_idx, render_target->valid_mask) {
-      struct pvr_rt_dataset *rt_dataset = render_target->rt_dataset[valid_idx];
-
-      if (rt_dataset && render_target->valid_mask & BITFIELD_BIT(valid_idx))
-         pvr_render_target_dataset_destroy(rt_dataset);
-
-      render_target->rt_dataset[valid_idx] = NULL;
-      render_target->valid_mask &= ~BITFIELD_BIT(valid_idx);
-   }
-}
-
 void pvr_reset_graphics_dirty_state(struct pvr_cmd_buffer *const cmd_buffer,
                                     bool start_geom);
 

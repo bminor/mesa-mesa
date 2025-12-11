@@ -178,7 +178,6 @@ pvr_render_target_dataset_create(struct pvr_device *device,
                                  uint32_t samples,
                                  uint32_t layers,
                                  struct pvr_rt_dataset **const rt_dataset_out);
-void pvr_render_target_dataset_destroy(struct pvr_rt_dataset *dataset);
 
 VkResult pvr_render_job_submit(struct pvr_render_ctx *ctx,
                                struct pvr_render_job *job,

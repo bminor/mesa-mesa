@@ -54,6 +54,7 @@ pvr_files = files(
   'pvr_query_compute.c',
   'pvr_queue.c',
   'pvr_robustness.c',
+  'pvr_rt_dataset.c',
   'pvr_sampler.c',
   'pvr_spm.c',
   'pvr_tex_state.c',
