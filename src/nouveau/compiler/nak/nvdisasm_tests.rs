@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: MIT
 
 use crate::ir::*;
-use crate::sm70::ShaderModel70;
 use compiler::cfg::CFGBuilder;
 use rustc_hash::FxBuildHasher;
 
@@ -88,7 +87,7 @@ fn disassemble_instrs(instrs: Vec<Instr>, sm: u8) -> Vec<String> {
         io: ShaderIoInfo::None,
     };
 
-    let sm: Box<dyn ShaderModel> = Box::new(ShaderModel70::new(sm));
+    let sm: Box<dyn ShaderModel> = Box::new(ShaderModelInfo::new(sm));
     let s = Shader {
         sm: &*sm,
         info: info,

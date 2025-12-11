@@ -9,6 +9,10 @@ use nak_bindings::*;
 
 pub use crate::builder::{Builder, InstrBuilder, SSABuilder, SSAInstrBuilder};
 use crate::legalize::LegalizeBuilder;
+use crate::sm20::ShaderModel20;
+use crate::sm32::ShaderModel32;
+use crate::sm50::ShaderModel50;
+use crate::sm70::ShaderModel70;
 use crate::sph::{OutputTopology, PixelImap};
 pub use crate::ssa_value::*;
 use compiler::as_slice::*;
@@ -9297,6 +9301,114 @@ pub trait ShaderModel {
 
     fn legalize_op(&self, b: &mut LegalizeBuilder, op: &mut Op);
     fn encode_shader(&self, s: &Shader<'_>) -> Vec<u32>;
+}
+
+pub struct ShaderModelInfo {
+    sm: u8,
+}
+
+impl ShaderModelInfo {
+    pub fn new(sm: u8) -> Self {
+        ShaderModelInfo { sm }
+    }
+}
+
+macro_rules! sm_match {
+    ($self: expr, |$x: ident| $y: expr) => {
+        if $self.sm >= 70 {
+            let $x = ShaderModel70::new($self.sm);
+            $y
+        } else if $self.sm >= 50 {
+            let $x = ShaderModel50::new($self.sm);
+            $y
+        } else if $self.sm >= 32 {
+            let $x = ShaderModel32::new($self.sm);
+            $y
+        } else if $self.sm >= 20 {
+            let $x = ShaderModel20::new($self.sm);
+            $y
+        } else {
+            panic!("Unsupported shader model");
+        }
+    };
+}
+
+impl ShaderModel for ShaderModelInfo {
+    fn sm(&self) -> u8 {
+        self.sm
+    }
+
+    fn num_regs(&self, file: RegFile) -> u32 {
+        sm_match!(self, |sm| sm.num_regs(file))
+    }
+    fn hw_reserved_gprs(&self) -> u32 {
+        sm_match!(self, |sm| sm.hw_reserved_gprs())
+    }
+    fn crs_size(&self, max_crs_depth: u32) -> u32 {
+        sm_match!(self, |sm| sm.crs_size(max_crs_depth))
+    }
+    fn op_can_be_uniform(&self, op: &Op) -> bool {
+        sm_match!(self, |sm| sm.op_can_be_uniform(op))
+    }
+
+    /// Latency before another non-NOP can execute
+    fn exec_latency(&self, op: &Op) -> u32 {
+        sm_match!(self, |sm| sm.exec_latency(op))
+    }
+
+    /// Read-after-read latency
+    fn raw_latency(
+        &self,
+        write: &Op,
+        dst_idx: usize,
+        read: &Op,
+        src_idx: usize,
+    ) -> u32 {
+        sm_match!(self, |sm| sm.raw_latency(write, dst_idx, read, src_idx))
+    }
+
+    /// Write-after-read latency
+    fn war_latency(
+        &self,
+        read: &Op,
+        src_idx: usize,
+        write: &Op,
+        dst_idx: usize,
+    ) -> u32 {
+        sm_match!(self, |sm| sm.war_latency(read, src_idx, write, dst_idx))
+    }
+
+    /// Write-after-write latency
+    fn waw_latency(
+        &self,
+        a: &Op,
+        a_dst_idx: usize,
+        a_has_pred: bool,
+        b: &Op,
+        b_dst_idx: usize,
+    ) -> u32 {
+        sm_match!(self, |sm| sm
+            .waw_latency(a, a_dst_idx, a_has_pred, b, b_dst_idx))
+    }
+
+    fn paw_latency(&self, write: &Op, dst_idx: usize) -> u32 {
+        sm_match!(self, |sm| sm.paw_latency(write, dst_idx))
+    }
+    fn worst_latency(&self, write: &Op, dst_idx: usize) -> u32 {
+        sm_match!(self, |sm| sm.worst_latency(write, dst_idx))
+    }
+    fn latency_upper_bound(&self) -> u32 {
+        sm_match!(self, |sm| sm.latency_upper_bound())
+    }
+    fn max_instr_delay(&self) -> u8 {
+        sm_match!(self, |sm| sm.max_instr_delay())
+    }
+    fn legalize_op(&self, b: &mut LegalizeBuilder, op: &mut Op) {
+        sm_match!(self, |sm| sm.legalize_op(b, op))
+    }
+    fn encode_shader(&self, s: &Shader<'_>) -> Vec<u32> {
+        sm_match!(self, |sm| sm.encode_shader(s))
+    }
 }
 
 /// For compute shaders, large values of local_size impose an additional limit

@@ -4,10 +4,6 @@
 use crate::api::{GetDebugFlags, ShaderBin, DEBUG};
 use crate::hw_runner::{Context, Runner, BO, CB0};
 use crate::ir::*;
-use crate::sm20::ShaderModel20;
-use crate::sm32::ShaderModel32;
-use crate::sm50::ShaderModel50;
-use crate::sm70::ShaderModel70;
 
 use acorn::Acorn;
 use compiler::bindings::MESA_SHADER_COMPUTE;
@@ -41,17 +37,7 @@ impl RunSingleton {
 
             let run = Runner::new(dev_id);
             let sm_nr = run.dev_info().sm;
-            let sm: Box<dyn ShaderModel + Send + Sync> = if sm_nr >= 70 {
-                Box::new(ShaderModel70::new(sm_nr))
-            } else if sm_nr >= 50 {
-                Box::new(ShaderModel50::new(sm_nr))
-            } else if sm_nr >= 32 {
-                Box::new(ShaderModel32::new(sm_nr))
-            } else if sm_nr >= 20 {
-                Box::new(ShaderModel20::new(sm_nr))
-            } else {
-                panic!("Unsupported shader model");
-            };
+            let sm = Box::new(ShaderModelInfo::new(sm_nr));
             RunSingleton { sm, run }
         })
     }

@@ -2,11 +2,9 @@
 // SPDX-License-Identifier: MIT
 
 use crate::from_nir::*;
-use crate::ir::{ShaderInfo, ShaderIoInfo, ShaderModel, ShaderStageInfo};
-use crate::sm20::ShaderModel20;
-use crate::sm32::ShaderModel32;
-use crate::sm50::ShaderModel50;
-use crate::sm70::ShaderModel70;
+use crate::ir::{
+    ShaderInfo, ShaderIoInfo, ShaderModel, ShaderModelInfo, ShaderStageInfo,
+};
 use crate::sph;
 
 use compiler::bindings::*;
@@ -435,18 +433,7 @@ fn nak_compile_shader_internal(
         Some(unsafe { &*fs_key })
     };
 
-    let sm: Box<dyn ShaderModel> = if nak.sm >= 70 {
-        Box::new(ShaderModel70::new(nak.sm))
-    } else if nak.sm >= 50 {
-        Box::new(ShaderModel50::new(nak.sm))
-    } else if nak.sm >= 32 {
-        Box::new(ShaderModel32::new(nak.sm))
-    } else if nak.sm >= 20 {
-        Box::new(ShaderModel20::new(nak.sm))
-    } else {
-        panic!("Unsupported shader model");
-    };
-
+    let sm = Box::new(ShaderModelInfo::new(nak.sm));
     let mut s = nak_shader_from_nir(nak, nir, sm.as_ref());
 
     if DEBUG.print() {
