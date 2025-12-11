@@ -985,6 +985,14 @@ static void run_late_optimization_and_lowering_passes(struct si_nir_shader_ctx *
    if (nir->info.use_aco_amd)
       progress |= ac_nir_optimize_uniform_atomics(nir);
 
+   NIR_PASS(progress, nir, nir_opt_uniform_subgroup,
+         &(struct nir_lower_subgroups_options){
+            .subgroup_size = shader->wave_size,
+            .ballot_bit_size = shader->wave_size,
+            .ballot_components = 1,
+            .lower_ballot_bit_count_to_mbcnt_amd = true,
+         });
+
    NIR_PASS(progress, nir, si_nir_lower_abi, shader, &ctx->args);
    /* Global access lowering must be called after lowering ABI which emits regular load_global intrinsics. */
    NIR_PASS(progress, nir, ac_nir_lower_global_access);
