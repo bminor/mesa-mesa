@@ -473,6 +473,14 @@ radv_postprocess_nir(struct radv_device *device, const struct radv_graphics_stat
    if (!radv_use_llvm_for_stage(pdev, stage->stage))
       ac_nir_optimize_uniform_atomics(stage->nir);
 
+   NIR_PASS(_, stage->nir, nir_opt_uniform_subgroup,
+            &(struct nir_lower_subgroups_options){
+               .subgroup_size = stage->info.wave_size,
+               .ballot_bit_size = stage->info.wave_size,
+               .ballot_components = 1,
+               .lower_ballot_bit_count_to_mbcnt_amd = true,
+            });
+
    NIR_PASS(_, stage->nir, nir_opt_idiv_const, 8);
 
    NIR_PASS(_, stage->nir, nir_lower_idiv,
