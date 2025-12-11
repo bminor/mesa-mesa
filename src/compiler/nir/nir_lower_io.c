@@ -475,10 +475,9 @@ lower_load(nir_intrinsic_instr *intrin, struct lower_io_state *state,
            nir_def *array_index, nir_variable *var, nir_def *offset,
            unsigned component, const struct glsl_type *type)
 {
-   const bool lower_double = !glsl_type_is_integer(type) && state->options & nir_lower_io_lower_64bit_float_to_32;
    if (intrin->def.bit_size == 64 &&
-       (lower_double || (state->options & (nir_lower_io_lower_64bit_to_32_new |
-                                           nir_lower_io_lower_64bit_to_32)))) {
+       state->options & (nir_lower_io_lower_64bit_to_32_new |
+                         nir_lower_io_lower_64bit_to_32)) {
       nir_builder *b = &state->builder;
       bool use_high_dvec2_semantic = uses_high_dvec2_semantic(state, var);
 
@@ -638,10 +637,9 @@ lower_store(nir_intrinsic_instr *intrin, struct lower_io_state *state,
             nir_def *array_index, nir_variable *var, nir_def *offset,
             unsigned component, const struct glsl_type *type)
 {
-   const bool lower_double = !glsl_type_is_integer(type) && state->options & nir_lower_io_lower_64bit_float_to_32;
    if (intrin->src[1].ssa->bit_size == 64 &&
-       (lower_double || (state->options & (nir_lower_io_lower_64bit_to_32 |
-                                           nir_lower_io_lower_64bit_to_32_new)))) {
+       state->options & (nir_lower_io_lower_64bit_to_32 |
+                         nir_lower_io_lower_64bit_to_32_new)) {
       nir_builder *b = &state->builder;
 
       const unsigned slot_size = state->type_size(glsl_dvec_type(2), false);
