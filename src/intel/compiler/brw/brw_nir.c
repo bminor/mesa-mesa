@@ -158,7 +158,8 @@ load_urb(nir_builder *b,
    if (devinfo->ver >= 20) {
       nir_def *addr = nir_iadd(b, handle, nir_ishl_imm(b, offset, 4));
       return nir_load_urb_lsc_intel(b, intrin->def.num_components, bits, addr,
-                                    16 * base + 4 * io_component(intrin));
+                                    16 * base + 4 * io_component(intrin),
+                                    .access = access);
    }
 
    /* Load a whole vec4 and return the desired portion */
