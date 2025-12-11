@@ -614,7 +614,7 @@
         "description": "anv: Fix typo when checking if async rt scratch size changed",
         "nominated": true,
         "nomination_type": 1,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": null,
         "notes": null
