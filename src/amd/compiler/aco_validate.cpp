@@ -784,11 +784,6 @@ validate_ir(Program* program)
                check(instr->definitions[0].regClass().type() == RegType::sgpr ||
                         program->wave_size == 32,
                      "The result of unclustered reductions must go into an SGPR.", instr.get());
-            else
-               check(instr->definitions[0].regClass().type() == RegType::vgpr,
-                     "The result of scans and clustered reductions must go into a VGPR.",
-                     instr.get());
-
             break;
          }
          case Format::SMEM: {
