@@ -544,7 +544,7 @@
         "description": "intel/isl: Only assert surface addresses on gfx9+",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "8e96b516ca4ed4e81d288f730d1931e1ce663118",
         "notes": null
