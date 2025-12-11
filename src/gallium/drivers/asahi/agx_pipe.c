@@ -1965,6 +1965,7 @@ agx_init_screen_caps(struct pipe_screen *pscreen)
    u_init_pipe_screen_caps(pscreen, 1);
 
    caps->clip_halfz = true;
+   caps->prefer_real_buffer_in_constbuf0 = true;
    caps->npot_textures = true;
    caps->shader_stencil_export = true;
    caps->mixed_color_depth_bits = true;
