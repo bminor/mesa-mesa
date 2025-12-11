@@ -23,6 +23,12 @@ pass(nir_builder *b, nir_intrinsic_instr *intr, void *data)
       } else if (gfx_state->rs.cull_mode == VK_CULL_MODE_BACK_BIT) {
          replacement = nir_imm_true(b);
       }
+   } else if (intr->intrinsic == nir_intrinsic_load_front_face_fsign) {
+      if (gfx_state->rs.cull_mode == VK_CULL_MODE_FRONT_BIT) {
+         replacement = nir_imm_float(b, 1.0);
+      } else if (gfx_state->rs.cull_mode == VK_CULL_MODE_BACK_BIT) {
+         replacement = nir_imm_float(b, -1.0);
+      }
    } else if (intr->intrinsic == nir_intrinsic_load_sample_id) {
       if (!gfx_state->dynamic_rasterization_samples && gfx_state->ms.rasterization_samples == 0) {
          replacement = nir_imm_intN_t(b, 0, intr->def.bit_size);
