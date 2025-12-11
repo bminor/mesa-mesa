@@ -214,7 +214,7 @@ typedef enum {
     * presence is reflected in shader_info::outputs_written instead of
     * shader_info::fs::color_is_dual_source.
     */
-   nir_io_use_frag_result_dual_src_blend = BITFIELD_BIT(11),
+   nir_io_use_frag_result_dual_src_blend = BITFIELD_BIT(12),
 
    /* Options affecting the GLSL compiler or Gallium are below. */
 
