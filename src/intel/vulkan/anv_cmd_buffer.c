@@ -1305,7 +1305,7 @@ anv_cmd_buffer_set_stack_size(struct vk_command_buffer *vk_cmd_buffer,
    if (stack_size_log2 < 10)
       stack_size_log2 = 10;
 
-   if (rt->scratch.layout.total_size == 1 << stack_size_log2)
+   if (rt->scratch.layout.sw_stack_size == 1 << stack_size_log2)
       return;
 
    brw_rt_compute_scratch_layout(&rt->scratch.layout, device->info,
