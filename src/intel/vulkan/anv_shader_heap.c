@@ -124,10 +124,10 @@ anv_shader_heap_alloc(struct anv_shader_heap *heap,
       }
    } else {
       if (capture_replay) {
-         heap->vma.alloc_high = false;
+         heap->vma.alloc_high = true;
          addr = util_vma_heap_alloc(&heap->vma, size, align);
       } else {
-         heap->vma.alloc_high = true;
+         heap->vma.alloc_high = false;
          addr = util_vma_heap_alloc(&heap->vma, size, align);
       }
    }
