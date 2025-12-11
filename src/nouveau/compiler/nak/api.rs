@@ -239,7 +239,7 @@ pub struct ShaderBin {
 
 impl ShaderBin {
     pub fn new(
-        sm: &dyn ShaderModel,
+        sm: &ShaderModelInfo,
         info: &ShaderInfo,
         fs_key: Option<&nak_fs_key>,
         code: Vec<u32>,

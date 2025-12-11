@@ -889,11 +889,11 @@ pub trait SSABuilder: Builder {
 
 pub struct InstrBuilder<'a> {
     instrs: MappedInstrs,
-    sm: &'a dyn ShaderModel,
+    sm: &'a ShaderModelInfo,
 }
 
 impl<'a> InstrBuilder<'a> {
-    pub fn new(sm: &'a dyn ShaderModel) -> Self {
+    pub fn new(sm: &'a ShaderModelInfo) -> Self {
         Self {
             instrs: MappedInstrs::None,
             sm,
@@ -933,7 +933,7 @@ pub struct SSAInstrBuilder<'a> {
 
 impl<'a> SSAInstrBuilder<'a> {
     pub fn new(
-        sm: &'a dyn ShaderModel,
+        sm: &'a ShaderModelInfo,
         alloc: &'a mut SSAValueAllocator,
     ) -> Self {
         Self {

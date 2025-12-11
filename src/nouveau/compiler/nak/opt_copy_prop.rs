@@ -53,12 +53,12 @@ enum CopyPropEntry {
 }
 
 struct CopyPropPass<'a> {
-    sm: &'a dyn ShaderModel,
+    sm: &'a ShaderModelInfo,
     ssa_map: FxHashMap<SSAValue, CopyPropEntry>,
 }
 
 impl<'a> CopyPropPass<'a> {
-    pub fn new(sm: &'a dyn ShaderModel) -> Self {
+    pub fn new(sm: &'a ShaderModelInfo) -> Self {
         CopyPropPass {
             sm: sm,
             ssa_map: Default::default(),

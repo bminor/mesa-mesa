@@ -383,7 +383,7 @@ pub struct LegalizeBuilder<'a> {
 
 impl<'a> LegalizeBuilder<'a> {
     fn new(
-        sm: &'a dyn ShaderModel,
+        sm: &'a ShaderModelInfo,
         alloc: &'a mut SSAValueAllocator,
         const_tracker: &'a mut ConstTracker,
     ) -> Self {
@@ -437,7 +437,7 @@ impl<'a> SSABuilder for LegalizeBuilder<'a> {
 impl LegalizeBuildHelpers for LegalizeBuilder<'_> {}
 
 fn legalize_instr(
-    sm: &dyn ShaderModel,
+    sm: &ShaderModelInfo,
     b: &mut LegalizeBuilder,
     bl: &impl BlockLiveness,
     block_uniform: bool,

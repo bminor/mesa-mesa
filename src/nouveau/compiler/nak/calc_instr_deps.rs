@@ -597,7 +597,7 @@ fn instr_needs_texbar(instr: &Instr) -> bool {
 /// - Instead of pushing by 1 each element in the queue on a `push` op,
 ///   we could keep track of an in-flight range and use a wrapping timestamp
 ///   this improves performance but needs careful implementation to avoid bugs
-fn insert_texture_barriers(f: &mut Function, sm: &dyn ShaderModel) {
+fn insert_texture_barriers(f: &mut Function, sm: &ShaderModelInfo) {
     assert!(sm.is_kepler()); // Only kepler has texture barriers!
 
     let mut state_in: Vec<_> = (0..f.blocks.len())
@@ -643,7 +643,7 @@ fn insert_texture_barriers(f: &mut Function, sm: &dyn ShaderModel) {
     }
 }
 
-fn assign_barriers(f: &mut Function, sm: &dyn ShaderModel) {
+fn assign_barriers(f: &mut Function, sm: &ShaderModelInfo) {
     let mut uses = Box::new(RegTracker::new_with(&|| RegUse::None));
     let mut deps = DepGraph::new();
 
@@ -767,7 +767,7 @@ type AccumulatedDelay = u8;
 type DelayRegTracker = SparseRegTracker<RegUseMap<RegOrigin, AccumulatedDelay>>;
 
 struct BlockDelayScheduler<'a> {
-    sm: &'a dyn ShaderModel,
+    sm: &'a ShaderModelInfo,
     f: &'a Function,
     // Map from barrier to last waited cycle
     bars: [u32; 6],
@@ -915,7 +915,7 @@ impl BlockDelayScheduler<'_> {
     }
 }
 
-fn calc_delays(f: &mut Function, sm: &dyn ShaderModel) -> u64 {
+fn calc_delays(f: &mut Function, sm: &ShaderModelInfo) -> u64 {
     let mut instr_cycles: Vec<Vec<u32>> =
         f.blocks.iter().map(|b| vec![0; b.instrs.len()]).collect();
 

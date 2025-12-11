@@ -21,7 +21,7 @@ use nv_push_rs::Push as NvPush;
 use nvidia_headers::classes::cl90b5::mthd as cl90b5;
 
 struct RunSingleton {
-    sm: Box<dyn ShaderModel + Send + Sync>,
+    sm: Box<ShaderModelInfo>,
     run: Runner,
 }
 
@@ -46,7 +46,7 @@ impl RunSingleton {
 const LOCAL_SIZE_X: u16 = 32;
 
 pub struct TestShaderBuilder<'a> {
-    sm: &'a dyn ShaderModel,
+    sm: &'a ShaderModelInfo,
     alloc: SSAValueAllocator,
     b: InstrBuilder<'a>,
     start_block: BasicBlock,
@@ -56,7 +56,7 @@ pub struct TestShaderBuilder<'a> {
 }
 
 impl<'a> TestShaderBuilder<'a> {
-    pub fn new(sm: &'a dyn ShaderModel) -> Self {
+    pub fn new(sm: &'a ShaderModelInfo) -> Self {
         let mut alloc = SSAValueAllocator::new();
         let mut label_alloc = LabelAllocator::new();
         let mut b = SSAInstrBuilder::new(sm, &mut alloc);

@@ -6,7 +6,7 @@ use crate::ir::*;
 use rustc_hash::FxHashMap;
 
 fn should_lower_to_warp(
-    sm: &dyn ShaderModel,
+    sm: &ShaderModelInfo,
     instr: &Instr,
     r2ur: &FxHashMap<SSAValue, SSAValue>,
 ) -> bool {

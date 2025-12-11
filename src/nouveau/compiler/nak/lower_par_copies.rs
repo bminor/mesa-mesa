@@ -90,7 +90,7 @@ fn cycle_use_swap(pc: &OpParCopy, file: RegFile) -> bool {
     }
 }
 
-fn lower_par_copy(pc: OpParCopy, sm: &dyn ShaderModel) -> MappedInstrs {
+fn lower_par_copy(pc: OpParCopy, sm: &ShaderModelInfo) -> MappedInstrs {
     let mut graph = CopyGraph::new();
     let mut vals = Vec::new();
     let mut reg_to_idx = FxHashMap::default();

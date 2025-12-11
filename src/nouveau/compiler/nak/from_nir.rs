@@ -318,7 +318,7 @@ enum SyncType {
 
 struct ShaderFromNir<'a> {
     nir: &'a nir_shader,
-    sm: &'a dyn ShaderModel,
+    sm: &'a ShaderModelInfo,
     info: ShaderInfo,
     float_ctl: ShaderFloatControls,
     cfg: CFGBuilder<u32, BasicBlock, FxBuildHasher>,
@@ -338,7 +338,7 @@ impl<'a> ShaderFromNir<'a> {
     fn new(
         nak: &nak_compiler,
         nir: &'a nir_shader,
-        sm: &'a dyn ShaderModel,
+        sm: &'a ShaderModelInfo,
     ) -> Self {
         Self {
             nir: nir,
@@ -4381,7 +4381,7 @@ impl<'a> ShaderFromNir<'a> {
 pub fn nak_shader_from_nir<'a>(
     nak: &nak_compiler,
     ns: &'a nir_shader,
-    sm: &'a dyn ShaderModel,
+    sm: &'a ShaderModelInfo,
 ) -> Shader<'a> {
     ShaderFromNir::new(nak, ns, sm).parse_shader()
 }

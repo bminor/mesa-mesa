@@ -4,7 +4,9 @@
 extern crate bitview;
 extern crate nvidia_headers;
 
-use crate::ir::{ShaderInfo, ShaderIoInfo, ShaderModel, ShaderStageInfo};
+use crate::ir::{
+    ShaderInfo, ShaderIoInfo, ShaderModel, ShaderModelInfo, ShaderStageInfo,
+};
 use bitview::{
     BitMutView, BitMutViewable, BitView, BitViewable, SetBit, SetField,
 };
@@ -464,7 +466,7 @@ impl ShaderProgramHeader {
 }
 
 pub fn encode_header(
-    sm: &dyn ShaderModel,
+    sm: &ShaderModelInfo,
     shader_info: &ShaderInfo,
     fs_key: Option<&nak_fs_key>,
 ) -> [u32; CURRENT_MAX_SHADER_HEADER_SIZE] {

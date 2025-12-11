@@ -6,6 +6,7 @@ use crate::legalize::{
     src_is_reg, src_is_upred_reg, swap_srcs_if_not_reg, LegalizeBuildHelpers,
     LegalizeBuilder,
 };
+use crate::sm70::ShaderModel70;
 use bitview::*;
 
 use rustc_hash::FxHashMap;
@@ -4155,14 +4156,14 @@ impl SM70Op for Op {
 }
 
 pub fn legalize_sm70_op(
-    _sm: &dyn ShaderModel,
+    _sm: &ShaderModel70,
     b: &mut LegalizeBuilder,
     op: &mut Op,
 ) {
     op.legalize(b);
 }
 
-pub fn encode_sm70_shader(sm: &dyn ShaderModel, s: &Shader<'_>) -> Vec<u32> {
+pub fn encode_sm70_shader(sm: &ShaderModel70, s: &Shader<'_>) -> Vec<u32> {
     assert!(s.functions.len() == 1);
     let func = &s.functions[0];
 
