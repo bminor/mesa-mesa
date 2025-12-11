@@ -64,6 +64,8 @@ dEQP-VK.ssbo.phys.layout.single_struct_array.single_buffer.std140_instance_array
 dEQP-VK.ssbo.phys.layout.single_struct_array.single_buffer.std430_instance_array
 dEQP-VK.ssbo.phys.layout.single_struct_array.single_buffer.std430_instance_array_comp_access_store_cols
 dEQP-VK.ssbo.phys.layout.single_struct_array.single_buffer.std430_instance_array_store_cols
+ubsan-dEQP-VK.ssbo.phys.layout.3_level_array.std430.column_major_mat4x3_store_cols
+ubsan-dEQP-VK.ssbo.phys.layout.3_level_unsized_array.std140.column_major_mat4x3_store_cols
 
 # WSI tests are too flaky to be useful
 dEQP-VK.image.swapchain_mutable.*

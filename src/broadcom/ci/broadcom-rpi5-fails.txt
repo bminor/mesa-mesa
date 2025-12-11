@@ -683,7 +683,10 @@ dEQP-VK.pipeline.monolithic.logic_op_na_formats.r8g8b8a8_srgb.xor_blend,Fail
 asan-KHR-GL31.frag_coord_conventions.multisample,Fail
 asan-KHR-GL31.transform_feedback3.skip_multiple_buffers,Fail
 asan-dEQP-VK.image.mutable.2d_array.r16g16b16a16_sfloat_r16g16b16a16_sint_draw_copy_resolve_mutable_resolve_att,Fail
+asan-dEQP-VK.pipeline.monolithic.logic_op_na_formats.r16g16b16a16_sfloat.set_blend,Fail
 asan-dEQP-VK.pipeline.monolithic.logic_op_na_formats.r8g8b8a8_srgb.or_inverted_blend,Fail
+asan-dEQP-VK.image.mutable.2d_array.r16g16_sfloat_r32_sint_draw_copy_resolve_mutable_resolve_att,Fail
+asan-dEQP-VK.pipeline.monolithic.logic_op_na_formats.r16g16_sfloat.no_op_blend,Fail
 
 # New failures with VK CTS 1.4.4.0
 dEQP-VK.binding_model.unused_invalid_descriptor.copy.combined_image_sampler,Crash
@@ -696,8 +699,32 @@ dEQP-VK.binding_model.unused_invalid_descriptor.write.unused.combined_image_samp
 dEQP-VK.binding_model.unused_invalid_descriptor.write.unused.sampled_image,Crash
 dEQP-VK.binding_model.unused_invalid_descriptor.write.unused.storage_buffer,Crash
 dEQP-VK.binding_model.unused_invalid_descriptor.write.unused.uniform_buffer,Crash
+asan-dEQP-VK.binding_model.unused_invalid_descriptor.write.invalid.combined_image_sampler,Crash
 
 # New failures with ES CTS 3.2.13.0
+asan-dEQP-GLES31.functional.copy_image.non_compressed.viewclass_128_bits.rgba32i_rgba32i.texture2d_to_renderbuffer,Fail
+asan-dEQP-GLES31.functional.copy_image.non_compressed.viewclass_128_bits.rgba32ui_rgba32ui.renderbuffer_to_renderbuffer,Fail
+asan-dEQP-GLES31.functional.copy_image.non_compressed.viewclass_24_bits.rgb8_rgb8.renderbuffer_to_renderbuffer,Fail
+asan-dEQP-GLES31.functional.copy_image.non_compressed.viewclass_24_bits.rgb8_rgb8.texture2d_to_renderbuffer,Fail
+asan-dEQP-GLES31.functional.copy_image.non_compressed.viewclass_32_bits.r32i_r32i.renderbuffer_to_renderbuffer,Fail
+asan-dEQP-GLES31.functional.copy_image.non_compressed.viewclass_32_bits.r32ui_r32ui.texture2d_to_renderbuffer,Fail
+asan-dEQP-GLES31.functional.copy_image.non_compressed.viewclass_32_bits.rg16i_rg16i.renderbuffer_to_renderbuffer,Fail
+asan-dEQP-GLES31.functional.copy_image.non_compressed.viewclass_32_bits.rg16i_rg16i.texture2d_to_renderbuffer,Fail
+asan-dEQP-GLES31.functional.copy_image.non_compressed.viewclass_32_bits.rg16ui_rg16ui.renderbuffer_to_renderbuffer,Fail
+asan-dEQP-GLES31.functional.copy_image.non_compressed.viewclass_32_bits.rgb10_a2_rgb10_a2.texture2d_to_renderbuffer,Fail
+asan-dEQP-GLES31.functional.copy_image.non_compressed.viewclass_32_bits.rgb10_a2ui_rg16f.renderbuffer_to_texture2d,Fail
+asan-dEQP-GLES31.functional.copy_image.non_compressed.viewclass_32_bits.rgb10_a2ui_rg16i.renderbuffer_to_texture2d,Fail
+asan-dEQP-GLES31.functional.copy_image.non_compressed.viewclass_32_bits.rgb10_a2ui_rgb10_a2ui.renderbuffer_to_renderbuffer,Fail
+asan-dEQP-GLES31.functional.copy_image.non_compressed.viewclass_32_bits.rgb10_a2ui_rgb10_a2ui.texture2d_to_renderbuffer,Fail
+asan-dEQP-GLES31.functional.copy_image.non_compressed.viewclass_32_bits.rgba8_rgba8.renderbuffer_to_renderbuffer,Fail
+asan-dEQP-GLES31.functional.copy_image.non_compressed.viewclass_32_bits.rgba8i_rgba8i.texture2d_to_renderbuffer,Fail
+asan-dEQP-GLES31.functional.copy_image.non_compressed.viewclass_32_bits.rgba8ui_rgba8ui.texture2d_to_renderbuffer,Fail
+asan-dEQP-GLES31.functional.copy_image.non_compressed.viewclass_64_bits.rg32i_rg32i.renderbuffer_to_renderbuffer,Fail
+asan-dEQP-GLES31.functional.copy_image.non_compressed.viewclass_64_bits.rg32ui_rg32ui.renderbuffer_to_renderbuffer,Fail
+asan-dEQP-GLES31.functional.copy_image.non_compressed.viewclass_64_bits.rgba16i_rgba16i.texture2d_to_renderbuffer,Fail
+asan-dEQP-GLES31.functional.copy_image.non_compressed.viewclass_64_bits.rgba16ui_rgba16ui.texture2d_to_renderbuffer,Fail
+asan-dEQP-GLES31.functional.copy_image.non_compressed.viewclass_8_bits.r8ui_r8ui.renderbuffer_to_renderbuffer,Fail
+asan-dEQP-GLES31.functional.copy_image.non_compressed.viewclass_8_bits.r8ui_r8ui.texture2d_to_renderbuffer,Fail
 dEQP-GLES31.functional.copy_image.non_compressed.viewclass_128_bits.rgba32i_rgba32i.renderbuffer_to_renderbuffer,Fail
 dEQP-GLES31.functional.copy_image.non_compressed.viewclass_128_bits.rgba32i_rgba32i.texture2d_to_renderbuffer,Fail
 dEQP-GLES31.functional.copy_image.non_compressed.viewclass_128_bits.rgba32ui_rgba32ui.renderbuffer_to_renderbuffer,Fail
@@ -706,10 +733,10 @@ dEQP-GLES31.functional.copy_image.non_compressed.viewclass_16_bits.r16i_r16i.ren
 dEQP-GLES31.functional.copy_image.non_compressed.viewclass_16_bits.r16i_r16i.texture2d_to_renderbuffer,Fail
 dEQP-GLES31.functional.copy_image.non_compressed.viewclass_16_bits.r16ui_r16ui.renderbuffer_to_renderbuffer,Fail
 dEQP-GLES31.functional.copy_image.non_compressed.viewclass_16_bits.r16ui_r16ui.texture2d_to_renderbuffer,Fail
-dEQP-GLES31.functional.copy_image.non_compressed.viewclass_16_bits.rg8i_rg8i.renderbuffer_to_renderbuffer,Fail
-dEQP-GLES31.functional.copy_image.non_compressed.viewclass_16_bits.rg8i_rg8i.texture2d_to_renderbuffer,Fail
 dEQP-GLES31.functional.copy_image.non_compressed.viewclass_16_bits.rg8_rg8.renderbuffer_to_renderbuffer,Fail
 dEQP-GLES31.functional.copy_image.non_compressed.viewclass_16_bits.rg8_rg8.texture2d_to_renderbuffer,Fail
+dEQP-GLES31.functional.copy_image.non_compressed.viewclass_16_bits.rg8i_rg8i.renderbuffer_to_renderbuffer,Fail
+dEQP-GLES31.functional.copy_image.non_compressed.viewclass_16_bits.rg8i_rg8i.texture2d_to_renderbuffer,Fail
 dEQP-GLES31.functional.copy_image.non_compressed.viewclass_16_bits.rg8ui_rg8ui.renderbuffer_to_renderbuffer,Fail
 dEQP-GLES31.functional.copy_image.non_compressed.viewclass_16_bits.rg8ui_rg8ui.texture2d_to_renderbuffer,Fail
 dEQP-GLES31.functional.copy_image.non_compressed.viewclass_24_bits.rgb8_rgb8.renderbuffer_to_renderbuffer,Fail
@@ -731,10 +758,10 @@ dEQP-GLES31.functional.copy_image.non_compressed.viewclass_32_bits.rgb10_a2ui_rg
 dEQP-GLES31.functional.copy_image.non_compressed.viewclass_32_bits.rgb10_a2ui_rg16ui.renderbuffer_to_texture2d,Fail
 dEQP-GLES31.functional.copy_image.non_compressed.viewclass_32_bits.rgb10_a2ui_rgb10_a2ui.renderbuffer_to_renderbuffer,Fail
 dEQP-GLES31.functional.copy_image.non_compressed.viewclass_32_bits.rgb10_a2ui_rgb10_a2ui.texture2d_to_renderbuffer,Fail
-dEQP-GLES31.functional.copy_image.non_compressed.viewclass_32_bits.rgba8i_rgba8i.renderbuffer_to_renderbuffer,Fail
-dEQP-GLES31.functional.copy_image.non_compressed.viewclass_32_bits.rgba8i_rgba8i.texture2d_to_renderbuffer,Fail
 dEQP-GLES31.functional.copy_image.non_compressed.viewclass_32_bits.rgba8_rgba8.renderbuffer_to_renderbuffer,Fail
 dEQP-GLES31.functional.copy_image.non_compressed.viewclass_32_bits.rgba8_rgba8.texture2d_to_renderbuffer,Fail
+dEQP-GLES31.functional.copy_image.non_compressed.viewclass_32_bits.rgba8i_rgba8i.renderbuffer_to_renderbuffer,Fail
+dEQP-GLES31.functional.copy_image.non_compressed.viewclass_32_bits.rgba8i_rgba8i.texture2d_to_renderbuffer,Fail
 dEQP-GLES31.functional.copy_image.non_compressed.viewclass_32_bits.rgba8ui_rgba8ui.renderbuffer_to_renderbuffer,Fail
 dEQP-GLES31.functional.copy_image.non_compressed.viewclass_32_bits.rgba8ui_rgba8ui.texture2d_to_renderbuffer,Fail
 dEQP-GLES31.functional.copy_image.non_compressed.viewclass_32_bits.srgb8_alpha8_srgb8_alpha8.texture2d_to_renderbuffer,Fail
@@ -746,9 +773,9 @@ dEQP-GLES31.functional.copy_image.non_compressed.viewclass_64_bits.rgba16i_rgba1
 dEQP-GLES31.functional.copy_image.non_compressed.viewclass_64_bits.rgba16i_rgba16i.texture2d_to_renderbuffer,Fail
 dEQP-GLES31.functional.copy_image.non_compressed.viewclass_64_bits.rgba16ui_rgba16ui.renderbuffer_to_renderbuffer,Fail
 dEQP-GLES31.functional.copy_image.non_compressed.viewclass_64_bits.rgba16ui_rgba16ui.texture2d_to_renderbuffer,Fail
+dEQP-GLES31.functional.copy_image.non_compressed.viewclass_8_bits.r8_r8.texture2d_to_renderbuffer,Fail
 dEQP-GLES31.functional.copy_image.non_compressed.viewclass_8_bits.r8i_r8i.renderbuffer_to_renderbuffer,Fail
 dEQP-GLES31.functional.copy_image.non_compressed.viewclass_8_bits.r8i_r8i.texture2d_to_renderbuffer,Fail
-dEQP-GLES31.functional.copy_image.non_compressed.viewclass_8_bits.r8_r8.texture2d_to_renderbuffer,Fail
 dEQP-GLES31.functional.copy_image.non_compressed.viewclass_8_bits.r8ui_r8ui.renderbuffer_to_renderbuffer,Fail
 dEQP-GLES31.functional.copy_image.non_compressed.viewclass_8_bits.r8ui_r8ui.texture2d_to_renderbuffer,Fail
 
