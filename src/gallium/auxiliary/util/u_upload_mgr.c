@@ -215,6 +215,20 @@ u_upload_alloc_buffer(struct u_upload_mgr *upload, unsigned min_size, struct pip
    return size;
 }
 
+#if MESA_DEBUG
+DEBUG_GET_ONCE_BOOL_OPTION(force_reallocate, "U_UPLOAD_FORCE_REALLOCATE", false)
+#endif
+
+static inline bool
+force_reallocate(void)
+{
+#if MESA_DEBUG
+   return debug_get_option_force_reallocate();
+#else
+   return false;
+#endif
+}
+
 void
 u_upload_alloc(struct u_upload_mgr *upload,
                unsigned min_out_offset,
@@ -233,7 +247,7 @@ u_upload_alloc(struct u_upload_mgr *upload,
    /* Make sure we have enough space in the upload buffer
     * for the sub-allocation.
     */
-   if (unlikely(offset + size > buffer_size)) {
+   if (force_reallocate() || unlikely(offset + size > buffer_size)) {
       /* Allocate a new buffer and set the offset to the smallest one. */
       offset = align(min_out_offset, alignment);
       buffer_size = u_upload_alloc_buffer(upload, offset + size, releasebuf);
