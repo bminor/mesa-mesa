@@ -109,6 +109,9 @@ panfrost-g52-piglit:arm64:
   variables:
     HWCI_START_WESTON: 1
     DEQP_SUITE: panfrost-g52-piglit
+    # Transparent huge pages cause an OOM, and the oom-killer decides to kill weston
+    # Disable THP until this is sorted out
+    LAVA_CMDLINE: "panfrost.transparent_hugepage=false"
 
 panfrost-g72-gl:arm64:
   parallel: 3
