@@ -268,23 +268,46 @@ fast_clear_color(struct iris_context *ice,
 
    iris_resource_set_clear_color(ice, res, color);
 
-   /* Ivybridge PRM Vol 2, Part 1, "11.7 MCS Buffer for Render Target(s)":
-    *
-    *    "Any transition from any value in {Clear, Render, Resolve} to a
-    *    different value in {Clear, Render, Resolve} requires end of pipe
-    *    synchronization."
-    *
-    * In other words, fast clear ops are not properly synchronized with
-    * other drawing.  We need to use a PIPE_CONTROL to ensure that the
-    * contents of the previous draw hit the render target before we resolve
-    * and again afterwards to ensure that the resolve is complete before we
-    * do any more regular drawing.
-    */
    if (devinfo->ver >= 20) {
+      /* From the Xe2 Bspec 57340 (r59562),
+       * "MCS/CCS Buffers, Fast Clear for Render Target(s)":
+       *
+       *    Synchronization:
+       *    Due to interaction of scaled clearing rectangle with pixel
+       *    scoreboard, we require one of the following commands to be
+       *    issued. [...]
+       *
+       *    PIPE_CONTROL
+       *    PSS Stall Sync Enable            [...] 1b (Enable)
+       *       Machine-wide Stall at Pixel Stage, wait for all Prior Pixel
+       *       Work to Reach End of Pipe
+       *    Render Target Cache Flush Enable [...] 1b (Enable)
+       *       Post-Sync Op Flushes Render Cache before Unblocking Stall
+       *
+       *    This synchronization step is required before and after the fast
+       *    clear pass, to ensure correct ordering between pixels.
+       */
       iris_emit_pipe_control_flush(batch, "fast clear: pre-flush",
                                    PIPE_CONTROL_RENDER_TARGET_FLUSH |
                                    PIPE_CONTROL_PSS_STALL_SYNC);
    } else if (devinfo->verx10 >= 125) {
+      /* From the ACM Bspec 47704 (r52663), "Render Target Fast Clear":
+       *
+       *    Preamble pre fast clear synchronization
+       *
+       *    PIPE_CONTROL:
+       *    PS sync stall = 1
+       *    Tile Cache Flush = 1
+       *    RT Write Flush = 1
+       *    HDC Flush = 1
+       *    DC Flush = 1
+       *    Texture Invalidate = 1
+       *
+       *    [...]
+       *
+       *    Objective of the preamble flushes is to ensure all data is
+       *    evicted from L1 caches prior to fast clear.
+       */
       iris_emit_pipe_control_flush(batch, "fast clear: pre-flush",
                                    PIPE_CONTROL_TEXTURE_CACHE_INVALIDATE |
                                    PIPE_CONTROL_DATA_CACHE_FLUSH |
@@ -293,12 +316,39 @@ fast_clear_color(struct iris_context *ice,
                                    PIPE_CONTROL_TILE_CACHE_FLUSH |
                                    PIPE_CONTROL_PSS_STALL_SYNC);
    } else if (devinfo->verx10 >= 120) {
+      /* From the TGL Bspec 47704 (r52663), "Render Target Fast Clear":
+       *
+       *    Preamble pre fast clear synchronization
+       *
+       *    PIPE_CONTROL:
+       *    Depth Stall = 1
+       *    Tile Cache Flush = 1
+       *    RT Write Flush = 1
+       *    Texture Invalidate = 1
+       *
+       *    [...]
+       *
+       *    Objective of the preamble flushes is to ensure all data is
+       *    evicted from L1 caches prior to fast clear.
+       */
       iris_emit_pipe_control_flush(batch, "fast clear: pre-flush",
                                    PIPE_CONTROL_TEXTURE_CACHE_INVALIDATE |
                                    PIPE_CONTROL_RENDER_TARGET_FLUSH |
                                    PIPE_CONTROL_TILE_CACHE_FLUSH |
                                    PIPE_CONTROL_DEPTH_STALL);
    } else {
+      /* Ivybridge PRM Vol 2, Part 1, "11.7 MCS Buffer for Render Target(s)":
+       *
+       *    "Any transition from any value in {Clear, Render, Resolve} to a
+       *    different value in {Clear, Render, Resolve} requires end of pipe
+       *    synchronization."
+       *
+       * In other words, fast clear ops are not properly synchronized with
+       * other drawing.  We need to use a PIPE_CONTROL to ensure that the
+       * contents of the previous draw hit the render target before we resolve
+       * and again afterwards to ensure that the resolve is complete before we
+       * do any more regular drawing.
+       */
       iris_emit_end_of_pipe_sync(batch, "fast clear: pre-flush",
                                  PIPE_CONTROL_RENDER_TARGET_FLUSH);
    }
