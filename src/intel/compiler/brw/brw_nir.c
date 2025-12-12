@@ -770,8 +770,8 @@ brw_nir_lower_vs_inputs(nir_shader *nir)
 }
 
 void
-brw_nir_lower_vue_inputs(nir_shader *nir,
-                         const struct intel_vue_map *vue_map)
+brw_nir_lower_gs_inputs(nir_shader *nir,
+                        const struct intel_vue_map *vue_map)
 {
    nir_foreach_shader_in_variable(var, nir)
       var->data.driver_location = var->data.location;

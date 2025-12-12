@@ -184,8 +184,8 @@ bool brw_needs_vertex_attributes_bypass(const nir_shader *shader);
 void brw_nir_lower_fs_barycentrics(nir_shader *shader);
 
 void brw_nir_lower_vs_inputs(nir_shader *nir);
-void brw_nir_lower_vue_inputs(nir_shader *nir,
-                              const struct intel_vue_map *vue_map);
+void brw_nir_lower_gs_inputs(nir_shader *nir,
+                             const struct intel_vue_map *vue_map);
 void brw_nir_lower_tes_inputs(nir_shader *nir,
                               const struct intel_device_info *devinfo,
                               const struct intel_vue_map *vue);

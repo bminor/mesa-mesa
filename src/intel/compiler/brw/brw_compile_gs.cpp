@@ -176,7 +176,7 @@ brw_compile_gs(const struct brw_compiler *compiler,
                        pos_slots);
 
    brw_nir_apply_key(nir, compiler, &key->base, dispatch_width);
-   brw_nir_lower_vue_inputs(nir, &input_vue_map);
+   brw_nir_lower_gs_inputs(nir, &input_vue_map);
    brw_nir_lower_vue_outputs(nir);
    brw_postprocess_nir(nir, compiler, dispatch_width,
                        params->base.archiver, debug_enabled,
