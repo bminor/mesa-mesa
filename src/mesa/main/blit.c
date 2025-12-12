@@ -532,7 +532,8 @@ do_blit_framebuffer(struct gl_context *ctx,
 
          blit.src.resource = srcObj->pt;
          blit.src.level = srcAtt->TextureLevel;
-         blit.src.box.z = srcAtt->Zoffset + srcAtt->CubeMapFace;
+         blit.src.box.z = srcAtt->Zoffset + srcAtt->CubeMapFace +
+                          srcAtt->Texture->Attrib.MinLayer;
          blit.src.format = srcObj->surface_based ? srcObj->surface_format : srcObj->pt->format;
 
          if (!ctx->Color.sRGBEnabled)
