@@ -462,7 +462,6 @@ impl Context {
         let src = svm.svm_ptrs.find_alloc(src_addr);
         let dst = svm.svm_ptrs.find_alloc(dst_addr);
 
-        #[allow(clippy::collapsible_else_if)]
         if let Some((src_base, src_alloc)) = src {
             let src_res = src_alloc.alloc.get_res_for_access(ctx, RWFlags::RD)?;
             let src_offset = src_addr - src_base;
