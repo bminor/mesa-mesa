@@ -773,6 +773,15 @@ hud_run(struct hud_context *hud, struct cso_context *cso,
    if (hud->record_pipe && (!pipe || pipe == hud->record_pipe))
       hud_stop_queries(hud, hud->record_pipe);
 
+   /* Show info about the record device. */
+   if (hud->record_device_x >= 0 && hud->record_device_y >= 0)
+      hud_draw_string(hud, hud->record_device_x, hud->record_device_y, "Device: %s (%04d:%02x:%02d.%d)",
+               hud->record_pipe->screen->get_name(hud->record_pipe->screen),
+               hud->record_pipe->screen->caps.pci_group,
+               hud->record_pipe->screen->caps.pci_bus,
+               hud->record_pipe->screen->caps.pci_device,
+               hud->record_pipe->screen->caps.pci_function);
+
    if (hud->cso && (!cso || cso == hud->cso))
       hud_draw_results(hud, tex);
 
@@ -1239,6 +1248,7 @@ hud_parse_env_var(struct hud_context *hud, struct pipe_screen *screen,
    bool sort_items = false;
    bool is_csv = false;
    bool to_stdout = false;
+   bool device = false;
    const char *period_env;
 
    if (strncmp(env, "simple,", 7) == 0) {
@@ -1406,6 +1416,9 @@ hud_parse_env_var(struct hud_context *hud, struct pipe_screen *screen,
          to_stdout = true;
          is_csv = true;
       }
+      else if (strcmp(name, "dev") == 0) {
+         device = true;
+      }
       else {
          bool processed = false;
 
@@ -1557,6 +1570,12 @@ hud_parse_env_var(struct hud_context *hud, struct pipe_screen *screen,
       }
    }
 
+   /* Draw device after below the last graph. */
+   if (device) {
+      hud->record_device_x = x;
+      hud->record_device_y = (pane && pane->num_graphs) ? (pane->y2 + 1.5 * hud->font.glyph_height) : y;
+   }
+
    const char *hud_dump_dir = os_get_option("GALLIUM_HUD_DUMP_DIR");
    if ((hud_dump_dir && access(hud_dump_dir, W_OK) == 0) || to_stdout) {
       LIST_FOR_EACH_ENTRY(pane, &hud->pane_list, head) {
@@ -1635,6 +1654,7 @@ print_help(struct pipe_screen *screen)
    puts("    fps");
    puts("    frametime");
    puts("    cpu");
+   puts("    dev (prints render device info)");
 
    for (i = 0; i < num_cpus; i++)
       printf("    cpu%i\n", i);
@@ -2051,6 +2071,9 @@ hud_create(struct cso_context *cso, struct hud_context *share,
    /* constants */
    hud->constbuf.buffer_size = sizeof(hud->constants);
    hud->constbuf.user_buffer = &hud->constants;
+
+   hud->record_device_x = -1;
+   hud->record_device_y = -1;
 
    list_inithead(&hud->pane_list);
 
