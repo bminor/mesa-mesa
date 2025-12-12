@@ -991,7 +991,6 @@ pub enum ViewType {
 }
 
 /// An enum describing how an image view will be accessed by the shader.
-#[allow(dead_code)]
 #[derive(Clone, Debug, Copy, PartialEq)]
 #[repr(u8)]
 pub enum ViewAccess {

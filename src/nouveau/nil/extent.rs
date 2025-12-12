@@ -219,7 +219,6 @@ impl<U> Offset4D<U> {
         }
     }
 
-    #[allow(dead_code)]
     pub fn is_aligned_to(&self, alignment: Extent4D<U>) -> bool {
         (self.x % alignment.width) == 0
             && (self.y % alignment.height) == 0

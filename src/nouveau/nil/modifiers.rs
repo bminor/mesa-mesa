@@ -118,7 +118,6 @@ impl GOBType {
 }
 
 #[repr(u8)]
-#[allow(dead_code)]
 #[derive(Clone, Copy, Eq, PartialEq)]
 pub enum CompressionType {
     None = 0,
