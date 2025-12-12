@@ -46,15 +46,11 @@ REFRESH_WAIT_JOBS = 6
 MAX_ENABLE_JOB_ATTEMPTS = 3
 
 STATUS_COLORS = defaultdict(lambda: "", {
-    "created": "",
     "running": "[blue]",
     "success": "[green]",
     "failed": "[red]",
     "canceled": "[magenta]",
     "canceling": "[magenta]",
-    "manual": "",
-    "pending": "",
-    "skipped": "",
 })
 
 COMPLETED_STATUSES = frozenset({"success", "failed"})
