@@ -1458,6 +1458,7 @@ radv_BindVideoSessionMemoryKHR(VkDevice _device, VkVideoSessionKHR videoSession,
                                const VkBindVideoSessionMemoryInfoKHR *pBindSessionMemoryInfos)
 {
    VK_FROM_HANDLE(radv_video_session, vid, videoSession);
+   struct radv_device *device = radv_device_from_handle(_device);
 
    for (unsigned i = 0; i < videoSessionBindMemoryCount; i++) {
       switch (pBindSessionMemoryInfos[i].memoryBindIndex) {
@@ -1466,6 +1467,22 @@ radv_BindVideoSessionMemoryKHR(VkDevice _device, VkVideoSessionKHR videoSession,
          break;
       case RADV_BIND_DECODER_CTX:
          copy_bind(&vid->ctx, &pBindSessionMemoryInfos[i]);
+
+         if (vid->encode) {
+            radv_video_enc_init_ctx(device, vid);
+         } else {
+            if (vid->stream_type == RDECODE_CODEC_VP9) {
+               uint8_t *ctxptr = radv_buffer_map(device->ws, vid->ctx.mem->bo);
+               ctxptr += vid->ctx.offset;
+               ac_vcn_vp9_fill_probs_table(ctxptr);
+               device->ws->buffer_unmap(device->ws, vid->ctx.mem->bo, false);
+            } else if (vid->stream_type == RDECODE_CODEC_AV1) {
+               uint8_t *ctxptr = radv_buffer_map(device->ws, vid->ctx.mem->bo);
+               ctxptr += vid->ctx.offset;
+               ac_vcn_av1_init_probs(radv_device_physical(device)->av1_version, ctxptr);
+               device->ws->buffer_unmap(device->ws, vid->ctx.mem->bo, false);
+            }
+         }
          break;
       case RADV_BIND_INTRA_ONLY: {
          VkBindImageMemoryInfo bind_image = {
@@ -3253,18 +3270,6 @@ radv_vcn_cmd_reset(struct radv_cmd_buffer *cmd_buffer)
    void *ptr;
    uint32_t out_offset;
 
-   if (vid->stream_type == RDECODE_CODEC_VP9) {
-      uint8_t *ctxptr = radv_buffer_map(device->ws, vid->ctx.mem->bo);
-      ctxptr += vid->ctx.offset;
-      ac_vcn_vp9_fill_probs_table(ctxptr);
-      device->ws->buffer_unmap(device->ws, vid->ctx.mem->bo, false);
-   }
-   if (vid->stream_type == RDECODE_CODEC_AV1) {
-      uint8_t *ctxptr = radv_buffer_map(device->ws, vid->ctx.mem->bo);
-      ctxptr += vid->ctx.offset;
-      ac_vcn_av1_init_probs(pdev->av1_version, ctxptr);
-      device->ws->buffer_unmap(device->ws, vid->ctx.mem->bo, false);
-   }
    radv_vid_buffer_upload_alloc(cmd_buffer, size, &out_offset, &ptr);
 
    if (pdev->vid_decode_ip == AMD_IP_VCN_UNIFIED)

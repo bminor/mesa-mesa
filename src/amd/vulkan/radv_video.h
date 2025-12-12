@@ -90,6 +90,7 @@ void radv_vcn_write_memory(struct radv_cmd_buffer *cmd_buffer, uint64_t va, unsi
 void radv_init_physical_device_encoder(struct radv_physical_device *pdevice);
 void radv_probe_video_decode(struct radv_physical_device *pdev);
 void radv_probe_video_encode(struct radv_physical_device *pdev);
+void radv_video_enc_init_ctx(struct radv_device *device, struct radv_video_session *vid);
 void radv_video_enc_control_video_coding(struct radv_cmd_buffer *cmd_buffer,
                                          const VkVideoCodingControlInfoKHR *pCodingControlInfo);
 void radv_video_enc_begin_video_coding(struct radv_cmd_buffer *cmd_buffer, const VkVideoBeginCodingInfoKHR *pBeginInfo);

@@ -3026,27 +3026,22 @@ radv_vcn_encode_video(struct radv_cmd_buffer *cmd_buffer, const VkVideoEncodeInf
 }
 
 void
+radv_video_enc_init_ctx(struct radv_device *device, struct radv_video_session *vid)
+{
+   if (vid->enc_standard == RENCODE_ENCODE_STANDARD_AV1) {
+      uint8_t *cdfptr = radv_buffer_map(device->ws, vid->ctx.mem->bo);
+      cdfptr += vid->ctx.offset;
+      memcpy(cdfptr, rvcn_av1_cdf_default_table, VCN_ENC_AV1_DEFAULT_CDF_SIZE);
+      device->ws->buffer_unmap(device->ws, vid->ctx.mem->bo, false);
+   }
+}
+
+void
 radv_video_enc_control_video_coding(struct radv_cmd_buffer *cmd_buffer, const VkVideoCodingControlInfoKHR *control_info)
 {
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
    struct radv_physical_device *pdev = radv_device_physical(device);
    struct radv_video_session *vid = cmd_buffer->video.vid;
-
-   switch (vid->vk.op) {
-   case VK_VIDEO_CODEC_OPERATION_ENCODE_H264_BIT_KHR:
-   case VK_VIDEO_CODEC_OPERATION_ENCODE_H265_BIT_KHR:
-      break;
-   case VK_VIDEO_CODEC_OPERATION_ENCODE_AV1_BIT_KHR:
-      if (control_info->flags & VK_VIDEO_CODING_CONTROL_RESET_BIT_KHR) {
-         uint8_t *cdfptr = radv_buffer_map(device->ws, vid->ctx.mem->bo);
-         cdfptr += vid->ctx.offset;
-         memcpy(cdfptr, rvcn_av1_cdf_default_table, VCN_ENC_AV1_DEFAULT_CDF_SIZE);
-         device->ws->buffer_unmap(device->ws, vid->ctx.mem->bo, false);
-      }
-      break;
-   default:
-      UNREACHABLE("Unsupported\n");
-   }
 
    bool session_init = false;
    bool rate_control_init = false;
