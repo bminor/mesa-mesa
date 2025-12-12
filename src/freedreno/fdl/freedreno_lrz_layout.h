@@ -15,6 +15,7 @@ BEGINC;
 struct fdl_lrz_layout {
    uint32_t lrz_offset;
    uint32_t lrz_pitch;
+   uint32_t lrz_slice_pitch;   /* gen8+ */
    uint32_t lrz_height;
    uint32_t lrz_layer_size;
    uint32_t lrz_buffer_size;
@@ -120,17 +121,72 @@ fdl6_lrz_layout_init(struct fdl_lrz_layout *lrz_layout,
                      const struct fd_dev_info *dev_info, uint32_t lrz_offset,
                      uint32_t array_layers)
 {
-   unsigned width = layout->width0 + extra_width;
-   unsigned height = layout->height0 + extra_height;
-   fdl6_lrz_get_super_sampled_size(&width, &height, layout->nr_samples);
+   if (CHIP >= A8XX) {
+      static const struct lrz_block {
+         uint16_t width;
+         uint16_t height;
+      } lrz_block_sizes[4][4] = {
+         [0] = {
+            [MSAA_ONE]   = {  64, 128 },
+            [MSAA_TWO]   = {  64,  64 },
+            [MSAA_FOUR]  = {  32,  64 },
+            [MSAA_EIGHT] = {  32,  32 },
+         },
+         [1] = {
+            [MSAA_ONE]   = { 128, 128 },
+            [MSAA_TWO]   = { 128,  64 },
+            [MSAA_FOUR]  = {  64,  64 },
+            [MSAA_EIGHT] = {  64,  32 },
+         },
+         [2] = {
+            [MSAA_ONE]   = { 192, 128 },
+            [MSAA_TWO]   = { 192,  64 },
+            [MSAA_FOUR]  = {  96,  64 },
+            [MSAA_EIGHT] = {  96,  32 },
+         },
+         [3] = {
+            [MSAA_ONE]   = { 128, 256 },
+            [MSAA_TWO]   = { 128, 128 },
+            [MSAA_FOUR]  = {  64, 128 },
+            [MSAA_EIGHT] = {  64,  64 },
+         },
+      }, *lrz_block = &lrz_block_sizes[dev_info->num_slices - 1][ffs(layout->nr_samples) - 1];
 
-   unsigned lrz_pitch = align(DIV_ROUND_UP(width, 8), 32);
-   unsigned lrz_height = align(DIV_ROUND_UP(height, 8), 32);
+      const unsigned per_slice_block_width_in_tiles = 8;
+      const unsigned per_slice_block_height_in_tiles = 16;
+
+      const unsigned surface_width_in_blocks =
+         DIV_ROUND_UP(layout->width0 + extra_width, lrz_block->width);
+      const unsigned surface_height_in_blocks =
+         DIV_ROUND_UP(layout->height0 + extra_height, lrz_block->height);
+
+      lrz_layout->lrz_pitch =
+         align(surface_width_in_blocks * per_slice_block_width_in_tiles, 64);
+
+      /* Construct a "fake" height to use for fallback lrz clear on
+       * the blitter.  Since we use lrz_pitch as the width, this is
+       * just lrz_layer_size / lrz_pitch
+       */
+      lrz_layout->lrz_height = dev_info->num_slices *
+         surface_height_in_blocks * per_slice_block_height_in_tiles;
+
+      lrz_layout->lrz_slice_pitch = surface_height_in_blocks *
+         per_slice_block_height_in_tiles * lrz_layout->lrz_pitch * 2;
+
+      lrz_layout->lrz_layer_size = lrz_layout->lrz_slice_pitch * dev_info->num_slices;
+   } else {
+      unsigned width = layout->width0 + extra_width;
+      unsigned height = layout->height0 + extra_height;
+      fdl6_lrz_get_super_sampled_size(&width, &height, layout->nr_samples);
+
+      lrz_layout->lrz_pitch = align(DIV_ROUND_UP(width, 8), 32);
+      lrz_layout->lrz_height = align(DIV_ROUND_UP(height, 8), 32);
+
+      lrz_layout->lrz_layer_size =
+         lrz_layout->lrz_pitch * lrz_layout->lrz_height * sizeof(uint16_t);
+   }
 
    lrz_layout->lrz_offset = lrz_offset;
-   lrz_layout->lrz_height = lrz_height;
-   lrz_layout->lrz_pitch = lrz_pitch;
-   lrz_layout->lrz_layer_size = lrz_pitch * lrz_height * sizeof(uint16_t);
    lrz_layout->lrz_buffer_size = lrz_layout->lrz_layer_size * array_layers;
 
    /* Fast-clear buffer is 1bit/block */
@@ -144,7 +200,7 @@ fdl6_lrz_layout_init(struct fdl_lrz_layout *lrz_layout,
 
    /* Allocate 2 LRZ buffers for double-buffering on a7xx. */
    uint32_t lrz_size = lrz_layout->lrz_buffer_size *
-      (dev_info->chip >= 7 ? 2 : 1);
+      (CHIP >= A7XX ? 2 : 1);
 
    if (dev_info->props.enable_lrz_fast_clear ||
        dev_info->props.has_lrz_dir_tracking) {

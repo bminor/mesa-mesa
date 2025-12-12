@@ -69,7 +69,7 @@ template <chip CHIP>
 struct PACKED fd_lrzfc_layout<chip_range(CHIP >= A7XX)> {
    static const bool HAS_BIDIR = true;
    static const bool HAS_CB = true;
-   static const size_t FC_SIZE = 1024;
+   static const size_t FC_SIZE = (CHIP < A8XX) ? 1024 : 2048;
 
    union {
       struct {
