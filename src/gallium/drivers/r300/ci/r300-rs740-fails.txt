@@ -34,10 +34,6 @@ dEQP-GLES2.functional.draw.random.8,Fail
 
 dEQP-GLES2.functional.fbo.completeness.renderable.texture.color0.rgb_half_float_oes,Fail
 
-# Two regressions from 60e115dedfa29dd4353b2608b7f226f8f7cfa9bd
-dEQP-GLES2.functional.fbo.completeness.renderable.texture.color0.rgb_unsigned_int_2_10_10_10_rev,Fail
-dEQP-GLES2.functional.fbo.completeness.renderable.texture.color0.rgba_unsigned_int_2_10_10_10_rev,Fail
-
 dEQP-GLES2.functional.fbo.render.repeated_clear.tex2d_rgb,Fail
 dEQP-GLES2.functional.fbo.render.repeated_clear.tex2d_rgba,Fail
 

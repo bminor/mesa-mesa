@@ -1222,28 +1222,6 @@ st_choose_format(struct st_context *st, GLenum internalFormat,
       }
    }
 
-   /* For an unsized GL_RGB but a 2_10_10_10 type, try to pick one of the
-    * 2_10_10_10 formats.  This is important for
-    * GL_EXT_texture_type_2_10_10_10_REV support, which says that these
-    * formats are not color-renderable.  Mesa's check for making those
-    * non-color-renderable is based on our chosen format being 2101010.
-    */
-   if (type == GL_UNSIGNED_INT_2_10_10_10_REV ||
-       type == GL_UNSIGNED_INT_10_10_10_2 ||
-       type == GL_UNSIGNED_INT_10_10_10_2_OES) {
-      if (internalFormat == GL_RGB)
-         internalFormat = GL_RGB10;
-      else if (internalFormat == GL_RGBA)
-         internalFormat = GL_RGB10_A2;
-   }
-
-   if (type == GL_UNSIGNED_SHORT_5_5_5_1) {
-      if (internalFormat == GL_RGB)
-         internalFormat = GL_RGB5;
-      else if (internalFormat == GL_RGBA)
-         internalFormat = GL_RGB5_A1;
-   }
-
    /* search table for internalFormat */
    for (i = 0; i < ARRAY_SIZE(format_map); i++) {
       const struct format_mapping *mapping = &format_map[i];
@@ -1398,6 +1376,28 @@ st_ChooseTextureFormat(struct gl_context *ctx, GLenum target,
             is_renderbuffer = true;
          }
       }
+   }
+
+   /* For an unsized GL_RGB but a 2_10_10_10 type, try to pick one of the
+    * 2_10_10_10 formats.  This is important for
+    * GL_EXT_texture_type_2_10_10_10_REV support, which says that these
+    * formats are not color-renderable.  Mesa's check for making those
+    * non-color-renderable is based on our chosen format being 2101010.
+    */
+   if (type == GL_UNSIGNED_INT_2_10_10_10_REV ||
+       type == GL_UNSIGNED_INT_10_10_10_2 ||
+       type == GL_UNSIGNED_INT_10_10_10_2_OES) {
+      if (internalFormat == GL_RGB)
+         internalFormat = GL_RGB10;
+      else if (internalFormat == GL_RGBA)
+         internalFormat = GL_RGB10_A2;
+   }
+
+   if (type == GL_UNSIGNED_SHORT_5_5_5_1) {
+      if (internalFormat == GL_RGB)
+         internalFormat = GL_RGB5;
+      else if (internalFormat == GL_RGBA)
+         internalFormat = GL_RGB5_A1;
    }
 
    if (target == GL_TEXTURE_1D || target == GL_TEXTURE_1D_ARRAY) {
