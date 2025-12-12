@@ -108,6 +108,8 @@ impl LiveSet {
 impl FromIterator<SSAValue> for LiveSet {
     fn from_iter<T: IntoIterator<Item = SSAValue>>(iter: T) -> Self {
         let mut set = LiveSet::new();
+        let iter = iter.into_iter();
+        set.set.reserve(iter.size_hint().0);
         for ssa in iter {
             set.insert(ssa);
         }
@@ -117,6 +119,8 @@ impl FromIterator<SSAValue> for LiveSet {
 
 impl Extend<SSAValue> for LiveSet {
     fn extend<T: IntoIterator<Item = SSAValue>>(&mut self, iter: T) {
+        let iter = iter.into_iter();
+        self.set.reserve(iter.size_hint().0);
         for ssa in iter {
             self.insert(ssa);
         }
