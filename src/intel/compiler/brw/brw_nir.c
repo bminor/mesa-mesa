@@ -345,12 +345,13 @@ try_load_push_input(nir_builder *b,
                     nir_intrinsic_instr *io,
                     nir_def *offset)
 {
-   if (!nir_def_is_const(offset) || !cb_data->vec4_access)
+   if (!nir_def_is_const(offset))
       return NULL;
 
-   const unsigned base = io_base_slot(io, cb_data) +
-                         nir_src_as_uint(nir_src_for_ssa(offset));
-   const uint32_t byte_offset = 16 * base + 4 * io_component(io, cb_data);
+   const unsigned offset_unit = cb_data->vec4_access ? 16 : 4;
+   const uint32_t byte_offset =
+      16 * io_base_slot(io, cb_data) + 4 * io_component(io, cb_data) +
+      offset_unit * nir_src_as_uint(nir_src_for_ssa(offset));
    assert((byte_offset % 4) == 0);
 
    const enum mesa_shader_stage stage = b->shader->info.stage;
