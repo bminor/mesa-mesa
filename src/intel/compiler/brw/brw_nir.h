@@ -186,6 +186,9 @@ void brw_nir_lower_fs_barycentrics(nir_shader *shader);
 struct brw_lower_urb_cb_data {
    const struct intel_device_info *devinfo;
 
+   /** Maximum amount of pushed data in bytes */
+   unsigned max_push_bytes;
+
    /* If true, all access is guaranteed to be vec4 (128-bit) aligned.
     * offset and base are in units of 128-bit vec4 slots.
     *

@@ -354,12 +354,7 @@ try_load_push_input(nir_builder *b,
       offset_unit * nir_src_as_uint(nir_src_for_ssa(offset));
    assert((byte_offset % 4) == 0);
 
-   const enum mesa_shader_stage stage = b->shader->info.stage;
-   static const unsigned max_push_bytes[MESA_SHADER_MESH + 1] = {
-      [MESA_SHADER_TESS_EVAL] = 32 * 16 /* 32 vec4s */
-   };
-
-   if (byte_offset >= max_push_bytes[stage])
+   if (byte_offset >= cb_data->max_push_bytes)
       return NULL;
 
    return load_push_input(b, io, byte_offset);
@@ -978,6 +973,7 @@ brw_nir_lower_tes_inputs(nir_shader *nir,
    const struct brw_lower_urb_cb_data cb_data = {
       .devinfo = devinfo,
       .vec4_access = true,
+      .max_push_bytes = 32 * 16, /* 32 vec4s */
       .varying_to_slot = vue_map->varying_to_slot,
       .per_vertex_stride = vue_map->num_per_vertex_slots * 16,
       .dynamic_tes = vue_map->layout == INTEL_VUE_LAYOUT_SEPARATE,
