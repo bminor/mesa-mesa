@@ -759,6 +759,7 @@ gcm_place_instr(nir_instr *instr, struct gcm_state *state)
    if (instr->block == NULL) {
       nir_foreach_def(instr, gcm_replace_def_with_undef, state);
       nir_instr_remove(instr);
+      state->progress = true;
       return;
    }
 
