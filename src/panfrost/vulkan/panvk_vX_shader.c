@@ -1642,6 +1642,7 @@ panvk_deserialize_shader_variant(struct vk_device *vk_dev,
    if (shader->bin_ptr == NULL)
       return panvk_error(device, VK_ERROR_OUT_OF_HOST_MEMORY);
 
+   shader->own_bin = true;
    blob_copy_bytes(blob, (void *)shader->bin_ptr, shader->bin_size);
 
    result = shader_desc_info_deserialize(device, blob, shader);
