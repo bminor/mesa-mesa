@@ -16,6 +16,8 @@
 
 #include <pthread.h>
 
+#include "util/list.h"
+
 #include "vk_object.h"
 
 #include "pvr_limits.h"
