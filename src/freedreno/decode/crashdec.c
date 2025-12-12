@@ -257,7 +257,7 @@ debugbus_id(const char *name)
 static uint32_t
 cluster_id(const char *name)
 {
-   if (!is_a7xx())
+   if (!is_a7xx() || !name)
       return 0;
    return enumval("a7xx_cluster", name);
 }
