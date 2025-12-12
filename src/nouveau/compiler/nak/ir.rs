@@ -554,11 +554,7 @@ impl fmt::Display for Dst {
 #[derive(Clone, Eq, Hash, PartialEq)]
 pub enum CBuf {
     Binding(u8),
-
-    #[allow(dead_code)]
     BindlessSSA([SSAValue; 2]),
-
-    #[allow(dead_code)]
     BindlessUGPR(RegRef),
 }
 
@@ -605,7 +601,6 @@ pub enum SrcRef {
 }
 
 impl SrcRef {
-    #[allow(dead_code)]
     pub fn is_alu(&self) -> bool {
         match self {
             SrcRef::Zero | SrcRef::Imm32(_) | SrcRef::CBuf(_) => true,
@@ -641,7 +636,6 @@ impl SrcRef {
         }
     }
 
-    #[allow(dead_code)]
     pub fn is_barrier(&self) -> bool {
         match self {
             SrcRef::SSA(ssa) => ssa.file() == RegFile::Bar,
@@ -897,7 +891,6 @@ impl SrcMod {
 }
 
 #[derive(Clone, Copy, PartialEq)]
-#[allow(dead_code)]
 pub enum SrcSwizzle {
     None,
     Xx,
@@ -1733,7 +1726,6 @@ pub enum IntCmpType {
 }
 
 impl IntCmpType {
-    #[allow(dead_code)]
     pub fn is_signed(&self) -> bool {
         match self {
             IntCmpType::U32 => false,
@@ -1936,7 +1928,6 @@ pub struct TexCBufRef {
     pub offset: u16,
 }
 
-#[allow(dead_code)]
 #[derive(Clone, Copy, Eq, PartialEq)]
 pub enum TexRef {
     Bound(u16),
@@ -2113,7 +2104,6 @@ impl fmt::Display for TexOffsetMode {
     }
 }
 
-#[allow(dead_code)]
 #[derive(Clone, Copy, Eq, PartialEq)]
 pub enum TexQuery {
     Dimension,
@@ -2322,7 +2312,6 @@ impl fmt::Display for MemType {
     }
 }
 
-#[allow(dead_code)]
 #[derive(Clone, Copy, Eq, Hash, PartialEq)]
 pub enum MemOrder {
     Constant,
@@ -3482,7 +3471,6 @@ impl DisplayOp for OpImma {
 impl_display_for_op!(OpImma);
 
 #[derive(Clone, Copy, Eq, PartialEq)]
-#[allow(dead_code)]
 pub enum HmmaSize {
     M16N8K16,
     M16N8K8,
@@ -6473,7 +6461,6 @@ impl DisplayOp for OpLdc {
 impl_display_for_op!(OpLdc);
 
 #[derive(Clone, Copy, Eq, PartialEq)]
-#[allow(dead_code)]
 pub enum LdsmSize {
     M8N8,
     MT8N8,
@@ -9320,18 +9307,15 @@ pub trait ShaderModel {
         self.sm() >= 20 && self.sm() < 30
     }
 
-    #[allow(dead_code)]
     fn is_kepler_a(&self) -> bool {
         self.sm() >= 30 && self.sm() < 32
     }
 
-    #[allow(dead_code)]
     fn is_kepler_b(&self) -> bool {
         // TK1 is SM 3.2 and desktop Kepler B is SM 3.3+
         self.sm() >= 32 && self.sm() < 40
     }
 
-    #[allow(dead_code)]
     fn is_kepler(&self) -> bool {
         self.is_kepler_a() || self.is_kepler_b()
     }
@@ -9349,22 +9333,18 @@ pub trait ShaderModel {
         self.sm() >= 60 && self.sm() < 70
     }
 
-    #[allow(dead_code)]
     fn is_volta(&self) -> bool {
         self.sm() >= 70 && self.sm() < 73
     }
 
-    #[allow(dead_code)]
     fn is_turing(&self) -> bool {
         self.sm() >= 73 && self.sm() < 80
     }
 
-    #[allow(dead_code)]
     fn is_ampere(&self) -> bool {
         self.sm() >= 80 && self.sm() < 89
     }
 
-    #[allow(dead_code)]
     fn is_ada(&self) -> bool {
         self.sm() == 89
     }
@@ -9374,17 +9354,14 @@ pub trait ShaderModel {
         self.sm() >= 90 && self.sm() < 100
     }
 
-    #[allow(dead_code)]
     fn is_blackwell_a(&self) -> bool {
         self.sm() >= 100 && self.sm() < 110
     }
 
-    #[allow(dead_code)]
     fn is_blackwell_b(&self) -> bool {
         self.sm() >= 120 && self.sm() < 130
     }
 
-    #[allow(dead_code)]
     fn is_blackwell(&self) -> bool {
         self.is_blackwell_a() || self.is_blackwell_b()
     }

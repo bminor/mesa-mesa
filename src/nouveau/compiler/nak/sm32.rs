@@ -129,7 +129,6 @@ impl ShaderModel for ShaderModel32 {
 
 trait SM32Op {
     fn legalize(&mut self, b: &mut LegalizeBuilder);
-    #[allow(dead_code)]
     fn encode(&self, e: &mut SM32Encoder<'_>);
 }
 
@@ -141,7 +140,6 @@ fn true_reg() -> RegRef {
     RegRef::new(RegFile::Pred, 7, 1)
 }
 
-#[allow(dead_code)]
 struct SM32Encoder<'a> {
     sm: &'a ShaderModel32,
     ip: usize,

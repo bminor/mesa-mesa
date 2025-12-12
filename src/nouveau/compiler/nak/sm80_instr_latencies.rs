@@ -70,7 +70,6 @@ enum URegLatencySM80 {
     VoteU,
 }
 
-#[allow(dead_code)]
 #[derive(Debug)]
 enum UPredLatencySM80 {
     Coupled,

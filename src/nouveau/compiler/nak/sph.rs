@@ -303,7 +303,6 @@ impl ShaderProgramHeader {
     }
 
     #[inline]
-    #[allow(dead_code)]
     pub fn set_shader_local_memory_crs_size(
         &mut self,
         shader_local_memory_crs_size: u32,
@@ -442,7 +441,6 @@ impl ShaderProgramHeader {
     }
 
     #[inline]
-    #[allow(dead_code)]
     pub fn set_uses_underestimate(&mut self, uses_underestimate: bool) {
         assert!(self.shader_type == ShaderType::Fragment);
         self.set_bit(611, uses_underestimate);
