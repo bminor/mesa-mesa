@@ -495,7 +495,7 @@ hud_draw_results(struct hud_context *hud, struct pipe_resource *tex)
    const struct pipe_sampler_state *sampler_states[] =
          { &hud->font_sampler_state };
    struct hud_pane *pane;
-   struct pipe_resource *releasebuf[3] = {};
+   struct pipe_resource *releasebuf[3] = { 0 };
 
    if (!huds_visible)
       return;

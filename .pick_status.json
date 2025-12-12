@@ -104,7 +104,7 @@
         "description": "gallium: Fix gnu-empty-initalizer error",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "51605bfac2e4d0fd0c935ee1c3ce58b0a12584eb",
         "notes": null
