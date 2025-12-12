@@ -911,6 +911,8 @@ struct nir_shader *si_deserialize_shader(struct si_shader_selector *sel);
 unsigned si_get_ps_num_interp(struct si_shader *ps);
 unsigned si_get_shader_prefetch_size(struct si_shader *shader);
 unsigned si_get_max_workgroup_size(const struct si_shader *shader);
+unsigned si_shader_encode_vgprs(struct si_shader *shader);
+unsigned si_shader_encode_sgprs(struct si_shader *shader);
 
 /* si_shader_info.c */
 void si_nir_scan_shader(struct si_screen *sscreen, struct nir_shader *nir,

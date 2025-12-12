@@ -216,6 +216,25 @@ unsigned si_calculate_needed_lds_size(enum amd_gfx_level gfx_level, struct si_sh
    return lds_size;
 }
 
+unsigned si_shader_encode_vgprs(struct si_shader *shader)
+{
+   struct radeon_info *info = &shader->selector->screen->info;
+   unsigned encode_granularity = !info->has_graphics && info->family >= CHIP_MI200 ? 8 : 4;
+
+   assert(info->gfx_level >= GFX10 || shader->wave_size == 64);
+   if (shader->wave_size == 32)
+      encode_granularity *= 2;
+
+   return shader->config.num_vgprs / encode_granularity - 1;
+}
+
+unsigned si_shader_encode_sgprs(struct si_shader *shader)
+{
+   if (shader->selector->screen->info.gfx_level >= GFX10)
+      return 0; /* Gfx10+ don't have the SGPRS field and always allocate 128 SGPRs. */
+
+   return shader->config.num_sgprs / 8 - 1;
+}
 
 static void si_calculate_max_simd_waves(struct si_shader *shader)
 {

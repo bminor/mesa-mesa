@@ -497,20 +497,6 @@ void si_destroy_shader_cache(struct si_screen *sscreen)
 
 /* SHADER STATES */
 
-unsigned si_shader_encode_vgprs(struct si_shader *shader)
-{
-   assert(shader->selector->screen->info.gfx_level >= GFX10 || shader->wave_size == 64);
-   return shader->config.num_vgprs / (shader->wave_size == 32 ? 8 : 4) - 1;
-}
-
-unsigned si_shader_encode_sgprs(struct si_shader *shader)
-{
-   if (shader->selector->screen->info.gfx_level >= GFX10)
-      return 0; /* Gfx10+ don't have the SGPRS field and always allocate 128 SGPRs. */
-
-   return shader->config.num_sgprs / 8 - 1;
-}
-
 bool si_shader_mem_ordered(struct si_shader *shader)
 {
    struct si_screen *sscreen = shader->selector->screen;
