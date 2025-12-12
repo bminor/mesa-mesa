@@ -64,14 +64,15 @@ rusticl_files = files(
 )
 
 rusticl_args = [
+  # we error on all clippy warnings unless they are disabled
+  '-Dclippy::all',
+
   rust_global_args,
   rust_2024_lint_args,
 
   # Should be ran manually before moving to the 2024 edition
   # '-Dtail_expr_drop_order',
 
-  # we error on all clippy warnings unless they are disabled
-  '-Dclippy::all',
   # we want to add asserts in control flow
   '-Aclippy::assertions_on_constants',
   # warns on Arc<_> as keys
