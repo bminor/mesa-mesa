@@ -187,7 +187,7 @@ finish_cs(struct panvk_cmd_buffer *cmdbuf, uint32_t subqueue)
    panvk_per_arch(panvk_instr_end_work)(
       subqueue, cmdbuf, PANVK_INSTR_WORK_TYPE_CMDBUF, &instr_info_cmdbuf);
 
-   cs_finish(&cmdbuf->state.cs[subqueue].builder);
+   cs_end(&cmdbuf->state.cs[subqueue].builder);
 }
 
 static void
@@ -875,6 +875,9 @@ panvk_reset_cmdbuf(struct vk_command_buffer *vk_cmdbuf,
       u_trace_init(ut, &dev->utrace.utctx);
    }
 
+   for (uint32_t i = 0; i < ARRAY_SIZE(cmdbuf->state.cs); i++)
+      cs_builder_fini(&cmdbuf->state.cs[i].builder);
+
    memset(&cmdbuf->state, 0, sizeof(cmdbuf->state));
    init_cs_builders(cmdbuf);
 }
@@ -890,6 +893,9 @@ panvk_destroy_cmdbuf(struct vk_command_buffer *vk_cmdbuf)
 
    for (uint32_t i = 0; i < ARRAY_SIZE(cmdbuf->utrace.uts); i++)
       u_trace_fini(&cmdbuf->utrace.uts[i]);
+
+   for (uint32_t i = 0; i < ARRAY_SIZE(cmdbuf->state.cs); i++)
+      cs_builder_fini(&cmdbuf->state.cs[i].builder);
 
    panvk_pool_cleanup(&cmdbuf->cs_pool);
    panvk_pool_cleanup(&cmdbuf->desc_pool);

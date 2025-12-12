@@ -201,7 +201,8 @@ csf_oom_handler_init(struct panfrost_context *ctx)
    }
 
    assert(cs_is_valid(&b));
-   cs_finish(&b);
+   cs_end(&b);
+   cs_builder_fini(&b);
    ctx->csf.tiler_oom_handler.cs_bo = cs_bo;
    ctx->csf.tiler_oom_handler.length = handler.length * sizeof(uint64_t);
    ctx->csf.tiler_oom_handler.save_bo = reg_save_bo;
@@ -224,7 +225,10 @@ fail:
 void
 GENX(csf_cleanup_batch)(struct panfrost_batch *batch)
 {
-   free(batch->csf.cs.builder);
+   if (batch->csf.cs.builder) {
+      cs_builder_fini(batch->csf.cs.builder);
+      free(batch->csf.cs.builder);
+   }
 
    panfrost_pool_cleanup(&batch->csf.cs_chunk_pool);
 }
@@ -362,10 +366,9 @@ csf_emit_batch_end(struct panfrost_batch *batch)
    cs_wait_slot(b, 0);
 
    /* Finish the command stream */
-   if (!cs_is_valid(batch->csf.cs.builder))
-      return -1;
+   if (cs_is_valid(batch->csf.cs.builder))
+      cs_end(batch->csf.cs.builder);
 
-   cs_finish(batch->csf.cs.builder);
    return 0;
 }
 
@@ -1600,10 +1603,12 @@ GENX(csf_init_context)(struct panfrost_context *ctx)
    };
 
    assert(cs_is_valid(&b));
-   cs_finish(&b);
+   cs_end(&b);
 
    uint64_t cs_start = cs_root_chunk_gpu_addr(&b);
    uint32_t cs_size = cs_root_chunk_size(&b);
+
+   cs_builder_fini(&b);
 
    csf_prepare_qsubmit(ctx, &qsubmit, 0, cs_start, cs_size, &sync, 1);
    csf_prepare_gsubmit(ctx, &gsubmit, &qsubmit, 1);

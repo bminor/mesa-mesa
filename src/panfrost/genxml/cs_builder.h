@@ -254,6 +254,7 @@ cs_builder_init(struct cs_builder *b, const struct cs_builder_conf *conf,
                 struct cs_buffer root_buffer)
 {
    memset(b, 0, sizeof(*b));
+   util_dynarray_init(&b->blocks.instrs, NULL);
    b->conf = *conf;
    b->root_chunk.buffer = root_buffer;
    b->cur_chunk.buffer = root_buffer;
@@ -267,6 +268,13 @@ cs_builder_init(struct cs_builder *b, const struct cs_builder_conf *conf,
    b->conf.nr_kernel_registers = MAX2(b->conf.nr_kernel_registers, 3);
 
    b->blocks.instrs = UTIL_DYNARRAY_INIT;
+}
+
+static inline void
+cs_builder_fini(struct cs_builder *b)
+{
+   util_dynarray_fini(&b->blocks.instrs);
+   ralloc_free(b->maybe_ctx);
 }
 
 static inline bool
@@ -291,7 +299,7 @@ cs_root_chunk_gpu_addr(struct cs_builder *b)
 static inline uint32_t
 cs_root_chunk_size(struct cs_builder *b)
 {
-   /* Make sure cs_finish() was called. */
+   /* Make sure cs_end() was called. */
    struct cs_chunk empty_chunk;
    memset(&empty_chunk, 0, sizeof(empty_chunk));
    assert(!memcmp(&b->cur_chunk, &empty_chunk, sizeof(b->cur_chunk)));
@@ -301,7 +309,7 @@ cs_root_chunk_size(struct cs_builder *b)
 
 /*
  * Wrap the current queue. External users shouldn't call this function
- * directly, they should call cs_finish() when they are done building
+ * directly, they should call cs_end() when they are done building
  * the command stream, which will in turn call cs_wrap_queue().
  *
  * Internally, this is also used to finalize internal CS chunks when
@@ -754,7 +762,7 @@ cs_alloc_ins(struct cs_builder *b)
  * it for submission.
  */
 static inline void
-cs_finish(struct cs_builder *b)
+cs_end(struct cs_builder *b)
 {
    if (!cs_is_valid(b))
       return;
@@ -764,9 +772,6 @@ cs_finish(struct cs_builder *b)
 
    /* This prevents adding instructions after that point. */
    memset(&b->cur_chunk, 0, sizeof(b->cur_chunk));
-
-   util_dynarray_fini(&b->blocks.instrs);
-   ralloc_free(b->maybe_ctx);
 }
 
 /*
@@ -1459,7 +1464,7 @@ cs_maybe_end(struct cs_builder *b, struct cs_maybe_state *state,
         __state != NULL; cs_maybe_end(__b, __state, __maybe),                  \
         __state = NULL)
 
-/* Must be called before cs_finish */
+/* Must be called before cs_end */
 static inline void
 cs_patch_maybe(struct cs_builder *b, struct cs_maybe *maybe)
 {

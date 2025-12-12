@@ -396,10 +396,11 @@ init_subqueue(struct panvk_gpu_queue *queue, enum panvk_subqueue_id subqueue)
 
    cs_builder_init(&b, &conf, root_cs);
    cs_req_res(&b, get_resource_mask(subqueue));
-   cs_finish(&b);
+   cs_end(&b);
    assert(cs_is_valid(&b));
    subq->req_resource.cs_buffer_size = cs_root_chunk_size(&b);
    subq->req_resource.cs_buffer_addr = cs_root_chunk_gpu_addr(&b);
+   cs_builder_fini(&b);
    panvk_priv_mem_flush(subq->req_resource.buf, 0,
                         subq->req_resource.cs_buffer_size);
 
@@ -497,7 +498,7 @@ init_subqueue(struct panvk_gpu_queue *queue, enum panvk_subqueue_id subqueue)
       cs_move64_to(&b, heap_ctx_addr, queue->tiler_heap.context.dev_addr);
       cs_heap_set(&b, heap_ctx_addr);
    }
-   cs_finish(&b);
+   cs_end(&b);
 
    assert(cs_is_valid(&b));
 
@@ -520,6 +521,8 @@ init_subqueue(struct panvk_gpu_queue *queue, enum panvk_subqueue_id subqueue)
       .group_handle = queue->group_handle,
       .queue_submits = DRM_PANTHOR_OBJ_ARRAY(1, &qsubmit),
    };
+
+   cs_builder_fini(&b);
 
    pan_kmod_flush_bo_map_syncs(dev->kmod.dev);
 

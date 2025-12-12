@@ -257,5 +257,6 @@ panvk_per_arch(utrace_clone_finish_builder)(struct cs_builder *b)
                    cs_defer(SB_IMM_MASK, SB_ID(IMM_FLUSH)));
    cs_wait_slot(b, SB_ID(IMM_FLUSH));
 
-   cs_finish(b);
+   cs_end(b);
+   cs_builder_fini(b);
 }
