@@ -1508,14 +1508,15 @@ hud_parse_env_var(struct hud_context *hud, struct pipe_screen *screen,
          if (!pane)
             break;
 
-         y += height + hud->font.glyph_height * (pane->num_graphs + 2);
-         y_simple += hud->font.glyph_height * (pane->num_graphs + 1);
-         height = 100;
-
          if (pane && pane->num_graphs) {
+            y += height + hud->font.glyph_height * (pane->num_graphs + 2);
+            y_simple += hud->font.glyph_height * (pane->num_graphs + 1);
             list_addtail(&pane->head, &hud->pane_list);
             pane = NULL;
          }
+
+         height = 100;
+
          break;
 
       case ';':
