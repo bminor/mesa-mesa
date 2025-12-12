@@ -122,7 +122,7 @@ bi_iterator_schedule(bi_context *ctx)
       bi_remove_instruction(instr);
       list_add(&instr->link, &prev->link);
    }
-   util_dynarray_clear(&iterators);
+   util_dynarray_fini(&iterators);
 
    free(bi_index_to_instr);
    free(bi_index_to_block);
