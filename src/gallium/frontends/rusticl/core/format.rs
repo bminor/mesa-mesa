@@ -434,7 +434,6 @@ impl CLFormatInfo for cl_image_format {
 
 macro_rules! gl_cl_format_table {
     ([$($gl: ident => ($order: expr, $dtype: expr),)+]) => {
-        #[allow(non_upper_case_globals)]
         const fn gl_format_to_cl(
             gl_format: cl_GLenum
         ) -> Option<(cl_channel_order, cl_channel_type)> {
