@@ -1845,7 +1845,6 @@ v3d_attempt_compile(struct v3d_compile *c)
                  glsl_get_natural_size_align_bytes);
 
         NIR_PASS(_, c->s, v3d_nir_lower_global_2x32);
-        NIR_PASS(_, c->s, nir_lower_wrmasks);
         NIR_PASS(_, c->s, v3d_nir_lower_load_store_bitsize);
         NIR_PASS(_, c->s, v3d_nir_lower_scratch);
 

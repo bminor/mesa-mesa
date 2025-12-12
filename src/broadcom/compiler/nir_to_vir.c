@@ -721,9 +721,9 @@ ntq_emit_tmu_general(struct v3d_compile *c, nir_intrinsic_instr *instr,
                 }
         }
 
-        /* nir_lower_wrmasks should've ensured that any writemask on a store
-         * operation only has consecutive bits set, in which case we should've
-         * processed the full writemask above.
+        /* v3d_nir_lower_load_store_bitsize should've ensured that any writemask
+         * on a store operation only has consecutive bits set, in which case
+         * we should've processed the full writemask above.
          */
         assert(writemask == 0);
 }
