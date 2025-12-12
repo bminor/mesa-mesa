@@ -164,7 +164,7 @@
         "description": "panvk: Fix a memory leak in the descriptor set logic",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "ec02137c865ee0d2104f64714a9a39be6e25bf52",
         "notes": null
