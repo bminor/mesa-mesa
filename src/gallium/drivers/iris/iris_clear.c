@@ -280,14 +280,28 @@ fast_clear_color(struct iris_context *ice,
     * and again afterwards to ensure that the resolve is complete before we
     * do any more regular drawing.
     */
-   iris_emit_end_of_pipe_sync(batch, "fast clear: pre-flush",
-      PIPE_CONTROL_RENDER_TARGET_FLUSH |
-      (devinfo->ver    == 12  ? PIPE_CONTROL_TEXTURE_CACHE_INVALIDATE |
-                                PIPE_CONTROL_TILE_CACHE_FLUSH : 0) |
-      (devinfo->verx10 == 120 ? PIPE_CONTROL_DEPTH_STALL : 0) |
-      (devinfo->verx10 == 125 ? PIPE_CONTROL_FLUSH_HDC |
-                                PIPE_CONTROL_DATA_CACHE_FLUSH : 0) |
-      PIPE_CONTROL_PSS_STALL_SYNC);
+   if (devinfo->ver >= 20) {
+      iris_emit_pipe_control_flush(batch, "fast clear: pre-flush",
+                                   PIPE_CONTROL_RENDER_TARGET_FLUSH |
+                                   PIPE_CONTROL_PSS_STALL_SYNC);
+   } else if (devinfo->verx10 >= 125) {
+      iris_emit_pipe_control_flush(batch, "fast clear: pre-flush",
+                                   PIPE_CONTROL_TEXTURE_CACHE_INVALIDATE |
+                                   PIPE_CONTROL_DATA_CACHE_FLUSH |
+                                   PIPE_CONTROL_FLUSH_HDC |
+                                   PIPE_CONTROL_RENDER_TARGET_FLUSH |
+                                   PIPE_CONTROL_TILE_CACHE_FLUSH |
+                                   PIPE_CONTROL_PSS_STALL_SYNC);
+   } else if (devinfo->verx10 >= 120) {
+      iris_emit_pipe_control_flush(batch, "fast clear: pre-flush",
+                                   PIPE_CONTROL_TEXTURE_CACHE_INVALIDATE |
+                                   PIPE_CONTROL_RENDER_TARGET_FLUSH |
+                                   PIPE_CONTROL_TILE_CACHE_FLUSH |
+                                   PIPE_CONTROL_DEPTH_STALL);
+   } else {
+      iris_emit_end_of_pipe_sync(batch, "fast clear: pre-flush",
+                                 PIPE_CONTROL_RENDER_TARGET_FLUSH);
+   }
 
    /* Update the clear color now that previous rendering is complete. */
    if (color_changed && res->aux.clear_color_bo)

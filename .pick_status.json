@@ -24,7 +24,7 @@
         "description": "iris: Fix pipe control around fast-clears",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "23658920d138fc12b730a320325d8f5f1a9978bd",
         "notes": null
