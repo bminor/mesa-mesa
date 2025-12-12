@@ -2006,7 +2006,7 @@ by a particular renderpass/blit.
 	<reg64 offset="0x8104" name="GRAS_LRZ_BUFFER_BASE" align="256" type="waddress" usage="rp_blit" variants="A8XX-"/>
 
 	<bitset name="a6xx_gras_lrz_buffer_pitch" inline="yes">
-		<bitfield name="PITCH" low="0" high="7" shr="5" type="uint"/>
+		<bitfield name="PITCH" low="0" high="7" shr="6" type="uint"/>
 		<bitfield name="ARRAY_PITCH" low="10" high="28" shr="8" type="uint"/>
 	</bitset>
 

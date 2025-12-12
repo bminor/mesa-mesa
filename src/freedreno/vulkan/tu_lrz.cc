@@ -131,7 +131,7 @@ tu6_emit_lrz_buffer(struct tu_cs *cs, struct tu_image *depth_image)
    tu_cs_emit_regs(
       cs, GRAS_LRZ_BUFFER_BASE(CHIP, .qword = lrz_iova),
       GRAS_LRZ_BUFFER_PITCH(
-         CHIP, .pitch = depth_image->lrz_layout.lrz_pitch,
+         CHIP, .pitch = depth_image->lrz_layout.lrz_pitch * sizeof(uint16_t),
          .array_pitch = depth_image->lrz_layout.lrz_layer_size),
       A6XX_GRAS_LRZ_FAST_CLEAR_BUFFER_BASE(.qword = lrz_fc_iova));
 

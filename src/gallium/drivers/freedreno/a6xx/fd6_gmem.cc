@@ -266,7 +266,9 @@ emit_lrz(fd_cs &cs, struct fd_batch *batch, struct fd_batch_subpass *subpass)
    crb.attach_bo(subpass->lrz);
 
    crb.add(GRAS_LRZ_BUFFER_BASE(CHIP, .bo = subpass->lrz));
-   crb.add(GRAS_LRZ_BUFFER_PITCH(CHIP, .pitch = zsbuf->lrz_layout.lrz_pitch));
+   crb.add(GRAS_LRZ_BUFFER_PITCH(CHIP,
+      .pitch = zsbuf->lrz_layout.lrz_pitch * sizeof(uint16_t),
+   ));
    crb.add(A6XX_GRAS_LRZ_FAST_CLEAR_BUFFER_BASE(
       .bo = zsbuf->lrz_layout.lrz_fc_size ? subpass->lrz : NULL,
       .bo_offset = zsbuf->lrz_layout.lrz_fc_offset
