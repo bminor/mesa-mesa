@@ -109,7 +109,8 @@ generate_fn_set_fbds_provoking_vertex(struct panvk_device *dev,
    }
 
    assert(cs_is_valid(&b));
-   cs_finish(&b);
+   cs_end(&b);
+   cs_builder_fini(&b);
 
    *dump_region_size = function.dump_size;
 

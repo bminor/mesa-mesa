@@ -458,7 +458,7 @@ init_subqueue(struct panvk_gpu_queue *queue, enum panvk_subqueue_id subqueue)
       break;
    }
 
-   cs_finish(&b);
+   cs_end(&b);
 
    assert(cs_is_valid(&b));
 
@@ -479,6 +479,8 @@ init_subqueue(struct panvk_gpu_queue *queue, enum panvk_subqueue_id subqueue)
       .group_handle = queue->group_handle,
       .queue_submits = DRM_PANTHOR_OBJ_ARRAY(1, &qsubmit),
    };
+
+   cs_builder_fini(&b);
 
    int ret = pan_kmod_ioctl(dev->drm_fd, DRM_IOCTL_PANTHOR_GROUP_SUBMIT,
                             &gsubmit);

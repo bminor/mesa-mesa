@@ -300,7 +300,8 @@ generate_tiler_oom_handler(struct panvk_device *dev,
    }
 
    assert(cs_is_valid(&b));
-   cs_finish(&b);
+   cs_end(&b);
+   cs_builder_fini(&b);
    *dump_region_size = handler.dump_size;
 
    return handler.length * sizeof(uint64_t);
