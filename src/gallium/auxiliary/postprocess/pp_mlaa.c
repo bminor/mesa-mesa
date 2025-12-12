@@ -73,7 +73,7 @@ pp_jimenezmlaa_run(struct pp_queue_t *ppq, struct pipe_resource *in,
 
    const struct pipe_stencil_ref ref = { {1} };
 
-   struct pipe_resource *releasebuf[2] = {};
+   struct pipe_resource *releasebuf[2] = { 0 };
 
    /* Insufficient initialization checks. */
    assert(p);
