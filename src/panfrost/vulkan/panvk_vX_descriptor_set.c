@@ -307,6 +307,7 @@ panvk_destroy_descriptor_pool(struct panvk_device *device,
       util_vma_heap_finish(&pool->desc_heap);
       panvk_priv_bo_unref(pool->desc_bo);
    } else if (pool->host_only_mem) {
+      util_vma_heap_finish(&pool->desc_heap);
       vk_free2(&device->vk.alloc, pAllocator, (void *)pool->host_only_mem);
       pool->host_only_mem = 0;
    }
