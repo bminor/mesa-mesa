@@ -124,7 +124,7 @@
         "description": "panvk: Free the decode context in the create_device() error path",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "d155d6b7a334f07ad652e5a87f16f3302c7b968b",
         "notes": null
