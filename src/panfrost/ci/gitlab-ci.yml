@@ -173,7 +173,7 @@ panfrost-g610-piglit:arm64:
     LAVA_TAGS: 4gb
 
 panfrost-g610-vk:arm64:
-  parallel: 5
+  parallel: 4
   extends:
     - .lava-arm64-test-vk
     - .panfrost-test
@@ -181,12 +181,10 @@ panfrost-g610-vk:arm64:
     - .panfrost-vk-rules
   variables:
     DRIVER_NAME: panvk
-    # Using more than 4 cores cause instabilities
-    FDO_CI_CONCURRENT: 4
     MESA_VK_IGNORE_CONFORMANCE_WARNING: 1
     PANVK_DEBUG: "no_known_warn,sync,cs,coherent_before_cached"
     DEQP_SUITE: panfrost-g610-vk
-    DEQP_FRACTION: 5
+    DEQP_FRACTION: 3
     HWCI_START_WESTON: 1
     LAVA_TAGS: at-least-8gb
 
