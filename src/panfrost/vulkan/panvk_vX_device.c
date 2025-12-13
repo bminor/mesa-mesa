@@ -612,6 +612,9 @@ err_free_priv_bos:
    simple_mtx_destroy(&device->as.lock);
 
 err_destroy_kdev:
+   if (device->debug.decode_ctx)
+      pandecode_destroy_context(device->debug.decode_ctx);
+
    pan_kmod_dev_destroy(device->kmod.dev);
 
 err_finish_dev:
