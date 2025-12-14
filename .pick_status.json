@@ -454,7 +454,7 @@
         "description": "panfrost: fix get_image_width for 1D buffer images",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "0efe7a6eb909b47fb24a7e15edcf4ee0d01cfd95",
         "notes": null
