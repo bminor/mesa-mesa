@@ -574,7 +574,7 @@ tu_descriptor_set_create(struct tu_device *device,
 
    if (pool->host_memory_base) {
       if (pool->host_memory_end - pool->host_memory_ptr < mem_size)
-         return vk_error(device, VK_ERROR_OUT_OF_POOL_MEMORY);
+         return VK_ERROR_OUT_OF_POOL_MEMORY;
 
       set = (struct tu_descriptor_set*)pool->host_memory_ptr;
       pool->host_memory_ptr += mem_size;
@@ -614,7 +614,7 @@ tu_descriptor_set_create(struct tu_device *device,
 
       if (!pool->host_memory_base && pool->entry_count == pool->max_entry_count) {
          vk_object_free(&device->vk, NULL, set);
-         return vk_error(device, VK_ERROR_OUT_OF_POOL_MEMORY);
+         return VK_ERROR_OUT_OF_POOL_MEMORY;
       }
 
       uint64_t current_offset = pool->current_offset;
@@ -623,7 +623,7 @@ tu_descriptor_set_create(struct tu_device *device,
          uint64_t pool_vma_offset =
             util_vma_heap_alloc(&pool->bo_heap, set->size, 1);
          if (!pool_vma_offset)
-            return vk_error(device, VK_ERROR_FRAGMENTED_POOL);
+            return VK_ERROR_FRAGMENTED_POOL;
 
          assert(pool_vma_offset >= TU_POOL_HEAP_OFFSET &&
                 pool_vma_offset <= pool->size + TU_POOL_HEAP_OFFSET);
@@ -631,7 +631,7 @@ tu_descriptor_set_create(struct tu_device *device,
          current_offset = set->offset;
       } else {
          if (current_offset + set->size > pool->size)
-            return vk_error(device, VK_ERROR_OUT_OF_POOL_MEMORY);
+            return VK_ERROR_OUT_OF_POOL_MEMORY;
 
          pool->current_offset += set->size;
       }
