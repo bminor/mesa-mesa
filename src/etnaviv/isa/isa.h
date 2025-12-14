@@ -17,8 +17,8 @@ extern "C" {
 
 void isa_assemble_instruction(uint32_t *out, const struct etna_inst *instr);
 
-extern struct etna_asm_result *isa_parse_str(const char *str, bool dual_16_mode);
-extern struct etna_asm_result *isa_parse_file(const char *filepath, bool dual_16_mode);
+extern struct etna_asm_result *isa_parse_str(const char *str);
+extern struct etna_asm_result *isa_parse_file(const char *filepath);
 extern void isa_asm_result_destroy(struct etna_asm_result *result);
 
 #ifdef __cplusplus

@@ -18,7 +18,6 @@ struct encoded_instr {
    uint32_t word[4];
 };
 
-static const uint32_t FLAG_DUAL_16 = BITFIELD_BIT(0);
 static const uint32_t FLAG_FAILING_PARSE = BITFIELD_BIT(1);
 static const uint32_t FLAG_FAILING_ASM = BITFIELD_BIT(2);
 
@@ -68,7 +67,7 @@ TEST_P(DisasmTest, basicOpCodes)
    EXPECT_STREQ(as.disasm, disasm_output);
 
 #ifndef HAVE_ETNAVIV_NO_PEST
-   struct etna_asm_result *result = isa_parse_str(disasm_output, as.flags & FLAG_DUAL_16);
+   struct etna_asm_result *result = isa_parse_str(disasm_output);
    EXPECT_TRUE(result);
 
    if (as.flags & FLAG_FAILING_PARSE)
@@ -270,13 +269,13 @@ INSTANTIATE_TEST_SUITE_P(Threads, DisasmTest,
       disasm_state{ {0x01021001, 0x00002804, 0x00000020, 0xa1400008}, "add.hp.t1         t2._y__, th2.xxxx, void, -u0.xxxx\n"},
 
       // full dual-16 shader from a deqp3 run on GC3000
-      disasm_state{ {0x0101102e, 0x00201804, 0x80000020, 0x00002000}, "f2i.u32.t0        t1._y__, th1.xxxx, void, void\n", FLAG_DUAL_16},
-      disasm_state{ {0x0101102e, 0x00202804, 0x80000020, 0x01000000}, "f2i.u32.t1        t1._y__, th2.xxxx, void, void\n", FLAG_DUAL_16},
-      disasm_state{ {0x00811171, 0x15601804, 0x80000040, 0x76fffffa}, "cmp.eq.u32.t0     t1.x___, t1.yyyy, u0.xxxx, -1:s20\n", FLAG_DUAL_16},
-      disasm_state{ {0x00811171, 0x15601804, 0x80000040, 0x77ffdffa}, "cmp.eq.u32.t1     t1.x___, t1.yyyy, u0.xxxx, -1:s20\n", FLAG_DUAL_16},
-      disasm_state{ {0x0081158f, 0x00201804, 0x700000c0, 0x7c00000f}, "select.selmsb.s16 t1.x___, t1.xxxx, 0.000000:f16, 0.000000:f16\n", FLAG_DUAL_16 | FLAG_FAILING_ASM},
-      disasm_state{ {0x0381102d, 0x00201804, 0x40000000, 0x00000000}, "i2f.s16           t1.xyz_, t1.xxxx, void, void\n", FLAG_DUAL_16},
-      disasm_state{ {0x04011009, 0x00000004, 0x00000000, 0x20154008}, "mov               t1.___w, void, void, u0.yyyy\n", FLAG_DUAL_16}
+      disasm_state{ {0x0101102e, 0x00201804, 0x80000020, 0x00002000}, "f2i.u32.t0        t1._y__, th1.xxxx, void, void\n"},
+      disasm_state{ {0x0101102e, 0x00202804, 0x80000020, 0x01000000}, "f2i.u32.t1        t1._y__, th2.xxxx, void, void\n"},
+      disasm_state{ {0x00811171, 0x15601804, 0x80000040, 0x76fffffa}, "cmp.eq.u32.t0     t1.x___, t1.yyyy, u0.xxxx, -1:s20\n"},
+      disasm_state{ {0x00811171, 0x15601804, 0x80000040, 0x77ffdffa}, "cmp.eq.u32.t1     t1.x___, t1.yyyy, u0.xxxx, -1:s20\n"},
+      disasm_state{ {0x0081158f, 0x00201804, 0x700000c0, 0x7c00000f}, "select.selmsb.s16 t1.x___, t1.xxxx, 0.000000:f16, 0.000000:f16\n", FLAG_FAILING_ASM},
+      disasm_state{ {0x0381102d, 0x00201804, 0x40000000, 0x00000000}, "i2f.s16           t1.xyz_, t1.xxxx, void, void\n"},
+      disasm_state{ {0x04011009, 0x00000004, 0x00000000, 0x20154008}, "mov               t1.___w, void, void, u0.yyyy\n"}
    )
 );
 // clang-format on
@@ -416,7 +415,7 @@ INSTANTIATE_TEST_SUITE_P(SwizzleVariants, DisasmTest,
       disasm_state{ {0x0782102b, 0x00002804, 0xa0000040, 0x7800002f}, "swizzle.s8        t2, t2.xxxx, 0:u20, 2:u20\n"},
       disasm_state{ {0x0780102b, 0x00002804, 0xa0000040, 0x7800001f}, "swizzle.s8        t0, t2.xxxx, 0:u20, 1:u20\n"},
       disasm_state{ {0x0781102b, 0x00002804, 0xa00000c0, 0x7800001f}, "swizzle.s8        t1, t2.xxxx, 1:u20, 1:u20\n"},
-      disasm_state{ {0x0781102b, 0x00200804, 0x6000007e, 0x7800003f}, "swizzle.s16       t1, 0.000000:f16, 0:u20, 3:u20\n", FLAG_FAILING_ASM},
+      disasm_state{ {0x0781102b, 0x00200804, 0x6000007e, 0x7800003f}, "swizzle.s16       t1, 0.000000:f16, 0:u20, 3:u20\n"},
       disasm_state{ {0x0781102b, 0x00201804, 0x60000040, 0x780000cf}, "swizzle.s16       t1, t1.xxxx, 0:u20, 12:u20\n"},
       disasm_state{ {0x0780102b, 0x00201804, 0x60000040, 0x7800003f}, "swizzle.s16       t0, t1.xxxx, 0:u20, 3:u20\n"},
       disasm_state{ {0x0781102b, 0x00202804, 0x600000c0, 0x7800003f}, "swizzle.s16       t1, t2.xxxx, 1:u20, 3:u20\n"}

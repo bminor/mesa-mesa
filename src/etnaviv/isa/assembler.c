@@ -55,12 +55,11 @@ int
 main(int argc, char *argv[])
 {
    bool show_disasm = false;
-   bool dual_16_mode = false;
    const char *in = NULL;
    const char *out = NULL;
 
    int opt = 0;
-   while ((opt = getopt(argc, argv, "i:o:sd")) != -1) {
+   while ((opt = getopt(argc, argv, "i:o:s")) != -1) {
       switch (opt) {
       case 'i':
          in = optarg;
@@ -70,9 +69,6 @@ main(int argc, char *argv[])
          break;
       case 's':
          show_disasm = true;
-         break;
-      case 'd':
-         dual_16_mode = true;
          break;
       default:
          print_usage();
@@ -86,7 +82,7 @@ main(int argc, char *argv[])
       return EXIT_FAILURE;
    }
 
-   struct etna_asm_result *result = isa_parse_file(in, dual_16_mode);
+   struct etna_asm_result *result = isa_parse_file(in);
 
    if (!result->success) {
       fprintf(stderr, "Failed to parse %s\n%s\n", in, result->error);

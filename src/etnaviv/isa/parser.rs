@@ -111,7 +111,7 @@ fn fill_tex(pair: Pair<Rule>, tex: &mut etna_inst_tex) {
     }
 }
 
-fn fill_source(pair: Pair<Rule>, src: &mut etna_inst_src, dual_16_mode: bool) {
+fn fill_source(pair: Pair<Rule>, src: &mut etna_inst_src) {
     src.set_use(1);
 
     for item in pair.into_inner() {
@@ -148,17 +148,28 @@ fn fill_source(pair: Pair<Rule>, src: &mut etna_inst_src, dual_16_mode: bool) {
                 imm_struct.set_imm_type(0);
                 imm_struct.set_imm_val(0xfffff);
             }
-            Rule::Immediate_float | Rule::Immediate_half_float => {
+            Rule::Immediate_float => {
                 let value: f32 = parse_numeric(item);
                 let bits = value.to_bits();
 
                 assert!((bits & 0xfff) == 0); /* 12 lsb cut off */
                 src.set_rgroup(isa_reg_group::ISA_REG_GROUP_IMMED);
 
-                let imm_type = if dual_16_mode { 3 } else { 0 };
                 let imm_struct = unsafe { &mut src.__bindgen_anon_1.__bindgen_anon_2 };
 
-                imm_struct.set_imm_type(imm_type);
+                imm_struct.set_imm_type(0);
+                imm_struct.set_imm_val(bits >> 12);
+            }
+            Rule::Immediate_half_float => {
+                let value: f32 = parse_numeric(item);
+                let bits = value.to_bits();
+
+                assert!((bits & 0xfff) == 0); /* 12 lsb cut off */
+                src.set_rgroup(isa_reg_group::ISA_REG_GROUP_IMMED);
+
+                let imm_struct = unsafe { &mut src.__bindgen_anon_1.__bindgen_anon_2 };
+
+                imm_struct.set_imm_type(3);
                 imm_struct.set_imm_val(bits >> 12);
             }
             Rule::Immediate_int => {
@@ -200,7 +211,7 @@ fn fill_source(pair: Pair<Rule>, src: &mut etna_inst_src, dual_16_mode: bool) {
     }
 }
 
-fn process(input: Pair<Rule>, dual_16_mode: bool) -> Option<etna_inst> {
+fn process(input: Pair<Rule>) -> Option<etna_inst> {
     // The assembler and disassembler are both using the
     // 'full' form of the ISA which contains void's and
     // use the HW ordering of instruction src arguments.
@@ -273,7 +284,7 @@ fn process(input: Pair<Rule>, dual_16_mode: bool) -> Option<etna_inst> {
                 // Nothing to do
             }
             Rule::SrcRegister => {
-                fill_source(p, &mut instr.src[src_index], dual_16_mode);
+                fill_source(p, &mut instr.src[src_index]);
                 src_index += 1;
             }
             Rule::TexSrc => {
@@ -290,13 +301,13 @@ fn process(input: Pair<Rule>, dual_16_mode: bool) -> Option<etna_inst> {
     Some(instr)
 }
 
-fn parse(rule: Rule, content: &str, dual_16_mode: bool, asm_result: &mut etna_asm_result) {
+fn parse(rule: Rule, content: &str, asm_result: &mut etna_asm_result) {
     let result = Isa::parse(rule, content);
 
     match result {
         Ok(program) => {
             for line in program {
-                if let Some(result) = process(line, dual_16_mode) {
+                if let Some(result) = process(line) {
                     asm_result.append_instruction(result);
                 }
             }
@@ -310,12 +321,12 @@ fn parse(rule: Rule, content: &str, dual_16_mode: bool, asm_result: &mut etna_as
     }
 }
 
-pub fn asm_process_str(string: &str, dual_16_mode: bool, asm_result: &mut etna_asm_result) {
-    parse(Rule::instruction, string, dual_16_mode, asm_result)
+pub fn asm_process_str(string: &str, asm_result: &mut etna_asm_result) {
+    parse(Rule::instruction, string, asm_result)
 }
 
-pub fn asm_process_file(file: &str, dual_16_mode: bool, asm_result: &mut etna_asm_result) {
+pub fn asm_process_file(file: &str, asm_result: &mut etna_asm_result) {
     let content = fs::read_to_string(file).expect("cannot read file");
 
-    parse(Rule::instructions, &content, dual_16_mode, asm_result)
+    parse(Rule::instructions, &content, asm_result)
 }
