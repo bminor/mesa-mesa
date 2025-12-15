@@ -287,7 +287,7 @@ INSTANTIATE_TEST_SUITE_P(ImmediateValues, DisasmTest,
       disasm_state{ {0x00801001, 0x7e000805, 0x00000038, 0x00800008}, "add.rtz           t0.x___, 0.500000:f20, void, |t0.xxxx|\n"}, /* type: 0 */
       disasm_state{ {0x00811131, 0x95401804, 0x00aa0060, 0x76fffffa}, "cmp.le.t0         t1.x___, |th1.yyyy|, u0.yyyy, -1:s20\n"}, /* type: 1 */
       disasm_state{ {0x0080101a, 0x00001804, 0x40010000, 0x78000018}, "rshift.s32        t0.x___, t1.xxxx, void, 1:u20\n"}, /* type: 2*/
-      disasm_state{ {0x020211b1, 0x00001804, 0x01fe0040, 0x7c1fdffa}, "cmp.ne            t2.__z_, t1.xxxx, u0.wwww, -nan:f16\n", FLAG_FAILING_ASM} /* type: 3 */
+      disasm_state{ {0x020211b1, 0x00001804, 0x01fe0040, 0x7c1fdffa}, "cmp.ne            t2.__z_, t1.xxxx, u0.wwww, -nan:f16\n"} /* type: 3 */
    )
 );
 // clang-format on
@@ -419,6 +419,17 @@ INSTANTIATE_TEST_SUITE_P(SwizzleVariants, DisasmTest,
       disasm_state{ {0x0781102b, 0x00201804, 0x60000040, 0x780000cf}, "swizzle.s16       t1, t1.xxxx, 0:u20, 12:u20\n"},
       disasm_state{ {0x0780102b, 0x00201804, 0x60000040, 0x7800003f}, "swizzle.s16       t0, t1.xxxx, 0:u20, 3:u20\n"},
       disasm_state{ {0x0781102b, 0x00202804, 0x600000c0, 0x7800003f}, "swizzle.s16       t1, t2.xxxx, 1:u20, 3:u20\n"}
+   )
+);
+// clang-format on
+
+// clang-format off
+INSTANTIATE_TEST_SUITE_P(InfNaN, DisasmTest,
+   testing::Values(
+      disasm_state{ {0x00811009, 0x00000004, 0x00000000, 0x70ff0008}, "mov               t1.x___, void, void, inf:f20\n"},
+      disasm_state{ {0x00811009, 0x00000004, 0x00000000, 0x72ff0008}, "mov               t1.x___, void, void, -inf:f20\n"},
+      disasm_state{ {0x00811009, 0x00000004, 0x00000000, 0x70ff8008}, "mov               t1.x___, void, void, nan:f20\n"},
+      disasm_state{ {0x00811009, 0x00000004, 0x00000000, 0x72ff8008}, "mov               t1.x___, void, void, -nan:f20\n"}
    )
 );
 // clang-format on

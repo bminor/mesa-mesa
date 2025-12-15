@@ -219,13 +219,69 @@ fn fill_source(pair: Pair<Rule>, src: &mut etna_inst_src) {
                     src.__bindgen_anon_1.__bindgen_anon_1.set_reg(r);
                 }
             }
-            Rule::Immediate_Minus_Nan => {
+            Rule::Immediate_inf_float => {
                 src.set_rgroup(isa_reg_group::ISA_REG_GROUP_IMMED);
 
                 let imm_struct = unsafe { &mut src.__bindgen_anon_1.__bindgen_anon_2 };
 
                 imm_struct.set_imm_type(0);
-                imm_struct.set_imm_val(0xfffff);
+                imm_struct.set_imm_val(0x7f800);
+            }
+            Rule::Immediate_neg_inf_float => {
+                src.set_rgroup(isa_reg_group::ISA_REG_GROUP_IMMED);
+
+                let imm_struct = unsafe { &mut src.__bindgen_anon_1.__bindgen_anon_2 };
+
+                imm_struct.set_imm_type(0);
+                imm_struct.set_imm_val(0xff800);
+            }
+            Rule::Immediate_inf_half_float => {
+                src.set_rgroup(isa_reg_group::ISA_REG_GROUP_IMMED);
+
+                let imm_struct = unsafe { &mut src.__bindgen_anon_1.__bindgen_anon_2 };
+
+                imm_struct.set_imm_type(3);
+                imm_struct.set_imm_val(0x7c00);
+            }
+            Rule::Immediate_neg_inf_half_float => {
+                src.set_rgroup(isa_reg_group::ISA_REG_GROUP_IMMED);
+
+                let imm_struct = unsafe { &mut src.__bindgen_anon_1.__bindgen_anon_2 };
+
+                imm_struct.set_imm_type(3);
+                imm_struct.set_imm_val(0xfc00);
+            }
+            Rule::Immediate_nan_float => {
+                src.set_rgroup(isa_reg_group::ISA_REG_GROUP_IMMED);
+
+                let imm_struct = unsafe { &mut src.__bindgen_anon_1.__bindgen_anon_2 };
+
+                imm_struct.set_imm_type(0);
+                imm_struct.set_imm_val(0x7fc00);
+            }
+            Rule::Immediate_neg_nan_float => {
+                src.set_rgroup(isa_reg_group::ISA_REG_GROUP_IMMED);
+
+                let imm_struct = unsafe { &mut src.__bindgen_anon_1.__bindgen_anon_2 };
+
+                imm_struct.set_imm_type(0);
+                imm_struct.set_imm_val(0xffc00);
+            }
+            Rule::Immediate_nan_half_float => {
+                src.set_rgroup(isa_reg_group::ISA_REG_GROUP_IMMED);
+
+                let imm_struct = unsafe { &mut src.__bindgen_anon_1.__bindgen_anon_2 };
+
+                imm_struct.set_imm_type(3);
+                imm_struct.set_imm_val(0x7fff);
+            }
+            Rule::Immediate_neg_nan_half_float => {
+                src.set_rgroup(isa_reg_group::ISA_REG_GROUP_IMMED);
+
+                let imm_struct = unsafe { &mut src.__bindgen_anon_1.__bindgen_anon_2 };
+
+                imm_struct.set_imm_type(3);
+                imm_struct.set_imm_val(0xffff);
             }
             Rule::Immediate_float => {
                 let value: f32 = parse_numeric(item);

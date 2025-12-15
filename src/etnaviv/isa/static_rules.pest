@@ -22,12 +22,32 @@ DestVoid = { "void" }
 Negate = { "-" }
 Absolute = { "|" }
 
-Immediate_Minus_Nan = @{ Negate ~ "nan" }
+Immediate_inf_float = @{ "inf" ~ ":f20" }
+Immediate_neg_inf_float = @{ "-inf" ~ ":f20" }
+Immediate_inf_half_float = @{ "inf" ~ ":f16" }
+Immediate_neg_inf_half_float = @{ "-inf" ~ ":f16" }
+Immediate_nan_float = @{ "nan" ~ ":f20" }
+Immediate_neg_nan_float = @{ "-nan" ~ ":f20" }
+Immediate_nan_half_float = @{ "nan" ~ ":f16" }
+Immediate_neg_nan_half_float = @{ "-nan" ~ ":f16" }
 Immediate_float = @{ Negate? ~ ASCII_DIGIT+ ~ "." ~ ASCII_DIGIT+ ~ ":f20" }
 Immediate_half_float = @{ Negate? ~ ASCII_DIGIT+ ~ "." ~ ASCII_DIGIT+ ~ ":f16" }
 Immediate_uint = @{ ASCII_DIGIT+ ~ ":u20" }
 Immediate_int = @{ Negate? ~ ASCII_DIGIT+ ~ ":s20"  }
-Immediate = _{ Immediate_Minus_Nan | Immediate_float | Immediate_half_float | Immediate_uint | Immediate_int }
+Immediate = _{
+              Immediate_inf_float |
+              Immediate_neg_inf_float |
+              Immediate_inf_half_float |
+              Immediate_neg_inf_half_float |
+              Immediate_nan_float |
+              Immediate_neg_nan_float |
+              Immediate_nan_half_float |
+              Immediate_neg_nan_half_float |
+              Immediate_float |
+              Immediate_half_float |
+              Immediate_uint |
+              Immediate_int
+            }
 
 Register = @{ ASCII_DIGIT+ }
 DstRegister = ${ "t" ~ Register ~ RegAddressingMode? ~ Wrmask? }
