@@ -198,9 +198,6 @@ dEQP-VK.glsl.swizzles.vector_swizzles.mediump_vec4_x_fragment
 dEQP-VK.glsl.arrays.constructor.int4_fragment
 dEQP-VK.glsl.arrays.declaration.implicit_size_int_ivec3_fragment
 
-dEQP-VK.image.general_layout.memory_barrier.fragment.write_read.shader_read_write
-dEQP-VK.image.general_layout.memory_barrier.fragment.write_read.sampled_read_storage_write
-dEQP-VK.image.general_layout.memory_barrier.fragment.write_read.storage_read_storage_write
 dEQP-VK.image.store.with_format.2d_array.r8_snorm_single_layer
 dEQP-VK.image.subresource_layout.2d.4_levels.r8g8b8a8_uint_offset
 dEQP-VK.image.texel_view_compatible.graphic.extended.1d_image.texture_read.astc_5x4_unorm_block.r32g32b32a32_sint
