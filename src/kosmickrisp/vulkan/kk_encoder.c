@@ -54,6 +54,8 @@ kk_encoder_start_render(struct kk_cmd_buffer *cmd,
    /* We must not already be in a render encoder */
    assert(encoder->main.last_used != KK_ENC_RENDER ||
           encoder->main.encoder == NULL);
+
+   upload_queue_writes(cmd);
    if (encoder->main.last_used != KK_ENC_RENDER) {
       kk_encoder_signal_fence_and_end(cmd);
 
@@ -108,6 +110,11 @@ kk_encoder_end(struct kk_cmd_buffer *cmd)
 
    kk_encoder_signal_fence_and_end(cmd);
 
+   /* Ensure all writes are done before we really end encoding. We could have
+    * writes to be done in the following case: endRenderPasss->endQuery->cmdEnd */
+   upload_queue_writes(cmd);
+   kk_encoder_signal_fence_and_end(cmd);
+
    /* Let remaining render encoders run without waiting since we are done */
    mtl_encode_signal_event(cmd->encoder->pre_gfx.cmd_buffer,
                            cmd->encoder->event, cmd->encoder->event_value);
@@ -123,10 +130,14 @@ upload_queue_writes(struct kk_cmd_buffer *cmd)
 {
    struct kk_encoder *enc = cmd->encoder;
 
+   if (enc->imm_writes.size == 0u &&
+       enc->copy_query_pool_result_infos.size == 0u)
+      return;
+
    struct kk_device *dev = kk_cmd_buffer_device(cmd);
+   mtl_compute_encoder *compute = kk_compute_encoder(cmd);
    uint32_t count = util_dynarray_num_elements(&enc->imm_writes, uint64_t) / 2u;
    if (count != 0) {
-      mtl_compute_encoder *compute = kk_compute_encoder(cmd);
       struct kk_bo *bo = kk_cmd_allocate_buffer(cmd, enc->imm_writes.size, 8u);
       /* kk_cmd_allocate_buffer sets the cmd buffer error so we can just exit */
       if (!bo)
@@ -145,8 +156,6 @@ upload_queue_writes(struct kk_cmd_buffer *cmd)
    count = util_dynarray_num_elements(&enc->copy_query_pool_result_infos,
                                       struct kk_copy_query_pool_results_info);
    if (count != 0u) {
-      mtl_compute_encoder *compute = kk_compute_encoder(cmd);
-
       for (uint32_t i = 0u; i < count; ++i) {
          struct kk_copy_query_pool_results_info *push_data =
             util_dynarray_element(&enc->copy_query_pool_result_infos,
@@ -216,17 +225,15 @@ kk_encoder_signal_fence_and_end(struct kk_cmd_buffer *cmd)
                               encoder->event_value);
    }
 
-   if (encoder->main.last_used == KK_ENC_NONE)
-      return;
-
-   kk_encoder_signal_fence(encoder);
-   kk_encoder_internal_end_encoding(&encoder->main);
+   if (encoder->main.last_used != KK_ENC_NONE) {
+      kk_encoder_signal_fence(encoder);
+      kk_encoder_internal_end_encoding(&encoder->main);
+   }
 
    if (cmd->drawable) {
       mtl_present_drawable(encoder->main.cmd_buffer, cmd->drawable);
       cmd->drawable = NULL;
    }
-   upload_queue_writes(cmd);
 }
 
 static void
@@ -293,6 +300,7 @@ kk_compute_encoder(struct kk_cmd_buffer *cmd)
    mtl_compute_set_buffer(encoder->encoder, dev->samplers.table.bo->map, 0u,
                           1u);
    encoder->last_used = KK_ENC_COMPUTE;
+   upload_queue_writes(cmd);
    return (mtl_compute_encoder *)encoder->encoder;
 }
 
@@ -304,6 +312,7 @@ kk_blit_encoder(struct kk_cmd_buffer *cmd)
    if (encoder->last_used == KK_ENC_BLIT)
       return (mtl_blit_encoder *)encoder->encoder;
 
+   upload_queue_writes(cmd);
    kk_encoder_signal_fence_and_end(cmd);
    encoder->encoder = mtl_new_blit_command_encoder(encoder->cmd_buffer);
    if (encoder->wait_fence) {
