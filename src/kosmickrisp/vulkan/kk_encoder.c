@@ -270,6 +270,15 @@ mtl_render_encoder *
 kk_render_encoder(struct kk_cmd_buffer *cmd)
 {
    struct kk_encoder *encoder = cmd->encoder;
+
+   struct kk_graphics_state *gfx = &cmd->state.gfx;
+   if (gfx->need_to_start_render_pass) {
+      mtl_render_pass_descriptor_set_default_raster_sample_count(
+         cmd->state.gfx.render_pass_descriptor, gfx->sample_count);
+      gfx->need_to_start_render_pass = false;
+      kk_encoder_start_render(cmd, gfx->render_pass_descriptor,
+                              gfx->render.view_mask);
+   }
    /* Render encoders are created at vkBeginRendering only */
    assert(encoder->main.last_used == KK_ENC_RENDER && encoder->main.encoder);
    return (mtl_render_encoder *)encoder->main.encoder;

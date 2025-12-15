@@ -229,8 +229,13 @@ kk_CmdBeginRendering(VkCommandBuffer commandBuffer,
       mtl_new_render_pass_descriptor();
 
    /* Framebufferless rendering, need to set pass_descriptors
-    * renderTargetWidth/Height to non-0 values and defaultRasterSampleCount */
-   if (framebuffer_extent.width == 0u && framebuffer_extent.height == 0u) {
+    * renderTargetWidth/Height to non-0 values and defaultRasterSampleCount.
+    * However, since the sample count will only be known at first pipeline bind,
+    * we need to delay the start of the pass until then since Metal will ignore
+    * bound pipeline's sample count. */
+   bool no_framebuffer =
+      framebuffer_extent.width == 0u && framebuffer_extent.height == 0u;
+   if (no_framebuffer) {
       framebuffer_extent.width = render->area.extent.width;
       framebuffer_extent.height = render->area.extent.height;
       mtl_render_pass_descriptor_set_render_target_width(
@@ -345,9 +350,10 @@ kk_CmdBeginRendering(VkCommandBuffer commandBuffer,
    // TODO_KOSMICKRISP Fragment shading rate support goes here if Metal supports
    // it
 
-   /* Start new encoder and encode sync commands from previous barriers (aka
-    * fences) */
-   kk_encoder_start_render(cmd, pass_descriptor, render->view_mask);
+   /* Rendering with no attachments requires pushing the start of the render
+    * pass to first pipeline binding to know sample count. */
+   if (!no_framebuffer)
+      kk_encoder_start_render(cmd, pass_descriptor, render->view_mask);
 
    /* Store descriptor in case we need to restart the pass at pipeline barrier,
     * but force loads */
@@ -373,6 +379,7 @@ kk_CmdBeginRendering(VkCommandBuffer commandBuffer,
          attachment_descriptor, MTL_LOAD_ACTION_LOAD);
    }
    cmd->state.gfx.render_pass_descriptor = pass_descriptor;
+   cmd->state.gfx.need_to_start_render_pass = no_framebuffer;
 
    kk_cmd_buffer_dirty_all_gfx(cmd);
 

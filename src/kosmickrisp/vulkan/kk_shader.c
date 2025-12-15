@@ -953,6 +953,7 @@ kk_compile_graphics_pipeline(struct kk_device *device,
          pipeline_descriptor, max_amplification);
    }
 
+   vertex_shader->pipeline.gfx.sample_count = 1u;
    if (state->ms) {
       mtl_render_pipeline_descriptor_set_raster_sample_count(
          pipeline_descriptor, state->ms->rasterization_samples);
@@ -960,6 +961,8 @@ kk_compile_graphics_pipeline(struct kk_device *device,
          pipeline_descriptor, state->ms->alpha_to_coverage_enable);
       mtl_render_pipeline_descriptor_set_alpha_to_one(
          pipeline_descriptor, state->ms->alpha_to_one_enable);
+      vertex_shader->pipeline.gfx.sample_count =
+         state->ms->rasterization_samples;
    }
 
    vertex_shader->pipeline.gfx.handle =
@@ -1216,6 +1219,8 @@ kk_cmd_bind_graphics_shader(struct kk_cmd_buffer *cmd,
    cmd->state.gfx.is_depth_stencil_dynamic = requires_dynamic_depth_stencil;
    cmd->state.gfx.dirty |= KK_DIRTY_PIPELINE;
    cmd->state.gfx.dirty |= KK_DIRTY_VB;
+
+   cmd->state.gfx.sample_count = shader->pipeline.gfx.sample_count;
 }
 
 static void

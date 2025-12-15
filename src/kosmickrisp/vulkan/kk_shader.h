@@ -42,6 +42,7 @@ struct kk_shader {
             mtl_render_pipeline_state *handle;
             mtl_depth_stencil_state *mtl_depth_stencil_state_handle;
             enum mtl_primitive_type primitive_type;
+            uint32_t sample_count;
          } gfx;
          mtl_compute_pipeline_state *cs;
       };

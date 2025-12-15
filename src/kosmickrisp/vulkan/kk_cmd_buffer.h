@@ -115,10 +115,12 @@ struct kk_graphics_state {
    bool is_depth_stencil_dynamic;
    bool is_cull_front_and_back;
    bool restart_disabled;
+   bool need_to_start_render_pass;
 
    enum mtl_primitive_type primitive_type;
    enum mesa_prim prim;
    enum kk_dirty dirty;
+   uint32_t sample_count;
 
    struct {
       enum mtl_visibility_result_mode mode;
