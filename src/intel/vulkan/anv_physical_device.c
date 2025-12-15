@@ -283,7 +283,11 @@ get_device_extensions(const struct anv_physical_device *device,
       .EXT_calibrated_timestamps             = device->has_reg_timestamp,
       .EXT_color_write_enable                = true,
       .EXT_conditional_rendering             = true,
-      .EXT_conservative_rasterization        = true,
+      /* Skylake has broken conservative rasterization with backface culling.
+       * There is a chicken bit in 3D_CHICKEN3 to reenable the broken behavior
+       * on KBL+. So just disable crast on SKL.
+       */
+      .EXT_conservative_rasterization        = device->info.platform != INTEL_PLATFORM_SKL,
       .EXT_custom_border_color               = true,
       .EXT_depth_bias_control                = true,
       .EXT_depth_clamp_control               = true,
