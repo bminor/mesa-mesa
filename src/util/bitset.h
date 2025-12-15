@@ -261,7 +261,7 @@ __bitset_set_range(BITSET_WORD *r, int start, int end)
    __bitset_set_range(x, b, e)
 
 static inline void
-__bitclear_clear_range(BITSET_WORD *r, int start, int end)
+__bitset_clear_range(BITSET_WORD *r, int start, int end)
 {
    while (start <= end) {
       unsigned start_mod = start % BITSET_WORDBITS;
@@ -273,7 +273,7 @@ __bitclear_clear_range(BITSET_WORD *r, int start, int end)
 }
 
 #define BITSET_CLEAR_RANGE(x, b, e) \
-   __bitclear_clear_range(x, b, e)
+   __bitset_clear_range(x, b, e)
 
 static inline unsigned
 __bitset_extract(const BITSET_WORD *r, unsigned start, unsigned count)
