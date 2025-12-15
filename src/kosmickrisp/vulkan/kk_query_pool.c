@@ -292,8 +292,10 @@ kk_CmdEndQuery(VkCommandBuffer commandBuffer, VkQueryPool queryPool,
    cmd->state.gfx.dirty |= KK_DIRTY_OCCLUSION;
 
    /* Make the query available */
-   uint64_t addr = kk_query_available_addr(pool, query);
-   kk_cmd_write(cmd, pool->bo->map, addr, true);
+   if (kk_has_available(pool)) {
+      uint64_t addr = kk_query_available_addr(pool, query);
+      kk_cmd_write(cmd, pool->bo->map, addr, true);
+   }
 }
 
 static bool
