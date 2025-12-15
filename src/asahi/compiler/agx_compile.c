@@ -184,7 +184,7 @@ gather_cf(nir_builder *b, nir_intrinsic_instr *intr, void *data)
       unsigned location = sem.location + nir_src_as_uint(*offset);
       unsigned start_comp = (location * 4) + nir_intrinsic_component(intr);
 
-      BITSET_SET_BULK(set, start_comp, nr);
+      BITSET_SET_COUNT(set, start_comp, nr);
    } else {
       unsigned start_comp = (sem.location * 4) + nir_intrinsic_component(intr);
       bool compact = sem.location == VARYING_SLOT_CLIP_DIST0 ||
@@ -197,7 +197,7 @@ gather_cf(nir_builder *b, nir_intrinsic_instr *intr, void *data)
       nr = stride;
 
       for (unsigned i = 0; i < sem.num_slots; ++i) {
-         BITSET_SET_BULK(set, start_comp + (i * stride), nr);
+         BITSET_SET_COUNT(set, start_comp + (i * stride), nr);
       }
    }
 
@@ -241,9 +241,9 @@ assign_coefficient_regs(nir_shader *nir, struct agx_varyings_fs *var)
    static_assert(VARYING_SLOT_POS == 0, "special and handled first");
 
    for (unsigned i = VARYING_SLOT_POS + 1; i < VARYING_SLOT_MAX; ++i) {
-      bool smooth = BITSET_TEST_BULK(info.smooth, i * 4, 4);
-      bool flat = BITSET_TEST_BULK(info.flat, i * 4, 4);
-      bool noperspective = BITSET_TEST_BULK(info.noperspective, i * 4, 4);
+      bool smooth = BITSET_TEST_COUNT(info.smooth, i * 4, 4);
+      bool flat = BITSET_TEST_COUNT(info.flat, i * 4, 4);
+      bool noperspective = BITSET_TEST_COUNT(info.noperspective, i * 4, 4);
 
       if (!(smooth || flat || noperspective))
          continue;

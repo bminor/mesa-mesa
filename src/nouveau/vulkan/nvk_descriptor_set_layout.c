@@ -252,7 +252,7 @@ nvk_CreateDescriptorSetLayout(VkDevice device,
       switch (binding->descriptorType) {
       case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC:
          layout->binding[b].dynamic_buffer_index = dynamic_buffer_count;
-         BITSET_SET_BULK(layout->dynamic_ubos, dynamic_buffer_count,
+         BITSET_SET_COUNT(layout->dynamic_ubos, dynamic_buffer_count,
                          binding->descriptorCount);
          dynamic_buffer_count += binding->descriptorCount;
          break;

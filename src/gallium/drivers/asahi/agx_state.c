@@ -3925,7 +3925,7 @@ agx_batch_geometry_params(struct agx_batch *batch, uint64_t input_index_buffer,
                           const struct pipe_draw_start_count_bias *draw,
                           const struct pipe_draw_indirect_info *indirect)
 {
-   const uint32_t wg_size[3] = { 64, 1, 1 };
+   const uint32_t wg_size[3] = {64, 1, 1};
 
    struct poly_vertex_params vp;
    poly_vertex_params_init(&vp, batch->ctx->vs->b.info.outputs, wg_size);
@@ -4006,9 +4006,9 @@ agx_batch_geometry_params(struct agx_batch *batch, uint64_t input_index_buffer,
       poly_vertex_params_set_draw(&vp, draw->count, info->instance_count);
 
       struct poly_gs_info *gsi = &batch->ctx->gs->gs;
-      poly_geometry_params_set_draw(&params, info->mode,
-                                    gsi->shape, gsi->max_indices,
-                                    draw->count, info->instance_count);
+      poly_geometry_params_set_draw(&params, info->mode, gsi->shape,
+                                    gsi->max_indices, draw->count,
+                                    info->instance_count);
 
       unsigned vb_size = poly_tcs_in_size(draw->count * info->instance_count,
                                           batch->uniforms.vertex_outputs);
@@ -4556,7 +4556,7 @@ agx_draw_patches(struct agx_context *ctx, const struct pipe_draw_info *info,
 
    batch->uniforms.vertex_outputs = ctx->vs->b.info.outputs;
 
-   const uint32_t wg_size[3] = { 64, 1, 1 };
+   const uint32_t wg_size[3] = {64, 1, 1};
 
    struct poly_vertex_params vp;
    poly_vertex_params_init(&vp, batch->ctx->vs->b.info.outputs, wg_size);
@@ -4672,10 +4672,10 @@ agx_draw_patches(struct agx_context *ctx, const struct pipe_draw_info *info,
       uint64_t grids =
          agx_pool_alloc_aligned(&batch->pool, grid_stride * 3, 4).gpu;
 
-      libagx_tess_setup_indirect(
-         batch, agx_1d(1), AGX_BARRIER_ALL, state, grids, vertex_state,
-         indirect_ptr, 0, 0, 0 /* XXX: Index buffer */,
-         ctx->vs->b.info.outputs, tcs_statistic);
+      libagx_tess_setup_indirect(batch, agx_1d(1), AGX_BARRIER_ALL, state,
+                                 grids, vertex_state, indirect_ptr, 0, 0,
+                                 0 /* XXX: Index buffer */,
+                                 ctx->vs->b.info.outputs, tcs_statistic);
 
       vs_grid = agx_grid_indirect_local(grids + 0 * grid_stride);
       tcs_grid = agx_grid_indirect_local(grids + 1 * grid_stride);
@@ -5138,9 +5138,9 @@ agx_draw_vbo(struct pipe_context *pctx, const struct pipe_draw_info *info,
          indirect_gs = (struct pipe_draw_indirect_info){
             .draw_count = 1,
             .buffer = &indirect_rsrc.base,
-            .offset = batch->uniforms.geometry_params
-                    - indirect_rsrc.bo->va->addr
-                    + offsetof(struct poly_geometry_params, draw),
+            .offset = batch->uniforms.geometry_params -
+                      indirect_rsrc.bo->va->addr +
+                      offsetof(struct poly_geometry_params, draw),
          };
 
          indirect = &indirect_gs;

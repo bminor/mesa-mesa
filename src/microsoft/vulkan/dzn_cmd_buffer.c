@@ -798,7 +798,7 @@ dzn_cmd_buffer_dynbitset_set_range(struct dzn_cmd_buffer *cmdbuf,
    if (result != VK_SUCCESS)
       return result;
 
-   BITSET_SET_BULK(util_dynarray_element(array, BITSET_WORD, 0), bit, count);
+   BITSET_SET_COUNT(util_dynarray_element(array, BITSET_WORD, 0), bit, count);
    return VK_SUCCESS;
 }
 
@@ -816,7 +816,7 @@ dzn_cmd_buffer_dynbitset_clear_range(struct dzn_cmd_buffer *cmdbuf,
 
    while (bit <= end) {
       uint32_t subcount = MIN2(end + 1 - bit, 32 - (bit % 32));
-      BITSET_CLEAR_BULK(util_dynarray_element(array, BITSET_WORD, 0), bit,
+      BITSET_CLEAR_COUNT(util_dynarray_element(array, BITSET_WORD, 0), bit,
                         subcount);
       bit += subcount;
    }
@@ -5143,7 +5143,7 @@ dzn_CmdBindPipeline(VkCommandBuffer commandBuffer,
          cmdbuf->state.vb.views[vb].StrideInBytes = gfx->vb.strides[vb];
 
       if (gfx->vb.count > 0)
-         BITSET_SET_BULK(cmdbuf->state.vb.dirty, 0, gfx->vb.count);
+         BITSET_SET_COUNT(cmdbuf->state.vb.dirty, 0, gfx->vb.count);
    }
 }
 
@@ -5483,7 +5483,7 @@ dzn_CmdBindVertexBuffers(VkCommandBuffer commandBuffer,
       vbviews[firstBinding + i].SizeInBytes = buf->size - pOffsets[i];
    }
 
-   BITSET_SET_BULK(cmdbuf->state.vb.dirty, firstBinding, bindingCount);
+   BITSET_SET_COUNT(cmdbuf->state.vb.dirty, firstBinding, bindingCount);
 }
 
 VKAPI_ATTR void VKAPI_CALL

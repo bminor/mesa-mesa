@@ -3550,7 +3550,7 @@ iris_set_sampler_views(struct pipe_context *ctx,
    if (count == 0 && unbind_num_trailing_slots == 0)
       return;
 
-   BITSET_CLEAR_BULK(shs->bound_sampler_views, start,
+   BITSET_CLEAR_COUNT(shs->bound_sampler_views, start,
                      count + unbind_num_trailing_slots);
 
    for (i = 0; i < count; i++) {

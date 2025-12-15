@@ -279,7 +279,7 @@ find_free_alias_regs_in_range(const reg_bitset *alloc_regs,
    assert(end >= num_aliases);
 
    for (unsigned reg = start; reg < end - num_aliases; reg++) {
-      if (!BITSET_TEST_BULK(*alloc_regs, reg, num_aliases)) {
+      if (!BITSET_TEST_COUNT(*alloc_regs, reg, num_aliases)) {
          return reg;
       }
    }
@@ -384,7 +384,7 @@ alloc_alias(struct alias_table_state *state, struct ir3_instruction *instr,
        */
       unsigned first_reg = alias->num - alias_n;
 
-      if (BITSET_TEST_BULK(*alloc_regs, first_reg, num_aliases)) {
+      if (BITSET_TEST_COUNT(*alloc_regs, first_reg, num_aliases)) {
          continue;
       }
 
@@ -426,8 +426,8 @@ alloc_alias(struct alias_table_state *state, struct ir3_instruction *instr,
 
    /* Mark used registers as allocated. */
    assert(best_reg + num_aliases <= GPR_REG_SIZE);
-   assert(!BITSET_TEST_BULK(*alloc_regs, best_reg, num_aliases));
-   BITSET_SET_BULK(*alloc_regs, best_reg, num_aliases);
+   assert(!BITSET_TEST_COUNT(*alloc_regs, best_reg, num_aliases));
+   BITSET_SET_COUNT(*alloc_regs, best_reg, num_aliases);
 
    /* Add the allocated registers that differ from the ones already used to the
     * alias table.

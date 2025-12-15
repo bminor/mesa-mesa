@@ -985,7 +985,8 @@ hk_CreateImage(VkDevice _device, const VkImageCreateInfo *pCreateInfo,
    VkResult result;
 
    if (wsi_common_is_swapchain_image(pCreateInfo))
-      return wsi_common_create_swapchain_image(&pdev->wsi_device, pCreateInfo, pImage);
+      return wsi_common_create_swapchain_image(&pdev->wsi_device, pCreateInfo,
+                                               pImage);
 
    image = vk_zalloc2(&dev->vk.alloc, pAllocator, sizeof(*image), 8,
                       VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);

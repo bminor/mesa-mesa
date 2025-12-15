@@ -372,7 +372,7 @@ void si_set_tracked_regs_to_clear_state(struct si_context *ctx)
    ctx->tracked_regs.reg_value[SI_TRACKED_CB_DCC_CONTROL] = 0;
 
    /* Set all cleared context registers to saved. */
-   BITSET_SET_BULK(ctx->tracked_regs.reg_saved_mask, 0,
+   BITSET_SET_COUNT(ctx->tracked_regs.reg_saved_mask, 0,
                    SI_NUM_TRACKED_CONTEXT_REGS);
 }
 
