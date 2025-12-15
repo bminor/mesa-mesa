@@ -227,13 +227,13 @@ __bitset_shl(BITSET_WORD *x, unsigned amount, unsigned n)
    (assert (!"BITSET_CLEAR_RANGE: bit range crosses word boundary"), 0))
 
 static inline bool
-__bitset_test_range(const BITSET_WORD *r, unsigned start, unsigned end)
+__bitset_test_range(const BITSET_WORD *r, int start, int end)
 {
    while (start <= end) {
       unsigned start_mod = start % BITSET_WORDBITS;
-      unsigned size = MIN2(BITSET_WORDBITS - start_mod, end - start + 1);
+      unsigned size = MIN2(BITSET_WORDBITS - start_mod, end - start + 1u);
 
-      if (!BITSET_TEST_RANGE_INSIDE_WORD(r, start, start + size - 1, 0))
+      if (!BITSET_TEST_RANGE_INSIDE_WORD(r, start, start + size - 1u, 0))
          return true;
 
       start += size;
@@ -246,13 +246,13 @@ __bitset_test_range(const BITSET_WORD *r, unsigned start, unsigned end)
    __bitset_test_range(x, b, e)
 
 static inline void
-__bitset_set_range(BITSET_WORD *r, unsigned start, unsigned end)
+__bitset_set_range(BITSET_WORD *r, int start, int end)
 {
    while (start <= end) {
       unsigned start_mod = start % BITSET_WORDBITS;
-      unsigned size = MIN2(BITSET_WORDBITS - start_mod, end - start + 1);
+      unsigned size = MIN2(BITSET_WORDBITS - start_mod, end - start + 1u);
 
-      BITSET_SET_RANGE_INSIDE_WORD(r, start, start + size - 1);
+      BITSET_SET_RANGE_INSIDE_WORD(r, start, start + size - 1u);
       start += size;
    }
 }
@@ -261,13 +261,13 @@ __bitset_set_range(BITSET_WORD *r, unsigned start, unsigned end)
    __bitset_set_range(x, b, e)
 
 static inline void
-__bitclear_clear_range(BITSET_WORD *r, unsigned start, unsigned end)
+__bitclear_clear_range(BITSET_WORD *r, int start, int end)
 {
    while (start <= end) {
       unsigned start_mod = start % BITSET_WORDBITS;
-      unsigned size = MIN2(BITSET_WORDBITS - start_mod, end - start + 1);
+      unsigned size = MIN2(BITSET_WORDBITS - start_mod, end - start + 1u);
 
-      BITSET_CLEAR_RANGE_INSIDE_WORD(r, start, start + size - 1);
+      BITSET_CLEAR_RANGE_INSIDE_WORD(r, start, start + size - 1u);
       start += size;
    }
 }
