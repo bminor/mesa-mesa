@@ -101,53 +101,6 @@ kk_encoder_start_render(struct kk_cmd_buffer *cmd,
    return encoder->main.encoder;
 }
 
-static mtl_compute_encoder *
-kk_encoder_start_compute(struct kk_cmd_buffer *cmd)
-{
-   struct kk_encoder *encoder = cmd->encoder;
-   /* We must not already be in a render encoder */
-   assert(encoder->main.last_used != KK_ENC_RENDER ||
-          encoder->main.encoder == NULL);
-   struct kk_encoder_internal *enc = &encoder->main;
-   if (encoder->main.last_used != KK_ENC_COMPUTE) {
-      kk_encoder_signal_fence_and_end(cmd);
-      enc->encoder = mtl_new_compute_command_encoder(enc->cmd_buffer);
-      if (enc->wait_fence) {
-         mtl_compute_wait_for_fence(
-            enc->encoder, util_dynarray_top(&enc->fences, mtl_fence *));
-         enc->wait_fence = false;
-      }
-      enc->user_heap_hash = UINT32_MAX;
-
-      /* Bind read only data aka samplers' argument buffer. */
-      struct kk_device *dev = kk_cmd_buffer_device(cmd);
-      mtl_compute_set_buffer(enc->encoder, dev->samplers.table.bo->map, 0u, 1u);
-   }
-   encoder->main.last_used = KK_ENC_COMPUTE;
-   return encoder->main.encoder;
-}
-
-static mtl_compute_encoder *
-kk_encoder_start_blit(struct kk_cmd_buffer *cmd)
-{
-   struct kk_encoder *encoder = cmd->encoder;
-   /* We must not already be in a render encoder */
-   assert(encoder->main.last_used != KK_ENC_RENDER ||
-          encoder->main.encoder == NULL);
-   struct kk_encoder_internal *enc = &encoder->main;
-   if (encoder->main.last_used != KK_ENC_BLIT) {
-      kk_encoder_signal_fence_and_end(cmd);
-      enc->encoder = mtl_new_blit_command_encoder(enc->cmd_buffer);
-      if (enc->wait_fence) {
-         mtl_compute_wait_for_fence(
-            enc->encoder, util_dynarray_top(&enc->fences, mtl_fence *));
-         enc->wait_fence = false;
-      }
-   }
-   encoder->main.last_used = KK_ENC_BLIT;
-   return encoder->main.encoder;
-}
-
 void
 kk_encoder_end(struct kk_cmd_buffer *cmd)
 {
@@ -321,19 +274,45 @@ kk_render_encoder(struct kk_cmd_buffer *cmd)
 mtl_compute_encoder *
 kk_compute_encoder(struct kk_cmd_buffer *cmd)
 {
-   struct kk_encoder *encoder = cmd->encoder;
-   return encoder->main.last_used == KK_ENC_COMPUTE
-             ? (mtl_blit_encoder *)encoder->main.encoder
-             : kk_encoder_start_compute(cmd);
+   struct kk_encoder_internal *encoder = &cmd->encoder->main;
+
+   if (encoder->last_used == KK_ENC_COMPUTE)
+      return (mtl_compute_encoder *)encoder->encoder;
+
+   kk_encoder_signal_fence_and_end(cmd);
+   encoder->encoder = mtl_new_compute_command_encoder(encoder->cmd_buffer);
+   if (encoder->wait_fence) {
+      mtl_compute_wait_for_fence(
+         encoder->encoder, util_dynarray_top(&encoder->fences, mtl_fence *));
+      encoder->wait_fence = false;
+   }
+   encoder->user_heap_hash = UINT32_MAX;
+
+   /* Bind read only data aka samplers' argument buffer. */
+   struct kk_device *dev = kk_cmd_buffer_device(cmd);
+   mtl_compute_set_buffer(encoder->encoder, dev->samplers.table.bo->map, 0u,
+                          1u);
+   encoder->last_used = KK_ENC_COMPUTE;
+   return (mtl_compute_encoder *)encoder->encoder;
 }
 
 mtl_blit_encoder *
 kk_blit_encoder(struct kk_cmd_buffer *cmd)
 {
-   struct kk_encoder *encoder = cmd->encoder;
-   return encoder->main.last_used == KK_ENC_BLIT
-             ? (mtl_blit_encoder *)encoder->main.encoder
-             : kk_encoder_start_blit(cmd);
+   struct kk_encoder_internal *encoder = &cmd->encoder->main;
+
+   if (encoder->last_used == KK_ENC_BLIT)
+      return (mtl_blit_encoder *)encoder->encoder;
+
+   kk_encoder_signal_fence_and_end(cmd);
+   encoder->encoder = mtl_new_blit_command_encoder(encoder->cmd_buffer);
+   if (encoder->wait_fence) {
+      mtl_compute_wait_for_fence(
+         encoder->encoder, util_dynarray_top(&encoder->fences, mtl_fence *));
+      encoder->wait_fence = false;
+   }
+   encoder->last_used = KK_ENC_BLIT;
+   return (mtl_blit_encoder *)encoder->encoder;
 }
 
 static mtl_compute_encoder *
