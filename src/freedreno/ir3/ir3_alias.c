@@ -279,7 +279,7 @@ find_free_alias_regs_in_range(const reg_bitset *alloc_regs,
    assert(end >= num_aliases);
 
    for (unsigned reg = start; reg < end - num_aliases; reg++) {
-      if (!BITSET_TEST_RANGE(*alloc_regs, reg, reg + num_aliases - 1)) {
+      if (!BITSET_TEST_BULK(*alloc_regs, reg, num_aliases)) {
          return reg;
       }
    }

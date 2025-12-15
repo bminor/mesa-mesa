@@ -184,7 +184,7 @@ gather_cf(nir_builder *b, nir_intrinsic_instr *intr, void *data)
       unsigned location = sem.location + nir_src_as_uint(*offset);
       unsigned start_comp = (location * 4) + nir_intrinsic_component(intr);
 
-      BITSET_SET_RANGE(set, start_comp, start_comp + nr - 1);
+      BITSET_SET_BULK(set, start_comp, nr);
    } else {
       unsigned start_comp = (sem.location * 4) + nir_intrinsic_component(intr);
       bool compact = sem.location == VARYING_SLOT_CLIP_DIST0 ||
@@ -197,8 +197,7 @@ gather_cf(nir_builder *b, nir_intrinsic_instr *intr, void *data)
       nr = stride;
 
       for (unsigned i = 0; i < sem.num_slots; ++i) {
-         BITSET_SET_RANGE(set, start_comp + (i * stride),
-                          start_comp + (i * stride) + nr - 1);
+         BITSET_SET_BULK(set, start_comp + (i * stride), nr);
       }
    }
 
