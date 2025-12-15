@@ -210,74 +210,67 @@ upload_queue_writes(struct kk_cmd_buffer *cmd)
    kk_encoder_signal_fence_and_end(cmd);
 }
 
-static struct kk_encoder_internal *
-kk_encoder_get_internal(struct kk_encoder *encoder, enum kk_encoder_type type)
+static void
+kk_encoder_signal_fence(struct kk_encoder *encoder)
 {
+   assert(encoder);
+   enum kk_encoder_type type = encoder->main.last_used;
+   struct kk_encoder_internal *main_enc = &encoder->main;
+   if (!main_enc->encoder)
+      return;
+
+   mtl_fence *fence = mtl_new_fence(encoder->dev);
    switch (type) {
-   case KK_ENC_NONE:
-      assert(encoder->main.last_used == KK_ENC_NONE);
-      return NULL;
    case KK_ENC_RENDER:
-      assert(encoder->main.last_used == KK_ENC_RENDER);
-      return &encoder->main;
+      mtl_render_update_fence(main_enc->encoder, fence);
+      break;
    case KK_ENC_COMPUTE:
-      assert(encoder->main.last_used == KK_ENC_COMPUTE);
-      return &encoder->main;
+      mtl_compute_update_fence(main_enc->encoder, fence);
+      break;
    case KK_ENC_BLIT:
-      assert(encoder->main.last_used == KK_ENC_BLIT);
-      return &encoder->main;
+      mtl_blit_update_fence(main_enc->encoder, fence);
+      break;
    default:
       assert(0);
-      return NULL;
+      break;
    }
+   main_enc->wait_fence = true;
+   util_dynarray_append(&main_enc->fences, fence);
+}
+
+static void
+kk_encoder_internal_end_encoding(struct kk_encoder_internal *internal_encoder)
+{
+   assert(internal_encoder && internal_encoder->encoder);
+
+   mtl_end_encoding(internal_encoder->encoder);
+   mtl_release(internal_encoder->encoder);
+   internal_encoder->encoder = NULL;
+   internal_encoder->last_used = KK_ENC_NONE;
 }
 
 void
 kk_encoder_signal_fence_and_end(struct kk_cmd_buffer *cmd)
 {
    struct kk_encoder *encoder = cmd->encoder;
+   assert(encoder);
    /* End pre_gfx */
    if (encoder->pre_gfx.encoder) {
-      mtl_end_encoding(encoder->pre_gfx.encoder);
-      mtl_release(encoder->pre_gfx.encoder);
-      encoder->pre_gfx.encoder = NULL;
+      kk_encoder_internal_end_encoding(&encoder->pre_gfx);
 
       /* We can start rendering once all pre-graphics work is done */
       mtl_encode_signal_event(encoder->pre_gfx.cmd_buffer, encoder->event,
                               encoder->event_value);
    }
 
-   assert(encoder);
-   enum kk_encoder_type type = encoder->main.last_used;
-   struct kk_encoder_internal *enc = kk_encoder_get_internal(encoder, type);
-   if (!enc || !enc->encoder)
+   if (encoder->main.last_used == KK_ENC_NONE)
       return;
 
-   mtl_fence *fence = mtl_new_fence(encoder->dev);
-   switch (type) {
-   case KK_ENC_RENDER:
-      mtl_render_update_fence(enc->encoder, fence);
-      break;
-   case KK_ENC_COMPUTE:
-      mtl_compute_update_fence(enc->encoder, fence);
-      break;
-   case KK_ENC_BLIT:
-      mtl_blit_update_fence(enc->encoder, fence);
-      break;
-   default:
-      assert(0);
-      break;
-   }
-
-   mtl_end_encoding(enc->encoder);
-   mtl_release(enc->encoder);
-   enc->encoder = NULL;
-   enc->last_used = KK_ENC_NONE;
-   enc->wait_fence = true;
-   util_dynarray_append(&enc->fences, fence);
+   kk_encoder_signal_fence(encoder);
+   kk_encoder_internal_end_encoding(&encoder->main);
 
    if (cmd->drawable) {
-      mtl_present_drawable(enc->cmd_buffer, cmd->drawable);
+      mtl_present_drawable(encoder->main.cmd_buffer, cmd->drawable);
       cmd->drawable = NULL;
    }
    upload_queue_writes(cmd);
