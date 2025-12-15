@@ -4,7 +4,7 @@
         "description": "ac/descriptors: account for num_storage_samples for gfx10",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "3424e16ecedf9f47ca8e020b1ad4a899a3956ce0",
         "notes": null

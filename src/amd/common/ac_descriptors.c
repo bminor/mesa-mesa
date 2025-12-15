@@ -438,7 +438,11 @@ ac_build_gfx10_texture_descriptor(const struct radeon_info *info, const struct a
    const struct util_format_description *fmt_desc = util_format_description(state->format);
    const uint32_t img_format = ac_get_gfx10_img_format(info->gfx_level, state);
    const struct ac_surf_nbc_view *nbc_view = state->gfx10.nbc_view;
-   const uint32_t field_last_level = state->num_samples > 1 ? util_logbase2(state->num_samples) : state->last_level;
+   uint32_t num_samples;
+
+   num_samples = fmt_desc->colorspace == UTIL_FORMAT_COLORSPACE_ZS ? MAX2(1, state->num_samples) :
+                                                                     MAX2(1, state->num_storage_samples);
+   const uint32_t field_last_level = num_samples > 1 ? util_logbase2(num_samples) : state->last_level;
 
    desc[0] = 0;
    desc[1] = S_00A004_FORMAT_GFX10(img_format) |
@@ -450,7 +454,7 @@ ac_build_gfx10_texture_descriptor(const struct radeon_info *info, const struct a
              S_00A00C_DST_SEL_Y(ac_map_swizzle(state->swizzle[1])) |
              S_00A00C_DST_SEL_Z(ac_map_swizzle(state->swizzle[2])) |
              S_00A00C_DST_SEL_W(ac_map_swizzle(state->swizzle[3])) |
-             S_00A00C_BASE_LEVEL(state->num_samples > 1 ? 0 : state->first_level) |
+             S_00A00C_BASE_LEVEL(num_samples > 1 ? 0 : state->first_level) |
              S_00A00C_LAST_LEVEL_GFX10(field_last_level) |
              S_00A00C_BC_SWIZZLE(ac_border_color_swizzle(fmt_desc)) |
              S_00A00C_TYPE(state->type);
@@ -469,7 +473,7 @@ ac_build_gfx10_texture_descriptor(const struct radeon_info *info, const struct a
    desc[6] = 0;
    desc[7] = 0;
 
-   uint32_t max_mip = state->num_samples > 1 ? util_logbase2(state->num_samples) : state->num_levels - 1;
+   uint32_t max_mip = num_samples > 1 ? util_logbase2(num_samples) : state->num_levels - 1;
    if (nbc_view && nbc_view->valid)
       max_mip = nbc_view->num_levels - 1;
 
