@@ -163,6 +163,7 @@ kk_get_device_features(
       .inheritedQueries = true,
       .logicOp = true,
       .multiViewport = true,
+      .occlusionQueryPrecise = true,
       .robustBufferAccess = true,
       .samplerAnisotropy = true,
       .shaderClipDistance = true,
