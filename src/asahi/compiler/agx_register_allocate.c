@@ -752,11 +752,10 @@ assign_regs(struct ra_ctx *rctx, agx_index v, unsigned reg)
    BITSET_SET(rctx->visited, v.value);
 
    assert(rctx->ncomps[v.value] >= 1);
-   unsigned end = reg + rctx->ncomps[v.value] - 1;
-
-   assert(!BITSET_TEST_RANGE(rctx->used_regs[cls], reg, end) &&
+   assert(!BITSET_TEST_BULK(rctx->used_regs[cls], reg, rctx->ncomps[v.value]) &&
           "no interference");
-   BITSET_SET_RANGE(rctx->used_regs[cls], reg, end);
+
+   BITSET_SET_BULK(rctx->used_regs[cls], reg, rctx->ncomps[v.value]);
 
    /* Phi webs need to remember which register they're assigned to */
    struct phi_web_node *node =
@@ -1071,7 +1070,7 @@ agx_ra_assign_local(struct ra_ctx *rctx)
 
    /* Reserve bottom registers as temporaries for parallel copy lowering */
    if (rctx->shader->has_spill_pcopy_reserved) {
-      BITSET_SET_RANGE(used_regs_gpr, 0, 7);
+      BITSET_SET_BULK(used_regs_gpr, 0, 8);
    }
 
    agx_foreach_instr_in_block(block, I) {
@@ -1097,12 +1096,8 @@ agx_ra_assign_local(struct ra_ctx *rctx)
                assign_regs(rctx, I->dest[d], offset_reg);
          }
 
-         unsigned excess =
-            rctx->ncomps[I->src[0].value] - (I->nr_dests * width);
-         if (excess) {
-            BITSET_CLEAR_RANGE(used_regs_gpr, reg + (I->nr_dests * width),
-                               reg + rctx->ncomps[I->src[0].value] - 1);
-         }
+         unsigned trail = rctx->ncomps[I->src[0].value] - (I->nr_dests * width);
+         BITSET_CLEAR_BULK(used_regs_gpr, reg + (I->nr_dests * width), trail);
 
          agx_set_sources(rctx, I);
          agx_set_dests(rctx, I);

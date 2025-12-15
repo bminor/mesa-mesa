@@ -241,10 +241,9 @@ assign_coefficient_regs(nir_shader *nir, struct agx_varyings_fs *var)
    static_assert(VARYING_SLOT_POS == 0, "special and handled first");
 
    for (unsigned i = VARYING_SLOT_POS + 1; i < VARYING_SLOT_MAX; ++i) {
-      bool smooth = BITSET_TEST_RANGE(info.smooth, i * 4, (i * 4) + 3);
-      bool flat = BITSET_TEST_RANGE(info.flat, i * 4, (i * 4) + 3);
-      bool noperspective =
-         BITSET_TEST_RANGE(info.noperspective, i * 4, (i * 4) + 3);
+      bool smooth = BITSET_TEST_BULK(info.smooth, i * 4, 4);
+      bool flat = BITSET_TEST_BULK(info.flat, i * 4, 4);
+      bool noperspective = BITSET_TEST_BULK(info.noperspective, i * 4, 4);
 
       if (!(smooth || flat || noperspective))
          continue;

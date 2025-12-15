@@ -857,7 +857,7 @@ panvk_per_arch(cmd_prepare_draw_sysvals)(struct panvk_cmd_buffer *cmdbuf,
        * they are not read at all, so clear the dirty bits to avoid re-emitting
        * FAUs when we can. */
       if (!cmdbuf->state.gfx.cb.info.shader_loads_blend_const)
-         BITSET_CLEAR_RANGE(dirty_shader_sysvals, 0, 3);
+         BITSET_CLEAR_BULK(dirty_shader_sysvals, 0, 4);
 
       if (!BITSET_IS_EMPTY(dirty_shader_sysvals))
          gfx_state_set_dirty(cmdbuf, FS_PUSH_UNIFORMS);
