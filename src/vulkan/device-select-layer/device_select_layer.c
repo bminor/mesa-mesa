@@ -43,8 +43,6 @@
 #include "vk_util.h"
 
 static struct hash_table *device_select_instance_ht = NULL;
-static struct hash_table *device_select_physdev_ht = NULL;
-static struct hash_table *device_select_device_ht = NULL;
 static simple_mtx_t device_select_mutex = SIMPLE_MTX_INITIALIZER;
 
 static void
@@ -60,7 +58,7 @@ device_select_layer_add_instance(VkInstance instance, struct instance_info *info
 }
 
 static struct instance_info *
-device_select_layer_get_instance_info(VkInstance instance)
+device_select_layer_get_instance(VkInstance instance)
 {
    struct hash_entry *entry;
    struct instance_info *info = NULL;
@@ -77,21 +75,6 @@ device_select_layer_remove_instance(VkInstance instance)
 {
    simple_mtx_lock(&device_select_mutex);
 
-   /* Remove all entries in the physdev table corresponding to this VkInstance */
-   for (struct hash_entry *entry = _mesa_hash_table_next_entry(device_select_physdev_ht, NULL);
-         entry != NULL;
-         entry = _mesa_hash_table_next_entry(device_select_physdev_ht, entry))
-   {
-      if (entry->data == (void*)instance) {
-         _mesa_hash_table_remove(device_select_physdev_ht, entry);
-      }
-   }
-
-   if (_mesa_hash_table_num_entries(device_select_physdev_ht) == 0) {
-      _mesa_hash_table_destroy(device_select_physdev_ht, NULL);
-      device_select_physdev_ht = NULL;
-   }
-
    _mesa_hash_table_remove_key(device_select_instance_ht, instance);
 
    if (_mesa_hash_table_num_entries(device_select_instance_ht) == 0) {
@@ -99,71 +82,6 @@ device_select_layer_remove_instance(VkInstance instance)
       device_select_instance_ht = NULL;
    }
 
-   simple_mtx_unlock(&device_select_mutex);
-}
-
-static void
-device_select_layer_add_physdev(VkPhysicalDevice physdev, VkInstance instance)
-{
-   simple_mtx_lock(&device_select_mutex);
-
-   if (!device_select_physdev_ht)
-      device_select_physdev_ht = _mesa_pointer_hash_table_create(NULL);
-   _mesa_hash_table_insert(device_select_physdev_ht, physdev, instance);
-
-   simple_mtx_unlock(&device_select_mutex);
-}
-
-static VkInstance
-device_select_layer_get_instance_from_physdev(VkPhysicalDevice physdev)
-{
-   struct hash_entry *entry;
-   VkInstance instance = NULL;
-   simple_mtx_lock(&device_select_mutex);
-   entry = _mesa_hash_table_search(device_select_physdev_ht, (void *)physdev);
-   if (entry)
-      instance = (VkInstance)entry->data;
-   simple_mtx_unlock(&device_select_mutex);
-   return instance;
-}
-
-static void
-device_select_layer_add_device(VkDevice device, struct device_info *info)
-{
-   simple_mtx_lock(&device_select_mutex);
-
-   if (!device_select_device_ht)
-      device_select_device_ht = _mesa_pointer_hash_table_create(NULL);
-   _mesa_hash_table_insert(device_select_device_ht, device, info);
-
-   simple_mtx_unlock(&device_select_mutex);
-}
-
-static struct device_info *
-device_select_layer_get_device(VkDevice device)
-{
-   struct hash_entry *entry;
-   struct device_info *info = NULL;
-   simple_mtx_lock(&device_select_mutex);
-   entry = _mesa_hash_table_search(device_select_device_ht, (void *)device);
-   if (entry)
-      info = (struct device_info *)entry->data;
-
-   simple_mtx_unlock(&device_select_mutex);
-   return info;
-}
-
-static void
-device_select_layer_remove_device(VkDevice device)
-{
-   simple_mtx_lock(&device_select_mutex);
-
-   _mesa_hash_table_remove_key(device_select_device_ht, device);
-
-   if (_mesa_hash_table_num_entries(device_select_device_ht) == 0) {
-      _mesa_hash_table_destroy(device_select_device_ht, NULL);
-      device_select_device_ht = NULL;
-   }
    simple_mtx_unlock(&device_select_mutex);
 }
 
@@ -263,7 +181,7 @@ device_select_CreateInstance(const VkInstanceCreateInfo *pCreateInfo,
 static void
 device_select_DestroyInstance(VkInstance instance, const VkAllocationCallbacks *pAllocator)
 {
-   struct instance_info *info = device_select_layer_get_instance_info(instance);
+   struct instance_info *info = device_select_layer_get_instance(instance);
 
    device_select_layer_remove_instance(instance);
    info->DestroyInstance(instance, pAllocator);
@@ -328,7 +246,7 @@ static VkResult
 device_select_EnumeratePhysicalDevices(VkInstance instance, uint32_t *pPhysicalDeviceCount,
                                        VkPhysicalDevice *pPhysicalDevices)
 {
-   struct instance_info *info = device_select_layer_get_instance_info(instance);
+   struct instance_info *info = device_select_layer_get_instance(instance);
    uint32_t physical_device_count = 0;
    uint32_t selected_physical_device_count = 0;
    bool expose_only_one_dev = false;
@@ -403,7 +321,6 @@ device_select_EnumeratePhysicalDevices(VkInstance instance, uint32_t *pPhysicalD
       vk_outarray_append_typed(VkPhysicalDevice, &out, ent)
       {
          *ent = selected_physical_devices[i];
-         device_select_layer_add_physdev(selected_physical_devices[i], instance);
       }
    }
    result = vk_outarray_status(&out);
@@ -418,7 +335,7 @@ device_select_EnumeratePhysicalDeviceGroups(VkInstance instance,
                                             uint32_t *pPhysicalDeviceGroupCount,
                                             VkPhysicalDeviceGroupProperties *pPhysicalDeviceGroups)
 {
-   struct instance_info *info = device_select_layer_get_instance_info(instance);
+   struct instance_info *info = device_select_layer_get_instance(instance);
    uint32_t physical_device_group_count = 0;
    uint32_t selected_physical_device_group_count = 0;
    if (info->zink && info->xwayland)
@@ -483,9 +400,6 @@ device_select_EnumeratePhysicalDeviceGroups(VkInstance instance,
       vk_outarray_append_typed(VkPhysicalDeviceGroupProperties, &out, ent)
       {
          *ent = selected_physical_device_groups[i];
-         for (int physDevIdx = 0; physDevIdx < selected_physical_device_groups[i].physicalDeviceCount; physDevIdx++) {
-            device_select_layer_add_physdev(selected_physical_device_groups[i].physicalDevices[physDevIdx], instance);
-         }
       }
    }
    result = vk_outarray_status(&out);
@@ -493,55 +407,6 @@ out:
    free(physical_device_groups);
    free(selected_physical_device_groups);
    return result;
-}
-
-static VkResult device_select_CreateDevice(VkPhysicalDevice physicalDevice,
-                    const VkDeviceCreateInfo *pCreateInfo,
-					     const VkAllocationCallbacks *pAllocator,
-					     VkDevice *pDevice)
-{
-   VkInstance instance = device_select_layer_get_instance_from_physdev(physicalDevice);
-
-   VkLayerDeviceCreateInfo *chain_info;
-   for(chain_info = (VkLayerDeviceCreateInfo*)pCreateInfo->pNext; chain_info; chain_info = (VkLayerDeviceCreateInfo*)chain_info->pNext)
-      if(chain_info->sType == VK_STRUCTURE_TYPE_LOADER_DEVICE_CREATE_INFO && chain_info->function == VK_LAYER_LINK_INFO)
-         break;
-
-   assert(chain_info->u.pLayerInfo);
-
-   PFN_vkGetInstanceProcAddr GetInstanceProcAddr = chain_info->u.pLayerInfo->pfnNextGetInstanceProcAddr;
-   PFN_vkGetDeviceProcAddr GetDeviceProcAddr = chain_info->u.pLayerInfo->pfnNextGetDeviceProcAddr;
-   PFN_vkCreateDevice fpCreateDevice = (PFN_vkCreateDevice)GetInstanceProcAddr(instance, "vkCreateDevice");
-   if (fpCreateDevice == NULL) {
-      return VK_ERROR_INITIALIZATION_FAILED;
-   }
-
-   chain_info->u.pLayerInfo = chain_info->u.pLayerInfo->pNext;
-
-   VkResult result = fpCreateDevice(physicalDevice, pCreateInfo, pAllocator, pDevice);
-   if (result != VK_SUCCESS) {
-      return result;
-   }
-
-   struct device_info *device_info = (struct device_info *)calloc(1, sizeof(struct device_info));
-   device_info->GetDeviceProcAddr = GetDeviceProcAddr;
-
-#define DEVSEL_GET_CB(func) device_info->func = (PFN_vk##func)device_info->GetDeviceProcAddr(*pDevice, "vk" #func)
-   DEVSEL_GET_CB(DestroyDevice);
-#undef DEVSEL_GET_CB
-
-   device_select_layer_add_device(*pDevice, device_info);
-
-   return VK_SUCCESS;
-}
-
-static void device_select_DestroyDevice(VkDevice device, const VkAllocationCallbacks* pAllocator)
-{
-   struct device_info *info = device_select_layer_get_device(device);
-
-   device_select_layer_remove_device(device);
-   info->DestroyDevice(device, pAllocator);
-   free(info);
 }
 
 static void (*get_instance_proc_addr(VkInstance instance, const char *name))()
@@ -556,22 +421,9 @@ static void (*get_instance_proc_addr(VkInstance instance, const char *name))()
       return (void (*)())device_select_EnumeratePhysicalDevices;
    if (strcmp(name, "vkEnumeratePhysicalDeviceGroups") == 0)
       return (void (*)())device_select_EnumeratePhysicalDeviceGroups;
-   if (strcmp(name, "vkCreateDevice") == 0)
-      return (void(*)())device_select_CreateDevice;
 
-   struct instance_info *info = device_select_layer_get_instance_info(instance);
+   struct instance_info *info = device_select_layer_get_instance(instance);
    return info->GetInstanceProcAddr(instance, name);
-}
-
-static void  (*get_device_proc_addr(VkDevice device, const char* name))()
-{
-   if (strcmp(name, "vkGetDeviceProcAddr") == 0)
-      return (void(*)())get_device_proc_addr;
-   if (strcmp(name, "vkDestroyDevice") == 0)
-      return (void(*)())device_select_DestroyDevice;
-
-   struct device_info *info = device_select_layer_get_device(device);
-   return info->GetDeviceProcAddr(device, name);
 }
 
 PUBLIC VkResult
@@ -582,8 +434,6 @@ vkNegotiateLoaderLayerInterfaceVersion(VkNegotiateLayerInterface *pVersionStruct
    pVersionStruct->loaderLayerInterfaceVersion = 2;
 
    pVersionStruct->pfnGetInstanceProcAddr = get_instance_proc_addr;
-   pVersionStruct->pfnGetDeviceProcAddr = get_device_proc_addr;
-   pVersionStruct->pfnGetPhysicalDeviceProcAddr = NULL;
 
    return VK_SUCCESS;
 }
