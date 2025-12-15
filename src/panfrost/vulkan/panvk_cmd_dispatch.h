@@ -52,8 +52,7 @@ struct panvk_cmd_compute_state {
       if (memcmp(&(__cmdbuf)->state.compute.sysvals.__name,                    \
                  &__new_sysval.__name, sizeof(__new_sysval.__name))) {         \
          (__cmdbuf)->state.compute.sysvals.__name = __new_sysval.__name;       \
-         BITSET_SET_RANGE(__dirty, sysval_fau_start(compute, __name),          \
-                          sysval_fau_start(compute, __name));                  \
+         BITSET_SET(__dirty, sysval_fau_start(compute, __name)); \
       }                                                                        \
    } while (0)
 
