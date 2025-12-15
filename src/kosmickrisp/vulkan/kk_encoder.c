@@ -167,9 +167,6 @@ upload_queue_writes(struct kk_cmd_buffer *cmd)
       }
       enc->copy_query_pool_result_infos.size = 0u;
    }
-
-   /* All immediate write done, reset encoder */
-   kk_encoder_signal_fence_and_end(cmd);
 }
 
 static void

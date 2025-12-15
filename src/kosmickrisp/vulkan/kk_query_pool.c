@@ -424,6 +424,7 @@ kk_CmdCopyQueryPoolResults(VkCommandBuffer commandBuffer, VkQueryPool queryPool,
 
    util_dynarray_append(&cmd->encoder->copy_query_pool_result_infos, info);
    /* If we are not mid encoder, just upload the writes */
-   if (cmd->encoder->main.last_used == KK_ENC_NONE)
+   enum kk_encoder_type last_used = cmd->encoder->main.last_used;
+   if (last_used == KK_ENC_NONE || last_used == KK_ENC_COMPUTE)
       upload_queue_writes(cmd);
 }

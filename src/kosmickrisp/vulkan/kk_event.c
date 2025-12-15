@@ -96,10 +96,9 @@ kk_CmdSetEvent2(VkCommandBuffer commandBuffer, VkEvent _event,
    VK_FROM_HANDLE(kk_cmd_buffer, cmd, commandBuffer);
    enum kk_encoder_type last_used = cmd->encoder->main.last_used;
    kk_cmd_write(cmd, event->bo->map, event->addr, VK_EVENT_SET);
-   if (last_used != KK_ENC_NONE)
-      kk_encoder_signal_fence_and_end(cmd);
-   else
+   if (last_used == KK_ENC_NONE || last_used == KK_ENC_COMPUTE)
       upload_queue_writes(cmd);
+   kk_encoder_signal_fence_and_end(cmd);
 
    /* If we were inside a render pass, restart it loading attachments */
    if (last_used == KK_ENC_RENDER) {
@@ -119,10 +118,9 @@ kk_CmdResetEvent2(VkCommandBuffer commandBuffer, VkEvent _event,
    VK_FROM_HANDLE(kk_cmd_buffer, cmd, commandBuffer);
    enum kk_encoder_type last_used = cmd->encoder->main.last_used;
    kk_cmd_write(cmd, event->bo->map, event->addr, VK_EVENT_RESET);
-   if (last_used != KK_ENC_NONE)
-      kk_encoder_signal_fence_and_end(cmd);
-   else
+   if (last_used == KK_ENC_NONE || last_used == KK_ENC_COMPUTE)
       upload_queue_writes(cmd);
+   kk_encoder_signal_fence_and_end(cmd);
 
    /* If we were inside a render pass, restart it loading attachments */
    if (last_used == KK_ENC_RENDER) {
