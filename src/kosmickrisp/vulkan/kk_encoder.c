@@ -101,7 +101,7 @@ kk_encoder_start_render(struct kk_cmd_buffer *cmd,
    return encoder->main.encoder;
 }
 
-mtl_compute_encoder *
+static mtl_compute_encoder *
 kk_encoder_start_compute(struct kk_cmd_buffer *cmd)
 {
    struct kk_encoder *encoder = cmd->encoder;
@@ -127,7 +127,7 @@ kk_encoder_start_compute(struct kk_cmd_buffer *cmd)
    return encoder->main.encoder;
 }
 
-mtl_compute_encoder *
+static mtl_compute_encoder *
 kk_encoder_start_blit(struct kk_cmd_buffer *cmd)
 {
    struct kk_encoder *encoder = cmd->encoder;
@@ -208,6 +208,28 @@ upload_queue_writes(struct kk_cmd_buffer *cmd)
 
    /* All immediate write done, reset encoder */
    kk_encoder_signal_fence_and_end(cmd);
+}
+
+static struct kk_encoder_internal *
+kk_encoder_get_internal(struct kk_encoder *encoder, enum kk_encoder_type type)
+{
+   switch (type) {
+   case KK_ENC_NONE:
+      assert(encoder->main.last_used == KK_ENC_NONE);
+      return NULL;
+   case KK_ENC_RENDER:
+      assert(encoder->main.last_used == KK_ENC_RENDER);
+      return &encoder->main;
+   case KK_ENC_COMPUTE:
+      assert(encoder->main.last_used == KK_ENC_COMPUTE);
+      return &encoder->main;
+   case KK_ENC_BLIT:
+      assert(encoder->main.last_used == KK_ENC_BLIT);
+      return &encoder->main;
+   default:
+      assert(0);
+      return NULL;
+   }
 }
 
 void
@@ -319,28 +341,6 @@ kk_blit_encoder(struct kk_cmd_buffer *cmd)
    return encoder->main.last_used == KK_ENC_BLIT
              ? (mtl_blit_encoder *)encoder->main.encoder
              : kk_encoder_start_blit(cmd);
-}
-
-struct kk_encoder_internal *
-kk_encoder_get_internal(struct kk_encoder *encoder, enum kk_encoder_type type)
-{
-   switch (type) {
-   case KK_ENC_NONE:
-      assert(encoder->main.last_used == KK_ENC_NONE);
-      return NULL;
-   case KK_ENC_RENDER:
-      assert(encoder->main.last_used == KK_ENC_RENDER);
-      return &encoder->main;
-   case KK_ENC_COMPUTE:
-      assert(encoder->main.last_used == KK_ENC_COMPUTE);
-      return &encoder->main;
-   case KK_ENC_BLIT:
-      assert(encoder->main.last_used == KK_ENC_BLIT);
-      return &encoder->main;
-   default:
-      assert(0);
-      return NULL;
-   }
 }
 
 static mtl_compute_encoder *

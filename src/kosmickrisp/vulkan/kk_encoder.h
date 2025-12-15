@@ -89,10 +89,6 @@ kk_encoder_start_render(struct kk_cmd_buffer *cmd,
                         mtl_render_pass_descriptor *descriptor,
                         uint32_t view_mask);
 
-mtl_compute_encoder *kk_encoder_start_compute(struct kk_cmd_buffer *cmd);
-
-mtl_compute_encoder *kk_encoder_start_blit(struct kk_cmd_buffer *cmd);
-
 /* Ends encoding on all command buffers */
 void kk_encoder_end(struct kk_cmd_buffer *cmd);
 
@@ -104,9 +100,6 @@ mtl_render_encoder *kk_render_encoder(struct kk_cmd_buffer *cmd);
 mtl_compute_encoder *kk_compute_encoder(struct kk_cmd_buffer *cmd);
 
 mtl_blit_encoder *kk_blit_encoder(struct kk_cmd_buffer *cmd);
-
-struct kk_encoder_internal *kk_encoder_get_internal(struct kk_encoder *encoder,
-                                                    enum kk_encoder_type type);
 
 void upload_queue_writes(struct kk_cmd_buffer *cmd);
 
