@@ -94,20 +94,11 @@ kk_CmdSetEvent2(VkCommandBuffer commandBuffer, VkEvent _event,
 {
    VK_FROM_HANDLE(kk_event, event, _event);
    VK_FROM_HANDLE(kk_cmd_buffer, cmd, commandBuffer);
-   enum kk_encoder_type last_used = cmd->encoder->main.last_used;
    kk_cmd_write(cmd, event->bo->map, event->addr, VK_EVENT_SET);
-   if (last_used == KK_ENC_NONE || last_used == KK_ENC_COMPUTE)
-      upload_queue_writes(cmd);
-   kk_encoder_signal_fence_and_end(cmd);
 
-   /* If we were inside a render pass, restart it loading attachments */
-   if (last_used == KK_ENC_RENDER) {
-      struct kk_graphics_state *state = &cmd->state.gfx;
-      assert(state->render_pass_descriptor);
-      kk_encoder_start_render(cmd, state->render_pass_descriptor,
-                              state->render.view_mask);
-      kk_cmd_buffer_dirty_all_gfx(cmd);
-   }
+   /* Can only be called from outside of a render pass, which means we can
+    * directly upload the writes. */
+   upload_queue_writes(cmd);
 }
 
 VKAPI_ATTR void VKAPI_CALL
@@ -116,20 +107,11 @@ kk_CmdResetEvent2(VkCommandBuffer commandBuffer, VkEvent _event,
 {
    VK_FROM_HANDLE(kk_event, event, _event);
    VK_FROM_HANDLE(kk_cmd_buffer, cmd, commandBuffer);
-   enum kk_encoder_type last_used = cmd->encoder->main.last_used;
    kk_cmd_write(cmd, event->bo->map, event->addr, VK_EVENT_RESET);
-   if (last_used == KK_ENC_NONE || last_used == KK_ENC_COMPUTE)
-      upload_queue_writes(cmd);
-   kk_encoder_signal_fence_and_end(cmd);
 
-   /* If we were inside a render pass, restart it loading attachments */
-   if (last_used == KK_ENC_RENDER) {
-      struct kk_graphics_state *state = &cmd->state.gfx;
-      assert(state->render_pass_descriptor);
-      kk_encoder_start_render(cmd, state->render_pass_descriptor,
-                              state->render.view_mask);
-      kk_cmd_buffer_dirty_all_gfx(cmd);
-   }
+   /* Can only be called from outside of a render pass, which means we can
+    * directly upload the writes. */
+   upload_queue_writes(cmd);
 }
 
 VKAPI_ATTR void VKAPI_CALL
