@@ -1,5 +1,675 @@
 [
     {
+        "sha": "518705a4fe794683a4c672f803e011490d24c12c",
+        "description": "intel/brw: Split to a function the code that calculate sampler channels that should be written",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "188193cbf289c6237b62ce66d6a49c31c4e2032d",
+        "description": "iris: Add comments from Bspec fast-clear preamble page",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "18e67d853f2efb7d631b5a914a294f16273e3bba",
+        "description": "iris: Fix pipe control around fast-clears",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "23658920d138fc12b730a320325d8f5f1a9978bd",
+        "notes": null
+    },
+    {
+        "sha": "a2b70ce4ec9015ad1da6ebb51f1e5de61ac77cde",
+        "description": "aco/isel: remove uniform reduce/scan optimization",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "81245e262f33731c6e1283a5cd7cc9d979d8d5e2",
+        "description": "radeonsi: use nir_opt_uniform_subgroup",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ec81337d8d3c894fdd0fd81980f828b37db7d162",
+        "description": "radv: use nir_opt_uniform_subgroup",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f57add1d14c53075c42c4f6e57051c35afab84e9",
+        "description": "v3dv: Enable TFU blits with raster destinations on 7.1 HW (RPi5)",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "19580dfae1c8453b953cfebbd165f7bdc32f72db",
+        "description": "v3d: Enable TFU blits with raster destinations on 7.1 HW (RPi5)",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "40339ada9cc9fb5e4cce6e0abebed70d8f4c33f5",
+        "description": "broadcom: Drop use of nir_lower_wrmasks",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b1de4249f723836437623ceb040d22f5c2b708b1",
+        "description": "lavapipe/ci: Add a nightly ASAN job",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "cfd10a729d9b39a304dfe9b7e91ca86a84dcec7b",
+        "description": "gallium: Fix gnu-empty-initalizer error",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "51605bfac2e4d0fd0c935ee1c3ce58b0a12584eb",
+        "notes": null
+    },
+    {
+        "sha": "86d190e15852d680473fcdc6efe9a2d99a2f8f83",
+        "description": "nvk: Use rendering state attachment count when setting SET_CT_SELECT",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "84de6c12b26358fec759511fd2b6944fe85505a4",
+        "notes": null
+    },
+    {
+        "sha": "e241e30986c86500257178b0eb1397d3d1b63487",
+        "description": "anv: add a no-resource-barrier debug flag",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5f58ac7b114066d5b1fc5d6e991efc7f65631350",
+        "description": "anv: implement WA_18039014283",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "15174b185bd7656e1638c2e2d9f8d4c8bdb0e747",
+        "description": "anv: instrument resource barriers instruction in u_trace",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3520abf8a39bd1f0f8823d3b1374a7d1a5755514",
+        "description": "anv: use RESOURCE_BARRIER for event waiting when possible",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5f9ece0b838e13c63c3dd81a87d1988f626524e5",
+        "description": "anv: implement Wa_18037648410",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "24e9afb0b7107bc77af49aefd0f617e94492a7d7",
+        "description": "anv: implement resource barrier emissions",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e5fc567f49f2c673c46c1305e89276104e0aeefc",
+        "description": "anv: introduce an new virtual pipecontrol flag for BTI change",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "682f9072285aec053620b2889bbcbd91cbbd4834",
+        "description": "intel: rename DCFlushEnable to ForceDeviceCoherency",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e55a7bc83a6440a4933f348d4d4e780908845028",
+        "description": "anv: program STATE_COMPUTE_MODE to flush the L1 cache",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "47bc9da064caa2e2edac5f720d75f6ad88f722cb",
+        "description": "anv: use anv_add_pending_pipe_bits for event reset",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8834ef8bcd5ecc385323613bb0bc973cc0a1df30",
+        "description": "anv: use flushing PIPE_CONTROL for event signaling",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a06b0213c8e5f401704b155d1585ed63953bd7db",
+        "description": "anv: switch events to use 0/!0 values for unsignaled/signaled",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5b0c2339d5a71557d00421471e1d5f9e83e4b917",
+        "description": "anv: use the blitter/video barrier helper for event signalling",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5dd6f0d0ef3cc02e271f0be52046f732a78ab2bf",
+        "description": "anv: store event creation flags",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "72ee520b3690229e66c232e13c0b2109081977e0",
+        "description": "anv: remove unused event field",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "23be634934c0d527ab94f1f99301a314969f9945",
+        "description": "anv: disable deferred bits on Gfx20+",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "be5f5f659f9beb2f2611532affdfaaba7fa5f1bd",
+        "description": "anv: consider CS coherent with L3 on Xe2+",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "503355c7f896d8c6bab8b3a11a66bb3139962daa",
+        "description": "anv: update pipeline barriers for Xe2+",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "15524de710b06a9da5abd265eb389e634d533c91",
+        "description": "anv: remove pb-stalls from various locations",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "86dceded226218ef429197c46367b33b162ec7c5",
+        "description": "anv: move cs/pb-stall detection to flushing function",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f2c571fabff3f1ba2f0b2069f3f2df0bc9158ace",
+        "description": "anv: add tracking of involved stages in pipe flushes",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4e8a25cf6f765bff58b002583621e51ffeb64dc5",
+        "description": "anv: remove use of emit_apply_pipe_flushes() in various helpers",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d37a888a9bb0b326e48285fe195af52f1319b44f",
+        "description": "anv: remove unused gpu_memcpy function",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "01cf905c71af884277b3c65bbcea38c663bac6ad",
+        "description": "nak: Set variable_latency=0 for !needs_scoreboard",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b4bac84d3bb209e996a60fada5e7360f2302a252",
+        "description": "nak: Add a Dst::file() helper function",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f5f89407f6406baaaeccb1c319bf7a5fdc0a7215",
+        "description": "nak: Handle CS2R latencies in SSA form",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "fee87679bf9435ae670006bc98dee660ec28d92c",
+        "description": "radv/nir: fix front_face_fsign opt",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "0fe8250bf412cd5e14f4f91b195717e7ca2fcdd2",
+        "notes": null
+    },
+    {
+        "sha": "d17d1f53bd464f85fc761f4c0279d9faa2fd5594",
+        "description": "nir/opt_cse: update potential future plans merging copy propagation with CSE",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "9ac8e643d6aaaf8b56a8566d652ebb21f5e99d03",
+        "description": "nir/lower_io: explain properly how nir_lower_io_lower_64bit_to_32* options work",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "41d127b9e8079a2e255ced9de6207fa647df64a9",
+        "description": "nir/lower_io: remove unused option nir_lower_io_lower_64bit_float_to_32",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "09b2325877bc44147ad0a37d7ca5f022b57ee6be",
+        "description": "nir/print: print tex->sampler_dim",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4d976a5787c2baf3b1b7b786d106b86994ef790b",
+        "description": "nir: fix the value of nir_io_use_frag_result_dual_src_blend",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "9a2f1be814fdb8b836aacf5850a73271e8686088",
+        "notes": null
+    },
+    {
+        "sha": "375e9d109492d40d6def3ad3ba3a21160bf09fdd",
+        "description": "intel/mda: Handle better processing a lot of archives",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5474e9bfdcabe15a8560a97921aab8e4de0ac2be",
+        "description": "intel/mda: Use function to read content of objects",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "29f827795269cfaa5813611ffb28e9579e5d2d1f",
+        "description": "ir3/legalize: schedule (eq) more accurately",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "54cde77163592ec731f11a0617468c863f24b836",
+        "description": "ir3: print eq and needs_helpers instruction flags",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "db300116634edfa8622261b7201dcff725606ec5",
+        "description": "Uprev Piglit to 2842979ebe03b99c33c3e49af5960c69be6c6d46",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b40fe92b738e71721240cd0e3d0c0406565e1c24",
+        "description": "ci,piglit: update expectations from piglit nightly",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8a39515124e5578441ab2707b79bdf4709694943",
+        "description": "ci: Allow PIGLIT_TAG to be unset in deqp-runner script",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "9e62e225984cfbb9502c7fe5c9fa9066f8eca618",
+        "description": "crnm: clean uncolored job status",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c5f5b6b78db51826599a36751790e8cd4ab270e2",
+        "description": "crnm: default wo coloring when unknown GitLab job status",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d75f5e0add1af881ce85e9598466af91fdf28c55",
+        "description": "svga: Don't crash if only one of Depth or Stencil buffer is present",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d2f336c1085e7bcca4577266db8a938bd0263958",
+        "description": "intel/isl: Only assert surface addresses on gfx9+",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "8e96b516ca4ed4e81d288f730d1931e1ce663118",
+        "notes": null
+    },
+    {
+        "sha": "49446a62c05ac0c170fb8d423d7533b5d23c2203",
+        "description": "meson: specify minimal target meson version for rust subprojects",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f53f35cb329646e206ecf06e315d53181577f84b",
+        "description": "meson: silence warnings in rust subprojects",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "17e597093da1fb5e00aae570e1e356ad1c5880be",
+        "description": "radv: eliminate unused FS output channels",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5d2f3065fd2c8553eb28fb8e5382d81cdc605a72",
+        "description": "radv: gather color0_written with scalar io correctly",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "18013e3281e436c81093ae261f15891a05009fd2",
+        "description": "radv: consider dual src blend for when epilog needs alpha",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a1fbf91ff2e890f4e7c61da6881d8e062838e458",
+        "description": "radv/nir: fix radv_nir_remap_color_attachment progress",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "da197c3d55b945527cad662cf41830b9162aac31",
+        "description": "ac/nir/lower_ps_late: remove gfx6 mrtz writemask workaround",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6a7ff2204b8e3e3512cb27521e6c2b777862fa5a",
+        "description": "ac/llvm/gfx6: move mrtz writemask workaround to ac_build_export",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "072815e5cbe5c919ad39b924b5113c937e4ec528",
+        "description": "aco/gfx6: move mrtz writemask workaround to assembler and handle all mrt",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2044cf885b75ad017bba65554083d7e1e602f38e",
+        "description": "rust: build `ucd-trie` dependency with the correct edition",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "e28ff818695ca953b31ec15d1f371b64a4ff9e3d",
+        "notes": null
+    },
+    {
+        "sha": "f95a5d5df80662f9fb98d364107e149b1ce604ea",
+        "description": "rust: build `paste` dependency with the correct edition",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "dde95fc039da8bc31563d6d85bfacd97be4ba98c",
+        "notes": null
+    },
+    {
+        "sha": "d757018e77e702f7df0f51fbb17bea11e856fcab",
+        "description": "rust: build `equivalent` dependency with the correct edition",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "9e3e12e6a97a5412ab12d64b41045f040f4c4bbd",
+        "notes": null
+    },
+    {
         "sha": "b5cf3b1628bdf473ea40a6756a4098eb56151bbc",
         "description": "ac/nir: fix check for increasing size of non-descriptor loads",
         "nominated": true,
