@@ -275,6 +275,10 @@ __bitset_clear_range(BITSET_WORD *r, int start, int end)
 #define BITSET_CLEAR_RANGE(x, b, e) \
    __bitset_clear_range(x, b, e)
 
+#define BITSET_CLEAR_BULK(x, b, n) BITSET_CLEAR_RANGE(x, (b), (b) + (n) - 1)
+#define BITSET_TEST_BULK(x, b, n)  BITSET_TEST_RANGE(x,  (b), (b) + (n) - 1)
+#define BITSET_SET_BULK(x, b, n)   BITSET_SET_RANGE(x,   (b), (b) + (n) - 1)
+
 static inline unsigned
 __bitset_extract(const BITSET_WORD *r, unsigned start, unsigned count)
 {
