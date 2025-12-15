@@ -293,7 +293,7 @@ record_loads(nir_builder *b, nir_intrinsic_instr *intr, void *data)
    unsigned offset = nir_intrinsic_binding(intr);
    assert((offset % 2) == 0 && "all entries are aligned by ABI");
 
-   BITSET_SET_RANGE(table->pushed, (offset / 2), (offset / 2) + length - 1);
+   BITSET_SET_COUNT(table->pushed, (offset / 2), length);
 
    for (unsigned i = 0; i < length; ++i) {
       if (table->element_size[(offset / 2) + i])

@@ -4294,7 +4294,8 @@ analyze_io(struct zink_shader *zs, nir_shader *shader)
             if (deref_idx >= 0) {
                nir_variable *img = nir_deref_instr_get_variable(nir_def_as_deref(tex->src[deref_idx].src.ssa));
                unsigned size = glsl_type_is_array(img->type) ? glsl_get_aoa_size(img->type) : 1;
-               BITSET_SET_RANGE(shader->info.textures_used, img->data.driver_location, img->data.driver_location + (size - 1));
+               BITSET_SET_COUNT(shader->info.textures_used,
+                               img->data.driver_location, size);
             }
             continue;
          }
@@ -4680,8 +4681,8 @@ scan_nir(struct zink_screen *screen, nir_shader *shader, struct zink_shader *zs)
                 /* Structs have been lowered already, so get_aoa_size is sufficient. */
                 const unsigned size =
                    glsl_type_is_array(var->type) ? glsl_get_aoa_size(var->type) : 1;
-                BITSET_SET_RANGE(shader->info.images_used, var->data.binding,
-                                 var->data.binding + (MAX2(size, 1) - 1));
+                BITSET_SET_COUNT(shader->info.images_used, var->data.binding,
+                                MAX2(size, 1));
             }
             if (intr->intrinsic == nir_intrinsic_is_sparse_texels_resident ||
                 intr->intrinsic == nir_intrinsic_image_deref_sparse_load)

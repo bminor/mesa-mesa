@@ -464,10 +464,9 @@ set_bitset_range(BITSET_WORD* words, unsigned start, unsigned size)
 bool
 test_bitset_range(BITSET_WORD* words, unsigned start, unsigned size)
 {
-   unsigned end = start + size - 1;
    unsigned start_mod = start % BITSET_WORDBITS;
    if (start_mod + size <= BITSET_WORDBITS) {
-      return BITSET_TEST_RANGE(words, start, end);
+      return BITSET_TEST_COUNT(words, start, size);
    } else {
       unsigned first_size = BITSET_WORDBITS - start_mod;
       return test_bitset_range(words, start, BITSET_WORDBITS - start_mod) ||

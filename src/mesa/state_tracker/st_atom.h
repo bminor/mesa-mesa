@@ -126,7 +126,7 @@ typedef BITSET_DECLARE(st_state_bitset, ST_NUM_ATOMS);
    } while (0)
 
 #define ST_SET_ALL_STATES(bitset) \
-   BITSET_SET_RANGE(bitset, 0, ST_NUM_ATOMS - 1)
+   BITSET_SET_COUNT(bitset, 0, ST_NUM_ATOMS)
 
 #define ST_SHADER_STATE_MASK(bitset, shader) \
    ST_SET_STATE4(bitset, ST_NEW_##shader##_STATE, ST_NEW_##shader##_SAMPLER_VIEWS, \

@@ -939,7 +939,7 @@ find_param_regs(Program* program, const ABI& abi, callee_info& info,
       if (next_reg) {
          param_demand += Temp(0, params.back().rc);
          params.back().dst_info->def.setPrecolored(*next_reg);
-         BITSET_CLEAR_RANGE(regs, next_reg->reg(), next_reg->reg() + params.back().rc.size() - 1);
+         BITSET_CLEAR_COUNT(regs, next_reg->reg(), params.back().rc.size());
          if (!params.back().is_system_param) {
             ++info.reg_param_count;
             if (discardable)

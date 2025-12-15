@@ -70,8 +70,8 @@ static int32_t pvr_mrt_alloc_from_buffer(const struct pvr_device_info *dev_info,
    assert(pixel_size <= max_out_regs);
 
    for (uint32_t i = 0U; i <= (max_out_regs - pixel_size); i += alignment) {
-      if (!BITSET_TEST_RANGE(buffer->allocs, i, i + pixel_size - 1U)) {
-         BITSET_SET_RANGE(buffer->allocs, i, i + pixel_size - 1U);
+      if (!BITSET_TEST_COUNT(buffer->allocs, i, pixel_size)) {
+         BITSET_SET_COUNT(buffer->allocs, i, pixel_size);
          return i;
       }
    }

@@ -1161,7 +1161,7 @@ anv_state_reserved_array_pool_init(struct anv_state_reserved_array_pool *pool,
    if (pool->states == NULL)
       return vk_error(&device->vk, VK_ERROR_OUT_OF_HOST_MEMORY);
 
-   BITSET_SET_RANGE(pool->states, 0, pool->count - 1);
+   BITSET_SET_COUNT(pool->states, 0, pool->count);
    simple_mtx_init(&pool->mutex, mtx_plain);
 
    pool->state = anv_state_pool_alloc(pool->pool, pool->stride * count, alignment);

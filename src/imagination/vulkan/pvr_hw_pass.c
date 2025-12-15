@@ -390,7 +390,7 @@ pvr_is_space_in_buffer(const struct pvr_device_info *dev_info,
    assert(pixel_size <= max_out_regs);
 
    for (uint32_t i = 0U; i <= (max_out_regs - pixel_size); i += alignment) {
-      if (!BITSET_TEST_RANGE(buffer->allocs, i, i + pixel_size - 1U))
+      if (!BITSET_TEST_COUNT(buffer->allocs, i, pixel_size))
          return i;
    }
 
@@ -590,8 +590,8 @@ pvr_mark_storage_allocated_in_buffer(struct pvr_renderpass_alloc_buffer *buffer,
                                      uint32_t start,
                                      uint32_t pixel_size)
 {
-   assert(!BITSET_TEST_RANGE(buffer->allocs, start, start + pixel_size - 1U));
-   BITSET_SET_RANGE(buffer->allocs, start, start + pixel_size - 1U);
+   assert(!BITSET_TEST_COUNT(buffer->allocs, start, pixel_size));
+   BITSET_SET_COUNT(buffer->allocs, start, pixel_size);
 }
 
 static VkResult
@@ -706,7 +706,7 @@ pvr_free_buffer_storage(struct pvr_renderpass_alloc_buffer *buffer,
       pvr_get_accum_format_bitsize(int_attach->attachment->vk_format),
       32U);
 
-   BITSET_CLEAR_RANGE(buffer->allocs, start, start + pixel_size - 1U);
+   BITSET_CLEAR_COUNT(buffer->allocs, start, pixel_size);
 }
 
 /** Free the storage allocated to an attachment. */

@@ -3531,8 +3531,8 @@ iris_set_sampler_views(struct pipe_context *ctx,
    if (count == 0 && unbind_num_trailing_slots == 0)
       return;
 
-   BITSET_CLEAR_RANGE(shs->bound_sampler_views, start,
-                      start + count + unbind_num_trailing_slots - 1);
+   BITSET_CLEAR_COUNT(shs->bound_sampler_views, start,
+                     count + unbind_num_trailing_slots);
 
    for (i = 0; i < count; i++) {
       struct pipe_sampler_view *pview = views ? views[i] : NULL;

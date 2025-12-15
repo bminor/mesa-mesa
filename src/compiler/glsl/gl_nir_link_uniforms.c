@@ -142,7 +142,7 @@ mark_array_elements_referenced(const struct array_deref_range *dr,
          BITSET_SET(bits, dr[0].index);
       } else {
          /* Accessed by non-constant index so set everything as referenced */
-         BITSET_SET_RANGE(bits, 0, dr[0].size - 1);
+         BITSET_SET_COUNT(bits, 0, dr[0].size);
       }
 
       return;

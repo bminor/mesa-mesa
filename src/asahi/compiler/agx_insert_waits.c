@@ -65,8 +65,7 @@ agx_insert_waits_local(agx_context *ctx, agx_block *block)
 
          unsigned nr_read = agx_index_size_16(I->src[s]);
          for (unsigned slot = 0; slot < ARRAY_SIZE(slots); ++slot) {
-            if (BITSET_TEST_RANGE(slots[slot].writes, I->src[s].value,
-                                  I->src[s].value + nr_read - 1))
+            if (BITSET_TEST_COUNT(slots[slot].writes, I->src[s].value, nr_read))
                wait_mask |= BITSET_BIT(slot);
          }
       }
@@ -78,8 +77,8 @@ agx_insert_waits_local(agx_context *ctx, agx_block *block)
 
          unsigned nr_writes = agx_index_size_16(I->dest[d]);
          for (unsigned slot = 0; slot < ARRAY_SIZE(slots); ++slot) {
-            if (BITSET_TEST_RANGE(slots[slot].writes, I->dest[d].value,
-                                  I->dest[d].value + nr_writes - 1))
+            if (BITSET_TEST_COUNT(slots[slot].writes, I->dest[d].value,
+                                  nr_writes))
                wait_mask |= BITSET_BIT(slot);
          }
       }
@@ -125,9 +124,8 @@ agx_insert_waits_local(agx_context *ctx, agx_block *block)
                continue;
 
             assert(I->dest[d].type == AGX_INDEX_REGISTER);
-            BITSET_SET_RANGE(
-               slots[I->scoreboard].writes, I->dest[d].value,
-               I->dest[d].value + agx_index_size_16(I->dest[d]) - 1);
+            BITSET_SET_COUNT(slots[I->scoreboard].writes, I->dest[d].value,
+                             agx_index_size_16(I->dest[d]));
          }
 
          slots[I->scoreboard].nr_pending++;

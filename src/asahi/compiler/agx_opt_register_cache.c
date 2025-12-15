@@ -13,12 +13,12 @@ postra_liveness_ins(BITSET_WORD *live, agx_instr *I)
 {
    agx_foreach_reg_dest(I, d) {
       unsigned reg = I->dest[d].value;
-      BITSET_CLEAR_RANGE(live, reg, reg + agx_index_size_16(I->dest[d]) - 1);
+      BITSET_CLEAR_COUNT(live, reg, agx_index_size_16(I->dest[d]));
    }
 
    agx_foreach_reg_src(I, s) {
       unsigned reg = I->src[s].value;
-      BITSET_SET_RANGE(live, reg, reg + agx_index_size_16(I->src[s]) - 1);
+      BITSET_SET_COUNT(live, reg, agx_index_size_16(I->src[s]));
    }
 }
 
@@ -113,7 +113,7 @@ agx_opt_register_cache(agx_context *ctx)
             unsigned nr = agx_index_size_16(I->dest[d]);
 
             I->dest[d].cache = BITSET_TEST(alu_reads, I->dest[d].value);
-            BITSET_CLEAR_RANGE(alu_reads, reg, reg + nr - 1);
+            BITSET_CLEAR_COUNT(alu_reads, reg, nr);
          }
 
          agx_foreach_reg_src(I, s) {
@@ -128,8 +128,7 @@ agx_opt_register_cache(agx_context *ctx)
              * That includes if the register is overwritten this cycle, but that
              * won't show up in the liveness analysis.
              */
-            bool lu = !BITSET_TEST_RANGE(live, reg, reg + nr - 1) ||
-                      writes_reg(I, reg);
+            bool lu = !BITSET_TEST_COUNT(live, reg, nr) || writes_reg(I, reg);
 
             /* Handling divergent blocks would require physical CFG awareness.
              * Just bail for now, skipping this pass won't affect correctness.
@@ -144,7 +143,7 @@ agx_opt_register_cache(agx_context *ctx)
              * better given our limited understanding of the hardware.
              */
             if (agx_is_alu(I))
-               BITSET_SET_RANGE(alu_reads, reg, reg + nr - 1);
+               BITSET_SET_COUNT(alu_reads, reg, nr);
 
             assert(!(I->src[s].discard && I->src[s].cache));
          }

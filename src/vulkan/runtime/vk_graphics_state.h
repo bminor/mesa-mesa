@@ -1210,7 +1210,7 @@ vk_dynamic_graphics_state_fill(struct vk_dynamic_graphics_state *dyn,
 static inline void
 vk_dynamic_graphics_state_dirty_all(struct vk_dynamic_graphics_state *d)
 {
-   BITSET_SET_RANGE(d->dirty, 0, MESA_VK_DYNAMIC_GRAPHICS_STATE_ENUM_MAX - 1);
+   BITSET_SET_COUNT(d->dirty, 0, MESA_VK_DYNAMIC_GRAPHICS_STATE_ENUM_MAX);
 }
 
 /** Mark all states in the given vk_dynamic_graphics_state not dirty

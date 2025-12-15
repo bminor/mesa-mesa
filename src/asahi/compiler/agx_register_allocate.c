@@ -331,7 +331,7 @@ find_regs_simple(struct ra_ctx *rctx, enum ra_class cls, unsigned count,
                  unsigned align, unsigned *out)
 {
    for (unsigned reg = 0; reg + count <= rctx->bound[cls]; reg += align) {
-      if (!BITSET_TEST_RANGE(rctx->used_regs[cls], reg, reg + count - 1)) {
+      if (!BITSET_TEST_COUNT(rctx->used_regs[cls], reg, count)) {
          *out = reg;
          return true;
       }
@@ -388,7 +388,7 @@ find_best_region_to_evict(struct ra_ctx *rctx, unsigned size,
       /* Do not evict the same register multiple times. It's not necessary since
        * we're just shuffling, there are enough free registers elsewhere.
        */
-      if (BITSET_TEST_RANGE(already_evicted, base, base + size - 1))
+      if (BITSET_TEST_COUNT(already_evicted, base, size))
          continue;
 
       /* Estimate the number of moves required if we pick this region */
@@ -521,7 +521,7 @@ assign_regs_by_copying(struct ra_ctx *rctx, agx_index dest, const agx_instr *I,
       /* We are going to allocate to this range, so it is now fully used. Mark
        * it as such so we don't reassign here later.
        */
-      BITSET_SET_RANGE(rctx->used_regs[RA_GPR], new_reg, new_reg + nr - 1);
+      BITSET_SET_COUNT(rctx->used_regs[RA_GPR], new_reg, nr);
 
       /* The first iteration is special: it is the original allocation of a
        * variable. All subsequent iterations pick a new register for a blocked
@@ -534,7 +534,7 @@ assign_regs_by_copying(struct ra_ctx *rctx, agx_index dest, const agx_instr *I,
       /* Mark down the set of clobbered registers, so that killed sources may be
        * handled correctly later.
        */
-      BITSET_SET_RANGE(clobbered, new_reg, new_reg + nr - 1);
+      BITSET_SET_COUNT(clobbered, new_reg, nr);
 
       /* Update bookkeeping for this variable */
       set_ssa_to_reg(rctx, ssa, new_reg);
@@ -634,7 +634,7 @@ find_regs(struct ra_ctx *rctx, agx_instr *I, unsigned dest_idx, unsigned count,
       util_dynarray_fini(&copies);
 
       /* assign_regs asserts this is cleared, so clear to be reassigned */
-      BITSET_CLEAR_RANGE(rctx->used_regs[cls], reg, reg + count - 1);
+      BITSET_CLEAR_COUNT(rctx->used_regs[cls], reg, count);
       return reg;
    }
 }
@@ -751,12 +751,12 @@ assign_regs(struct ra_ctx *rctx, agx_index v, unsigned reg)
    assert(!BITSET_TEST(rctx->visited, v.value) && "SSA violated");
    BITSET_SET(rctx->visited, v.value);
 
-   assert(rctx->ncomps[v.value] >= 1);
-   unsigned end = reg + rctx->ncomps[v.value] - 1;
-
-   assert(!BITSET_TEST_RANGE(rctx->used_regs[cls], reg, end) &&
+   unsigned nr = rctx->ncomps[v.value];
+   assert(nr >= 1);
+   assert(!BITSET_TEST_COUNT(rctx->used_regs[cls], reg, nr) &&
           "no interference");
-   BITSET_SET_RANGE(rctx->used_regs[cls], reg, end);
+
+   BITSET_SET_COUNT(rctx->used_regs[cls], reg, nr);
 
    /* Phi webs need to remember which register they're assigned to */
    struct phi_web_node *node =
@@ -815,7 +815,7 @@ try_coalesce_with(struct ra_ctx *rctx, agx_index ssa, unsigned count,
    unsigned base = rctx->ssa_to_reg[ssa.value];
    enum ra_class cls = ra_class_for_index(ssa);
 
-   if (BITSET_TEST_RANGE(rctx->used_regs[cls], base, base + count - 1))
+   if (BITSET_TEST_COUNT(rctx->used_regs[cls], base, count))
       return false;
 
    assert(base + count <= rctx->bound[cls] && "invariant");
@@ -840,7 +840,7 @@ pick_regs(struct ra_ctx *rctx, agx_instr *I, unsigned d)
    if (rctx->phi_web[phi_idx].assigned) {
       unsigned reg = rctx->phi_web[phi_idx].reg;
       if ((reg % align) == 0 && reg + align < rctx->bound[cls] &&
-          !BITSET_TEST_RANGE(rctx->used_regs[cls], reg, reg + align - 1))
+          !BITSET_TEST_COUNT(rctx->used_regs[cls], reg, align))
          return reg;
    }
 
@@ -881,7 +881,7 @@ pick_regs(struct ra_ctx *rctx, agx_instr *I, unsigned d)
          if (base % align)
             continue;
 
-         if (!BITSET_TEST_RANGE(rctx->used_regs[cls], base, base + count - 1))
+         if (!BITSET_TEST_COUNT(rctx->used_regs[cls], base, count))
             return base;
       }
    }
@@ -891,7 +891,7 @@ pick_regs(struct ra_ctx *rctx, agx_instr *I, unsigned d)
    if (collect_phi && collect_phi->op == AGX_OPCODE_EXPORT) {
       unsigned reg = collect_phi->imm;
 
-      if (!BITSET_TEST_RANGE(rctx->used_regs[cls], reg, reg + align - 1) &&
+      if (!BITSET_TEST_COUNT(rctx->used_regs[cls], reg, align) &&
           (reg % align) == 0)
          return reg;
    }
@@ -903,8 +903,7 @@ pick_regs(struct ra_ctx *rctx, agx_instr *I, unsigned d)
          if (exp && exp->op == AGX_OPCODE_EXPORT) {
             unsigned reg = exp->imm;
 
-            if (!BITSET_TEST_RANGE(rctx->used_regs[cls], reg,
-                                   reg + align - 1) &&
+            if (!BITSET_TEST_COUNT(rctx->used_regs[cls], reg, align) &&
                 (reg % align) == 0)
                return reg;
          }
@@ -947,8 +946,7 @@ pick_regs(struct ra_ctx *rctx, agx_instr *I, unsigned d)
             continue;
 
          /* If those registers are free, then choose them */
-         if (!BITSET_TEST_RANGE(rctx->used_regs[cls], our_reg,
-                                our_reg + align - 1))
+         if (!BITSET_TEST_COUNT(rctx->used_regs[cls], our_reg, align))
             return our_reg;
       }
 
@@ -961,8 +959,8 @@ pick_regs(struct ra_ctx *rctx, agx_instr *I, unsigned d)
       for (unsigned base = 0;
            base + (collect->nr_srcs * align) <= rctx->bound[cls];
            base += collect_align) {
-         if (!BITSET_TEST_RANGE(rctx->used_regs[cls], base,
-                                base + (collect->nr_srcs * align) - 1))
+         if (!BITSET_TEST_COUNT(rctx->used_regs[cls], base,
+                                collect->nr_srcs * align))
             return base + offset;
       }
 
@@ -973,7 +971,7 @@ pick_regs(struct ra_ctx *rctx, agx_instr *I, unsigned d)
       if (collect_align > align) {
          for (unsigned reg = offset; reg + collect_align <= rctx->bound[cls];
               reg += collect_align) {
-            if (!BITSET_TEST_RANGE(rctx->used_regs[cls], reg, reg + count - 1))
+            if (!BITSET_TEST_COUNT(rctx->used_regs[cls], reg, count))
                return reg;
          }
       }
@@ -994,7 +992,7 @@ pick_regs(struct ra_ctx *rctx, agx_instr *I, unsigned d)
          unsigned base = phi->dest[0].reg;
 
          if (base + count <= rctx->bound[cls] &&
-             !BITSET_TEST_RANGE(rctx->used_regs[cls], base, base + count - 1))
+             !BITSET_TEST_COUNT(rctx->used_regs[cls], base, count))
             return base;
       }
    }
@@ -1013,7 +1011,7 @@ kill_source(struct ra_ctx *rctx, const agx_instr *I, unsigned s)
    assert(I->op != AGX_OPCODE_PHI && "phis don't use .kill");
    assert(count >= 1);
 
-   BITSET_CLEAR_RANGE(rctx->used_regs[cls], reg, reg + count - 1);
+   BITSET_CLEAR_COUNT(rctx->used_regs[cls], reg, count);
 }
 
 static void
@@ -1074,7 +1072,7 @@ agx_ra_assign_local(struct ra_ctx *rctx)
 
    /* Reserve bottom registers as temporaries for parallel copy lowering */
    if (rctx->shader->has_spill_pcopy_reserved) {
-      BITSET_SET_RANGE(used_regs_gpr, 0, 7);
+      BITSET_SET_COUNT(used_regs_gpr, 0, 8);
    }
 
    agx_foreach_instr_in_block(block, I) {
@@ -1093,20 +1091,15 @@ agx_ra_assign_local(struct ra_ctx *rctx)
 
             /* Free up the source */
             unsigned offset_reg = reg + (d * width);
-            BITSET_CLEAR_RANGE(used_regs_gpr, offset_reg,
-                               offset_reg + width - 1);
+            BITSET_CLEAR_COUNT(used_regs_gpr, offset_reg, width);
 
             /* Assign the destination where the source was */
             if (!agx_is_null(I->dest[d]))
                assign_regs(rctx, I->dest[d], offset_reg);
          }
 
-         unsigned excess =
-            rctx->ncomps[I->src[0].value] - (I->nr_dests * width);
-         if (excess) {
-            BITSET_CLEAR_RANGE(used_regs_gpr, reg + (I->nr_dests * width),
-                               reg + rctx->ncomps[I->src[0].value] - 1);
-         }
+         unsigned trail = rctx->ncomps[I->src[0].value] - (I->nr_dests * width);
+         BITSET_CLEAR_COUNT(used_regs_gpr, reg + (I->nr_dests * width), trail);
 
          agx_set_sources(rctx, I);
          agx_set_dests(rctx, I);
