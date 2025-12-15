@@ -2070,7 +2070,7 @@ by a particular renderpass/blit.
 
 	<!-- 0x810c-0x810f invalid -->
 
-	<reg32 offset="0x8110" name="GRAS_LRZ_BUFFER_SLICE_PITCH" low="0" high="31" shr="8" type="uint" variants="A8XX-"/>
+	<reg32 offset="0x8110" name="GRAS_LRZ_BUFFER_SLICE_PITCH" low="8" high="31" shr="8" type="uint" variants="A8XX-"/>
 
 	<reg32 offset="0x8110" name="GRAS_MODE_CNTL" low="0" high="1" variants="A6XX-A7XX" usage="cmd"/>
 	<reg32 offset="0x8213" name="GRAS_MODE_CNTL" low="0" high="1" variants="A8XX-" usage="cmd"/>
