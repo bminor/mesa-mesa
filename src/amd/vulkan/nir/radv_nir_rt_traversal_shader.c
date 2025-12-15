@@ -1156,7 +1156,7 @@ radv_build_traversal_shader(struct radv_device *device, struct radv_ray_tracing_
    for (uint32_t i = 0; i < ARRAY_SIZE(hit_attribs); i++)
       hit_attribs[i] = nir_local_variable_create(nir_shader_get_entrypoint(b.shader), glsl_uint_type(), "ahit_attrib");
 
-   struct radv_nir_rt_traversal_params params = {};
+   struct radv_nir_rt_traversal_params params = {0};
 
    if (info->tmin.state == RADV_RT_CONST_ARG_STATE_VALID)
       params.tmin = nir_imm_int(&b, info->tmin.value);
