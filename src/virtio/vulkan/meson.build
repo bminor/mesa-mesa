@@ -101,7 +101,8 @@ if system_has_kms_drm
 endif
 
 if with_platform_wayland or with_platform_x11 or \
-   (system_has_kms_drm and not with_platform_android)
+   (system_has_kms_drm and not with_platform_android) or \
+   with_platform_windows
   libvn_files += files('vn_wsi.c')
   vn_flags += '-DVN_USE_WSI_PLATFORM'
 endif

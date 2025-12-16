@@ -85,6 +85,8 @@ vn_physical_device_init_features(struct vn_physical_device *physical_dev)
    const uint32_t renderer_version = physical_dev->renderer_version;
    const struct vk_device_extension_table *exts =
       &physical_dev->renderer_extensions;
+   const struct vk_device_extension_table *supported_exts =
+      &physical_dev->base.vk.supported_extensions;
    struct vn_ring *ring = physical_dev->instance->ring.ring;
    VkPhysicalDeviceFeatures2 feats2 = {
       .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2,
@@ -431,10 +433,10 @@ vn_physical_device_init_features(struct vn_physical_device *physical_dev)
    feats->memoryUnmapReserve = true;
 
 #ifdef VN_USE_WSI_PLATFORM
-   feats->presentId = true;
-   feats->presentId2 = true;
-   feats->presentWait = true;
-   feats->presentWait2 = true;
+   feats->presentId = supported_exts->KHR_present_id;
+   feats->presentId2 = supported_exts->KHR_present_id2;
+   feats->presentWait = supported_exts->KHR_present_wait;
+   feats->presentWait2 = supported_exts->KHR_present_wait2;
    feats->swapchainMaintenance1 = true;
 #endif
 
@@ -1181,10 +1183,12 @@ vn_physical_device_get_native_extensions(
 #ifdef VN_USE_WSI_PLATFORM
    if (physical_dev->renderer_sync_fd.semaphore_importable) {
       exts->KHR_incremental_present = true;
+#ifndef VK_USE_PLATFORM_WIN32_KHR
       exts->KHR_present_id = true;
       exts->KHR_present_id2 = true;
       exts->KHR_present_wait = true;
       exts->KHR_present_wait2 = true;
+#endif /* VK_USE_PLATFORM_WIN32_KHR */
       exts->KHR_swapchain = true;
       exts->KHR_swapchain_maintenance1 = true;
       exts->KHR_swapchain_mutable_format = true;
@@ -1202,7 +1206,7 @@ vn_physical_device_get_native_extensions(
    exts->EXT_pci_bus_info =
       physical_dev->instance->renderer->info.pci.has_bus_info ||
       renderer_exts->EXT_pci_bus_info;
-#endif
+#endif /* VN_USE_WSI_PLATFORM */
 
    /* Use common implementation but enable only when the renderer supports
     * VK_KHR_acceleration_structure because VK_KHR_deferred_host_operations is
