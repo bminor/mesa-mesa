@@ -293,6 +293,8 @@ nir_vprintf_fmt(nir_builder *b, unsigned ptr_bit_size, const char *fmt, va_list 
     * cache while debugging compiler issues is a good practice anyway.
     */
    u_printf_singleton_add(&info, 1);
+
+   b->shader->info.writes_memory = true;
 }
 
 void
