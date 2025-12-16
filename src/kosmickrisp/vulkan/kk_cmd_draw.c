@@ -786,7 +786,10 @@ kk_flush_draw_state(struct kk_cmd_buffer *cmd)
       desc->root_dirty = true;
    }
 
-   if (gfx->dirty & KK_DIRTY_VB) {
+   if (BITSET_TEST(dyn->dirty, MESA_VK_DYNAMIC_VI) ||
+       BITSET_TEST(dyn->dirty, MESA_VK_DYNAMIC_VI_BINDINGS_VALID) ||
+       BITSET_TEST(dyn->dirty, MESA_VK_DYNAMIC_VI_BINDING_STRIDES) ||
+       gfx->dirty & KK_DIRTY_VB) {
       unsigned slot = 0;
       cmd->state.gfx.vb.max_vertices = 0u;
       u_foreach_bit(i, cmd->state.gfx.vb.attribs_read) {
@@ -794,8 +797,6 @@ kk_flush_draw_state(struct kk_cmd_buffer *cmd)
             struct vk_vertex_attribute_state attr = dyn->vi->attributes[i];
             struct kk_addr_range vb = gfx->vb.addr_range[attr.binding];
 
-            mtl_render_use_resource(enc, gfx->vb.handles[attr.binding],
-                                    MTL_RESOURCE_USAGE_READ);
             desc->root.draw.attrib_clamps[slot] = kk_calculate_vbo_clamp(
                vb.addr, 0, vk_format_to_pipe_format(attr.format), vb.range,
                dyn->vi_binding_strides[attr.binding], attr.offset,
