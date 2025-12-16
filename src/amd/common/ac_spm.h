@@ -86,7 +86,24 @@ enum ac_spm_segment_type {
    AC_SPM_SEGMENT_TYPE_COUNT,
 };
 
+enum ac_spm_raw_counter_id {
+   AC_SPM_TCP_PERF_SEL_REQ = 0,
+   AC_SPM_TCP_PERF_SEL_REQ_MISS,
+   AC_SPM_SQC_PERF_SEL_DCACHE_HITS,
+   AC_SPM_SQC_PERF_SEL_DCACHE_MISSES,
+   AC_SPM_SQC_PERF_SEL_DCACHE_MISSES_DUPLICATE,
+   AC_SPM_SQC_PERF_SEL_ICACHE_HITS,
+   AC_SPM_SQC_PERF_SEL_ICACHE_MISSES,
+   AC_SPM_SQC_PERF_SEL_ICACHE_MISSES_DUPLICATE,
+   AC_SPM_GL1C_PERF_SEL_REQ,
+   AC_SPM_GL1C_PERF_SEL_REQ_MISS,
+   AC_SPM_GL2C_PERF_SEL_REQ,
+   AC_SPM_GL2C_PERF_SEL_MISS,
+   AC_SPM_RAW_COUNTER_ID_COUNT,
+};
+
 struct ac_spm_counter_descr {
+   enum ac_spm_raw_counter_id id;
    enum ac_pc_gpu_block gpu_block;
    uint32_t event_id;
 };
@@ -119,6 +136,7 @@ struct ac_spm_muxsel_line {
 
 struct ac_spm_counter_info {
    /* General info. */
+   enum ac_spm_raw_counter_id id;
    enum ac_pc_gpu_block gpu_block;
    uint32_t instance;
    uint32_t event_id;
