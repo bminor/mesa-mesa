@@ -1090,8 +1090,10 @@ vn_physical_device_init_external_fence_handles(
    physical_dev->external_fence_handles = 0;
 
    if (physical_dev->instance->renderer->info.has_external_sync) {
+#if !DETECT_OS_WINDOWS
       physical_dev->external_fence_handles =
          VK_EXTERNAL_FENCE_HANDLE_TYPE_SYNC_FD_BIT;
+#endif
    }
 }
 
@@ -1141,8 +1143,10 @@ vn_physical_device_init_external_semaphore_handles(
    physical_dev->external_timeline_semaphore_handles = 0;
 
    if (physical_dev->instance->renderer->info.has_external_sync) {
+#if !DETECT_OS_WINDOWS
       physical_dev->external_binary_semaphore_handles =
          VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT;
+#endif
    }
 }
 
@@ -1157,13 +1161,21 @@ vn_physical_device_get_native_extensions(
    memset(exts, 0, sizeof(*exts));
 
    if (physical_dev->instance->renderer->info.has_external_sync &&
-       physical_dev->renderer_sync_fd.fence_exportable)
-      exts->KHR_external_fence_fd = true;
+       physical_dev->renderer_sync_fd.fence_exportable) {
+      if (physical_dev->external_fence_handles ==
+          VK_EXTERNAL_FENCE_HANDLE_TYPE_SYNC_FD_BIT) {
+         exts->KHR_external_fence_fd = true;
+      }
+   }
 
    if (physical_dev->instance->renderer->info.has_external_sync &&
        physical_dev->renderer_sync_fd.semaphore_importable &&
-       physical_dev->renderer_sync_fd.semaphore_exportable)
-      exts->KHR_external_semaphore_fd = true;
+       physical_dev->renderer_sync_fd.semaphore_exportable) {
+      if (physical_dev->external_binary_semaphore_handles ==
+          VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT) {
+         exts->KHR_external_semaphore_fd = true;
+      }
+   }
 
 #ifdef VK_USE_PLATFORM_ANDROID_KHR
    if (physical_dev->external_memory.renderer_handle_type &&
@@ -1187,8 +1199,10 @@ vn_physical_device_get_native_extensions(
    }
 #else  /* VK_USE_PLATFORM_ANDROID_KHR */
    if (physical_dev->external_memory.renderer_handle_type) {
+#if !DETECT_OS_WINDOWS
       exts->KHR_external_memory_fd = true;
       exts->EXT_external_memory_dma_buf = true;
+#endif /* !DETECT_OS_WINDOWS */
    }
 #endif /* VK_USE_PLATFORM_ANDROID_KHR */
 
