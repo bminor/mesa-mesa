@@ -216,6 +216,7 @@ kk_cmd_buffer_dirty_all_gfx(struct kk_cmd_buffer *cmd)
    /* Ensure we flush all graphics state */
    vk_dynamic_graphics_state_dirty_all(&cmd->vk.dynamic_graphics_state);
    cmd->state.gfx.dirty = ~0u;
+   cmd->state.gfx.descriptors.root_dirty = true;
 }
 
 void kk_cmd_release_dynamic_ds_state(struct kk_cmd_buffer *cmd);
