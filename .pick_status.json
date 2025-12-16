@@ -3364,7 +3364,7 @@
         "description": "anv: fix dynamic buffers & independent sets",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 3,
         "main_sha": null,
         "because_sha": "0ca870c6f3eb215345185e4396901623dc51f190",
         "notes": null
