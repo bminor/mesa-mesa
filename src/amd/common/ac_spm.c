@@ -727,6 +727,507 @@ bool ac_spm_get_trace(const struct ac_spm *spm, struct ac_spm_trace *trace)
    return ac_spm_get_num_samples(spm, &trace->num_samples);
 }
 
+/* SPM components. */
+/* Instruction cache components. */
+static struct ac_spm_derived_component_descr gfx10_inst_cache_request_count_comp = {
+   .id = AC_SPM_COMPONENT_INST_CACHE_REQUEST_COUNT,
+   .counter_id = AC_SPM_COUNTER_INST_CACHE_HIT,
+   .name = "Requests",
+   .usage = AC_SPM_USAGE_ITEMS,
+};
+
+static struct ac_spm_derived_component_descr gfx10_inst_cache_hit_count_comp = {
+   .id = AC_SPM_COMPONENT_INST_CACHE_HIT_COUNT,
+   .counter_id = AC_SPM_COUNTER_INST_CACHE_HIT,
+   .name = "Hits",
+   .usage = AC_SPM_USAGE_ITEMS,
+};
+
+static struct ac_spm_derived_component_descr gfx10_inst_cache_miss_count_comp = {
+   .id = AC_SPM_COMPONENT_INST_CACHE_MISS_COUNT,
+   .counter_id = AC_SPM_COUNTER_INST_CACHE_HIT,
+   .name = "Misses",
+   .usage = AC_SPM_USAGE_ITEMS,
+};
+
+/* Scalar cache components. */
+static struct ac_spm_derived_component_descr gfx10_scalar_cache_request_count_comp = {
+   .id = AC_SPM_COMPONENT_SCALAR_CACHE_REQUEST_COUNT,
+   .counter_id = AC_SPM_COUNTER_SCALAR_CACHE_HIT,
+   .name = "Requests",
+   .usage = AC_SPM_USAGE_ITEMS,
+};
+
+static struct ac_spm_derived_component_descr gfx10_scalar_cache_hit_count_comp = {
+   .id = AC_SPM_COMPONENT_SCALAR_CACHE_HIT_COUNT,
+   .counter_id = AC_SPM_COUNTER_SCALAR_CACHE_HIT,
+   .name = "Hits",
+   .usage = AC_SPM_USAGE_ITEMS,
+};
+
+static struct ac_spm_derived_component_descr gfx10_scalar_cache_miss_count_comp = {
+   .id = AC_SPM_COMPONENT_SCALAR_CACHE_MISS_COUNT,
+   .counter_id = AC_SPM_COUNTER_SCALAR_CACHE_HIT,
+   .name = "Misses",
+   .usage = AC_SPM_USAGE_ITEMS,
+};
+
+/* L0 cache components. */
+static struct ac_spm_derived_component_descr gfx10_l0_cache_request_count_comp = {
+   .id = AC_SPM_COMPONENT_L0_CACHE_REQUEST_COUNT,
+   .counter_id = AC_SPM_COUNTER_L0_CACHE_HIT,
+   .name = "Requests",
+   .usage = AC_SPM_USAGE_ITEMS,
+};
+
+static struct ac_spm_derived_component_descr gfx10_l0_cache_hit_count_comp = {
+   .id = AC_SPM_COMPONENT_L0_CACHE_HIT_COUNT,
+   .counter_id = AC_SPM_COUNTER_L0_CACHE_HIT,
+   .name = "Hits",
+   .usage = AC_SPM_USAGE_ITEMS,
+};
+
+static struct ac_spm_derived_component_descr gfx10_l0_cache_miss_count_comp = {
+   .id = AC_SPM_COMPONENT_L0_CACHE_MISS_COUNT,
+   .counter_id = AC_SPM_COUNTER_L0_CACHE_HIT,
+   .name = "Misses",
+   .usage = AC_SPM_USAGE_ITEMS,
+};
+
+/* L1 cache components. */
+static struct ac_spm_derived_component_descr gfx10_l1_cache_request_count_comp = {
+   .id = AC_SPM_COMPONENT_L1_CACHE_REQUEST_COUNT,
+   .counter_id = AC_SPM_COUNTER_L1_CACHE_HIT,
+   .name = "Requests",
+   .usage = AC_SPM_USAGE_ITEMS,
+};
+
+static struct ac_spm_derived_component_descr gfx10_l1_cache_hit_count_comp = {
+   .id = AC_SPM_COMPONENT_L1_CACHE_HIT_COUNT,
+   .counter_id = AC_SPM_COUNTER_L1_CACHE_HIT,
+   .name = "Hits",
+   .usage = AC_SPM_USAGE_ITEMS,
+};
+
+static struct ac_spm_derived_component_descr gfx10_l1_cache_miss_count_comp = {
+   .id = AC_SPM_COMPONENT_L1_CACHE_MISS_COUNT,
+   .counter_id = AC_SPM_COUNTER_L1_CACHE_HIT,
+   .name = "Misses",
+   .usage = AC_SPM_USAGE_ITEMS,
+};
+
+/* L2 cache components. */
+static struct ac_spm_derived_component_descr gfx10_l2_cache_request_count_comp = {
+   .id = AC_SPM_COMPONENT_L2_CACHE_REQUEST_COUNT,
+   .counter_id = AC_SPM_COUNTER_L2_CACHE_HIT,
+   .name = "Requests",
+   .usage = AC_SPM_USAGE_ITEMS,
+};
+
+static struct ac_spm_derived_component_descr gfx10_l2_cache_hit_count_comp = {
+   .id = AC_SPM_COMPONENT_L2_CACHE_HIT_COUNT,
+   .counter_id = AC_SPM_COUNTER_L2_CACHE_HIT,
+   .name = "Hits",
+   .usage = AC_SPM_USAGE_ITEMS,
+};
+
+static struct ac_spm_derived_component_descr gfx10_l2_cache_miss_count_comp = {
+   .id = AC_SPM_COMPONENT_L2_CACHE_MISS_COUNT,
+   .counter_id = AC_SPM_COUNTER_L2_CACHE_HIT,
+   .name = "Misses",
+   .usage = AC_SPM_USAGE_ITEMS,
+};
+
+/* SPM counters. */
+static struct ac_spm_derived_counter_descr gfx10_inst_cache_hit_counter = {
+   .id = AC_SPM_COUNTER_INST_CACHE_HIT,
+   .group_id = AC_SPM_GROUP_CACHE,
+   .name = "Instruction cache hit",
+   .desc = "The percentage of read requests made that hit the data in the "
+           "Instruction cache. The Instruction cache supplies shader code to an "
+           "executing shader. Each request is 64 bytes in size. Value range: 0% "
+           "(no hit) to 100% (optimal).",
+   .usage = AC_SPM_USAGE_PERCENTAGE,
+   .num_components = 3,
+   .components = {
+      &gfx10_inst_cache_request_count_comp,
+      &gfx10_inst_cache_hit_count_comp,
+      &gfx10_inst_cache_miss_count_comp,
+   },
+};
+
+static struct ac_spm_derived_counter_descr gfx10_scalar_cache_hit_counter = {
+   .id = AC_SPM_COUNTER_SCALAR_CACHE_HIT,
+   .group_id = AC_SPM_GROUP_CACHE,
+   .name = "Scalar cache hit",
+   .desc = "The percentage of read requests made from executing shader code "
+           "that hit the data in the Scalar cache. The Scalar cache contains data "
+           "that does not vary in each thread across the wavefront. Each request is "
+           "64 bytes in size. Value range: 0% (no hit) to 100% (optimal).",
+   .usage = AC_SPM_USAGE_PERCENTAGE,
+   .num_components = 3,
+   .components = {
+      &gfx10_scalar_cache_request_count_comp,
+      &gfx10_scalar_cache_hit_count_comp,
+      &gfx10_scalar_cache_miss_count_comp,
+   },
+};
+
+static struct ac_spm_derived_counter_descr gfx10_l0_cache_hit_counter = {
+   .id = AC_SPM_COUNTER_L0_CACHE_HIT,
+   .group_id = AC_SPM_GROUP_CACHE,
+   .name = "L0 cache hit",
+   .desc = "The percentage of read requests that hit the data in the L0 cache. "
+           "The L0 cache contains vector data, which is data that may vary in each "
+           "thread across the wavefront. Each request is 128 bytes in size. Value "
+           "range: 0% (no hit) to 100% (optimal).",
+   .usage = AC_SPM_USAGE_PERCENTAGE,
+   .num_components = 3,
+   .components = {
+      &gfx10_l0_cache_request_count_comp,
+      &gfx10_l0_cache_hit_count_comp,
+      &gfx10_l0_cache_miss_count_comp,
+   },
+};
+
+static struct ac_spm_derived_counter_descr gfx10_l1_cache_hit_counter = {
+   .id = AC_SPM_COUNTER_L1_CACHE_HIT,
+   .group_id = AC_SPM_GROUP_CACHE,
+   .name = "L1 cache hit",
+   .desc = "The percentage of read or write requests that hit the data in the "
+           "L1 cache. The L1 cache is shared across all WGPs in a single shader "
+           "engine. Each request is 128 bytes in size. Value range: 0% (no hit) to "
+           "100% (optimal).",
+   .usage = AC_SPM_USAGE_PERCENTAGE,
+   .num_components = 3,
+   .components = {
+      &gfx10_l1_cache_request_count_comp,
+      &gfx10_l1_cache_hit_count_comp,
+      &gfx10_l1_cache_miss_count_comp,
+   },
+};
+
+static struct ac_spm_derived_counter_descr gfx10_l2_cache_hit_counter = {
+   .id = AC_SPM_COUNTER_L2_CACHE_HIT,
+   .group_id = AC_SPM_GROUP_CACHE,
+   .name = "L2 cache hit",
+   .desc = "The percentage of read or write requests that hit the data in the "
+           "L2 cache. The L2 cache is shared by many blocks across the GPU, "
+           "including the Command Processor, Geometry Engine, all WGPs, all Render "
+           "Backends, and others. Each request is 128 bytes in size. Value range: 0% "
+           "(no hit) to 100% (optimal).",
+   .usage = AC_SPM_USAGE_PERCENTAGE,
+   .num_components = 3,
+   .components = {
+      &gfx10_l2_cache_request_count_comp,
+      &gfx10_l2_cache_hit_count_comp,
+      &gfx10_l2_cache_miss_count_comp,
+   },
+};
+
+/* SPM groups. */
+static struct ac_spm_derived_group_descr gfx10_cache_group = {
+   .id = AC_SPM_GROUP_CACHE,
+   .name = "Cache",
+   .num_counters = 5,
+   .counters = {
+      &gfx10_inst_cache_hit_counter,
+      &gfx10_scalar_cache_hit_counter,
+      &gfx10_l0_cache_hit_counter,
+      &gfx10_l1_cache_hit_counter,
+      &gfx10_l2_cache_hit_counter,
+   },
+};
+
+static struct ac_spm_derived_counter *
+ac_spm_get_counter_by_id(struct ac_spm_derived_trace *spm_derived_trace,
+                         enum ac_spm_counter_id counter_id)
+{
+   for (uint32_t i = 0; i < spm_derived_trace->num_counters; i++) {
+      struct ac_spm_derived_counter *counter = &spm_derived_trace->counters[i];
+
+      if (counter->descr->id == counter_id)
+         return counter;
+   }
+
+   return NULL;
+}
+
+static struct ac_spm_derived_component *
+ac_spm_get_component_by_id(struct ac_spm_derived_trace *spm_derived_trace,
+                           enum ac_spm_component_id component_id)
+{
+   for (uint32_t i = 0; i < spm_derived_trace->num_components; i++) {
+      struct ac_spm_derived_component *component = &spm_derived_trace->components[i];
+
+      if (component->descr->id == component_id)
+         return component;
+   }
+
+   return NULL;
+}
+
+static void
+ac_spm_add_group(struct ac_spm_derived_trace *spm_derived_trace,
+                 const struct ac_spm_derived_group_descr *group_descr)
+{
+   for (uint32_t i = 0; i < group_descr->num_counters; i++) {
+      const struct ac_spm_derived_counter_descr *counter_descr =
+         group_descr->counters[i];
+
+      for (uint32_t j = 0; j < counter_descr->num_components; j++) {
+         struct ac_spm_derived_component *component =
+            &spm_derived_trace->components[spm_derived_trace->num_components++];
+         assert(spm_derived_trace->num_components <= AC_SPM_COMPONENT_COUNT);
+
+         component->descr = counter_descr->components[j];
+      }
+
+      struct ac_spm_derived_counter *counter =
+         &spm_derived_trace->counters[spm_derived_trace->num_counters++];
+      assert(spm_derived_trace->num_counters <= AC_SPM_COUNTER_COUNT);
+      counter->descr = counter_descr;
+   }
+
+   struct ac_spm_derived_group *group =
+      &spm_derived_trace->groups[spm_derived_trace->num_groups++];
+   assert(spm_derived_trace->num_groups <= AC_SPM_GROUP_COUNT);
+   group->descr = group_descr;
+}
+
+static enum ac_spm_raw_counter_op
+ac_spm_get_raw_counter_op(enum ac_spm_raw_counter_id id)
+{
+   switch (id) {
+   case AC_SPM_TCP_PERF_SEL_REQ:
+   case AC_SPM_TCP_PERF_SEL_REQ_MISS:
+   case AC_SPM_SQC_PERF_SEL_DCACHE_HITS:
+   case AC_SPM_SQC_PERF_SEL_DCACHE_MISSES:
+   case AC_SPM_SQC_PERF_SEL_DCACHE_MISSES_DUPLICATE:
+   case AC_SPM_SQC_PERF_SEL_ICACHE_HITS:
+   case AC_SPM_SQC_PERF_SEL_ICACHE_MISSES:
+   case AC_SPM_SQC_PERF_SEL_ICACHE_MISSES_DUPLICATE:
+   case AC_SPM_GL1C_PERF_SEL_REQ:
+   case AC_SPM_GL1C_PERF_SEL_REQ_MISS:
+   case AC_SPM_GL2C_PERF_SEL_REQ:
+   case AC_SPM_GL2C_PERF_SEL_MISS:
+      return AC_SPM_RAW_COUNTER_OP_SUM;
+   default:
+      UNREACHABLE("Invalid SPM raw counter ID.");
+   }
+}
+
+struct ac_spm_derived_trace *
+ac_spm_get_derived_trace(const struct radeon_info *info,
+                         const struct ac_spm_trace *spm_trace)
+{
+   uint32_t sample_size_in_bytes = spm_trace->sample_size_in_bytes;
+   uint8_t *spm_data_ptr = (uint8_t *)spm_trace->ptr;
+   struct ac_spm_derived_trace *spm_derived_trace;
+
+   spm_derived_trace = calloc(1, sizeof(*spm_derived_trace));
+   if (!spm_derived_trace)
+      return NULL;
+
+   /* Add groups to the trace. */
+   ac_spm_add_group(spm_derived_trace, &gfx10_cache_group);
+
+   spm_derived_trace->timestamps = malloc(spm_trace->num_samples * sizeof(uint64_t));
+   if (!spm_derived_trace->timestamps) {
+      free(spm_derived_trace);
+      return NULL;
+   }
+
+   /* Skip the reserved 32 bytes of data at beginning. */
+   spm_data_ptr += 32;
+
+   /* Collect timestamps. */
+   uint64_t sample_size_in_qwords = sample_size_in_bytes / sizeof(uint64_t);
+   uint64_t *timestamp_ptr = (uint64_t *)spm_data_ptr;
+
+   for (uint32_t i = 0; i < spm_trace->num_samples; i++) {
+      uint64_t index = i * sample_size_in_qwords;
+      uint64_t timestamp = timestamp_ptr[index];
+
+      spm_derived_trace->timestamps[i] = timestamp;
+   }
+
+   /* Collect raw counter values. */
+   uint64_t *raw_counter_values[AC_SPM_RAW_COUNTER_ID_COUNT];
+   for (uint32_t i = 0; i < AC_SPM_RAW_COUNTER_ID_COUNT; i++) {
+      raw_counter_values[i] = calloc(spm_trace->num_samples, sizeof(uint64_t));
+   }
+
+   const uint32_t sample_size_in_hwords = sample_size_in_bytes / sizeof(uint16_t);
+   const uint16_t *counter_values_ptr = (uint16_t *)spm_data_ptr;
+
+   for (uint32_t c = 0; c < spm_trace->num_counters; c++) {
+      const uint64_t offset = spm_trace->counters[c].offset;
+      const uint32_t id = spm_trace->counters[c].id;
+      const enum ac_spm_raw_counter_op op = ac_spm_get_raw_counter_op(id);
+
+      for (uint32_t s = 0; s < spm_trace->num_samples; s++) {
+         const uint64_t index = offset + (s * sample_size_in_hwords);
+         const uint16_t value = counter_values_ptr[index];
+
+         switch (op) {
+         case AC_SPM_RAW_COUNTER_OP_SUM:
+            raw_counter_values[id][s] += value;
+            break;
+         default:
+            UNREACHABLE("Invalid SPM raw counter OP.\n");
+         }
+      }
+   }
+
+#define GET_COMPONENT(n) \
+   struct ac_spm_derived_component *_##n = \
+      ac_spm_get_component_by_id(spm_derived_trace, AC_SPM_COMPONENT_##n);
+#define GET_COUNTER(n) \
+   struct ac_spm_derived_counter *_##n = \
+      ac_spm_get_counter_by_id(spm_derived_trace, AC_SPM_COUNTER_##n);
+
+   GET_COUNTER(INST_CACHE_HIT);
+   GET_COUNTER(SCALAR_CACHE_HIT);
+   GET_COUNTER(L0_CACHE_HIT);
+   GET_COUNTER(L1_CACHE_HIT);
+   GET_COUNTER(L2_CACHE_HIT);
+
+   GET_COMPONENT(INST_CACHE_REQUEST_COUNT);
+   GET_COMPONENT(INST_CACHE_HIT_COUNT);
+   GET_COMPONENT(INST_CACHE_MISS_COUNT);
+   GET_COMPONENT(SCALAR_CACHE_REQUEST_COUNT);
+   GET_COMPONENT(SCALAR_CACHE_HIT_COUNT);
+   GET_COMPONENT(SCALAR_CACHE_MISS_COUNT);
+   GET_COMPONENT(L0_CACHE_REQUEST_COUNT);
+   GET_COMPONENT(L0_CACHE_HIT_COUNT);
+   GET_COMPONENT(L0_CACHE_MISS_COUNT);
+   GET_COMPONENT(L1_CACHE_REQUEST_COUNT);
+   GET_COMPONENT(L1_CACHE_HIT_COUNT);
+   GET_COMPONENT(L1_CACHE_MISS_COUNT);
+   GET_COMPONENT(L2_CACHE_REQUEST_COUNT);
+   GET_COMPONENT(L2_CACHE_HIT_COUNT);
+   GET_COMPONENT(L2_CACHE_MISS_COUNT);
+
+#undef GET_COMPONENT
+#undef GET_COUNTER
+
+#define ADD(id, value) \
+   util_dynarray_append(&_##id->values, (double)(value));
+
+#define OP_RAW(n) \
+   raw_counter_values[AC_SPM_##n][s]
+#define OP_SUM2(a, b) \
+   raw_counter_values[AC_SPM_##a][s] + \
+   raw_counter_values[AC_SPM_##b][s]
+#define OP_SUM3(a, b, c) \
+   raw_counter_values[AC_SPM_##a][s] + \
+   raw_counter_values[AC_SPM_##b][s] + \
+   raw_counter_values[AC_SPM_##c][s]
+#define OP_SUB2(a, b) \
+   raw_counter_values[AC_SPM_##a][s] - \
+   raw_counter_values[AC_SPM_##b][s]
+
+   for (uint32_t s = 0; s < spm_trace->num_samples; s++) {
+      /* Cache group. */
+      /* Instruction cache. */
+      const double inst_cache_request_count =
+         OP_SUM3(SQC_PERF_SEL_ICACHE_HITS, SQC_PERF_SEL_ICACHE_MISSES, SQC_PERF_SEL_ICACHE_MISSES_DUPLICATE);
+      const double inst_cache_hit_count =
+         OP_RAW(SQC_PERF_SEL_ICACHE_HITS);
+      const double inst_cache_miss_count =
+         OP_SUM2(SQC_PERF_SEL_ICACHE_MISSES, SQC_PERF_SEL_ICACHE_MISSES_DUPLICATE);
+      const double inst_cache_hit =
+         inst_cache_request_count ? (inst_cache_hit_count / inst_cache_request_count) * 100.0f : 0.0f;
+
+      ADD(INST_CACHE_REQUEST_COUNT, inst_cache_request_count);
+      ADD(INST_CACHE_HIT_COUNT, inst_cache_hit_count);
+      ADD(INST_CACHE_MISS_COUNT, inst_cache_miss_count);
+      ADD(INST_CACHE_HIT, inst_cache_hit);
+
+      /* Scalar cache. */
+      const double scalar_cache_request_count =
+         OP_SUM3(SQC_PERF_SEL_DCACHE_HITS, SQC_PERF_SEL_DCACHE_MISSES, SQC_PERF_SEL_DCACHE_MISSES_DUPLICATE);
+      const double scalar_cache_hit_count =
+         OP_RAW(SQC_PERF_SEL_DCACHE_HITS);
+      const double scalar_cache_miss_count =
+         OP_SUM2(SQC_PERF_SEL_DCACHE_MISSES, SQC_PERF_SEL_DCACHE_MISSES_DUPLICATE);
+      const double scalar_cache_hit =
+         scalar_cache_request_count ? (scalar_cache_hit_count / scalar_cache_request_count) * 100.0f : 0.0f;
+
+      ADD(SCALAR_CACHE_REQUEST_COUNT, scalar_cache_request_count);
+      ADD(SCALAR_CACHE_HIT_COUNT, scalar_cache_hit_count);
+      ADD(SCALAR_CACHE_MISS_COUNT, scalar_cache_miss_count);
+      ADD(SCALAR_CACHE_HIT, scalar_cache_hit);
+
+      /* L0 cache. */
+      const double l0_cache_request_count = OP_RAW(TCP_PERF_SEL_REQ);
+      const double l0_cache_hit_count = OP_SUB2(TCP_PERF_SEL_REQ, TCP_PERF_SEL_REQ_MISS);
+      const double l0_cache_miss_count = OP_RAW(TCP_PERF_SEL_REQ_MISS);
+      const double l0_cache_hit =
+         l0_cache_request_count ? (l0_cache_hit_count / l0_cache_request_count) * 100.0f : 0.0f;
+
+      ADD(L0_CACHE_REQUEST_COUNT, l0_cache_request_count);
+      ADD(L0_CACHE_HIT_COUNT, l0_cache_hit_count);
+      ADD(L0_CACHE_MISS_COUNT, l0_cache_miss_count);
+      ADD(L0_CACHE_HIT, l0_cache_hit);
+
+      /* L1 cache. */
+      const double l1_cache_request_count = OP_RAW(GL1C_PERF_SEL_REQ);
+      const double l1_cache_hit_count = OP_SUB2(GL1C_PERF_SEL_REQ, GL1C_PERF_SEL_REQ_MISS);
+      const double l1_cache_miss_count = OP_RAW(GL1C_PERF_SEL_REQ_MISS);
+      const double l1_cache_hit =
+         l1_cache_request_count ? (l1_cache_hit_count / l1_cache_request_count) * 100.0f : 0.0f;
+
+      ADD(L1_CACHE_REQUEST_COUNT, l1_cache_request_count);
+      ADD(L1_CACHE_HIT_COUNT, l1_cache_hit_count);
+      ADD(L1_CACHE_MISS_COUNT, l1_cache_miss_count);
+      ADD(L1_CACHE_HIT, l1_cache_hit);
+
+      /* L2 cache. */
+      const double l2_cache_request_count = OP_RAW(GL2C_PERF_SEL_REQ);
+      const double l2_cache_hit_count = OP_SUB2(GL2C_PERF_SEL_REQ, GL2C_PERF_SEL_MISS);
+      const double l2_cache_miss_count = OP_RAW(GL2C_PERF_SEL_MISS);
+      const double l2_cache_hit =
+         l2_cache_request_count ? (l2_cache_hit_count / l2_cache_request_count) * 100.0f : 0.0f;
+
+      ADD(L2_CACHE_REQUEST_COUNT, l2_cache_request_count);
+      ADD(L2_CACHE_HIT_COUNT, l2_cache_hit_count);
+      ADD(L2_CACHE_MISS_COUNT, l2_cache_miss_count);
+      ADD(L2_CACHE_HIT, l2_cache_hit);
+   }
+
+#undef ADD
+#undef OP_RAW
+#undef OP_SUM2
+#undef OP_SUM3
+#undef OP_SUB2
+
+   spm_derived_trace->num_timestamps = spm_trace->num_samples;
+   spm_derived_trace->sample_interval = spm_trace->sample_interval;
+
+   for (uint32_t i = 0; i < AC_SPM_RAW_COUNTER_ID_COUNT; i++)
+      free(raw_counter_values[i]);
+
+   return spm_derived_trace;
+}
+
+void
+ac_spm_destroy_derived_trace(struct ac_spm_derived_trace *spm_derived_trace)
+{
+   for (uint32_t i = 0; i < spm_derived_trace->num_components; i++) {
+      struct ac_spm_derived_component *component = &spm_derived_trace->components[i];
+      util_dynarray_fini(&component->values);
+   }
+
+   for (uint32_t i = 0; i < spm_derived_trace->num_counters; i++) {
+      struct ac_spm_derived_counter *counter = &spm_derived_trace->counters[i];
+      util_dynarray_fini(&counter->values);
+   }
+
+   free(spm_derived_trace);
+}
+
 static void
 ac_emit_spm_muxsel(struct ac_cmdbuf *cs, enum amd_gfx_level gfx_level,
                    enum amd_ip_type ip_type, const struct ac_spm *spm)

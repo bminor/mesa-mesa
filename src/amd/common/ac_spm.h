@@ -11,6 +11,8 @@
 
 #include "ac_perfcounter.h"
 
+#include "util/u_dynarray.h"
+
 struct ac_cmdbuf;
 
 #define AC_SPM_MAX_COUNTER_PER_BLOCK 16
@@ -100,6 +102,10 @@ enum ac_spm_raw_counter_id {
    AC_SPM_GL2C_PERF_SEL_REQ,
    AC_SPM_GL2C_PERF_SEL_MISS,
    AC_SPM_RAW_COUNTER_ID_COUNT,
+};
+
+enum ac_spm_raw_counter_op {
+   AC_SPM_RAW_COUNTER_OP_SUM = 0,
 };
 
 struct ac_spm_counter_descr {
@@ -212,12 +218,116 @@ struct ac_spm_trace {
    uint32_t num_samples;
 };
 
+enum ac_spm_group_id {
+   AC_SPM_GROUP_CACHE,
+   AC_SPM_GROUP_COUNT,
+};
+
+enum ac_spm_counter_id {
+   AC_SPM_COUNTER_INST_CACHE_HIT,
+   AC_SPM_COUNTER_SCALAR_CACHE_HIT,
+   AC_SPM_COUNTER_L0_CACHE_HIT,
+   AC_SPM_COUNTER_L1_CACHE_HIT, /* < GFX12 */
+   AC_SPM_COUNTER_L2_CACHE_HIT,
+   AC_SPM_COUNTER_COUNT,
+};
+
+enum ac_spm_component_id {
+   AC_SPM_COMPONENT_INST_CACHE_REQUEST_COUNT,
+   AC_SPM_COMPONENT_INST_CACHE_HIT_COUNT,
+   AC_SPM_COMPONENT_INST_CACHE_MISS_COUNT,
+   AC_SPM_COMPONENT_SCALAR_CACHE_REQUEST_COUNT,
+   AC_SPM_COMPONENT_SCALAR_CACHE_HIT_COUNT,
+   AC_SPM_COMPONENT_SCALAR_CACHE_MISS_COUNT,
+   AC_SPM_COMPONENT_L0_CACHE_REQUEST_COUNT,
+   AC_SPM_COMPONENT_L0_CACHE_HIT_COUNT,
+   AC_SPM_COMPONENT_L0_CACHE_MISS_COUNT,
+   AC_SPM_COMPONENT_L1_CACHE_REQUEST_COUNT,  /* < GFX12 */
+   AC_SPM_COMPONENT_L1_CACHE_HIT_COUNT,      /* < GFX12 */
+   AC_SPM_COMPONENT_L1_CACHE_MISS_COUNT,     /* < GFX12 */
+   AC_SPM_COMPONENT_L2_CACHE_REQUEST_COUNT,
+   AC_SPM_COMPONENT_L2_CACHE_HIT_COUNT,
+   AC_SPM_COMPONENT_L2_CACHE_MISS_COUNT,
+   AC_SPM_COMPONENT_COUNT,
+};
+
+enum ac_spm_usage_type {
+   AC_SPM_USAGE_PERCENTAGE = 1,
+   AC_SPM_USAGE_ITEMS = 5,
+};
+
+#define AC_SPM_MAX_COMPONENTS_PER_COUNTER 3
+#define AC_SPM_MAX_COUNTERS_PER_GROUP     5
+
+struct ac_spm_derived_component_descr {
+   enum ac_spm_component_id id;
+   enum ac_spm_counter_id counter_id;
+   const char *name;
+   enum ac_spm_usage_type usage;
+};
+
+struct ac_spm_derived_counter_descr {
+   enum ac_spm_counter_id id;
+   enum ac_spm_group_id group_id;
+   const char *name;
+   const char *desc;
+   enum ac_spm_usage_type usage;
+   uint32_t num_components;
+   struct ac_spm_derived_component_descr *components[AC_SPM_MAX_COMPONENTS_PER_COUNTER];
+};
+
+struct ac_spm_derived_group_descr {
+   enum ac_spm_group_id id;
+   const char *name;
+   uint32_t num_counters;
+   struct ac_spm_derived_counter_descr *counters[AC_SPM_MAX_COUNTERS_PER_GROUP];
+};
+
+struct ac_spm_derived_group {
+   const struct ac_spm_derived_group_descr *descr;
+};
+
+struct ac_spm_derived_counter {
+   const struct ac_spm_derived_counter_descr *descr;
+
+   struct util_dynarray values;
+};
+
+struct ac_spm_derived_component {
+   const struct ac_spm_derived_component_descr *descr;
+
+   struct util_dynarray values;
+};
+
+struct ac_spm_derived_trace {
+   uint32_t num_timestamps;
+   uint64_t *timestamps;
+
+   uint32_t num_groups;
+   struct ac_spm_derived_group groups[AC_SPM_GROUP_COUNT];
+
+   uint32_t num_counters;
+   struct ac_spm_derived_counter counters[AC_SPM_COUNTER_COUNT];
+
+   uint32_t num_components;
+   struct ac_spm_derived_component components[AC_SPM_COMPONENT_COUNT];
+
+   uint32_t sample_interval;
+};
+
 bool ac_init_spm(const struct radeon_info *info,
                  const struct ac_perfcounters *pc,
                  struct ac_spm *spm);
 void ac_destroy_spm(struct ac_spm *spm);
 
 bool ac_spm_get_trace(const struct ac_spm *spm, struct ac_spm_trace *trace);
+
+struct ac_spm_derived_trace *
+ac_spm_get_derived_trace(const struct radeon_info *info,
+                         const struct ac_spm_trace *spm_trace);
+
+void
+ac_spm_destroy_derived_trace(struct ac_spm_derived_trace *spm_derived_trace);
 
 void
 ac_emit_spm_setup(struct ac_cmdbuf *cs, enum amd_gfx_level gfx_level,
