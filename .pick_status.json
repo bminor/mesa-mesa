@@ -1,5 +1,585 @@
 [
     {
+        "sha": "9c16bbd0237575e5dd9bd4e5f25d6da990ac4925",
+        "description": "brw: Perform mark_last_urb_write_with_eot optimization after CFG",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a4e84c9244f0392950e1ba00654d4250c7fe6ccf",
+        "description": "nir/gcm: Consider dead code elimination done by GCM as progress",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c7a345aea68ad0c6f16d3e7f81de30b6ad8fb0b1",
+        "description": "r300/ci: remove RV530 and RV380 non-asan deqp jobs",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c1bf22b56f25a531ac3bb8ccc35c2918f0e06f54",
+        "description": "panfrost: do not over-estimate format tib-size",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5330d09931bafb8682965f8fe71d1d0ab3a6befd",
+        "description": "panfrost: factor out meat of pan_bytes_per_pixel_tib to helper",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "762fe6e9dce1b28186dd8df7d3d1aad03ba26508",
+        "description": "panfrost: do not over-estimate memory needed for dummy-rt",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "9ec6197a0b553e2d6037d04a4eca68998021ba33",
+        "notes": null
+    },
+    {
+        "sha": "aa3c8e6fb01a122aa06cd6659f8c7784d66ef9b4",
+        "description": "panvk/csf: Fix BY_REGION dependencies",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a00f6ee033579497adf3d6cbae79e8fe1b277255",
+        "description": "zink/ci: Add tests to the anv-tgl fails list to reflect CI state",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "86581cca70951b7a7ac26352192b00e801646553",
+        "description": "pan/ci: Replace the g610-vk-full job by a g610-vk-asan one",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "fe3a0ab105c0309963b10f978e1d7a25fc1962a1",
+        "description": "ci: Add panfrost drivers to debian-arm64-asan",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8f0a8916c4037162b7d56749c84c16a8bb165ca1",
+        "description": "pan/ci: Extend g610-vk pre-merge test coverage",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "1f704f00129fec348eda045d9c1bd29598f918b6",
+        "description": "pan/ci: Update the g610 flakes to avoid UnexpectedImprovement(Pass)",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "55481b6f100416d2b7df7eb541456b0ddf9a6afc",
+        "description": "panvk: Free the decode context in the create_device() error path",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "d155d6b7a334f07ad652e5a87f16f3302c7b968b",
+        "notes": null
+    },
+    {
+        "sha": "bbc8ce27048440befc0519ac03eeefa933f6ef0d",
+        "description": "pan/cs: Don't leak builder resources",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "50d2396b7ebf6fee85de561d93539310a2fdd125",
+        "notes": null
+    },
+    {
+        "sha": "d9fa4d5cbb05600e44797f593545671eea581f2f",
+        "description": "panvk: Don't leak shader binaries when loaded from the cache",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "3d2cc01f8acf0a473d2f26c4a5249a59a9733ac9",
+        "notes": null
+    },
+    {
+        "sha": "b66861a5f072c6473c69d00ecb69cd8bea0e07a8",
+        "description": "pan/bi: Fix leak in bi_iterator_schedule()",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "7dc4f28507bda10d1793e81a854b15ab798977c6",
+        "notes": null
+    },
+    {
+        "sha": "29d173060e6eaea32dc79ca5f4be3a4e4dd43016",
+        "description": "panvk: Fix a memory leak in the descriptor set logic",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "ec02137c865ee0d2104f64714a9a39be6e25bf52",
+        "notes": null
+    },
+    {
+        "sha": "8b6e4c68d619a6c50c5d2a7eb8be7fd9bebb16c7",
+        "description": "panvk: Expose EXT_multisampled_render_to_single_sampled",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b6cadef428fb855c6aa837ae37907ace3f6cc3d6",
+        "description": "panvk: Implement VkSubpassResolvePerformanceQueryEXT",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5d2e297556bdde79c28a2bad66b2134253369ee6",
+        "description": "panvk: Setup attachments for ms to ss rendering",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "cb3f6481750a4eb1618d123a49840b77f2aded6c",
+        "description": "panvk: Create MS shadow images and views",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "092d78ebf4a8b28a73edc4e389c4e4c9097fa418",
+        "description": "pan/preload: Prepare for reading from single sampled view",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d7ae5d58249f39d5ac4c98cd15673d24778ed703",
+        "description": "pan/decode: Fix indent in pandecode_dcd",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6193483c4f3f17b357108c1f6c6e4e13418ba435",
+        "description": "radv: rename RADEON_FLAG_VA_UNCACHED to RADEON_FLAG_GL2_BYPASS",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0beb83b0eb0c04db9ad9782acd72b86e6697f011",
+        "description": "radv: add RADV_DEBUG=vm option",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e53576a5596fbe411ac5e6703d04a83e1d8b7db2",
+        "description": "brw: Move MATH related validation",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "55863c1267f2bf2744a9b9b98ff819ff260d29de",
+        "description": "brw: Add EU validation for ROR/ROL",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "47d8ed11775aaa52ee4188fd1eadfa936837ac02",
+        "description": "brw: Move PLN/LINE normalization",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3f436bdc6e4d2bf2d18f1cc5046fbbb9a1621999",
+        "description": "brw: Make LINE normalization into validation",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "75cf20f0eb639e3c61eb570ff4150cf23c0c4a6e",
+        "description": "brw: Remove LINE from brw_builder and brw_generator",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "cd3e3dd0d3c5487a2b65ad5dced322a17155db92",
+        "description": "brw: Drop asserts for brw_SRND",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "68190499df0b3102f682bcb18655c1f8056bf586",
+        "description": "brw: Move ADD related validation",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6ae92d3372a72c68326332e29d4d58732ff51c33",
+        "description": "brw: Move AVG related validation",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6d8d733d4d9b3a83d8ba736af4c1f0b56a1321a2",
+        "description": "brw: Move MUL related validation",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "26523bedecb585e7839a120d8ba216dcccdc28bb",
+        "description": "brw: Call nir_opt_offsets for mesh shaders",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "88d46605bd31a4e5e5ce388aa2dbf5e0a445ae39",
+        "description": "nir: Support Intel URB intrinsics in nir_opt_offsets",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d831f38d1139c0fd612c371629e47549eab756d1",
+        "description": "brw: Delete all the old backend mesh/task URB handling code",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d0dc45955dd95ca0549d50df4de1840dbf644d20",
+        "description": "brw: Lower task shader payload access in NIR",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "bd0c173595f9e0020afd75118bccb0608d0b891a",
+        "description": "brw: Lower mesh shader outputs in NIR",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6e5cc63a3a7886c628ea38a001782cd5853b9e0a",
+        "description": "brw: Extend URB lowering infrastructure to handle mesh shader outputs",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "60db7f20c94570b9f0138f8cb83a5fe1d8b49e18",
+        "description": "brw: move MUE initialization out of the SIMD loop",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d3053fb3d2e09861ed118eb63901ef6da1a8533f",
+        "description": "brw: Implement URB handle intrinsics for task/mesh stages",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d18423b116074f457cbdcc5dcb854e9a891ef55c",
+        "description": "brw: Make lower_{inputs,outputs}_to_urb_intrinsics non-static",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "788c49ecc66bec8caa3c09857523703ced9b9ba7",
+        "description": "brw: Extend load_urb/store_urb to handle 32-bit non-vec4-aligned access",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "97857d32248d7a8f560c371d4709c1f60b2afc6f",
+        "description": "nir: Fix mod analysis of ishl to shift the recursive result",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "2255375c4db6efb0024b06c14c4024c1ab76d0f5",
+        "notes": null
+    },
+    {
+        "sha": "2b700f6bfdec9dd4fd6982f6e2c3171c77805f7d",
+        "description": "brw: Delete attr_desc struct",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "817769540329a1cd2250db3fb6c3810a8b4ad3b7",
+        "description": "brw: Add missed access to store_urb_lsc_intel intrinsics",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "87c63b472507025c5e8b9bf796ddbb037e2f6c32",
+        "description": "brw: Rename brw_nir_lower_vue_inputs to brw_nir_lower_gs_inputs",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d525d2456a748178b09ed23c5425c287058e246d",
+        "description": "brw: Calculate tessellation URB offsets when lowering to URB intrinsics",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b02a01c63630a47407c82c17dae0b48ce3d8508f",
+        "description": "intel: Replace signed char with int8_t",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ca96f8517cc996915778c6d63d753f4cce63c555",
+        "description": "iris: remove uses of pipe_surface as a pointer",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e8134e6eaf76db8d8d35ef6c434c4eb5099f355c",
+        "description": "radv/rt: Fix gnu-empty-initializer error",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "f692ac76ca82fde74d181edaaa2f0e7c3b9e4e9d",
+        "notes": null
+    },
+    {
+        "sha": "0324700c03887f8ec54a124b3625200f384cbca7",
+        "description": "radv: Use zero-filled BO for GFX6 and GFX10 null index buffer bug",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f001515c875d8a0c4db4feb4c1b9bcabc61e6fab",
+        "description": "aco: Use only VGPR offset on buffer atomics on GFX6-7",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "42e797b1395f8be582ad5f42f29ff420e45fa5bf",
+        "description": "svga: Report \"VRAM\" more accurately",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "94d2ec975dd9a8501f1ddcb13b5db6d3318df2ae",
+        "description": "anv: disable crast on SKL",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "59f821218ca812f26f8573072bc8169bd1701657",
+        "description": "radv/video: Move probability table filling to bind",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3bddd2eaedbc169e1b0a72bf4858d5c0b9dbfb15",
+        "description": "Revert \"device-select-layer: Implement VkNegotiateLayerInterface::pfnGetDeviceProcAddr\"",
+        "nominated": false,
+        "nomination_type": 3,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "b17896f693b21348f1e3804c0cfba6175980f927",
+        "notes": null
+    },
+    {
         "sha": "518705a4fe794683a4c672f803e011490d24c12c",
         "description": "intel/brw: Split to a function the code that calculate sampler channels that should be written",
         "nominated": false,
