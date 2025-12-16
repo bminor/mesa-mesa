@@ -164,8 +164,11 @@ void ir3_update_merge_sets_index(struct ir3_liveness *live, struct ir3 *ir);
 void ir3_index_instrs_for_merge_sets(struct ir3 *ir);
 
 struct ir3_pressure {
+   /* Register number limits for RA, in units of half regs. */
    unsigned full, half, shared, shared_half;
 };
+
+struct ir3_pressure ir3_ra_get_reg_file_limits(struct ir3_shader_variant *so);
 
 void ir3_calc_pressure(struct ir3_shader_variant *v, struct ir3_liveness *live,
                        struct ir3_pressure *max_pressure);

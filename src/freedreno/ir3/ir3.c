@@ -234,7 +234,7 @@ ir3_should_double_threadsize(struct ir3_shader_variant *v, unsigned regs_count)
        * correlated with dynamic branching).  For fp16 apps, the increased ALU
        * rate made it worth it regardless.
        */
-      if (uses_significant_16bit_alu(v)) {
+      if (!v->ir || uses_significant_16bit_alu(v)) {
          /* Check that doubling the threadsize wouldn't exceed the regfile size */
          return regs_count * 2 <= compiler->reg_size_vec4;
       } else {

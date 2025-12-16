@@ -621,6 +621,11 @@ create_variant(struct ir3_shader *shader, const struct ir3_shader_key *key,
    if (v->type == MESA_SHADER_COMPUTE ||
        v->type == MESA_SHADER_KERNEL) {
       v->cs.force_linear_dispatch = shader->cs.force_linear_dispatch;
+
+      v->local_size[0] = shader->nir->info.workgroup_size[0];
+      v->local_size[1] = shader->nir->info.workgroup_size[1];
+      v->local_size[2] = shader->nir->info.workgroup_size[2];
+      v->local_size_variable = shader->nir->info.workgroup_size_variable;
    }
 
    struct ir3_const_state *const_state = ir3_const_state_mut(v);

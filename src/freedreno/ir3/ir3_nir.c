@@ -11,6 +11,7 @@
 
 #include "ir3_compiler.h"
 #include "ir3_nir.h"
+#include "ir3_ra.h"
 #include "ir3_shader.h"
 
 #include "nir_builtin_builder.h"

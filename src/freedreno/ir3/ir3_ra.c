@@ -2746,6 +2746,33 @@ calc_limit_pressure_for_cs_with_barrier(struct ir3_shader_variant *v,
    }
 }
 
+struct ir3_pressure
+ir3_ra_get_reg_file_limits(struct ir3_shader_variant *v)
+{
+   struct ir3_pressure limit_pressure = {
+      .full = RA_FULL_SIZE,
+      .half = RA_HALF_SIZE,
+      .shared = RA_SHARED_SIZE,
+      .shared_half = RA_SHARED_HALF_SIZE,
+   };
+
+   if (mesa_shader_stage_is_compute(v->type) &&
+       v->shader->nir->info.uses_control_barrier) {
+      calc_limit_pressure_for_cs_with_barrier(v, &limit_pressure);
+   }
+
+   /* If the user forces a doubled threadsize, we may have to lower the limit
+    * because on some gens the register file is not big enough to hold a
+    * double-size wave with all 48 registers in use.
+    */
+   if (v->shader_options.real_wavesize == IR3_DOUBLE_ONLY) {
+      limit_pressure.full =
+         MAX2(limit_pressure.full, v->compiler->reg_size_vec4 / 2 * 16);
+   }
+
+   return limit_pressure;
+}
+
 int
 ir3_ra(struct ir3_shader_variant *v)
 {
@@ -2788,24 +2815,7 @@ ir3_ra(struct ir3_shader_variant *v)
    d("\thalf: %u", max_pressure.half);
    d("\tshared: %u", max_pressure.shared);
 
-   struct ir3_pressure limit_pressure;
-   limit_pressure.full = RA_FULL_SIZE;
-   limit_pressure.half = RA_HALF_SIZE;
-   limit_pressure.shared = RA_SHARED_SIZE;
-   limit_pressure.shared_half = RA_SHARED_HALF_SIZE;
-
-   if (mesa_shader_stage_is_compute(v->type) && v->has_barrier) {
-      calc_limit_pressure_for_cs_with_barrier(v, &limit_pressure);
-   }
-
-   /* If the user forces a doubled threadsize, we may have to lower the limit
-    * because on some gens the register file is not big enough to hold a
-    * double-size wave with all 48 registers in use.
-    */
-   if (v->shader_options.real_wavesize == IR3_DOUBLE_ONLY) {
-      limit_pressure.full =
-         MAX2(limit_pressure.full, ctx->compiler->reg_size_vec4 / 2 * 16);
-   }
+   struct ir3_pressure limit_pressure = ir3_ra_get_reg_file_limits(v);
 
    /* If requested, lower the limit so that spilling happens more often. */
    if (ir3_shader_debug & IR3_DBG_SPILLALL)

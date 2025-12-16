@@ -5663,13 +5663,6 @@ ir3_compile_shader_nir(struct ir3_compiler *compiler,
 
    ir = so->ir = ctx->ir;
 
-   if (mesa_shader_stage_is_compute(so->type)) {
-      so->local_size[0] = ctx->s->info.workgroup_size[0];
-      so->local_size[1] = ctx->s->info.workgroup_size[1];
-      so->local_size[2] = ctx->s->info.workgroup_size[2];
-      so->local_size_variable = ctx->s->info.workgroup_size_variable;
-   }
-
    if (so->type == MESA_SHADER_FRAGMENT && so->reads_shading_rate &&
        !so->reads_smask &&
        compiler->reading_shading_rate_requires_smask_quirk) {
