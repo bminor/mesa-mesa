@@ -1171,7 +1171,15 @@ nir_src_num_components(nir_src src)
    return src.ssa->num_components;
 }
 
-bool nir_src_is_divergent(nir_src *src);
+nir_block *nir_src_get_block(nir_src *src);
+
+bool nir_def_is_divergent_at_use_block(nir_def *def, nir_block *block);
+
+static inline bool
+nir_src_is_divergent(nir_src *src)
+{
+   return nir_def_is_divergent_at_use_block(src->ssa, nir_src_get_block(src));
+}
 
 /* Are all components the same, ie. .xxxx */
 static inline bool
@@ -4536,7 +4544,6 @@ const char *nir_src_as_string(nir_src src);
 bool nir_src_is_always_uniform(nir_src src);
 bool nir_srcs_equal(nir_src src1, nir_src src2);
 bool nir_instrs_equal(const nir_instr *instr1, const nir_instr *instr2);
-nir_block *nir_src_get_block(nir_src *src);
 
 static inline void
 nir_src_rewrite(nir_src *src, nir_def *new_ssa)
