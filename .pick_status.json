@@ -64,7 +64,7 @@
         "description": "panvk: Fix set_compute_sysval()",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "ae76a6a04596bfdbd37bab165bc5f2a5ff60d389",
         "notes": null
