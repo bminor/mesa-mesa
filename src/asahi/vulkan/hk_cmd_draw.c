@@ -1045,7 +1045,7 @@ hk_upload_vertex_params(struct hk_cmd_buffer *cmd, struct agx_draw draw)
    struct hk_graphics_state *gfx = &cmd->state.gfx;
    struct hk_descriptor_state *desc = &cmd->state.gfx.descriptors;
 
-   const uint32_t wg_size[3] = { 64, 1, 1 };
+   const uint32_t wg_size[3] = {64, 1, 1};
 
    struct poly_vertex_params params;
    poly_vertex_params_init(&params, 0, wg_size);
@@ -1148,7 +1148,7 @@ hk_upload_geometry_params(struct hk_cmd_buffer *cmd, struct agx_draw draw)
       mode = u_decomposed_prim(mode);
    }
 
-   const uint32_t wg_size[3] = { 64, 1, 1 };
+   const uint32_t wg_size[3] = {64, 1, 1};
 
    struct poly_geometry_params params;
    poly_geometry_params_init(&params, mode, wg_size);
@@ -1212,8 +1212,7 @@ hk_upload_geometry_params(struct hk_cmd_buffer *cmd, struct agx_draw draw)
             poly_gs_rast_vertices(gsi->shape, gsi->max_indices, 1, 0);
       }
    } else {
-      poly_geometry_params_set_draw(&params, mode,
-                                    gsi->shape, gsi->max_indices,
+      poly_geometry_params_set_draw(&params, mode, gsi->shape, gsi->max_indices,
                                     draw.b.count[0], draw.b.count[1]);
 
       unsigned size = params.input_primitives * params.count_buffer_stride;
@@ -1573,8 +1572,8 @@ hk_launch_gs_prerast(struct hk_cmd_buffer *cmd, struct hk_cs *cs,
       }
    } else {
       if (agx_is_indirect(draw.b)) {
-         return agx_draw_indirect(
-            geometry_params + offsetof(struct poly_geometry_params, draw));
+         return agx_draw_indirect(geometry_params +
+                                  offsetof(struct poly_geometry_params, draw));
       } else {
          return (struct agx_draw){
             .b = agx_3d(cmd->geom_index_count, cmd->geom_instance_count, 1),
