@@ -834,7 +834,10 @@ get_image_format_sample_counts(struct panvk_physical_device *physical_device,
    unsigned max_cbuf_atts = pan_get_max_cbufs(arch, max_tib_size);
 
    assert(!vk_format_is_compressed(format));
-   unsigned format_size = vk_format_get_blocksize(format);
+
+   enum pipe_format pfmt = vk_format_to_pipe_format(format);
+   unsigned format_size =
+      pan_format_tib_size(pfmt, physical_device->formats.blendable[pfmt].internal);
 
    return panvk_get_sample_counts(arch, max_tib_size, max_cbuf_atts,
                                   format_size);

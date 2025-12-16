@@ -145,7 +145,9 @@ get_max_msaa(struct panfrost_device *dev, enum pipe_format format)
 {
    unsigned max_tib_size = pan_query_tib_size(dev->model);
    unsigned max_cbuf_atts = pan_get_max_cbufs(dev->arch, max_tib_size);
-   unsigned format_size = util_format_get_blocksize(format);
+
+   unsigned format_size =
+      pan_format_tib_size(format, dev->blendable_formats[format].internal);
 
    unsigned max_msaa = pan_get_max_msaa(dev->arch, max_tib_size,
                                         max_cbuf_atts, format_size);
