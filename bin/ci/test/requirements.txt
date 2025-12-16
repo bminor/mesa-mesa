@@ -1,6 +1,6 @@
 -r ../requirements.txt
 aiohttp==3.13.*
-filelock==3.12.4
+filelock==3.20.1
 fire==0.7.0
 freezegun==1.5.1
 mock==5.1.0
