@@ -259,71 +259,71 @@ struct radv_shader_info {
       struct radv_legacy_gs_info legacy_gs_info;
       struct gfx10_ngg_info ngg_info;
    };
+};
 
-   /* Precomputed register values. */
-   struct {
-      uint32_t pgm_lo;
-      uint32_t pgm_rsrc1;
-      uint32_t pgm_rsrc2;
-      uint32_t pgm_rsrc3;
+/* Precomputed register values. */
+struct radv_shader_regs {
+   uint32_t pgm_lo;
+   uint32_t pgm_rsrc1;
+   uint32_t pgm_rsrc2;
+   uint32_t pgm_rsrc3;
 
-      union {
+   union {
+      struct {
+         uint32_t spi_shader_late_alloc_vs;
+         uint32_t spi_shader_pgm_rsrc3_vs;
+         uint32_t vgt_reuse_off;
+      } vs;
+
+      struct {
+         uint32_t vgt_esgs_ring_itemsize;
+         uint32_t vgt_gs_instance_cnt;
+         uint32_t vgt_gs_max_prims_per_subgroup;
+         uint32_t vgt_gs_vert_itemsize[4];
+         uint32_t vgt_gsvs_ring_itemsize;
+         uint32_t vgt_gsvs_ring_offset[3];
+      } gs;
+
+      struct {
+         uint32_t ge_cntl; /* Not fully precomputed. */
+         uint32_t ge_max_output_per_subgroup;
+         uint32_t ge_ngg_subgrp_cntl;
+         uint32_t spi_shader_idx_format;
+         uint32_t vgt_primitiveid_en;
          struct {
-            uint32_t spi_shader_late_alloc_vs;
-            uint32_t spi_shader_pgm_rsrc3_vs;
-            uint32_t vgt_reuse_off;
-         } vs;
+            uint32_t spi_shader_gs_meshlet_dim;
+            uint32_t spi_shader_gs_meshlet_exp_alloc;
+            uint32_t spi_shader_gs_meshlet_ctrl; /* GFX12+ */
+         } ms;
+      } ngg;
 
-         struct {
-            uint32_t vgt_esgs_ring_itemsize;
-            uint32_t vgt_gs_instance_cnt;
-            uint32_t vgt_gs_max_prims_per_subgroup;
-            uint32_t vgt_gs_vert_itemsize[4];
-            uint32_t vgt_gsvs_ring_itemsize;
-            uint32_t vgt_gsvs_ring_offset[3];
-         } gs;
+      struct {
+         uint32_t db_shader_control;
+         uint32_t pa_sc_shader_control;
+         uint32_t spi_ps_in_control;
+         uint32_t spi_shader_z_format;
+         uint32_t spi_gs_out_config_ps;
+         uint32_t pa_sc_hisz_control;
+      } ps;
 
-         struct {
-            uint32_t ge_cntl; /* Not fully precomputed. */
-            uint32_t ge_max_output_per_subgroup;
-            uint32_t ge_ngg_subgrp_cntl;
-            uint32_t spi_shader_idx_format;
-            uint32_t vgt_primitiveid_en;
-            struct {
-               uint32_t spi_shader_gs_meshlet_dim;
-               uint32_t spi_shader_gs_meshlet_exp_alloc;
-               uint32_t spi_shader_gs_meshlet_ctrl; /* GFX12+ */
-            } ms;
-         } ngg;
+      struct {
+         uint32_t compute_num_thread_x;
+         uint32_t compute_num_thread_y;
+         uint32_t compute_num_thread_z;
+         uint32_t compute_resource_limits;
+      } cs;
+   };
 
-         struct {
-            uint32_t db_shader_control;
-            uint32_t pa_sc_shader_control;
-            uint32_t spi_ps_in_control;
-            uint32_t spi_shader_z_format;
-            uint32_t spi_gs_out_config_ps;
-            uint32_t pa_sc_hisz_control;
-         } ps;
-
-         struct {
-            uint32_t compute_num_thread_x;
-            uint32_t compute_num_thread_y;
-            uint32_t compute_num_thread_z;
-            uint32_t compute_resource_limits;
-         } cs;
-      };
-
-      /* Common registers between stages. */
-      uint32_t vgt_gs_max_vert_out;
-      uint32_t vgt_gs_onchip_cntl;
-      uint32_t spi_shader_pgm_rsrc3_gs;
-      uint32_t spi_shader_pgm_rsrc4_gs;
-      uint32_t ge_pc_alloc;
-      uint32_t pa_cl_vs_out_cntl;
-      uint32_t spi_vs_out_config;
-      uint32_t spi_shader_pos_format;
-      uint32_t vgt_gs_instance_cnt;
-   } regs;
+   /* Common registers between stages. */
+   uint32_t vgt_gs_max_vert_out;
+   uint32_t vgt_gs_onchip_cntl;
+   uint32_t spi_shader_pgm_rsrc3_gs;
+   uint32_t spi_shader_pgm_rsrc4_gs;
+   uint32_t ge_pc_alloc;
+   uint32_t pa_cl_vs_out_cntl;
+   uint32_t spi_vs_out_config;
+   uint32_t spi_shader_pos_format;
+   uint32_t vgt_gs_instance_cnt;
 };
 
 void radv_nir_shader_info_init(mesa_shader_stage stage, mesa_shader_stage next_stage, struct radv_shader_info *info);
