@@ -237,10 +237,11 @@ emit_lrz(fd_cs &cs, struct fd_batch *batch, struct fd_batch_subpass *subpass)
    struct pipe_framebuffer_state *pfb = &batch->framebuffer;
 
    if (!subpass->lrz) {
-      fd_crb crb(cs, 7);
+      fd_crb crb(cs, 8);
 
       crb.add(GRAS_LRZ_BUFFER_BASE(CHIP));
       crb.add(GRAS_LRZ_BUFFER_PITCH(CHIP));
+      crb.add(A6XX_GRAS_LRZ_VIEW_INFO());
       crb.add(A6XX_GRAS_LRZ_FAST_CLEAR_BUFFER_BASE());
 
       if (CHIP >= A7XX) {
@@ -259,7 +260,7 @@ emit_lrz(fd_cs &cs, struct fd_batch *batch, struct fd_batch_subpass *subpass)
     */
    fd6_event_write<CHIP>(batch->ctx, cs, FD_LRZ_FLUSH);
 
-   fd_crb crb(cs, 7);
+   fd_crb crb(cs, 8);
 
    struct fd_resource *zsbuf = fd_resource(pfb->zsbuf.texture);
 
@@ -268,6 +269,12 @@ emit_lrz(fd_cs &cs, struct fd_batch *batch, struct fd_batch_subpass *subpass)
    crb.add(GRAS_LRZ_BUFFER_BASE(CHIP, .bo = subpass->lrz));
    crb.add(GRAS_LRZ_BUFFER_PITCH(CHIP,
       .pitch = zsbuf->lrz_layout.lrz_pitch * sizeof(uint16_t),
+      .array_pitch = zsbuf->lrz_layout.lrz_layer_size,
+   ));
+   crb.add(A6XX_GRAS_LRZ_VIEW_INFO(
+      .base_layer = pfb->zsbuf.first_layer,
+      .layer_count = pfb->zsbuf.last_layer - pfb->zsbuf.first_layer + 1,
+      .base_mip_level = pfb->zsbuf.level,
    ));
    crb.add(A6XX_GRAS_LRZ_FAST_CLEAR_BUFFER_BASE(
       .bo = zsbuf->lrz_layout.lrz_fc_size ? subpass->lrz : NULL,
