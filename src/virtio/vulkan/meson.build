@@ -75,7 +75,6 @@ libvn_files = files(
   'vn_ring.c',
   'vn_renderer_internal.c',
   'vn_renderer_util.c',
-  'vn_renderer_vtest.c',
 )
 
 vn_incs = [
@@ -106,6 +105,10 @@ vn_link_args = [
 ]
 
 vn_libs = []
+
+if not with_platform_windows
+  libvn_files += files('vn_renderer_vtest.c')
+endif
 
 if system_has_kms_drm
   libvn_files += files('vn_renderer_virtgpu.c')
