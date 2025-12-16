@@ -4061,7 +4061,7 @@ enum anv_query_bits {
  * there is no tile cache.
  */
 #define ANV_DEVINFO_HAS_COHERENT_L3_CS(devinfo) \
-   (intel_device_info_is_dg2(devinfo) || (devinfo)->ver >= 20)
+   (intel_device_info_is_dg2(devinfo))
 
 /* Things we need to flush before accessing query data using the command
  * streamer.
