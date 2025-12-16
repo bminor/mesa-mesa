@@ -122,6 +122,7 @@ kk_get_device_extensions(const struct kk_instance *instance,
       .EXT_vertex_attribute_divisor = true,
 
       /* Optional extensions */
+      .KHR_calibrated_timestamps = true,
       .KHR_shader_maximal_reconvergence = true,
       .KHR_shader_relaxed_extended_instruction = true,
       .KHR_shader_subgroup_uniform_control_flow = true,
@@ -131,6 +132,7 @@ kk_get_device_extensions(const struct kk_instance *instance,
 #endif
       .KHR_workgroup_memory_explicit_layout = true,
 
+      .EXT_calibrated_timestamps = true,
       .EXT_external_memory_metal = true,
       .EXT_load_store_op_none = true,
       .EXT_mutable_descriptor_type = true,
@@ -1001,31 +1003,6 @@ kk_GetPhysicalDeviceQueueFamilyProperties2(
             (VkExtent3D){1, 1, 1};
       }
    }
-}
-
-static const VkTimeDomainKHR kk_time_domains[] = {
-   VK_TIME_DOMAIN_DEVICE_KHR,
-   VK_TIME_DOMAIN_CLOCK_MONOTONIC_KHR,
-#ifdef CLOCK_MONOTONIC_RAW
-   VK_TIME_DOMAIN_CLOCK_MONOTONIC_RAW_KHR,
-#endif
-};
-
-VKAPI_ATTR VkResult VKAPI_CALL
-kk_GetPhysicalDeviceCalibrateableTimeDomainsKHR(VkPhysicalDevice physicalDevice,
-                                                uint32_t *pTimeDomainCount,
-                                                VkTimeDomainKHR *pTimeDomains)
-{
-   VK_OUTARRAY_MAKE_TYPED(VkTimeDomainKHR, out, pTimeDomains, pTimeDomainCount);
-
-   for (int d = 0; d < ARRAY_SIZE(kk_time_domains); d++) {
-      vk_outarray_append_typed(VkTimeDomainKHR, &out, i)
-      {
-         *i = kk_time_domains[d];
-      }
-   }
-
-   return vk_outarray_status(&out);
 }
 
 VKAPI_ATTR void VKAPI_CALL
