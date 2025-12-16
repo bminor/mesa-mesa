@@ -29,6 +29,9 @@ uint32_t mtl_device_get_peer_index(mtl_device *dev);
 uint64_t mtl_device_get_registry_id(mtl_device *dev);
 struct mtl_size mtl_device_max_threads_per_threadgroup(mtl_device *dev);
 
+/* Timestamp query */
+uint64_t mtl_device_get_gpu_timestamp(mtl_device *dev);
+
 /* Resource queries */
 void mtl_heap_buffer_size_and_align_with_length(mtl_device *device,
                                                 uint64_t *size_B,

@@ -59,6 +59,13 @@ mtl_device_max_threads_per_threadgroup(mtl_device *dev)
    return (struct mtl_size){};
 }
 
+/* Timestamp query */
+uint64_t
+mtl_device_get_gpu_timestamp(mtl_device *dev)
+{
+   return 0u;
+}
+
 /* Resource queries */
 void
 mtl_heap_buffer_size_and_align_with_length(mtl_device *device, uint64_t *size_B,
