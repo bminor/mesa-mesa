@@ -78,6 +78,12 @@ libvn_files = files(
   'vn_renderer_vtest.c',
 )
 
+vn_incs = [
+  inc_include,
+  inc_src,
+  inc_virtio,
+]
+
 vn_deps = [
   dep_thread,
   idep_mesautil,
@@ -87,11 +93,17 @@ vn_deps = [
   idep_xmlconfig,
 ]
 
-vn_flags = [
+vn_c_args = [
   no_override_init_args,
 ] + cc.get_supported_arguments([
   '-Werror=switch',
 ])
+
+vn_link_args = [
+  ld_args_bsymbolic,
+  ld_args_gc_sections,
+  vulkan_icd_link_args,
+]
 
 vn_libs = []
 
@@ -104,7 +116,7 @@ if with_platform_wayland or with_platform_x11 or \
    (system_has_kms_drm and not with_platform_android) or \
    with_platform_windows
   libvn_files += files('vn_wsi.c')
-  vn_flags += '-DVN_USE_WSI_PLATFORM'
+  vn_c_args += '-DVN_USE_WSI_PLATFORM'
 endif
 
 if with_platform_wayland
@@ -123,13 +135,11 @@ endif
 libvulkan_virtio = shared_library(
   'vulkan_virtio',
   [libvn_files, vn_entrypoints, sha1_h],
-  include_directories : [
-    inc_include, inc_src, inc_virtio,
-  ],
+  include_directories : vn_incs,
   link_with : vn_libs,
-  dependencies : [vn_deps],
-  c_args : [vn_flags],
-  link_args : [vulkan_icd_link_args, ld_args_bsymbolic, ld_args_gc_sections],
+  dependencies : vn_deps,
+  c_args : vn_c_args,
+  link_args : vn_link_args,
   link_depends : vulkan_icd_link_depends,
   gnu_symbol_visibility : 'hidden',
   install : true,
