@@ -4,6 +4,7 @@
  */
 #include "nvk_event.h"
 
+#include "nvk_buffer.h"
 #include "nvk_cmd_buffer.h"
 #include "nvk_device.h"
 #include "nvk_entrypoints.h"
@@ -257,4 +258,18 @@ nvk_CmdWaitEvents2(VkCommandBuffer commandBuffer,
    }
 
    nvk_cmd_invalidate_deps(cmd, eventCount, pDependencyInfos);
+}
+
+VKAPI_ATTR void VKAPI_CALL
+nvk_CmdWriteBufferMarker2AMD(VkCommandBuffer commandBuffer,
+                             VkPipelineStageFlags2 stage,
+                             VkBuffer _buffer,
+                             VkDeviceSize offset,
+                             uint32_t marker)
+{
+   VK_FROM_HANDLE(nvk_cmd_buffer, cmd, commandBuffer);
+   VK_FROM_HANDLE(nvk_buffer, buffer, _buffer);
+   const uint64_t marker_addr = vk_buffer_address(&buffer->vk, offset);
+
+   nvk_event_report_semaphore(cmd, stage, marker_addr, marker);
 }
