@@ -428,9 +428,11 @@ vn_physical_device_init_features(struct vn_physical_device *physical_dev)
    feats->deviceMemoryReport = true;
 
    /* VK_EXT_map_memory_placed */
-   feats->memoryMapPlaced = true;
-   feats->memoryMapRangePlaced = false;
-   feats->memoryUnmapReserve = true;
+   if (supported_exts->EXT_map_memory_placed) {
+      feats->memoryMapPlaced = true;
+      feats->memoryMapRangePlaced = false;
+      feats->memoryUnmapReserve = true;
+   }
 
 #ifdef VN_USE_WSI_PLATFORM
    feats->presentId = supported_exts->KHR_present_id;
@@ -576,6 +578,8 @@ vn_physical_device_init_properties(struct vn_physical_device *physical_dev)
    struct vk_properties *props = &physical_dev->base.vk.properties;
    const struct vk_device_extension_table *exts =
       &physical_dev->renderer_extensions;
+   const struct vk_device_extension_table *supported_exts =
+      &physical_dev->base.vk.supported_extensions;
    VkPhysicalDeviceProperties2 props2 = {
       .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2,
    };
@@ -871,7 +875,8 @@ vn_physical_device_init_properties(struct vn_physical_device *physical_dev)
    props->minPlacedMemoryMapAlignment = os_page_size;
 
    /* VK_EXT_physical_device_drm */
-   VN_SET_VK_PROPS(props, &renderer_info->drm.props);
+   if (supported_exts->EXT_physical_device_drm)
+      VN_SET_VK_PROPS(props, &renderer_info->drm.props);
 
    /* VK_EXT_pci_bus_info */
    if (renderer_info->pci.has_bus_info)
@@ -1215,8 +1220,10 @@ vn_physical_device_get_native_extensions(
    exts->KHR_deferred_host_operations =
       physical_dev->ray_tracing && renderer_exts->KHR_acceleration_structure;
    exts->KHR_map_memory2 = true;
+#if !DETECT_OS_WINDOWS
    exts->EXT_map_memory_placed = true;
    exts->EXT_physical_device_drm = true;
+#endif
    /* use common implementation */
    exts->EXT_tooling_info = true;
    exts->EXT_device_memory_report = true;
@@ -1383,7 +1390,9 @@ vn_physical_device_get_passthrough_extensions(
       .EXT_global_priority_query = true,
       .EXT_graphics_pipeline_library = !VN_DEBUG(NO_GPL),
       .EXT_image_2d_view_of_3d = true,
+#if !DETECT_OS_WINDOWS
       .EXT_image_drm_format_modifier = true,
+#endif
       .EXT_image_sliced_view_of_3d = true,
       .EXT_image_view_min_lod = true,
       .EXT_index_type_uint8 = true,
