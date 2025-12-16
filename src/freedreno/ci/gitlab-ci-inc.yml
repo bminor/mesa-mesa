@@ -289,7 +289,9 @@
     FDO_CI_CONCURRENT: 8
     CI_TRON_DUT_SETUP_TAGS: dt_gpu:codename:a750
     CI_TRON_KERNEL__URL: 'https://fs.mupuf.org/hdk8650/2025-08-22-msm-fixes-for-mesa-ci//linux-arm64'
-    CI_TRON_INITRAMFS_CATEGORY__50_PLATFORM__0__URL: 'https://fs.mupuf.org/hdk8650/sm8650-hdk-firmware.cpio.xz'
+    CI_TRON_INITRAMFS_CATEGORY__50_PLATFORM__0__URL: "https://${S3_BASE_PATH}/${FIRMWARE_REPO}/qcom-${FIRMWARE_TAG}.tar"
+    CI_TRON_INITRAMFS_CATEGORY__50_PLATFORM__0__FORMAT__0__ARCHIVE__EXTENSION: cpio
+    CI_TRON_INITRAMFS_CATEGORY__50_PLATFORM__0__FORMAT__0__ARCHIVE__KEEP__0__PATH: './lib/firmware/qcom/(sm8650/)?.*gen70900.*'
     CI_TRON_DTB__0__URL: 'https://fs.mupuf.org/hdk8650/2025-08-22-msm-fixes-for-mesa-ci//linux-arm64.dtbs.cpio.xz'
     CI_TRON_DTB__0__FORMAT__0__ARCHIVE__MATCH: 'boot/dtbs/qcom/sm8650-hdk.dtb'
     CI_TRON__B2C_SWAP_SIZE: '16g'

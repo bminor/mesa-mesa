@@ -35,7 +35,7 @@ variables:
   KERNEL_TAG: "v6.17-mesa-ceea"
   KERNEL_REPO: "gfx-ci/linux"
   PKG_REPO_REV: "0d2527f6"
-  FIRMWARE_TAG: "e16373de"
+  FIRMWARE_TAG: "8fc31b97"
   FIRMWARE_REPO: "gfx-ci/firmware"
 
   WINDOWS_X64_MSVC_TAG: "20251120-bison"
