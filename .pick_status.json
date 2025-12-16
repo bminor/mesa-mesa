@@ -54,7 +54,7 @@
         "description": "panfrost: do not over-estimate memory needed for dummy-rt",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "9ec6197a0b553e2d6037d04a4eca68998021ba33",
         "notes": null
