@@ -471,23 +471,20 @@ pan_bytes_per_pixel_tib(enum pipe_format format)
 static unsigned
 pan_cbuf_bytes_per_pixel(const struct pan_fb_info *fb)
 {
-   /* dummy/non-existent render-targets use RGBA8 UNORM, e.g 4 bytes */
-   const unsigned dummy_rt_size = 4 * fb->nr_samples;
-
+   bool need_dummy = false;
    unsigned sum = 0;
 
-   if (!fb->rt_count) {
-      /* The HW needs at least one render-target */
-      return dummy_rt_size;
-   }
-
-   for (int cb = 0; cb < fb->rt_count; ++cb) {
-      unsigned rt_size = dummy_rt_size;
+   for (int cb = 0; cb < MAX2(fb->rt_count, 1); ++cb) {
       const struct pan_image_view *rt = fb->rts[cb].view;
       if (rt)
-         rt_size = pan_bytes_per_pixel_tib(rt->format) * rt->nr_samples;
+         sum += pan_bytes_per_pixel_tib(rt->format) * rt->nr_samples;
+      else
+         need_dummy = true;
+   }
 
-      sum += rt_size;
+   if (need_dummy) {
+      /* dummy/non-existent render-targets use RGBA8 UNORM, e.g 4 bytes */
+      sum = MAX2(sum, 4 * fb->nr_samples);
    }
 
    if (fb->pls_enabled) {
