@@ -455,17 +455,7 @@ pan_bytes_per_pixel_tib(enum pipe_format format)
 {
    const struct pan_blendable_format *bf =
       GENX(pan_blendable_format_from_pipe_format)(format);
-
-   if (bf->internal) {
-      /* Blendable formats are always 32-bits in the tile buffer,
-       * extra bits are used as padding or to dither */
-      return 4;
-   } else {
-      /* Non-blendable formats are raw, rounded up to the nearest
-       * power-of-two size */
-      unsigned bytes = util_format_get_blocksize(format);
-      return util_next_power_of_two(bytes);
-   }
+   return pan_format_tib_size(format, bf->internal);
 }
 
 static unsigned

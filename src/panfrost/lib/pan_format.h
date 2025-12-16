@@ -129,6 +129,21 @@ pan_format_get_plane_blocksize(enum pipe_format format, unsigned plane_idx)
    }
 }
 
+static inline unsigned
+pan_format_tib_size(enum pipe_format format, bool internal)
+{
+   if (internal) {
+      /* Blendable formats are always 32-bits in the tile buffer,
+       * extra bits are used as padding or to dither */
+      return 4;
+   } else {
+      /* Non-blendable formats are raw, rounded up to the nearest
+       * power-of-two size */
+      unsigned bytes = util_format_get_blocksize(format);
+      return util_next_power_of_two(bytes);
+   }
+}
+
 typedef uint32_t mali_pixel_format;
 
 /* pan bind flags */
