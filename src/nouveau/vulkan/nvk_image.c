@@ -1547,8 +1547,10 @@ nvk_image_plane_bind(struct nvk_device *dev,
                                 &plane_size_B, &plane_align_B);
    *offset_B = align64(*offset_B, plane_align_B);
 
+   const bool not_shared = !(mem->mem->flags & NVKMD_MEM_SHARED);
+
    if (plane->nil.pte_kind != 0) {
-      if (mem->dedicated_image == image && image->can_compress) {
+      if (mem->dedicated_image == image && image->can_compress && not_shared) {
          image->is_compressed = true;
          plane->addr = mem->mem->va->addr + *offset_B;
       } else {

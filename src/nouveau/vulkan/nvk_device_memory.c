@@ -157,6 +157,7 @@ nvk_AllocateMemory(VkDevice device,
    if (fd_info != NULL)
       handle_types |= fd_info->handleType;
 
+   const bool not_shared = handle_types == 0;
    bool pinned_to_vram = false;
 
    /* Align to os page size (typically 4K) as a start as this works for
@@ -179,10 +180,16 @@ nvk_AllocateMemory(VkDevice device,
          alignment = MAX2(alignment, image->planes[0].nil.align_B);
          pte_kind = image->planes[0].nil.pte_kind;
          tile_mode = image->planes[0].nil.tile_mode;
-      } else if (image->can_compress) {
-         /* If it's a dedicated alloc and it's not modifiers, then it's marked
-          * for compression and larger pages, so we set the pinned bit and up
-          * the alignment.
+      } else if (image->can_compress && not_shared) {
+         /* If it's a dedicated alloc and it's not modifiers or shared, then
+          * it's marked for compression and larger pages, so we set the pinned
+          * bit and up the alignment.
+          *
+          * Disabling compression for export/import is a bit nicer to apps.
+          * Eg. QtWebEngine likes to export/import buffers with
+          * VK_IMAGE_TILING_OPTIMAL and renders incorrectly if we remove
+          * the not_shared check.
+          * https://qt-project.atlassian.net/browse/QTBUG-141866
           */
          pinned_to_vram = true;
          pte_kind = image->planes[0].nil.compressed_pte_kind;
