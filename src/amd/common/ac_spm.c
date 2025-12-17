@@ -532,8 +532,10 @@ bool ac_init_spm(const struct radeon_info *info,
    for (unsigned i = 0; i < create_info_count; i++) {
       const struct ac_pc_block *block = ac_pc_get_block(pc, create_info[i].b->gpu_block);
 
-      if (!block)
+      if (!block) {
+         fprintf(stderr, "ac/spm: Unknown group.\n");
          return false;
+      }
 
       num_counters += block->num_global_instances;
    }
