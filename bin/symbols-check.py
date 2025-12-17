@@ -80,7 +80,7 @@ def get_symbols_nm(nm, lib):
         if line.startswith(' '):
             continue
         fields = line.split()
-        if len(fields) == 2 and fields[1] == 'U':
+        if len(fields) >= 2 and fields[1] == 'U':
             continue
         symbol_name = fields[0]
         if platform_name == 'Linux' or platform_name == 'GNU' or platform_name.startswith('GNU/'):
