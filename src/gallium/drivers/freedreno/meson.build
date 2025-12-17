@@ -235,6 +235,7 @@ freedreno_c_args += cc.get_supported_arguments([
 
 freedreno_cpp_args = []
 freedreno_cpp_args += cpp.get_supported_arguments([
+  '-DFD_BO_NO_HARDPIN=1',
   '-fno-exceptions',
   '-fno-rtti',
   '-Wno-address-of-packed-member',

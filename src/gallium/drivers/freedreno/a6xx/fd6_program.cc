@@ -7,8 +7,6 @@
  *    Rob Clark <robclark@freedesktop.org>
  */
 
-#define FD_BO_NO_HARDPIN 1
-
 #include <initializer_list>
 
 #include "pipe/p_state.h"
