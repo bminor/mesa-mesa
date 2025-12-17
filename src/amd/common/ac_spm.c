@@ -104,6 +104,12 @@ static struct ac_spm_counter_descr gfx103_gl2c_perf_sel_ea_wrreq =
    {AC_SPM_GL2C_PERF_SEL_EA_WRREQ, GL2C, 0x53};
 static struct ac_spm_counter_descr gfx103_gl2c_perf_sel_ea_wrreq_64b =
    {AC_SPM_GL2C_PERF_SEL_EA_WRREQ_64B, GL2C, 0x55};
+static struct ac_spm_counter_descr gfx103_td_perf_sel_ray_tracing_bvh4_tri_node =
+   {AC_SPM_TD_PERF_SEL_RAY_TRACING_BVH4_TRI_NODE, TD, 0x76};
+static struct ac_spm_counter_descr gfx103_td_perf_sel_ray_tracing_bvh4_fp16_box_node =
+   {AC_SPM_TD_PERF_SEL_RAY_TRACING_BVH4_FP16_BOX_NODE, TD, 0x74};
+static struct ac_spm_counter_descr gfx103_td_perf_sel_ray_tracing_bvh4_fp32_box_node =
+   {AC_SPM_TD_PERF_SEL_RAY_TRACING_BVH4_FP32_BOX_NODE, TD, 0x75};
 
 static struct ac_spm_counter_create_info gfx103_spm_counters[] = {
    {&gfx10_tcp_perf_sel_req},
@@ -130,6 +136,9 @@ static struct ac_spm_counter_create_info gfx103_spm_counters[] = {
    {&gfx10_gcea_perf_sel_sarb_io_sized_requests},
    {&gfx10_ta_perf_sel_ta_busy},
    {&gfx10_tcp_perf_sel_tcp_ta_req_stall},
+   {&gfx103_td_perf_sel_ray_tracing_bvh4_tri_node},
+   {&gfx103_td_perf_sel_ray_tracing_bvh4_fp16_box_node},
+   {&gfx103_td_perf_sel_ray_tracing_bvh4_fp32_box_node},
 };
 
 /* GFX11+ */
@@ -177,6 +186,9 @@ static struct ac_spm_counter_create_info gfx11_spm_counters[] = {
    {&gfx10_gcea_perf_sel_sarb_io_sized_requests},
    {&gfx10_ta_perf_sel_ta_busy},
    {&gfx11_tcp_perf_sel_tcp_ta_req_stall},
+   {&gfx103_td_perf_sel_ray_tracing_bvh4_tri_node},
+   {&gfx103_td_perf_sel_ray_tracing_bvh4_fp16_box_node},
+   {&gfx103_td_perf_sel_ray_tracing_bvh4_fp32_box_node},
 };
 
 /* GFX12+ */
@@ -1114,6 +1126,24 @@ static struct ac_spm_derived_counter_descr gfx10_mem_unit_stalled_counter = {
    },
 };
 
+static struct ac_spm_derived_counter_descr gfx103_ray_box_tests_counter = {
+   .id = AC_SPM_COUNTER_RAY_BOX_TESTS,
+   .group_id = AC_SPM_GROUP_RT,
+   .name = "Ray-box tests",
+   .desc = "The number of ray box intersection tests.",
+   .usage = AC_SPM_USAGE_ITEMS,
+   .num_components = 0,
+};
+
+static struct ac_spm_derived_counter_descr gfx103_ray_tri_tests_counter = {
+   .id = AC_SPM_COUNTER_RAY_TRI_TESTS,
+   .group_id = AC_SPM_GROUP_RT,
+   .name = "Ray-triangle tests",
+   .desc = "iThe number of ray triangle intersection tests",
+   .usage = AC_SPM_USAGE_ITEMS,
+   .num_components = 0,
+};
+
 /* SPM groups. */
 static struct ac_spm_derived_group_descr gfx10_cache_group = {
    .id = AC_SPM_GROUP_CACHE,
@@ -1156,6 +1186,16 @@ static struct ac_spm_derived_group_descr gfx10_memory_percentage_group = {
    .counters = {
       &gfx10_mem_unit_busy_counter,
       &gfx10_mem_unit_stalled_counter,
+   },
+};
+
+static struct ac_spm_derived_group_descr gfx103_rt_group = {
+   .id = AC_SPM_GROUP_RT,
+   .name = "Ray tracing",
+   .num_counters = 2,
+   .counters = {
+      &gfx103_ray_box_tests_counter,
+      &gfx103_ray_tri_tests_counter,
    },
 };
 
@@ -1246,6 +1286,9 @@ ac_spm_get_raw_counter_op(enum ac_spm_raw_counter_id id)
    case AC_SPM_GL2C_PERF_SEL_EA_WRREQ_64B:
    case AC_SPM_GCEA_PERF_SEL_SARB_DRAM_SIZED_REQUESTS:
    case AC_SPM_GCEA_PERF_SEL_SARB_IO_SIZED_REQUESTS:
+   case AC_SPM_TD_PERF_SEL_RAY_TRACING_BVH4_TRI_NODE:
+   case AC_SPM_TD_PERF_SEL_RAY_TRACING_BVH4_FP16_BOX_NODE:
+   case AC_SPM_TD_PERF_SEL_RAY_TRACING_BVH4_FP32_BOX_NODE:
       return AC_SPM_RAW_COUNTER_OP_SUM;
    case AC_SPM_TA_PERF_SEL_TA_BUSY:
    case AC_SPM_TCP_PERF_SEL_TCP_TA_REQ_STALL:
@@ -1272,6 +1315,8 @@ ac_spm_get_derived_trace(const struct radeon_info *info,
    ac_spm_add_group(spm_derived_trace, &gfx10_lds_group);
    ac_spm_add_group(spm_derived_trace, &gfx10_memory_bytes_group);
    ac_spm_add_group(spm_derived_trace, &gfx10_memory_percentage_group);
+   if (info->gfx_level >= GFX10_3)
+      ac_spm_add_group(spm_derived_trace, &gfx103_rt_group);
 
    spm_derived_trace->timestamps = malloc(spm_trace->num_samples * sizeof(uint64_t));
    if (!spm_derived_trace->timestamps) {
@@ -1343,6 +1388,8 @@ ac_spm_get_derived_trace(const struct radeon_info *info,
    GET_COUNTER(PCIE_BYTES);
    GET_COUNTER(MEM_UNIT_BUSY);
    GET_COUNTER(MEM_UNIT_STALLED);
+   GET_COUNTER(RAY_BOX_TESTS);
+   GET_COUNTER(RAY_TRI_TESTS);
 
    GET_COMPONENT(INST_CACHE_REQUEST_COUNT);
    GET_COMPONENT(INST_CACHE_HIT_COUNT);
@@ -1506,6 +1553,18 @@ ac_spm_get_derived_trace(const struct radeon_info *info,
 
       ADD(MEM_UNIT_STALLED_CYCLES, mem_unit_stalled_cycles);
       ADD(MEM_UNIT_STALLED, mem_unit_stalled);
+
+      /* Raytracing group. */
+      /* Ray box tests. */
+      const double ray_box_tests = OP_RAW(TD_PERF_SEL_RAY_TRACING_BVH4_FP16_BOX_NODE) +
+                                   OP_RAW(TD_PERF_SEL_RAY_TRACING_BVH4_FP32_BOX_NODE);
+
+      ADD(RAY_BOX_TESTS, ray_box_tests);
+
+      /* Ray triangle tests. */
+      const double ray_tri_tests = OP_RAW(TD_PERF_SEL_RAY_TRACING_BVH4_TRI_NODE);
+
+      ADD(RAY_TRI_TESTS, ray_tri_tests);
    }
 
 #undef ADD
