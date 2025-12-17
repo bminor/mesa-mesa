@@ -926,7 +926,7 @@ tu6_emit_render_cntl<A6XX>(struct tu_cmd_buffer *cmd,
       }
 
       if (no_track) {
-         tu_cs_emit_pkt4(cs, REG_A6XX_RB_RENDER_CNTL, 1);
+         tu_cs_emit_pkt4(cs, RB_RENDER_CNTL(A6XX).reg, 1);
          tu_cs_emit(cs, cntl);
          return;
       }
@@ -945,7 +945,7 @@ tu6_emit_render_cntl<A6XX>(struct tu_cmd_buffer *cmd,
 
    tu_cs_emit_pkt7(cs, CP_REG_WRITE, 3);
    tu_cs_emit(cs, CP_REG_WRITE_0_TRACKER(TRACK_RENDER_CNTL));
-   tu_cs_emit(cs, REG_A6XX_RB_RENDER_CNTL);
+   tu_cs_emit(cs, RB_RENDER_CNTL(A6XX).reg);
    tu_cs_emit(cs, cntl);
 }
 
@@ -9124,7 +9124,7 @@ tu_dispatch(struct tu_cmd_buffer *cmd,
           * previous dispatches to finish.
           */
          tu_cs_emit_pkt7(cs, CP_MEM_TO_REG, 3);
-         tu_cs_emit(cs, CP_MEM_TO_REG_0_REG(REG_A7XX_SP_CS_NDRANGE_1));
+         tu_cs_emit(cs, CP_MEM_TO_REG_0_REG(SP_CS_NDRANGE_1(CHIP).reg));
          tu_cs_emit_qw(cs, info->indirect);
 
          tu_cs_emit_pkt7(cs, CP_SCRATCH_WRITE, 2);
@@ -9149,7 +9149,7 @@ tu_dispatch(struct tu_cmd_buffer *cmd,
                     CP_REG_RMW_0_SKIP_WAIT_FOR_ME |
                     CP_REG_RMW_0_SRC0_IS_REG |
                     CP_REG_RMW_0_SRC1_ADD);
-         tu_cs_emit(cs, REG_A7XX_SP_CS_NDRANGE_1); /* SRC0 */
+         tu_cs_emit(cs, SP_CS_NDRANGE_1(CHIP).reg); /* SRC0 */
          tu_cs_emit(cs, -1); /* SRC1 */
 
          /* scratch0 = ((scratch0 & (local_size - 1)) rot 2
@@ -9167,7 +9167,7 @@ tu_dispatch(struct tu_cmd_buffer *cmd,
          /* write scratch0 to SP_CS_NDRANGE_7 */
          tu_cs_emit_pkt7(cs, CP_SCRATCH_TO_REG, 1);
          tu_cs_emit(cs,
-                    CP_SCRATCH_TO_REG_0_REG(REG_A7XX_SP_CS_NDRANGE_7) |
+                    CP_SCRATCH_TO_REG_0_REG(SP_CS_NDRANGE_7(CHIP).reg) |
                     CP_SCRATCH_TO_REG_0_SCRATCH(0));
 
          tu_cs_emit_pkt7(cs, CP_SCRATCH_WRITE, 2);
@@ -9185,7 +9185,7 @@ tu_dispatch(struct tu_cmd_buffer *cmd,
                     CP_REG_RMW_0_SKIP_WAIT_FOR_ME |
                     CP_REG_RMW_0_SRC0_IS_REG |
                     CP_REG_RMW_0_SRC1_ADD);
-         tu_cs_emit(cs, REG_A7XX_SP_CS_NDRANGE_1); /* SRC0 */
+         tu_cs_emit(cs, SP_CS_NDRANGE_1(CHIP).reg); /* SRC0 */
          tu_cs_emit(cs, local_size[0] - 1); /* SRC1 */
 
          unsigned local_size_log2 = util_logbase2(local_size[0]);
@@ -9207,7 +9207,7 @@ tu_dispatch(struct tu_cmd_buffer *cmd,
          /* write scratch0 to SP_CS_KERNEL_GROUP_X */
          tu_cs_emit_pkt7(cs, CP_SCRATCH_TO_REG, 1);
          tu_cs_emit(cs,
-                    CP_SCRATCH_TO_REG_0_REG(REG_A7XX_SP_CS_KERNEL_GROUP_X) |
+                    CP_SCRATCH_TO_REG_0_REG(SP_CS_KERNEL_GROUP_X(CHIP).reg) |
                     CP_SCRATCH_TO_REG_0_SCRATCH(0));
       } else {
          tu_cs_emit_regs(cs,
