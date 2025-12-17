@@ -545,6 +545,8 @@ bool ac_init_spm(const struct radeon_info *info,
       const struct ac_pc_block *block = ac_pc_get_block(pc, create_info[i].b->gpu_block);
       struct ac_spm_counter_create_info counter = create_info[i];
 
+      assert(block->num_global_instances > 0);
+
       for (unsigned j = 0; j < block->num_global_instances; j++) {
          counter.instance = j;
 
