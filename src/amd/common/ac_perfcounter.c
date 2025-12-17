@@ -1353,6 +1353,11 @@ bool ac_init_perfcounters(const struct radeon_info *info,
          } else if (!strcmp(block->b->b->name, "GL2C") ||
                     !strcmp(block->b->b->name, "GCEA")) {
             block->num_instances = block->num_global_instances = info->num_tcc_blocks;
+         } else if (!strcmp(block->b->b->name, "CPF")) {
+            block->num_instances = block->num_global_instances = 1;
+         } else if (!strcmp(block->b->b->name, "TA") ||
+                    !strcmp(block->b->b->name, "TD")) {
+            block->num_global_instances = block->num_instances;
          }
       }
 

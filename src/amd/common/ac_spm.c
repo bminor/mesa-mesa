@@ -165,14 +165,18 @@ ac_spm_init_instance_mapping(const struct radeon_info *info,
          /* Per-SA blocks. */
          assert(block->b->b->gpu_block == GL1C ||
                 block->b->b->gpu_block == TCP ||
-                block->b->b->gpu_block == SQ_WGP);
+                block->b->b->gpu_block == SQ_WGP ||
+                block->b->b->gpu_block == TA ||
+                block->b->b->gpu_block == TD);
          se_index = (counter->instance / block->num_instances) / info->max_sa_per_se;
          sa_index = (counter->instance / block->num_instances) % info->max_sa_per_se;
          instance_index = counter->instance % block->num_instances;
       }
    } else {
       /* Global blocks. */
-      assert(block->b->b->gpu_block == GL2C);
+      assert(block->b->b->gpu_block == GL2C ||
+             block->b->b->gpu_block == CPF ||
+             block->b->b->gpu_block == GCEA);
       instance_index = counter->instance;
    }
 
