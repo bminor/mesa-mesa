@@ -1029,6 +1029,38 @@ static struct ac_pc_block_gfxdescr groups_gfx10[] = {
    {&gfx10_UTCL1, 15},
 };
 
+static struct ac_pc_block_gfxdescr groups_gfx103[] = {
+   {&cik_CB, 461},
+   {&gfx10_CHA, 45},
+   {&gfx10_CHCG, 35},
+   {&gfx10_CHC, 35},
+   {&cik_CPC, 47},
+   {&cik_CPF, 40},
+   {&cik_CPG, 82},
+   {&gfx10_DB, 370},
+   {&gfx10_GCR, 94},
+   {&cik_GDS, 123},
+   {&gfx10_GE, 315},
+   {&gfx10_GL1A, 36},
+   {&gfx10_GL1C, 64, 4},
+   {&gfx10_GL2A, 91},
+   {&gfx10_GL2C, 235},
+   {&cik_GRBM, 47},
+   {&cik_GRBMSE, 19},
+   {&gfx10_PA_PH, 960},
+   {&cik_PA_SC, 552},
+   {&gfx10_PA_SU, 266},
+   {&gfx10_RLC, 7},
+   {&gfx10_RMI, 258},
+   {&cik_SPI, 329},
+   {&gfx10_SQ, 509},
+   {&cik_SX, 225},
+   {&cik_TA, 226},
+   {&gfx10_TCP, 77},
+   {&cik_TD, 61},
+   {&gfx10_UTCL1, 15},
+};
+
 static struct ac_pc_block_gfxdescr groups_gfx11[] = {
    {&cik_CB, 313},
    {&gfx10_CHA, 39},
@@ -1237,9 +1269,12 @@ bool ac_init_perfcounters(const struct radeon_info *info,
       num_blocks = ARRAY_SIZE(groups_gfx9);
       break;
    case GFX10:
-   case GFX10_3:
       blocks = groups_gfx10;
       num_blocks = ARRAY_SIZE(groups_gfx10);
+      break;
+   case GFX10_3:
+      blocks = groups_gfx103;
+      num_blocks = ARRAY_SIZE(groups_gfx103);
       break;
    case GFX11:
       blocks = groups_gfx11;
