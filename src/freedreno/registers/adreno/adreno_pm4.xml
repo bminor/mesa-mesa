@@ -1095,7 +1095,7 @@ opcode: CP_LOAD_STATE4 (30) (4 dwords)
 			<bitfield name="DIRTY" pos="16" type="boolean"/>
 			<bitfield name="DISABLE" pos="17" type="boolean"/>
 			<bitfield name="DISABLE_ALL_GROUPS" pos="18" type="boolean"/>
-			<bitfield name="LOAD_IMMED" pos="19" type="boolean"/>
+			<bitfield name="LOAD_IMMED" pos="19" type="boolean" variants="A5XX"/>
 			<bitfield name="BINNING" pos="20" varset="chip" variants="A6XX-" type="boolean"/>
 			<bitfield name="GMEM" pos="21" varset="chip" variants="A6XX-" type="boolean"/>
 			<bitfield name="SYSMEM" pos="22" varset="chip" variants="A6XX-" type="boolean"/>
