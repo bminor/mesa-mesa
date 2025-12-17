@@ -1057,7 +1057,7 @@ static struct ac_pc_block_gfxdescr groups_gfx103[] = {
    {&cik_SX, 225},
    {&cik_TA, 226},
    {&gfx10_TCP, 77},
-   {&cik_TD, 61},
+   {&cik_TD, 192},
    {&gfx10_UTCL1, 15},
 };
 
