@@ -1653,10 +1653,21 @@ instr_mark_helpers(struct ir3_mark_helpers_data *bd,
        * that we can keep them enabled until it is written.
        */
       unsigned nsrcs;
+      unsigned first_src_n = 0;
 
       if (instr->opc == OPC_SAM || instr->opc == OPC_SAMB ||
           instr->opc == OPC_GETLOD) {
          nsrcs = (instr->flags & IR3_INSTR_3D) ? 3 : 2;
+
+         /* sam.s2en has the samp/tex in the first src; skip over it. */
+         if (instr->flags & IR3_INSTR_S2EN) {
+            if (instr->srcs[0]->flags & IR3_REG_FIRST_ALIAS) {
+               assert(ir3_alias_group_size(instr, 0) == 2);
+               first_src_n = 2;
+            } else {
+               first_src_n = 1;
+            }
+         }
       } else {
          /* dsx/dsy: derive the number of sources from the dst wrmask since the
           * src itself may use aliases.
@@ -1664,10 +1675,10 @@ instr_mark_helpers(struct ir3_mark_helpers_data *bd,
          nsrcs = util_last_bit(instr->dsts[0]->wrmask);
       }
 
-      if (instr->srcs[0]->flags & IR3_REG_FIRST_ALIAS) {
-         assert(nsrcs <= instr->srcs_count);
+      if (instr->srcs[first_src_n]->flags & IR3_REG_FIRST_ALIAS) {
+         assert(first_src_n + nsrcs <= instr->srcs_count);
 
-         for (unsigned i = 0; i < nsrcs; i++) {
+         for (unsigned i = first_src_n; i < first_src_n + nsrcs; i++) {
             struct ir3_register *src = instr->srcs[i];
 
             if (is_reg_gpr(src)) {
@@ -1675,7 +1686,8 @@ instr_mark_helpers(struct ir3_mark_helpers_data *bd,
             }
          }
       } else {
-         regmask_set_masked(&bd->needs_helpers, instr->srcs[0], MASK(nsrcs));
+         regmask_set_masked(&bd->needs_helpers, instr->srcs[first_src_n],
+                            MASK(nsrcs));
       }
 
       break;
