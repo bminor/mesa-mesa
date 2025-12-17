@@ -3784,6 +3784,7 @@ wsi_AcquireXlibDisplayEXT(VkPhysicalDevice physicalDevice,
    if (fd < 0)
       return VK_ERROR_INITIALIZATION_FAILED;
 
+   drmSetClientCap(fd, DRM_CLIENT_CAP_ATOMIC, 1);
    wsi->fd = fd;
 #endif
 
@@ -4074,6 +4075,7 @@ wsi_AcquireDrmDisplayEXT(VkPhysicalDevice physicalDevice,
 
    drmModeFreeConnector(drm_connector);
 
+   drmSetClientCap(drmFd, DRM_CLIENT_CAP_ATOMIC, 1);
    wsi->fd = drmFd;
    return VK_SUCCESS;
 }
