@@ -357,7 +357,8 @@ ac_spm_map_counter(struct ac_spm *spm, struct ac_spm_block_select *block_sel,
                               S_037008_PERF_MODE3(0);
             break;
          default:
-            return false;
+            /*  Try to program the new counter slot. */
+            continue;
          }
 
          /* Mark this 16-bit counter as used. */
