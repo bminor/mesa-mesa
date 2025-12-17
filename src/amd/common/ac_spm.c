@@ -57,6 +57,10 @@ static struct ac_spm_counter_descr gfx10_gcea_perf_sel_sarb_dram_sized_requests 
    {AC_SPM_GCEA_PERF_SEL_SARB_DRAM_SIZED_REQUESTS, GCEA, 0x37};
 static struct ac_spm_counter_descr gfx10_gcea_perf_sel_sarb_io_sized_requests =
    {AC_SPM_GCEA_PERF_SEL_SARB_IO_SIZED_REQUESTS, GCEA, 0x39};
+static struct ac_spm_counter_descr gfx10_ta_perf_sel_ta_busy =
+   {AC_SPM_TA_PERF_SEL_TA_BUSY, TA, 0xf};
+static struct ac_spm_counter_descr gfx10_tcp_perf_sel_tcp_ta_req_stall =
+   {AC_SPM_TCP_PERF_SEL_TCP_TA_REQ_STALL, TCP, 0x24};
 
 static struct ac_spm_counter_create_info gfx10_spm_counters[] = {
    {&gfx10_tcp_perf_sel_req},
@@ -81,6 +85,8 @@ static struct ac_spm_counter_create_info gfx10_spm_counters[] = {
    {&gfx10_gl2c_perf_sel_ea_wrreq_64b},
    {&gfx10_gcea_perf_sel_sarb_dram_sized_requests},
    {&gfx10_gcea_perf_sel_sarb_io_sized_requests},
+   {&gfx10_ta_perf_sel_ta_busy},
+   {&gfx10_tcp_perf_sel_tcp_ta_req_stall},
 };
 
 /* GFX10.3+ */
@@ -122,6 +128,8 @@ static struct ac_spm_counter_create_info gfx103_spm_counters[] = {
    {&gfx103_gl2c_perf_sel_ea_wrreq_64b},
    {&gfx10_gcea_perf_sel_sarb_dram_sized_requests},
    {&gfx10_gcea_perf_sel_sarb_io_sized_requests},
+   {&gfx10_ta_perf_sel_ta_busy},
+   {&gfx10_tcp_perf_sel_tcp_ta_req_stall},
 };
 
 /* GFX11+ */
@@ -141,6 +149,8 @@ static struct ac_spm_counter_descr gfx11_sqc_perf_sel_icache_misses_duplicate =
    {AC_SPM_SQC_PERF_SEL_ICACHE_MISSES_DUPLICATE, SQ_WGP, 0x110};
 static struct ac_spm_counter_descr gfx11_sqc_perf_sel_lds_bank_conflict =
    {AC_SPM_SQC_PERF_SEL_LDS_BANK_CONFLICT, SQ_WGP, 0x100};
+static struct ac_spm_counter_descr gfx11_tcp_perf_sel_tcp_ta_req_stall =
+   {AC_SPM_TCP_PERF_SEL_TCP_TA_REQ_STALL, TCP, 0x27};
 
 static struct ac_spm_counter_create_info gfx11_spm_counters[] = {
    {&gfx10_tcp_perf_sel_req},
@@ -165,6 +175,8 @@ static struct ac_spm_counter_create_info gfx11_spm_counters[] = {
    {&gfx103_gl2c_perf_sel_ea_wrreq_64b},
    {&gfx10_gcea_perf_sel_sarb_dram_sized_requests},
    {&gfx10_gcea_perf_sel_sarb_io_sized_requests},
+   {&gfx10_ta_perf_sel_ta_busy},
+   {&gfx11_tcp_perf_sel_tcp_ta_req_stall},
 };
 
 /* GFX12+ */
@@ -916,6 +928,20 @@ static struct ac_spm_derived_component_descr gfx10_cs_lds_bank_conflict_cycles_c
    .usage = AC_SPM_USAGE_CYCLES,
 };
 
+static struct ac_spm_derived_component_descr gfx10_mem_unit_busy_cycles_comp = {
+   .id = AC_SPM_COMPONENT_MEM_UNIT_BUSY_CYCLES,
+   .counter_id = AC_SPM_COUNTER_MEM_UNIT_BUSY,
+   .name = "Memory unit busy cycles",
+   .usage = AC_SPM_USAGE_CYCLES,
+};
+
+static struct ac_spm_derived_component_descr gfx10_mem_unit_stalled_cycles_comp = {
+   .id = AC_SPM_COMPONENT_MEM_UNIT_STALLED_CYCLES,
+   .counter_id = AC_SPM_COUNTER_MEM_UNIT_STALLED,
+   .name = "Memory unit stalled cycles",
+   .usage = AC_SPM_USAGE_CYCLES,
+};
+
 /* SPM counters. */
 static struct ac_spm_derived_counter_descr gfx10_inst_cache_hit_counter = {
    .id = AC_SPM_COUNTER_INST_CACHE_HIT,
@@ -1057,6 +1083,37 @@ static struct ac_spm_derived_counter_descr gfx10_pcie_bytes_counter = {
    .num_components = 0,
 };
 
+static struct ac_spm_derived_counter_descr gfx10_mem_unit_busy_counter = {
+   .id = AC_SPM_COUNTER_MEM_UNIT_BUSY,
+   .group_id = AC_SPM_GROUP_MEMORY_PERCENTAGE,
+   .name = "Memory unity busy",
+   .desc = "The percentage of GPUTime the memory unit is active. The result "
+           "includes the stall time (MemUnitStalled). This is measured with all "
+           "extra fetches and writes and any cache or memory effects taken into "
+           "account. Value range: 0% to 100% (fetch-bound).",
+   .usage = AC_SPM_USAGE_PERCENTAGE,
+   .num_components = 2,
+   .components = {
+      &gfx10_gpu_busy_cycles_comp,
+      &gfx10_mem_unit_busy_cycles_comp,
+   },
+};
+
+static struct ac_spm_derived_counter_descr gfx10_mem_unit_stalled_counter = {
+   .id = AC_SPM_COUNTER_MEM_UNIT_STALLED,
+   .group_id = AC_SPM_GROUP_MEMORY_PERCENTAGE,
+   .name = "Memory unit stalled",
+   .desc = "The percentage of GPUTime the memory unit is stalled. Try reducing "
+           "the number or size of fetches and writes if possible. Value range: 0% "
+           "(optimal) to 100% (bad).",
+   .usage = AC_SPM_USAGE_PERCENTAGE,
+   .num_components = 2,
+   .components = {
+      &gfx10_gpu_busy_cycles_comp,
+      &gfx10_mem_unit_stalled_cycles_comp,
+   },
+};
+
 /* SPM groups. */
 static struct ac_spm_derived_group_descr gfx10_cache_group = {
    .id = AC_SPM_GROUP_CACHE,
@@ -1089,6 +1146,16 @@ static struct ac_spm_derived_group_descr gfx10_memory_bytes_group = {
       &gfx10_write_size_counter,
       &gfx10_local_vid_mem_bytes_counter,
       &gfx10_pcie_bytes_counter,
+   },
+};
+
+static struct ac_spm_derived_group_descr gfx10_memory_percentage_group = {
+   .id = AC_SPM_GROUP_MEMORY_PERCENTAGE,
+   .name = "Memory (%)",
+   .num_counters = 2,
+   .counters = {
+      &gfx10_mem_unit_busy_counter,
+      &gfx10_mem_unit_stalled_counter,
    },
 };
 
@@ -1129,6 +1196,11 @@ ac_spm_add_group(struct ac_spm_derived_trace *spm_derived_trace,
          group_descr->counters[i];
 
       for (uint32_t j = 0; j < counter_descr->num_components; j++) {
+         /* Avoid redundant components. */
+         if (ac_spm_get_component_by_id(spm_derived_trace,
+                                        counter_descr->components[j]->id))
+            continue;
+
          struct ac_spm_derived_component *component =
             &spm_derived_trace->components[spm_derived_trace->num_components++];
          assert(spm_derived_trace->num_components <= AC_SPM_COMPONENT_COUNT);
@@ -1175,6 +1247,9 @@ ac_spm_get_raw_counter_op(enum ac_spm_raw_counter_id id)
    case AC_SPM_GCEA_PERF_SEL_SARB_DRAM_SIZED_REQUESTS:
    case AC_SPM_GCEA_PERF_SEL_SARB_IO_SIZED_REQUESTS:
       return AC_SPM_RAW_COUNTER_OP_SUM;
+   case AC_SPM_TA_PERF_SEL_TA_BUSY:
+   case AC_SPM_TCP_PERF_SEL_TCP_TA_REQ_STALL:
+      return AC_SPM_RAW_COUNTER_OP_MAX;
    default:
       UNREACHABLE("Invalid SPM raw counter ID.");
    }
@@ -1196,6 +1271,7 @@ ac_spm_get_derived_trace(const struct radeon_info *info,
    ac_spm_add_group(spm_derived_trace, &gfx10_cache_group);
    ac_spm_add_group(spm_derived_trace, &gfx10_lds_group);
    ac_spm_add_group(spm_derived_trace, &gfx10_memory_bytes_group);
+   ac_spm_add_group(spm_derived_trace, &gfx10_memory_percentage_group);
 
    spm_derived_trace->timestamps = malloc(spm_trace->num_samples * sizeof(uint64_t));
    if (!spm_derived_trace->timestamps) {
@@ -1239,6 +1315,9 @@ ac_spm_get_derived_trace(const struct radeon_info *info,
          case AC_SPM_RAW_COUNTER_OP_SUM:
             raw_counter_values[id][s] += value;
             break;
+         case AC_SPM_RAW_COUNTER_OP_MAX:
+            raw_counter_values[id][s] = MAX2(raw_counter_values[id][s], value);
+            break;
          default:
             UNREACHABLE("Invalid SPM raw counter OP.\n");
          }
@@ -1262,6 +1341,8 @@ ac_spm_get_derived_trace(const struct radeon_info *info,
    GET_COUNTER(WRITE_SIZE);
    GET_COUNTER(LOCAL_VID_MEM_BYTES);
    GET_COUNTER(PCIE_BYTES);
+   GET_COUNTER(MEM_UNIT_BUSY);
+   GET_COUNTER(MEM_UNIT_STALLED);
 
    GET_COMPONENT(INST_CACHE_REQUEST_COUNT);
    GET_COMPONENT(INST_CACHE_HIT_COUNT);
@@ -1280,6 +1361,8 @@ ac_spm_get_derived_trace(const struct radeon_info *info,
    GET_COMPONENT(L2_CACHE_MISS_COUNT);
    GET_COMPONENT(GPU_BUSY_CYCLES);
    GET_COMPONENT(CS_LDS_BANK_CONFLICT_CYCLES);
+   GET_COMPONENT(MEM_UNIT_BUSY_CYCLES);
+   GET_COMPONENT(MEM_UNIT_STALLED_CYCLES);
 
 #undef GET_COMPONENT
 #undef GET_COUNTER
@@ -1406,6 +1489,23 @@ ac_spm_get_derived_trace(const struct radeon_info *info,
       const double pcie_bytes = OP_RAW(GCEA_PERF_SEL_SARB_IO_SIZED_REQUESTS) * 32;
 
       ADD(PCIE_BYTES, pcie_bytes);
+
+      /* Memory (percentage) group. */
+      /* Memory unit busy. */
+      const double mem_unit_busy_cycles = OP_RAW(TA_PERF_SEL_TA_BUSY);
+      const double mem_unit_busy =
+         gpu_busy_cycles ? (mem_unit_busy_cycles / gpu_busy_cycles) * 100.0f : 0.0f;
+
+      ADD(MEM_UNIT_BUSY_CYCLES, mem_unit_busy_cycles);
+      ADD(MEM_UNIT_BUSY, mem_unit_busy);
+
+      /* Memory unit stalled. */
+      const double mem_unit_stalled_cycles = OP_RAW(TCP_PERF_SEL_TCP_TA_REQ_STALL);
+      const double mem_unit_stalled =
+         gpu_busy_cycles ? (mem_unit_stalled_cycles / gpu_busy_cycles) * 100.0f : 0.f;
+
+      ADD(MEM_UNIT_STALLED_CYCLES, mem_unit_stalled_cycles);
+      ADD(MEM_UNIT_STALLED, mem_unit_stalled);
    }
 
 #undef ADD
