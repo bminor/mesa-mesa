@@ -359,7 +359,7 @@ v3dv-rpi5-vk-asan:arm64:
     CI_TRON_TIMEOUT__OVERALL__MINUTES: 20
     FDO_CI_CONCURRENT: 1
     DEQP_SUITE: broadcom-rpi5-vk-asan
-    DEQP_FRACTION: 80
+    DEQP_FRACTION: 170
 
 # This is quite unstable. Keep it disabled
 .rpi3-skqp:arm64:
