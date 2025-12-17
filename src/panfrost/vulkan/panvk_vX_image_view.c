@@ -437,12 +437,9 @@ panvk_per_arch(DestroyImageView)(VkDevice _device, VkImageView _view,
    if (!view)
       return;
 
-   if (view->vk.image->create_flags &
-       VK_IMAGE_CREATE_MULTISAMPLED_RENDER_TO_SINGLE_SAMPLED_BIT_EXT) {
-      for (uint32_t i = 0; i < ARRAY_SIZE(view->ms_views); ++i) {
-         panvk_per_arch(DestroyImageView)(_device, view->ms_views[i],
-                                          pAllocator);
-      }
+   for (uint32_t i = 0; i < ARRAY_SIZE(view->ms_views); ++i) {
+      panvk_per_arch(DestroyImageView)(_device, view->ms_views[i],
+                                       pAllocator);
    }
 
    panvk_pool_free_mem(&view->mem);
