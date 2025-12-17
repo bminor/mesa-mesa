@@ -13,6 +13,7 @@
 #include "util/u_sync_provider.h"
 
 #include "addrlib/src/amdgpu_asic_addr.h"
+#include "amd_family.h"
 #include "sid.h"
 #include "util/macros.h"
 #include "util/u_cpu_detect.h"
@@ -2307,10 +2308,12 @@ static uint16_t get_task_num_entries(enum radeon_family fam)
    case CHIP_VANGOGH:
    case CHIP_NAVI24:
    case CHIP_REMBRANDT:
+   case CHIP_RAPHAEL_MENDOCINO:
+   case CHIP_PHOENIX:
+   case CHIP_PHOENIX2:
+   case CHIP_STRIX1:
+   case CHIP_KRACKAN1:
       return 256;
-   case CHIP_NAVI21:
-   case CHIP_NAVI22:
-   case CHIP_NAVI23:
    default:
       return 1024;
    }
