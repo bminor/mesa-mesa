@@ -37,6 +37,10 @@ static struct ac_spm_counter_descr gfx10_gl2c_perf_sel_req =
    {AC_SPM_GL2C_PERF_SEL_REQ, GL2C, 0x3};
 static struct ac_spm_counter_descr gfx10_gl2c_perf_sel_miss =
    {AC_SPM_GL2C_PERF_SEL_MISS, GL2C, 0x23};
+static struct ac_spm_counter_descr gfx10_cpf_perf_sel_stat_busy =
+   {AC_SPM_CPF_PERF_SEL_STAT_BUSY, CPF, 0x18};
+static struct ac_spm_counter_descr gfx10_sqc_perf_sel_lds_bank_conflict =
+   {AC_SPM_SQC_PERF_SEL_LDS_BANK_CONFLICT, SQ, 0x11d};
 
 static struct ac_spm_counter_create_info gfx10_spm_counters[] = {
    {&gfx10_tcp_perf_sel_req},
@@ -51,6 +55,8 @@ static struct ac_spm_counter_create_info gfx10_spm_counters[] = {
    {&gfx10_gl1c_perf_sel_req_miss},
    {&gfx10_gl2c_perf_sel_req},
    {&gfx10_gl2c_perf_sel_miss},
+   {&gfx10_cpf_perf_sel_stat_busy},
+   {&gfx10_sqc_perf_sel_lds_bank_conflict},
 };
 
 /* GFX10.3+ */
@@ -70,6 +76,8 @@ static struct ac_spm_counter_create_info gfx103_spm_counters[] = {
    {&gfx10_gl1c_perf_sel_req_miss},
    {&gfx10_gl2c_perf_sel_req},
    {&gfx103_gl2c_perf_sel_miss},
+   {&gfx10_cpf_perf_sel_stat_busy},
+   {&gfx10_sqc_perf_sel_lds_bank_conflict},
 };
 
 /* GFX11+ */
@@ -87,6 +95,8 @@ static struct ac_spm_counter_descr gfx11_sqc_perf_sel_icache_misses =
    {AC_SPM_SQC_PERF_SEL_ICACHE_MISSES, SQ_WGP, 0x10f};
 static struct ac_spm_counter_descr gfx11_sqc_perf_sel_icache_misses_duplicate =
    {AC_SPM_SQC_PERF_SEL_ICACHE_MISSES_DUPLICATE, SQ_WGP, 0x110};
+static struct ac_spm_counter_descr gfx11_sqc_perf_sel_lds_bank_conflict =
+   {AC_SPM_SQC_PERF_SEL_LDS_BANK_CONFLICT, SQ_WGP, 0x100};
 
 static struct ac_spm_counter_create_info gfx11_spm_counters[] = {
    {&gfx10_tcp_perf_sel_req},
@@ -101,6 +111,8 @@ static struct ac_spm_counter_create_info gfx11_spm_counters[] = {
    {&gfx10_gl1c_perf_sel_req_miss},
    {&gfx10_gl2c_perf_sel_req},
    {&gfx103_gl2c_perf_sel_miss},
+   {&gfx10_cpf_perf_sel_stat_busy},
+   {&gfx11_sqc_perf_sel_lds_bank_conflict},
 };
 
 /* GFX12+ */
@@ -838,6 +850,20 @@ static struct ac_spm_derived_component_descr gfx10_l2_cache_miss_count_comp = {
    .usage = AC_SPM_USAGE_ITEMS,
 };
 
+static struct ac_spm_derived_component_descr gfx10_gpu_busy_cycles_comp = {
+   .id = AC_SPM_COMPONENT_GPU_BUSY_CYCLES,
+   .counter_id = AC_SPM_COUNTER_CS_LDS_BANK_CONFLICT,
+   .name = "Gpu Busy Cycles",
+   .usage = AC_SPM_USAGE_CYCLES,
+};
+
+static struct ac_spm_derived_component_descr gfx10_cs_lds_bank_conflict_cycles_comp = {
+   .id = AC_SPM_COMPONENT_CS_LDS_BANK_CONFLICT_CYCLES,
+   .counter_id = AC_SPM_COUNTER_CS_LDS_BANK_CONFLICT,
+   .name = "LDS Busy Cycles",
+   .usage = AC_SPM_USAGE_CYCLES,
+};
+
 /* SPM counters. */
 static struct ac_spm_derived_counter_descr gfx10_inst_cache_hit_counter = {
    .id = AC_SPM_COUNTER_INST_CACHE_HIT,
@@ -925,6 +951,20 @@ static struct ac_spm_derived_counter_descr gfx10_l2_cache_hit_counter = {
    },
 };
 
+static struct ac_spm_derived_counter_descr gfx10_cs_lds_bank_conflict_counter = {
+   .id = AC_SPM_COUNTER_CS_LDS_BANK_CONFLICT,
+   .group_id = AC_SPM_GROUP_LDS,
+   .name = "LDS Bank Conflict",
+   .desc = "The percentage of GPUTime LDS is stalled by bank conflicts. Value "
+           "range: 0% (optimal) to 100% (bad).",
+   .usage = AC_SPM_USAGE_PERCENTAGE,
+   .num_components = 2,
+   .components = {
+      &gfx10_gpu_busy_cycles_comp,
+      &gfx10_cs_lds_bank_conflict_cycles_comp,
+   },
+};
+
 /* SPM groups. */
 static struct ac_spm_derived_group_descr gfx10_cache_group = {
    .id = AC_SPM_GROUP_CACHE,
@@ -936,6 +976,15 @@ static struct ac_spm_derived_group_descr gfx10_cache_group = {
       &gfx10_l0_cache_hit_counter,
       &gfx10_l1_cache_hit_counter,
       &gfx10_l2_cache_hit_counter,
+   },
+};
+
+static struct ac_spm_derived_group_descr gfx10_lds_group = {
+   .id = AC_SPM_GROUP_LDS,
+   .name = "LDS",
+   .num_counters = 1,
+   .counters = {
+      &gfx10_cs_lds_bank_conflict_counter,
    },
 };
 
@@ -1011,6 +1060,8 @@ ac_spm_get_raw_counter_op(enum ac_spm_raw_counter_id id)
    case AC_SPM_GL1C_PERF_SEL_REQ_MISS:
    case AC_SPM_GL2C_PERF_SEL_REQ:
    case AC_SPM_GL2C_PERF_SEL_MISS:
+   case AC_SPM_CPF_PERF_SEL_STAT_BUSY:
+   case AC_SPM_SQC_PERF_SEL_LDS_BANK_CONFLICT:
       return AC_SPM_RAW_COUNTER_OP_SUM;
    default:
       UNREACHABLE("Invalid SPM raw counter ID.");
@@ -1031,6 +1082,7 @@ ac_spm_get_derived_trace(const struct radeon_info *info,
 
    /* Add groups to the trace. */
    ac_spm_add_group(spm_derived_trace, &gfx10_cache_group);
+   ac_spm_add_group(spm_derived_trace, &gfx10_lds_group);
 
    spm_derived_trace->timestamps = malloc(spm_trace->num_samples * sizeof(uint64_t));
    if (!spm_derived_trace->timestamps) {
@@ -1092,6 +1144,7 @@ ac_spm_get_derived_trace(const struct radeon_info *info,
    GET_COUNTER(L0_CACHE_HIT);
    GET_COUNTER(L1_CACHE_HIT);
    GET_COUNTER(L2_CACHE_HIT);
+   GET_COUNTER(CS_LDS_BANK_CONFLICT);
 
    GET_COMPONENT(INST_CACHE_REQUEST_COUNT);
    GET_COMPONENT(INST_CACHE_HIT_COUNT);
@@ -1108,6 +1161,8 @@ ac_spm_get_derived_trace(const struct radeon_info *info,
    GET_COMPONENT(L2_CACHE_REQUEST_COUNT);
    GET_COMPONENT(L2_CACHE_HIT_COUNT);
    GET_COMPONENT(L2_CACHE_MISS_COUNT);
+   GET_COMPONENT(GPU_BUSY_CYCLES);
+   GET_COMPONENT(CS_LDS_BANK_CONFLICT_CYCLES);
 
 #undef GET_COMPONENT
 #undef GET_COUNTER
@@ -1127,6 +1182,8 @@ ac_spm_get_derived_trace(const struct radeon_info *info,
 #define OP_SUB2(a, b) \
    raw_counter_values[AC_SPM_##a][s] - \
    raw_counter_values[AC_SPM_##b][s]
+
+   const uint32_t num_simds = info->num_cu * info->cu_info.num_simd_per_compute_unit;
 
    for (uint32_t s = 0; s < spm_trace->num_samples; s++) {
       /* Cache group. */
@@ -1195,6 +1252,17 @@ ac_spm_get_derived_trace(const struct radeon_info *info,
       ADD(L2_CACHE_HIT_COUNT, l2_cache_hit_count);
       ADD(L2_CACHE_MISS_COUNT, l2_cache_miss_count);
       ADD(L2_CACHE_HIT, l2_cache_hit);
+
+      /* LDS group */
+      /* CS LDS Bank Conflict. */
+      const double gpu_busy_cycles = OP_RAW(CPF_PERF_SEL_STAT_BUSY);
+      const double cs_lds_bank_conflict_cycles = OP_RAW(SQC_PERF_SEL_LDS_BANK_CONFLICT) / (double)num_simds;
+      const double cs_lds_bank_conflict =
+         gpu_busy_cycles ? (cs_lds_bank_conflict_cycles / gpu_busy_cycles) * 100.0f : 0.0f;
+
+      ADD(GPU_BUSY_CYCLES, gpu_busy_cycles);
+      ADD(CS_LDS_BANK_CONFLICT_CYCLES, cs_lds_bank_conflict_cycles);
+      ADD(CS_LDS_BANK_CONFLICT, cs_lds_bank_conflict);
    }
 
 #undef ADD
