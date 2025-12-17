@@ -187,7 +187,7 @@ anv_slab_bo_free(struct anv_device *device, struct anv_bo *bo)
    }
 
    bo->refcount = 0;
-   pb_slab_free(get_slabs(device, bo->size), &bo->slab_entry);
+   pb_slab_free(get_slabs(device, bo->actual_size), &bo->slab_entry);
 }
 
 static unsigned heap_max_get(struct anv_device *device)
