@@ -41,6 +41,22 @@ static struct ac_spm_counter_descr gfx10_cpf_perf_sel_stat_busy =
    {AC_SPM_CPF_PERF_SEL_STAT_BUSY, CPF, 0x18};
 static struct ac_spm_counter_descr gfx10_sqc_perf_sel_lds_bank_conflict =
    {AC_SPM_SQC_PERF_SEL_LDS_BANK_CONFLICT, SQ, 0x11d};
+static struct ac_spm_counter_descr gfx10_gl2c_perf_sel_ea_rdreq_32b =
+   {AC_SPM_GL2C_PERF_SEL_EA_RDREQ_32B, GL2C, 0x59};
+static struct ac_spm_counter_descr gfx10_gl2c_perf_sel_ea_rdreq_64b =
+   {AC_SPM_GL2C_PERF_SEL_EA_RDREQ_64B, GL2C, 0x5a};
+static struct ac_spm_counter_descr gfx10_gl2c_perf_sel_ea_rdreq_96b =
+   {AC_SPM_GL2C_PERF_SEL_EA_RDREQ_96B, GL2C, 0x5b};
+static struct ac_spm_counter_descr gfx10_gl2c_perf_sel_ea_rdreq_128b =
+   {AC_SPM_GL2C_PERF_SEL_EA_RDREQ_128B, GL2C, 0x5c};
+static struct ac_spm_counter_descr gfx10_gl2c_perf_sel_ea_wrreq =
+   {AC_SPM_GL2C_PERF_SEL_EA_WRREQ, GL2C, 0x4b};
+static struct ac_spm_counter_descr gfx10_gl2c_perf_sel_ea_wrreq_64b =
+   {AC_SPM_GL2C_PERF_SEL_EA_WRREQ_64B, GL2C, 0x4c};
+static struct ac_spm_counter_descr gfx10_gcea_perf_sel_sarb_dram_sized_requests =
+   {AC_SPM_GCEA_PERF_SEL_SARB_DRAM_SIZED_REQUESTS, GCEA, 0x37};
+static struct ac_spm_counter_descr gfx10_gcea_perf_sel_sarb_io_sized_requests =
+   {AC_SPM_GCEA_PERF_SEL_SARB_IO_SIZED_REQUESTS, GCEA, 0x39};
 
 static struct ac_spm_counter_create_info gfx10_spm_counters[] = {
    {&gfx10_tcp_perf_sel_req},
@@ -57,11 +73,31 @@ static struct ac_spm_counter_create_info gfx10_spm_counters[] = {
    {&gfx10_gl2c_perf_sel_miss},
    {&gfx10_cpf_perf_sel_stat_busy},
    {&gfx10_sqc_perf_sel_lds_bank_conflict},
+   {&gfx10_gl2c_perf_sel_ea_rdreq_32b},
+   {&gfx10_gl2c_perf_sel_ea_rdreq_64b},
+   {&gfx10_gl2c_perf_sel_ea_rdreq_96b},
+   {&gfx10_gl2c_perf_sel_ea_rdreq_128b},
+   {&gfx10_gl2c_perf_sel_ea_wrreq},
+   {&gfx10_gl2c_perf_sel_ea_wrreq_64b},
+   {&gfx10_gcea_perf_sel_sarb_dram_sized_requests},
+   {&gfx10_gcea_perf_sel_sarb_io_sized_requests},
 };
 
 /* GFX10.3+ */
 static struct ac_spm_counter_descr gfx103_gl2c_perf_sel_miss =
    {AC_SPM_GL2C_PERF_SEL_MISS, GL2C, 0x2b};
+static struct ac_spm_counter_descr gfx103_gl2c_perf_sel_ea_rdreq_32b =
+   {AC_SPM_GL2C_PERF_SEL_EA_RDREQ_32B, GL2C, 0x63};
+static struct ac_spm_counter_descr gfx103_gl2c_perf_sel_ea_rdreq_64b =
+   {AC_SPM_GL2C_PERF_SEL_EA_RDREQ_64B, GL2C, 0x64};
+static struct ac_spm_counter_descr gfx103_gl2c_perf_sel_ea_rdreq_96b =
+   {AC_SPM_GL2C_PERF_SEL_EA_RDREQ_96B, GL2C, 0x65};
+static struct ac_spm_counter_descr gfx103_gl2c_perf_sel_ea_rdreq_128b =
+   {AC_SPM_GL2C_PERF_SEL_EA_RDREQ_128B, GL2C, 0x66};
+static struct ac_spm_counter_descr gfx103_gl2c_perf_sel_ea_wrreq =
+   {AC_SPM_GL2C_PERF_SEL_EA_WRREQ, GL2C, 0x53};
+static struct ac_spm_counter_descr gfx103_gl2c_perf_sel_ea_wrreq_64b =
+   {AC_SPM_GL2C_PERF_SEL_EA_WRREQ_64B, GL2C, 0x55};
 
 static struct ac_spm_counter_create_info gfx103_spm_counters[] = {
    {&gfx10_tcp_perf_sel_req},
@@ -78,6 +114,14 @@ static struct ac_spm_counter_create_info gfx103_spm_counters[] = {
    {&gfx103_gl2c_perf_sel_miss},
    {&gfx10_cpf_perf_sel_stat_busy},
    {&gfx10_sqc_perf_sel_lds_bank_conflict},
+   {&gfx103_gl2c_perf_sel_ea_rdreq_32b},
+   {&gfx103_gl2c_perf_sel_ea_rdreq_64b},
+   {&gfx103_gl2c_perf_sel_ea_rdreq_96b},
+   {&gfx103_gl2c_perf_sel_ea_rdreq_128b},
+   {&gfx103_gl2c_perf_sel_ea_wrreq},
+   {&gfx103_gl2c_perf_sel_ea_wrreq_64b},
+   {&gfx10_gcea_perf_sel_sarb_dram_sized_requests},
+   {&gfx10_gcea_perf_sel_sarb_io_sized_requests},
 };
 
 /* GFX11+ */
@@ -113,6 +157,14 @@ static struct ac_spm_counter_create_info gfx11_spm_counters[] = {
    {&gfx103_gl2c_perf_sel_miss},
    {&gfx10_cpf_perf_sel_stat_busy},
    {&gfx11_sqc_perf_sel_lds_bank_conflict},
+   {&gfx103_gl2c_perf_sel_ea_rdreq_32b},
+   {&gfx103_gl2c_perf_sel_ea_rdreq_64b},
+   {&gfx103_gl2c_perf_sel_ea_rdreq_96b},
+   {&gfx103_gl2c_perf_sel_ea_rdreq_128b},
+   {&gfx103_gl2c_perf_sel_ea_wrreq},
+   {&gfx103_gl2c_perf_sel_ea_wrreq_64b},
+   {&gfx10_gcea_perf_sel_sarb_dram_sized_requests},
+   {&gfx10_gcea_perf_sel_sarb_io_sized_requests},
 };
 
 /* GFX12+ */
@@ -965,6 +1017,46 @@ static struct ac_spm_derived_counter_descr gfx10_cs_lds_bank_conflict_counter = 
    },
 };
 
+static struct ac_spm_derived_counter_descr gfx10_fetch_size_counter = {
+   .id = AC_SPM_COUNTER_FETCH_SIZE,
+   .group_id = AC_SPM_GROUP_MEMORY_BYTES,
+   .name = "Fetch size",
+   .desc = "The total bytes fetched from the video memory. This is measured "
+           "with all extra fetches and any cache or memory effects taken into "
+           "account.",
+   .usage = AC_SPM_USAGE_BYTES,
+   .num_components = 0,
+};
+
+static struct ac_spm_derived_counter_descr gfx10_write_size_counter = {
+   .id = AC_SPM_COUNTER_WRITE_SIZE,
+   .group_id = AC_SPM_GROUP_MEMORY_BYTES,
+   .name = "Write size",
+   .desc = "The total bytes written to the video memory. This is measured with "
+           "all extra fetches and any cache or memory effects taken into account.",
+   .usage = AC_SPM_USAGE_BYTES,
+   .num_components = 0,
+};
+
+static struct ac_spm_derived_counter_descr gfx10_local_vid_mem_bytes_counter = {
+   .id = AC_SPM_COUNTER_LOCAL_VID_MEM_BYTES,
+   .group_id = AC_SPM_GROUP_MEMORY_BYTES,
+   .name = "Local video memory bytes",
+   .desc = "Number of bytes read from or written to the Infinity Cache (if "
+           "available) or local video memory",
+   .usage = AC_SPM_USAGE_BYTES,
+   .num_components = 0,
+};
+
+static struct ac_spm_derived_counter_descr gfx10_pcie_bytes_counter = {
+   .id = AC_SPM_COUNTER_PCIE_BYTES,
+   .group_id = AC_SPM_GROUP_MEMORY_BYTES,
+   .name = "PCIe bytes",
+   .desc = "Number of bytes sent and received over the PCIe bus",
+   .usage = AC_SPM_USAGE_BYTES,
+   .num_components = 0,
+};
+
 /* SPM groups. */
 static struct ac_spm_derived_group_descr gfx10_cache_group = {
    .id = AC_SPM_GROUP_CACHE,
@@ -985,6 +1077,18 @@ static struct ac_spm_derived_group_descr gfx10_lds_group = {
    .num_counters = 1,
    .counters = {
       &gfx10_cs_lds_bank_conflict_counter,
+   },
+};
+
+static struct ac_spm_derived_group_descr gfx10_memory_bytes_group = {
+   .id = AC_SPM_GROUP_MEMORY_BYTES,
+   .name = "Memory (bytes)",
+   .num_counters = 4,
+   .counters = {
+      &gfx10_fetch_size_counter,
+      &gfx10_write_size_counter,
+      &gfx10_local_vid_mem_bytes_counter,
+      &gfx10_pcie_bytes_counter,
    },
 };
 
@@ -1062,6 +1166,14 @@ ac_spm_get_raw_counter_op(enum ac_spm_raw_counter_id id)
    case AC_SPM_GL2C_PERF_SEL_MISS:
    case AC_SPM_CPF_PERF_SEL_STAT_BUSY:
    case AC_SPM_SQC_PERF_SEL_LDS_BANK_CONFLICT:
+   case AC_SPM_GL2C_PERF_SEL_EA_RDREQ_32B:
+   case AC_SPM_GL2C_PERF_SEL_EA_RDREQ_64B:
+   case AC_SPM_GL2C_PERF_SEL_EA_RDREQ_96B:
+   case AC_SPM_GL2C_PERF_SEL_EA_RDREQ_128B:
+   case AC_SPM_GL2C_PERF_SEL_EA_WRREQ:
+   case AC_SPM_GL2C_PERF_SEL_EA_WRREQ_64B:
+   case AC_SPM_GCEA_PERF_SEL_SARB_DRAM_SIZED_REQUESTS:
+   case AC_SPM_GCEA_PERF_SEL_SARB_IO_SIZED_REQUESTS:
       return AC_SPM_RAW_COUNTER_OP_SUM;
    default:
       UNREACHABLE("Invalid SPM raw counter ID.");
@@ -1083,6 +1195,7 @@ ac_spm_get_derived_trace(const struct radeon_info *info,
    /* Add groups to the trace. */
    ac_spm_add_group(spm_derived_trace, &gfx10_cache_group);
    ac_spm_add_group(spm_derived_trace, &gfx10_lds_group);
+   ac_spm_add_group(spm_derived_trace, &gfx10_memory_bytes_group);
 
    spm_derived_trace->timestamps = malloc(spm_trace->num_samples * sizeof(uint64_t));
    if (!spm_derived_trace->timestamps) {
@@ -1145,6 +1258,10 @@ ac_spm_get_derived_trace(const struct radeon_info *info,
    GET_COUNTER(L1_CACHE_HIT);
    GET_COUNTER(L2_CACHE_HIT);
    GET_COUNTER(CS_LDS_BANK_CONFLICT);
+   GET_COUNTER(FETCH_SIZE);
+   GET_COUNTER(WRITE_SIZE);
+   GET_COUNTER(LOCAL_VID_MEM_BYTES);
+   GET_COUNTER(PCIE_BYTES);
 
    GET_COMPONENT(INST_CACHE_REQUEST_COUNT);
    GET_COMPONENT(INST_CACHE_HIT_COUNT);
@@ -1263,6 +1380,32 @@ ac_spm_get_derived_trace(const struct radeon_info *info,
       ADD(GPU_BUSY_CYCLES, gpu_busy_cycles);
       ADD(CS_LDS_BANK_CONFLICT_CYCLES, cs_lds_bank_conflict_cycles);
       ADD(CS_LDS_BANK_CONFLICT, cs_lds_bank_conflict);
+
+      /* Memmory (bytes) group. */
+      /* Fetch size. */
+      double fetch_size = OP_RAW(GL2C_PERF_SEL_EA_RDREQ_32B) * 32 +
+                          OP_RAW(GL2C_PERF_SEL_EA_RDREQ_64B) * 64 +
+                          OP_RAW(GL2C_PERF_SEL_EA_RDREQ_96B) * 96 +
+                          OP_RAW(GL2C_PERF_SEL_EA_RDREQ_128B) * 128;
+
+      ADD(FETCH_SIZE, fetch_size);
+
+      /* Write size. */
+      const double write_size = (OP_RAW(GL2C_PERF_SEL_EA_WRREQ) * 32 +
+                                 OP_RAW(GL2C_PERF_SEL_EA_WRREQ_64B) * 64) -
+                                (OP_RAW(GL2C_PERF_SEL_EA_WRREQ_64B) * 32);
+
+      ADD(WRITE_SIZE, write_size);
+
+      /* Local video mem bytes. */
+      const double local_vid_mem_bytes = OP_RAW(GCEA_PERF_SEL_SARB_DRAM_SIZED_REQUESTS) * 32;
+
+      ADD(LOCAL_VID_MEM_BYTES, local_vid_mem_bytes);
+
+      /* PCIe bytes. */
+      const double pcie_bytes = OP_RAW(GCEA_PERF_SEL_SARB_IO_SIZED_REQUESTS) * 32;
+
+      ADD(PCIE_BYTES, pcie_bytes);
    }
 
 #undef ADD
