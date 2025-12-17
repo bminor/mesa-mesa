@@ -44,7 +44,7 @@ traces:
       checksum: 58e2d6ea105ca2735b05ce06709691fb
       text: "Clear color for the background can be black or grey"
     zink-radv-gfx1201:
-      checksum: ef6775705fb8c9f2d0c8a29ae6ab0efd
+      checksum: de4ba8c453cd97c46d0921ddccb4b48b
 
   blender/blender-demo-ellie_pose.trace:
     gl-zink-anv-adl:
@@ -107,9 +107,9 @@ traces:
     gl-zink-anv-tgl:
       checksum: 83a21aa3f856af2d38e8be8391f58611
     zink-radv-vangogh:
-      checksum: aebd0199cbac91915f407242e955e823
+      checksum: f0c9eed59a70fe69a2ba36e3fdbee297
     zink-radv-gfx1201:
-      checksum: aebd0199cbac91915f407242e955e823
+      checksum: f0c9eed59a70fe69a2ba36e3fdbee297
 
   gputest/pixmark-julia-fp64-v2.trace:
     gl-zink-anv-adl:
@@ -326,9 +326,9 @@ traces:
       checksum: 0af2faa0d9183c1bc4dc7612befe1f0a
       text: "'egl_platform.cpp( 227) - Error   - Couldn't find a suitable EGL config' -- revisit when we can turn on X11?"
     zink-radv-vangogh:
-      checksum: dcd475693bab6c6acedb721d84faa6c7
+      checksum: d4f1b9d7d6183b95624d9c119e8cfa4c
     zink-radv-gfx1201:
-      checksum: 15f10ce94fe9ee793e6b80a3b652f052
+      checksum: bffa1d53704afb2e1e9407313a7805a9
 
   supertuxkart/supertuxkart-menu.rdc:
     gl-zink-anv-adl:
