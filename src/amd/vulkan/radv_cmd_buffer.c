@@ -3967,6 +3967,7 @@ radv_emit_graphics_pipeline(struct radv_cmd_buffer *cmd_buffer)
 {
    struct radv_graphics_pipeline *pipeline = cmd_buffer->state.graphics_pipeline;
    struct radv_device *device = radv_cmd_buffer_device(cmd_buffer);
+   struct radv_cmd_stream *cs = cmd_buffer->cs;
 
    if (cmd_buffer->state.emitted_graphics_pipeline == pipeline)
       return;
@@ -3976,6 +3977,8 @@ radv_emit_graphics_pipeline(struct radv_cmd_buffer *cmd_buffer)
    if (pipeline->sqtt_shaders_reloc) {
       /* Emit shaders relocation because RGP requires them to be contiguous in memory. */
       radv_sqtt_emit_relocated_shaders(cmd_buffer, pipeline);
+
+      radv_cs_add_buffer(device->ws, cs->b, pipeline->sqtt_shaders_reloc->bo);
    }
 
    if (radv_device_fault_detection_enabled(device))
