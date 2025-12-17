@@ -410,17 +410,13 @@ const struct pan_format GENX(pan_pipe_format)[PIPE_FORMAT_COUNT] = {
    FMT(R16G16_UINT,             RG16UI,          RG01, L, VTR_IB),
    FMT(R32G32_UINT,             RG32UI,          RG01, L, VTR_IB),
    FMT(R8G8B8_UINT,             RGB8UI,          RGB1, L, V_____),
-   /* TODO: enable storage after CTS bug fix is merged:
-    * https://gitlab.khronos.org/Tracker/vk-gl-cts/-/issues/5700 */
-   FMT(R32G32B32_UINT,          RGB32UI,         RGB1, L, VTR___),
+   FMT(R32G32B32_UINT,          RGB32UI,         RGB1, L, VTR_IB),
    FMT(R8G8B8A8_UINT,           RGBA8UI,         RGBA, L, VTR_IB),
    FMT(R16G16B16A16_UINT,       RGBA16UI,        RGBA, L, VTR_IB),
    FMT(R32G32B32A32_UINT,       RGBA32UI,        RGBA, L, VTR_IB),
    FMT(R32_FLOAT,               R32F,            R001, L, VTR_IB),
    FMT(R32G32_FLOAT,            RG32F,           RG01, L, VTR_IB),
-   /* TODO: enable storage after CTS bug fix is merged:
-    * https://gitlab.khronos.org/Tracker/vk-gl-cts/-/issues/5700 */
-   FMT(R32G32B32_FLOAT,         RGB32F,          RGB1, L, VTR___),
+   FMT(R32G32B32_FLOAT,         RGB32F,          RGB1, L, VTR_IB),
    FMT(R32G32B32A32_FLOAT,      RGBA32F,         RGBA, L, VTR_IB),
    FMT(R8_UNORM,                R8_UNORM,        R001, L, VTR_IB),
    FMT(R16_UNORM,               R16_UNORM,       R001, L, VTR_IB),
@@ -508,9 +504,7 @@ const struct pan_format GENX(pan_pipe_format)[PIPE_FORMAT_COUNT] = {
    FMT(R32G32_SINT,             RG32I,           RG01, L, VTR_IB),
    FMT(R16G16_FLOAT,            RG16F,           RG01, L, VTR_IB),
    FMT(R8G8B8_SINT,             RGB8I,           RGB1, L, V_____),
-   /* TODO: enable storage after CTS bug fix is merged:
-    * https://gitlab.khronos.org/Tracker/vk-gl-cts/-/issues/5700 */
-   FMT(R32G32B32_SINT,          RGB32I,          RGB1, L, VTR___),
+   FMT(R32G32B32_SINT,          RGB32I,          RGB1, L, VTR_IB),
    FMT(R8G8B8A8_SINT,           RGBA8I,          RGBA, L, VTR_IB),
    FMT(R16G16B16A16_SINT,       RGBA16I,         RGBA, L, VTR_IB),
    FMT(R32G32B32A32_SINT,       RGBA32I,         RGBA, L, VTR_IB),
