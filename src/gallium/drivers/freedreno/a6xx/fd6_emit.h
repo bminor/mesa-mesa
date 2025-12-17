@@ -220,13 +220,17 @@ __event_write(fd_cs &cs, enum fd_gpu_event event,
    fd_pkt7 pkt(cs, CP_EVENT_WRITE, len);
 
    if (CHIP == A6XX) {
-      pkt.add(CP_EVENT_WRITE_0_EVENT(info.raw_event) |
-               COND(info.needs_seqno, CP_EVENT_WRITE_0_TIMESTAMP));
+      pkt.add(CP_EVENT_WRITE_0(
+         .event = info.raw_event,
+         .timestamp = info.needs_seqno,
+      ));
    } else if (CHIP >= A7XX) {
-      pkt.add(CP_EVENT_WRITE7_0_EVENT(info.raw_event) |
-              CP_EVENT_WRITE7_0_WRITE_SRC(esrc) |
-              CP_EVENT_WRITE7_0_WRITE_DST(edst) |
-              COND(info.needs_seqno, CP_EVENT_WRITE7_0_WRITE_ENABLED));
+      pkt.add(CP_EVENT_WRITE7_0(
+         .event = info.raw_event,
+         .write_src = esrc,
+         .write_dst = edst,
+         .write_enabled = info.needs_seqno,
+      ));
    }
 
    if (info.needs_seqno) {
