@@ -32,7 +32,7 @@ def bisect(args):
 
     while len(ids) > 1:
         lo_id = 0
-        hi_id = len(ids) // 2
+        hi_id = len(ids) // 2 - 1
         lo = ids[lo_id]
         hi = ids[hi_id]
         extra_env = {
@@ -44,7 +44,7 @@ def bisect(args):
         if was_good():
             del ids[lo_id:hi_id + 1]
         else:
-            del ids[hi_id:]
+            del ids[hi_id + 1:]
 
     print(ids)
 
