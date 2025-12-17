@@ -1,5 +1,65 @@
 [
     {
+        "sha": "c00ebca5c4b474249ba65fcfd50ecdf84a656b7c",
+        "description": "ir3: Improve spilling of NIR vars to scratch.",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0d9428736b7f9151bd6b0df7a003a8ecc94b4683",
+        "description": "ir3/ra: Make a helper to get RA register pressure limits.",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d5cb38e457bfc73f1367e6d6a49ebece7b878bdc",
+        "description": "ir3: Move the compute shader threadsize forcing earlier.",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5a09abe8905ab052cf60335a0b7b9696c698ff11",
+        "description": "nir: Introduce nir_lower_vars_to_scratch_global().",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "059d301c79fe72cfd72bb3cb55ac115be708abd7",
+        "description": "nir: Drop the mode argument of nir_lower_vars_to_scratch().",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "962bed2dd6020ce75695181355d93526a66b77ec",
+        "description": "vulkan: update ALLOWED_ANDROID_VERSION for api level 36",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
         "sha": "dfdaee5ca74fbf1945326b454079575826df5a89",
         "description": "nak: Use the hardware's max warps_per_sm value",
         "nominated": false,
