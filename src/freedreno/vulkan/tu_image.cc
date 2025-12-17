@@ -147,30 +147,6 @@ tu_layer_flag_address(const struct fdl6_view *iview, uint32_t layer)
    return iview->ubwc_addr + iview->ubwc_layer_size * layer;
 }
 
-void
-tu_cs_image_ref(struct tu_cs *cs, const struct fdl6_view *iview, uint32_t layer)
-{
-   tu_cs_emit(cs, A6XX_RB_MRT_PITCH(0, iview->pitch).value);
-   tu_cs_emit(cs, iview->layer_size >> 6);
-   tu_cs_emit_qw(cs, tu_layer_address(iview, layer));
-}
-
-void
-tu_cs_image_stencil_ref(struct tu_cs *cs, const struct tu_image_view *iview, uint32_t layer)
-{
-   tu_cs_emit(cs, A6XX_RB_STENCIL_BUFFER_PITCH(iview->stencil_pitch).value);
-   tu_cs_emit(cs, iview->stencil_layer_size >> 6);
-   tu_cs_emit_qw(cs, iview->stencil_base_addr + iview->stencil_layer_size * layer);
-}
-
-void
-tu_cs_image_depth_ref(struct tu_cs *cs, const struct tu_image_view *iview, uint32_t layer)
-{
-   tu_cs_emit(cs, A6XX_RB_DEPTH_BUFFER_PITCH(iview->depth_pitch).value);
-   tu_cs_emit(cs, iview->depth_layer_size >> 6);
-   tu_cs_emit_qw(cs, iview->depth_base_addr + iview->depth_layer_size * layer);
-}
-
 template <chip CHIP>
 void
 tu_cs_image_ref_2d(struct tu_cs *cs, const struct fdl6_view *iview, uint32_t layer, bool src)

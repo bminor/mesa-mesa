@@ -671,17 +671,32 @@ tu6_emit_zs(struct tu_cmd_buffer *cmd,
       &cmd->state.pass->attachments[a];
    enum a6xx_depth_format fmt = tu6_pipe2depth(attachment->format);
 
-   tu_cs_emit_pkt4(cs, REG_A6XX_RB_DEPTH_BUFFER_INFO, 6);
-   tu_cs_emit(cs, RB_DEPTH_BUFFER_INFO(CHIP,
-                     .depth_format = fmt,
-                     .tilemode = TILE6_3,
-                     .losslesscompen = iview->view.ubwc_enabled,
-                     ).value);
-   if (attachment->format == VK_FORMAT_D32_SFLOAT_S8_UINT)
-      tu_cs_image_depth_ref(cs, iview, 0);
-   else
-      tu_cs_image_ref(cs, &iview->view, 0);
-   tu_cs_emit(cs, tu_attachment_gmem_offset(cmd, attachment, 0));
+   unsigned depth_pitch, depth_array_pitch;
+   uint64_t depth_base;
+
+   if (attachment->format == VK_FORMAT_D32_SFLOAT_S8_UINT) {
+      depth_pitch = iview->depth_pitch;
+      depth_array_pitch = iview->depth_layer_size;
+      depth_base = iview->depth_base_addr;
+   } else {
+      depth_pitch = iview->view.pitch;
+      depth_array_pitch = iview->view.layer_size;
+      depth_base = tu_layer_address(&iview->view, 0);
+   }
+
+   tu_cs_emit_regs(cs,
+      RB_DEPTH_BUFFER_INFO(CHIP,
+         .depth_format = fmt,
+         .tilemode = TILE6_3,
+         .losslesscompen = iview->view.ubwc_enabled,
+      ),
+      A6XX_RB_DEPTH_BUFFER_PITCH(depth_pitch),
+      A6XX_RB_DEPTH_BUFFER_ARRAY_PITCH(depth_array_pitch),
+      A6XX_RB_DEPTH_BUFFER_BASE(depth_base),
+      A6XX_RB_DEPTH_GMEM_BASE(
+         tu_attachment_gmem_offset(cmd, attachment, 0)
+      ),
+   );
 
    tu_cs_emit_regs(cs, GRAS_SU_DEPTH_BUFFER_INFO(CHIP, .depth_format = fmt));
 
@@ -691,18 +706,31 @@ tu6_emit_zs(struct tu_cmd_buffer *cmd,
    if (attachment->format == VK_FORMAT_D32_SFLOAT_S8_UINT ||
        attachment->format == VK_FORMAT_S8_UINT) {
 
-      tu_cs_emit_pkt4(cs, REG_A6XX_RB_STENCIL_BUFFER_INFO, 6);
-      tu_cs_emit(cs, RB_STENCIL_BUFFER_INFO(CHIP,
-                        .separate_stencil = true,
-                        .tilemode = TILE6_3,
-                        ).value);
+      unsigned stencil_pitch, stencil_array_pitch, stencil_gmem_offset;
+      uint64_t stencil_base;
+
       if (attachment->format == VK_FORMAT_D32_SFLOAT_S8_UINT) {
-         tu_cs_image_stencil_ref(cs, iview, 0);
-         tu_cs_emit(cs, tu_attachment_gmem_offset_stencil(cmd, attachment, 0));
+         stencil_pitch = iview->stencil_pitch;
+         stencil_array_pitch = iview->stencil_layer_size;
+         stencil_base = iview->stencil_base_addr;
+         stencil_gmem_offset = tu_attachment_gmem_offset_stencil(cmd, attachment, 0);
       } else {
-         tu_cs_image_ref(cs, &iview->view, 0);
-         tu_cs_emit(cs, tu_attachment_gmem_offset(cmd, attachment, 0));
+         stencil_pitch = iview->view.pitch;
+         stencil_array_pitch = iview->view.layer_size;
+         stencil_base = tu_layer_address(&iview->view, 0);
+         stencil_gmem_offset = tu_attachment_gmem_offset(cmd, attachment, 0);
       }
+
+      tu_cs_emit_regs(cs,
+         RB_STENCIL_BUFFER_INFO(CHIP,
+            .separate_stencil = true,
+            .tilemode = TILE6_3,
+         ),
+         A6XX_RB_STENCIL_BUFFER_PITCH(stencil_pitch),
+         A6XX_RB_STENCIL_BUFFER_ARRAY_PITCH(stencil_array_pitch),
+         A6XX_RB_STENCIL_BUFFER_BASE(stencil_base),
+         A6XX_RB_STENCIL_GMEM_BASE(stencil_gmem_offset),
+      );
    } else {
       tu_cs_emit_regs(cs,
                      RB_STENCIL_BUFFER_INFO(CHIP, 0));
