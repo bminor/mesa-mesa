@@ -514,7 +514,7 @@
         "description": "nvk: Set maxStorageBufferRange = maxBufferSize",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "65f12fde44075276b640925d4f4301fcf00fc955",
         "notes": null
