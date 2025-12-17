@@ -8,6 +8,8 @@
 
 #include <stdint.h>
 
+#include "util/macros.h"
+
 #include "fd6_hw.h"
 
 /* In order to debug issues with usage of stale reg data we need to have
@@ -26,6 +28,9 @@
 static inline bool
 fd_reg_stomp_allowed(chip CHIP, uint16_t reg)
 {
+   PRAGMA_DIAGNOSTIC_PUSH
+   PRAGMA_DIAGNOSTIC_IGNORED_CLANG(-W#pragma-messages)
+
    switch (CHIP) {
    case A6XX: {
       switch (reg) {
@@ -77,6 +82,7 @@ fd_reg_stomp_allowed(chip CHIP, uint16_t reg)
    default: {
       UNREACHABLE("Unknown GPU");
    }
+   PRAGMA_DIAGNOSTIC_POP
    }
 
    return true;

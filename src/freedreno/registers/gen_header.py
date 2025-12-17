@@ -121,6 +121,10 @@ def tab_to(name, value):
         tab_count = 1
     print(name + ('\t' * tab_count) + value)
 
+def define_macro(name, value, has_variants):
+    if has_variants:
+        value = "__FD_DEPRECATED " + value
+    tab_to(name, value)
 
 def mask(low, high):
     return ((0xffffffffffffffff >> (64 - (high + 1 - low))) << low)
@@ -407,11 +411,13 @@ class Array(object):
             print("\t\tdefault: return INVALID_IDX(idx);")
             print("\t}\n}")
         if proto == '':
-            tab_to("#define REG_%s_%s" %
-                   (self.domain, self.name), "0x%08x\n" % array_offset)
+            define_macro("#define REG_%s_%s" %
+                         (self.domain, self.name), "0x%08x\n" % array_offset,
+                         has_variants)
         else:
-            tab_to("#define REG_%s_%s(%s)" % (self.domain, self.name,
-                   proto), "(0x%08x + %s )\n" % (array_offset, strides))
+            define_macro("#define REG_%s_%s(%s)" % (self.domain, self.name,
+                         proto), "(0x%08x + %s )\n" % (array_offset, strides),
+                         has_variants)
 
     def dump_pack_struct(self, has_variants):
         pass
@@ -466,10 +472,13 @@ class Reg(object):
         strides = indices_strides(self.indices())
         offset = self.total_offset()
         if proto == '':
-            tab_to("#define REG_%s" % self.full_name, "0x%08x" % offset)
+            define_macro("#define REG_%s" % self.full_name, "0x%08x" % offset, has_variants)
         elif not has_variants:
-            print("static CONSTEXPR inline uint32_t REG_%s(%s) { return 0x%08x + %s; }" % (
-                self.full_name, proto, offset, strides))
+            depcrstr = ""
+            if has_variants:
+                depcrstr = " __FD_DEPRECATED "
+            print("static CONSTEXPR inline%s uint32_t REG_%s(%s) { return 0x%08x + %s; }" % (
+                  depcrstr, self.full_name, proto, offset, strides))
 
         if self.bitset.inline:
             self.bitset.dump(has_variants, self.full_name, self)
@@ -977,6 +986,15 @@ def dump_c(args, guard, func):
     print("#else")
     print("#define __struct_cast(X) (struct X)")
     print("#define CONSTEXPR")
+    print("#endif")
+    print()
+
+    # TODO figure out what to do about fd_reg_stomp_allowed()
+    # vs gcc.. for now only enable the warnings with clang:
+    print("#if defined(__clang__) && !defined(FD_NO_DEPRECATED_PACK)")
+    print("#define __FD_DEPRECATED _Pragma (\"GCC warning \\\"Deprecated reg builder\\\"\")")
+    print("#else")
+    print("#define __FD_DEPRECATED")
     print("#endif")
     print()
 
