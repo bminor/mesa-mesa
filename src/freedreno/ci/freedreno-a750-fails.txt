@@ -10,10 +10,8 @@ KHR-GLES3.framebuffer_blit.framebuffer_blit_functionality_multisampled_to_single
 KHR-GLES3.framebuffer_blit.multisampled_to_singlesampled_blit_depth_config_test,Fail
 KHR-GLES31.core.texture_stencil8.multisample,Fail
 KHR-GLES31.core.vertex_attrib_binding.advanced-iterations,Fail
-dEQP-GLES2.functional.texture.mipmap.cube.projected.nearest_linear,Fail
 
 # New failures with GL CTS 4.6.7.0 & ES CTS 3.2.13.0
-dEQP-GLES3.functional.polygon_offset.fixed16_enable,Fail
 dEQP-GLES31.functional.copy_image.non_compressed.viewclass_32_bits.rgba8_rgba8ui.renderbuffer_to_renderbuffer,Fail
 dEQP-GLES31.functional.copy_image.non_compressed.viewclass_32_bits.srgb8_alpha8_rgba8ui.renderbuffer_to_renderbuffer,Fail
 
