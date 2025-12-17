@@ -800,19 +800,17 @@ etna_emit_state(struct etna_context *ctx)
          etna_stall(stream, SYNC_RECIPIENT_RA, SYNC_RECIPIENT_PE);
       }
    } else {
-      /* ideally this cache would only be flushed if there are VS uniform changes */
-      if (need_steering)
-         etna_set_state(stream, VIVS_SH_CONTROL, 0x0);
-
-      if (dirty & (uniform_dirty_bits | ctx->shader.vs->uniforms_dirty_bits))
+      if (dirty & (uniform_dirty_bits | ctx->shader.vs->uniforms_dirty_bits)) {
+         if (need_steering)
+            etna_set_state(stream, VIVS_SH_CONTROL, 0x0);
          etna_uniforms_write(ctx, ctx->shader.vs, ctx->constant_buffer[MESA_SHADER_VERTEX].cb);
+      }
 
-      /* ideally this cache would only be flushed if there are PS uniform changes */
-      if (need_steering)
-         etna_set_state(stream, VIVS_SH_CONTROL, VIVS_SH_CONTROL_PS_UNIFORM);
-
-      if (dirty & (uniform_dirty_bits | ctx->shader.fs->uniforms_dirty_bits))
+      if (dirty & (uniform_dirty_bits | ctx->shader.fs->uniforms_dirty_bits)) {
+         if (need_steering)
+            etna_set_state(stream, VIVS_SH_CONTROL, VIVS_SH_CONTROL_PS_UNIFORM);
          etna_uniforms_write(ctx, ctx->shader.fs, ctx->constant_buffer[MESA_SHADER_FRAGMENT].cb);
+      }
    }
 /**** End of state update ****/
 #undef EMIT_STATE
