@@ -932,6 +932,28 @@ static struct ac_pc_block_base gfx10_UTCL1 = {
    .num_spm_counters = 0,
 };
 
+/* gfx10_GCEA */
+static unsigned gfx10_GCEA_select0[] = {
+   R_036800_GCEA_PERFCOUNTER2_SELECT,
+};
+
+static unsigned gfx10_GCEA_select1[] = {
+   R_036804_GCEA_PERFCOUNTER2_SELECT1,
+};
+static struct ac_pc_block_base gfx10_GCEA = {
+   .gpu_block = GCEA,
+   .name = "GCEA",
+   .num_counters = 1,
+
+   .select0 = gfx10_GCEA_select0,
+   .select1 = gfx10_GCEA_select1,
+   .counter0_lo = R_034980_GCEA_PERFCOUNTER2_LO,
+
+   .num_spm_counters = 1,
+   .num_spm_wires = 2,
+   .spm_block_select = AC_SPM_GLOBAL_BLOCK_GCEA,
+};
+
 /* gfx11_SQ_WQP */
 static struct ac_pc_block_base gfx11_SQ_WGP = {
    .gpu_block = SQ_WGP,
@@ -1027,6 +1049,7 @@ static struct ac_pc_block_gfxdescr groups_gfx10[] = {
    {&gfx10_TCP, 77},
    {&cik_TD, 61},
    {&gfx10_UTCL1, 15},
+   {&gfx10_GCEA, 88},
 };
 
 static struct ac_pc_block_gfxdescr groups_gfx103[] = {
@@ -1059,6 +1082,7 @@ static struct ac_pc_block_gfxdescr groups_gfx103[] = {
    {&gfx10_TCP, 77},
    {&cik_TD, 192},
    {&gfx10_UTCL1, 15},
+   {&gfx10_GCEA, 89},
 };
 
 static struct ac_pc_block_gfxdescr groups_gfx11[] = {
@@ -1092,6 +1116,7 @@ static struct ac_pc_block_gfxdescr groups_gfx11[] = {
    {&cik_TD, 196},
    {&gfx10_UTCL1, 65},
    {&gfx11_SQ_WGP, 511, 4},
+   {&gfx10_GCEA, 86},
 };
 
 static struct ac_pc_block_gfxdescr groups_gfx12[] = {
@@ -1325,7 +1350,8 @@ bool ac_init_perfcounters(const struct radeon_info *info,
          } else if (!strcmp(block->b->b->name, "GL1C") ||
                     !strcmp(block->b->b->name, "SQ_WGP")) {
             block->num_global_instances = block->num_instances * info->num_se * info->max_sa_per_se;
-         } else if (!strcmp(block->b->b->name, "GL2C")) {
+         } else if (!strcmp(block->b->b->name, "GL2C") ||
+                    !strcmp(block->b->b->name, "GCEA")) {
             block->num_instances = block->num_global_instances = info->num_tcc_blocks;
          }
       }

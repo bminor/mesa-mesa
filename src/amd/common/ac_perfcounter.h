@@ -67,7 +67,7 @@ enum ac_pc_gpu_block {
    ATC     = 0x1A,
    ATCL2   = 0x1B,
    MCVML2  = 0x1C,
-   EA      = 0x1D,
+   GCEA    = 0x1D,
    RPB     = 0x1E,
    RMI     = 0x1F,
    UMCCH   = 0x20,
