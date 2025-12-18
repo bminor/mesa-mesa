@@ -1405,8 +1405,8 @@ ac_use_derived_spm_trace(const struct radeon_info *info,
    if (!spm_trace)
       return false;
 
-   /* TODO: Enable for GPUs. */
-   return false;
+   /* TODO: Enable for GFX12. */
+   return info->gfx_level >= GFX10 && info->gfx_level < GFX12;
 }
 
 int
