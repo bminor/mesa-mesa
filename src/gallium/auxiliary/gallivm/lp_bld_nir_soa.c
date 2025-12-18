@@ -3683,32 +3683,20 @@ visit_alu(struct lp_build_nir_soa_context *bld,
    struct lp_type scalar_double_type = bld->scalar_dbl_bld.type;
 
    /* Set the per-intruction float controls. */
-   bld->half_bld.type.signed_zero_preserve |=
-      !!(instr->fp_fast_math & FLOAT_CONTROLS_SIGNED_ZERO_PRESERVE_FP16);
-   bld->scalar_half_bld.type.signed_zero_preserve |=
-      !!(instr->fp_fast_math & FLOAT_CONTROLS_SIGNED_ZERO_PRESERVE_FP16);
-   bld->half_bld.type.nan_preserve |=
-      !!(instr->fp_fast_math & FLOAT_CONTROLS_NAN_PRESERVE_FP16);
-   bld->scalar_half_bld.type.nan_preserve |=
-      !!(instr->fp_fast_math & FLOAT_CONTROLS_NAN_PRESERVE_FP16);
+   bld->half_bld.type.signed_zero_preserve |= nir_alu_instr_is_signed_zero_preserve(instr);
+   bld->scalar_half_bld.type.signed_zero_preserve |= nir_alu_instr_is_signed_zero_preserve(instr);
+   bld->half_bld.type.nan_preserve |= nir_alu_instr_is_nan_preserve(instr);
+   bld->scalar_half_bld.type.nan_preserve |= nir_alu_instr_is_nan_preserve(instr);
 
-   bld->base.type.signed_zero_preserve |=
-      !!(instr->fp_fast_math & FLOAT_CONTROLS_SIGNED_ZERO_PRESERVE_FP32);
-   bld->scalar_base.type.signed_zero_preserve |=
-      !!(instr->fp_fast_math & FLOAT_CONTROLS_SIGNED_ZERO_PRESERVE_FP32);
-   bld->base.type.nan_preserve |=
-      !!(instr->fp_fast_math & FLOAT_CONTROLS_NAN_PRESERVE_FP32);
-   bld->scalar_base.type.nan_preserve |=
-      !!(instr->fp_fast_math & FLOAT_CONTROLS_NAN_PRESERVE_FP32);
+   bld->base.type.signed_zero_preserve |= nir_alu_instr_is_signed_zero_preserve(instr);
+   bld->scalar_base.type.signed_zero_preserve |= nir_alu_instr_is_signed_zero_preserve(instr);
+   bld->base.type.nan_preserve |= nir_alu_instr_is_nan_preserve(instr);
+   bld->scalar_base.type.nan_preserve |= nir_alu_instr_is_nan_preserve(instr);
 
-   bld->dbl_bld.type.signed_zero_preserve |=
-      !!(instr->fp_fast_math & FLOAT_CONTROLS_SIGNED_ZERO_PRESERVE_FP64);
-   bld->scalar_dbl_bld.type.signed_zero_preserve |=
-      !!(instr->fp_fast_math & FLOAT_CONTROLS_SIGNED_ZERO_PRESERVE_FP64);
-   bld->dbl_bld.type.nan_preserve |=
-      !!(instr->fp_fast_math & FLOAT_CONTROLS_NAN_PRESERVE_FP64);
-   bld->scalar_dbl_bld.type.nan_preserve |=
-      !!(instr->fp_fast_math & FLOAT_CONTROLS_NAN_PRESERVE_FP64);
+   bld->dbl_bld.type.signed_zero_preserve |= nir_alu_instr_is_signed_zero_preserve(instr);
+   bld->scalar_dbl_bld.type.signed_zero_preserve |= nir_alu_instr_is_signed_zero_preserve(instr);
+   bld->dbl_bld.type.nan_preserve |= nir_alu_instr_is_nan_preserve(instr);
+   bld->scalar_dbl_bld.type.nan_preserve |= nir_alu_instr_is_nan_preserve(instr);
 
    for (unsigned i = 0; i < nir_op_infos[instr->op].num_inputs; i++) {
       /**
