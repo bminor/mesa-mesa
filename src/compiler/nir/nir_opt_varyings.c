@@ -1017,15 +1017,6 @@ get_interp_vec4_type(struct linkage_info *linkage, unsigned slot,
 }
 
 static bool
-preserve_infs_nans(nir_shader *nir, unsigned bit_size)
-{
-   unsigned mode = nir->info.float_controls_execution_mode;
-
-   return nir_is_float_control_inf_preserve(mode, bit_size) ||
-          nir_is_float_control_nan_preserve(mode, bit_size);
-}
-
-static bool
 preserve_nans(nir_shader *nir, unsigned bit_size)
 {
    unsigned mode = nir->info.float_controls_execution_mode;
@@ -3123,7 +3114,7 @@ can_move_alu_across_interp(struct linkage_info *linkage, nir_alu_instr *alu)
     * that instruction, while removing the Infs to NaNs conversion for sourced
     * interpolated values. We can't do that if Infs and NaNs must be preserved.
     */
-   if (preserve_infs_nans(linkage->consumer_builder.shader, alu->def.bit_size))
+   if (nir_alu_instr_is_inf_preserve(alu) || nir_alu_instr_is_nan_preserve(alu))
       return false;
 
    switch (alu->op) {
