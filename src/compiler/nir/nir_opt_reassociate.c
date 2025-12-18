@@ -174,7 +174,7 @@ struct chain {
    unsigned length;
    nir_scalar srcs[MAX_CHAIN_LENGTH];
    bool do_global_cse, exact;
-   unsigned fp_fast_math;
+   unsigned fp_math_ctrl;
 };
 
 UNUSED static void
@@ -222,7 +222,7 @@ build_chain(struct chain *c, nir_scalar def, unsigned reserved_count)
     * It is safe to add `exact` or float control bits, but not the reverse.
     */
    c->exact |= alu->exact;
-   c->fp_fast_math |= alu->fp_fast_math;
+   c->fp_math_ctrl |= alu->fp_math_ctrl;
 
    for (unsigned i = 0; i < 2; ++i) {
       nir_scalar src = nir_scalar_chase_alu_src(def, i);
@@ -451,7 +451,7 @@ reassociate_chain(struct chain *c, void *pair_freq)
 {
    nir_builder b = nir_builder_at(nir_before_instr(&c->root->instr));
    b.exact = c->exact;
-   b.fp_fast_math = c->fp_fast_math;
+   b.fp_math_ctrl = c->fp_math_ctrl;
 
    /* Pick a new order using sort-by-rank and possibly the CSE heuristics */
    unsigned pinned = 0;
@@ -503,7 +503,7 @@ reassociate_chain(struct chain *c, void *pair_freq)
    /* Set flags conservatively, matching the rest of the chain */
    c->root->no_signed_wrap = c->root->no_unsigned_wrap = false;
    c->root->exact = c->exact;
-   c->root->fp_fast_math = c->fp_fast_math;
+   c->root->fp_math_ctrl = c->fp_math_ctrl;
    return true;
 }
 

@@ -1522,6 +1522,24 @@ nir_op_is_selection(nir_op op)
 {
    return (nir_op_infos[op].algebraic_properties & NIR_OP_IS_SELECTION) != 0;
 }
+/**
+ * Floating point fast math control.
+ *
+ * All new bits must restrict optimizations when they are set, not when they
+ * are missing. This means a bitwise OR always produces a no less restrictive set.
+ *
+ * See also nir_alu_instr::exact, which should (and hopefully will be) moved
+ * to this enum in the future.
+ */
+typedef enum {
+   nir_fp_preserve_signed_zero = BITFIELD_BIT(0),
+   nir_fp_preserve_inf = BITFIELD_BIT(1),
+   nir_fp_preserve_nan = BITFIELD_BIT(2),
+
+   nir_fp_preserve_sz_inf_nan = BITFIELD_MASK(3),
+   nir_fp_fast_math = 0,
+   nir_fp_no_fast_math = BITFIELD_MASK(3),
+} nir_fp_math_control;
 
 /***/
 typedef struct nir_alu_instr {
@@ -1562,7 +1580,7 @@ typedef struct nir_alu_instr {
     * still handled through the exact bit, and the other float controls bits
     * (rounding mode and denorm handling) remain in the execution mode only.
     */
-   uint32_t fp_fast_math : 9;
+   uint32_t fp_math_ctrl : 3;
 
    /** Sources
     *
@@ -1574,25 +1592,25 @@ typedef struct nir_alu_instr {
 static inline bool
 nir_alu_instr_is_signed_zero_preserve(nir_alu_instr *alu)
 {
-   return nir_is_float_control_signed_zero_preserve(alu->fp_fast_math, alu->def.bit_size);
+   return alu->fp_math_ctrl & nir_fp_preserve_signed_zero;
 }
 
 static inline bool
 nir_alu_instr_is_inf_preserve(nir_alu_instr *alu)
 {
-   return nir_is_float_control_inf_preserve(alu->fp_fast_math, alu->def.bit_size);
+   return alu->fp_math_ctrl & nir_fp_preserve_inf;
 }
 
 static inline bool
 nir_alu_instr_is_nan_preserve(nir_alu_instr *alu)
 {
-   return nir_is_float_control_nan_preserve(alu->fp_fast_math, alu->def.bit_size);
+   return alu->fp_math_ctrl & nir_fp_preserve_nan;
 }
 
 static inline bool
 nir_alu_instr_is_signed_zero_inf_nan_preserve(nir_alu_instr *alu)
 {
-   return nir_is_float_control_signed_zero_inf_nan_preserve(alu->fp_fast_math, alu->def.bit_size);
+   return alu->fp_math_ctrl & nir_fp_preserve_sz_inf_nan;
 }
 
 void nir_alu_src_copy(nir_alu_src *dest, const nir_alu_src *src);

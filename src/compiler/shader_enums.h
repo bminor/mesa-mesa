@@ -1550,10 +1550,6 @@ enum gl_derivative_group {
 
 enum float_controls
 {
-   /* The order of these matters. For float_controls2, only the first 9 bits
-    * are used and stored per-instruction in nir_alu_instr::fp_fast_math.
-    * Any changes in this enum need to be synchronized with that.
-    */
    FLOAT_CONTROLS_DEFAULT_FLOAT_CONTROL_MODE = 0,
    FLOAT_CONTROLS_SIGNED_ZERO_PRESERVE_FP16  = BITFIELD_BIT(0),
    FLOAT_CONTROLS_SIGNED_ZERO_PRESERVE_FP32  = BITFIELD_BIT(1),

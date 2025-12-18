@@ -111,7 +111,7 @@ lower_reduction(nir_alu_instr *alu, nir_op chan_op, nir_op merge_op,
          chan->src[1].swizzle[0] = chan->src[1].swizzle[channel];
       }
       chan->exact = alu->exact;
-      chan->fp_fast_math = alu->fp_fast_math;
+      chan->fp_math_ctrl = alu->fp_math_ctrl;
 
       nir_builder_instr_insert(builder, &chan->instr);
 
@@ -164,7 +164,7 @@ lower_bfdot_to_bfdot2_bfadd(nir_builder *b, nir_alu_instr *alu)
       }
       instr->src[2].src = nir_src_for_ssa(acc);
       instr->exact = b->exact;
-      instr->fp_fast_math = b->fp_fast_math;
+      instr->fp_math_ctrl = b->fp_math_ctrl;
 
       nir_builder_instr_insert(b, &instr->instr);
       acc = &instr->def;
@@ -206,7 +206,7 @@ lower_fdot(nir_alu_instr *alu, nir_builder *builder, bool is_bfloat16)
       if (i != 0)
          instr->src[2].src = nir_src_for_ssa(prev);
       instr->exact = builder->exact;
-      instr->fp_fast_math = builder->fp_fast_math;
+      instr->fp_math_ctrl = builder->fp_math_ctrl;
 
       nir_builder_instr_insert(builder, &instr->instr);
 
@@ -225,7 +225,7 @@ lower_alu_instr_width(nir_builder *b, nir_instr *instr, void *_data)
    unsigned i, chan;
 
    b->exact = alu->exact;
-   b->fp_fast_math = alu->fp_fast_math;
+   b->fp_math_ctrl = alu->fp_math_ctrl;
 
    unsigned num_components = alu->def.num_components;
    unsigned target_width = 1;
@@ -449,7 +449,7 @@ lower_alu_instr_width(nir_builder *b, nir_instr *instr, void *_data)
 
       nir_alu_ssa_dest_init(lower, components, alu->def.bit_size);
       lower->exact = alu->exact;
-      lower->fp_fast_math = alu->fp_fast_math;
+      lower->fp_math_ctrl = alu->fp_math_ctrl;
 
       for (i = 0; i < components; i++) {
          vec->src[chan + i].src = nir_src_for_ssa(&lower->def);

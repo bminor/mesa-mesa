@@ -83,7 +83,7 @@ build_atomic(nir_builder *b, nir_intrinsic_instr *intr)
          b, nir_atomic_op_to_alu(nir_intrinsic_atomic_op(intr)), before, data);
       nir_alu_instr *op = nir_def_as_alu(expected);
       op->exact = true;
-      op->fp_fast_math = 0;
+      op->fp_math_ctrl = nir_fp_no_fast_math;
       switch (intr->intrinsic) {
       case nir_intrinsic_ssbo_atomic:
          xchg = nir_ssbo_atomic_swap(b, intr->def.bit_size,

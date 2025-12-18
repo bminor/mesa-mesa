@@ -807,7 +807,7 @@ nir_instr_set_add_or_rewrite(struct set *instr_set, nir_instr *instr,
        */
       if (instr->type == nir_instr_type_alu) {
          nir_instr_as_alu(match)->exact |= nir_instr_as_alu(instr)->exact;
-         nir_instr_as_alu(match)->fp_fast_math |= nir_instr_as_alu(instr)->fp_fast_math;
+         nir_instr_as_alu(match)->fp_math_ctrl |= nir_instr_as_alu(instr)->fp_math_ctrl;
       }
 
       assert(!def == !new_def);

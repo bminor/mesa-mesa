@@ -88,10 +88,8 @@ get_signed_inf(nir_builder *b, nir_def *zero)
 static nir_def *
 get_signed_zero(nir_builder *b, nir_def *src)
 {
-   uint32_t exec_mode = b->fp_fast_math;
-
    nir_def *zero;
-   if (nir_is_float_control_signed_zero_preserve(exec_mode, 64)) {
+   if (b->fp_math_ctrl & nir_fp_preserve_signed_zero) {
       nir_def *hi = nir_unpack_64_2x32_split_y(b, src);
       nir_def *sign = nir_iand_imm(b, hi, 0x80000000);
       zero = nir_pack_64_2x32_split(b, nir_imm_int(b, 0), sign);
@@ -105,9 +103,7 @@ get_signed_zero(nir_builder *b, nir_def *src)
 static nir_def *
 preserve_nan(nir_builder *b, nir_def *src, nir_def *res)
 {
-   uint32_t exec_mode = b->fp_fast_math;
-
-   if (nir_is_float_control_nan_preserve(exec_mode, 64)) {
+   if (b->fp_math_ctrl & nir_fp_preserve_nan) {
       nir_def *is_nan = nir_fneu(b, src, src);
       return nir_bcsel(b, is_nan, src, res);
    }
@@ -317,7 +313,6 @@ lower_sqrt_rsq(nir_builder *b, nir_def *src, bool sqrt)
       res = nir_ffma(b, y_1, r_1, y_1);
    }
 
-   uint32_t exec_mode = b->fp_fast_math;
    if (sqrt) {
       /* Here, the special cases we need to handle are
        * 0 -> 0 (sign preserving)
@@ -343,7 +338,7 @@ lower_sqrt_rsq(nir_builder *b, nir_def *src, bool sqrt)
       res = fix_inv_result(b, res, src, new_exp);
    }
 
-   if (nir_is_float_control_nan_preserve(exec_mode, 64))
+   if (b->fp_math_ctrl & nir_fp_preserve_nan)
       res = nir_bcsel(b, nir_feq_imm(b, src, -INFINITY),
                       nir_imm_double(b, NAN), res);
 
@@ -504,7 +499,7 @@ lower_minmax(nir_builder *b, nir_op cmp, nir_def *src0, nir_def *src1)
    /* IEEE-754-2019 requires that fmin/fmax compare -0 < 0, but -0 and 0 are
     * indistinguishable for flt/fge. So, we fix up signed zeroes.
     */
-   if (nir_is_float_control_signed_zero_preserve(b->fp_fast_math, 64)) {
+   if (b->fp_math_ctrl & nir_fp_preserve_signed_zero) {
       nir_def *src0_is_negzero = nir_ieq_imm(b, src0, 1ull << 63);
       nir_def *src1_is_poszero = nir_ieq_imm(b, src1, 0x0);
       nir_def *neg_pos_zero = nir_iand(b, src0_is_negzero, src1_is_poszero);
@@ -772,7 +767,7 @@ lower_doubles_instr(nir_builder *b, nir_instr *instr, void *_data)
    nir_alu_instr *alu = nir_instr_as_alu(instr);
 
    /* Easier to set it here than pass it around all over ther place. */
-   b->fp_fast_math = alu->fp_fast_math;
+   b->fp_math_ctrl = alu->fp_math_ctrl;
 
    nir_def *soft_def =
       lower_doubles_instr_to_soft(b, alu, data->softfp64, options);

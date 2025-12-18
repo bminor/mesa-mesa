@@ -51,7 +51,7 @@ lower_atomic_in_lock(nir_builder *b, nir_intrinsic_instr *intr, nir_def *loaded)
          b, nir_atomic_op_to_alu(nir_intrinsic_atomic_op(intr)), loaded, data);
       nir_alu_instr *alu = nir_def_as_alu(to_store);
       alu->exact = true;
-      alu->fp_fast_math = 0;
+      alu->fp_math_ctrl = nir_fp_no_fast_math;
       break;
    }
    case nir_atomic_op_xchg: {

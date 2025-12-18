@@ -44,7 +44,7 @@ typedef struct nir_builder {
    bool constant_fold_alu;
 
    /* Float_controls2 bits. See nir_alu_instr for details. */
-   uint32_t fp_fast_math;
+   uint32_t fp_math_ctrl;
 
    nir_shader *shader;
    nir_function_impl *impl;
@@ -725,7 +725,7 @@ nir_mov_alu(nir_builder *build, nir_alu_src src, unsigned num_components)
    nir_def_init(&mov->instr, &mov->def, num_components,
                 nir_src_bit_size(src.src));
    mov->exact = build->exact;
-   mov->fp_fast_math = build->fp_fast_math;
+   mov->fp_math_ctrl = build->fp_math_ctrl;
    mov->src[0] = src;
    nir_builder_instr_insert(build, &mov->instr);
 

@@ -733,7 +733,7 @@ write_alu(write_ctx *ctx, const nir_alu_instr *alu)
    }
 
    write_def(ctx, &alu->def, header, alu->instr.type);
-   blob_write_uint32(ctx->blob, alu->fp_fast_math);
+   blob_write_uint32(ctx->blob, alu->fp_math_ctrl);
 
    if (header.alu.packed_src_ssa_16bit) {
       for (unsigned i = 0; i < num_srcs; i++) {
@@ -788,7 +788,7 @@ read_alu(read_ctx *ctx, union packed_instr header)
    alu->no_unsigned_wrap = header.alu.no_unsigned_wrap;
 
    read_def(ctx, &alu->def, &alu->instr, header);
-   alu->fp_fast_math = blob_read_uint32(ctx->blob);
+   alu->fp_math_ctrl = blob_read_uint32(ctx->blob);
 
    if (header.alu.packed_src_ssa_16bit) {
       for (unsigned i = 0; i < num_srcs; i++) {

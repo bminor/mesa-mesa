@@ -44,7 +44,7 @@ lower_alu_instr(nir_builder *b, nir_alu_instr *instr, UNUSED void *cb_data)
 
    b->cursor = nir_before_instr(&instr->instr);
    b->exact = instr->exact;
-   b->fp_fast_math = instr->fp_fast_math;
+   b->fp_math_ctrl = instr->fp_math_ctrl;
 
    switch (instr->op) {
    case nir_op_bitfield_reverse:
@@ -176,9 +176,9 @@ lower_alu_instr(nir_builder *b, nir_alu_instr *instr, UNUSED void *cb_data)
        * nir_lower_alu is idempotent, and allows the backend to implement
        * soundly the no_signed_zero subset of fmin/fmax.
        */
-      b->fp_fast_math &= ~FLOAT_CONTROLS_SIGNED_ZERO_PRESERVE;
+      b->fp_math_ctrl &= ~nir_fp_preserve_signed_zero;
       nir_def *fminmax = max ? nir_fmax(b, s0, s1) : nir_fmin(b, s0, s1);
-      b->fp_fast_math = instr->fp_fast_math;
+      b->fp_math_ctrl = instr->fp_math_ctrl;
 
       /* If we have a constant source, we can usually optimize */
       if (s0->num_components == 1 && s0->bit_size == 32) {

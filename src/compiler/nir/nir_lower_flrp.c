@@ -345,7 +345,7 @@ convert_flrp_instruction(nir_builder *bld,
 
    bld->cursor = nir_before_instr(&alu->instr);
    bld->exact = alu->exact;
-   bld->fp_fast_math = alu->fp_fast_math;
+   bld->fp_math_ctrl = alu->fp_math_ctrl;
 
    /* There are two methods to implement flrp(x, y, t).  The strictly correct
     * implementation according to the GLSL spec is:

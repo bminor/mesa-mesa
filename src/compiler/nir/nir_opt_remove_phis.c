@@ -47,11 +47,11 @@ phi_srcs_equal(nir_def *a, nir_def *b)
    if (!nir_instrs_equal(a_instr, b_instr))
       return false;
 
-   /* nir_instrs_equal ignores exact/fast_math */
+   /* nir_instrs_equal ignores exact/fp_math_ctrl */
    if (a_instr->type == nir_instr_type_alu) {
       nir_alu_instr *a_alu = nir_def_as_alu(a);
       nir_alu_instr *b_alu = nir_def_as_alu(b);
-      if (a_alu->exact != b_alu->exact || a_alu->fp_fast_math != b_alu->fp_fast_math)
+      if (a_alu->exact != b_alu->exact || a_alu->fp_math_ctrl != b_alu->fp_math_ctrl)
          return false;
    }
 

@@ -417,22 +417,13 @@ handle_fp_fast_math(struct vtn_builder *b, UNUSED struct vtn_value *val,
       b->nb.exact = true;
 
    /* Decoration overrides defaults */
-   b->nb.fp_fast_math = 0;
+   b->nb.fp_math_ctrl = 0;
    if (!(dec->operands[0] & SpvFPFastMathModeNSZMask))
-      b->nb.fp_fast_math |=
-         FLOAT_CONTROLS_SIGNED_ZERO_PRESERVE_FP16 |
-         FLOAT_CONTROLS_SIGNED_ZERO_PRESERVE_FP32 |
-         FLOAT_CONTROLS_SIGNED_ZERO_PRESERVE_FP64;
+      b->nb.fp_math_ctrl |= nir_fp_preserve_signed_zero;
    if (!(dec->operands[0] & SpvFPFastMathModeNotNaNMask))
-      b->nb.fp_fast_math |=
-         FLOAT_CONTROLS_NAN_PRESERVE_FP16 |
-         FLOAT_CONTROLS_NAN_PRESERVE_FP32 |
-         FLOAT_CONTROLS_NAN_PRESERVE_FP64;
+      b->nb.fp_math_ctrl |= nir_fp_preserve_nan;
    if (!(dec->operands[0] & SpvFPFastMathModeNotInfMask))
-      b->nb.fp_fast_math |=
-         FLOAT_CONTROLS_INF_PRESERVE_FP16 |
-         FLOAT_CONTROLS_INF_PRESERVE_FP32 |
-         FLOAT_CONTROLS_INF_PRESERVE_FP64;
+      b->nb.fp_math_ctrl |= nir_fp_preserve_inf;
 }
 
 void
@@ -441,18 +432,30 @@ vtn_handle_fp_fast_math(struct vtn_builder *b, struct vtn_value *val)
    /* Take the NaN/Inf/SZ preserve bits from the execution mode and set them
     * on the builder, so the generated instructions can take it from it.
     * We only care about some of them, check nir_alu_instr for details.
-    * We also copy all bit widths, because we can't easily get the correct one
-    * here.
     */
-#define FLOAT_CONTROLS2_BITS (FLOAT_CONTROLS_SIGNED_ZERO_INF_NAN_PRESERVE_FP16 | \
-                              FLOAT_CONTROLS_SIGNED_ZERO_INF_NAN_PRESERVE_FP32 | \
-                              FLOAT_CONTROLS_SIGNED_ZERO_INF_NAN_PRESERVE_FP64)
-   static_assert(FLOAT_CONTROLS2_BITS == BITSET_MASK(9),
-      "enum float_controls and fp_fast_math out of sync!");
-   b->nb.fp_fast_math = b->shader->info.float_controls_execution_mode &
-      FLOAT_CONTROLS2_BITS;
+
+   b->nb.fp_math_ctrl = 0;
+   unsigned exec_mode = b->shader->info.float_controls_execution_mode;
+   if (val->type) {
+      unsigned bit_size;
+
+      /* Some ALU like modf and frexp return a struct of two values. */
+      if (glsl_type_is_struct(val->type->type))
+         bit_size = glsl_get_bit_size(val->type->type->fields.structure[0].type);
+      else
+         bit_size = glsl_get_bit_size(val->type->type);
+
+      if (bit_size >= 16 && bit_size <= 64) {
+         if (nir_is_float_control_signed_zero_preserve(exec_mode, bit_size))
+            b->nb.fp_math_ctrl |= nir_fp_preserve_signed_zero;
+         if (nir_is_float_control_inf_preserve(exec_mode, bit_size))
+            b->nb.fp_math_ctrl |= nir_fp_preserve_inf;
+         if (nir_is_float_control_nan_preserve(exec_mode, bit_size))
+            b->nb.fp_math_ctrl |= nir_fp_preserve_nan;
+      }
+   }
+
    vtn_foreach_decoration(b, val, handle_fp_fast_math, NULL);
-#undef FLOAT_CONTROLS2_BITS
 }
 
 nir_rounding_mode
@@ -870,15 +873,15 @@ vtn_handle_alu(struct vtn_builder *b, SpvOp opcode,
 
    case SpvOpIsInf: {
       const bool save_exact = b->nb.exact;
-      const unsigned save_fast_math = b->nb.fp_fast_math;
+      const unsigned save_math_ctrl = b->nb.fp_math_ctrl;
 
       b->nb.exact = true;
-      b->nb.fp_fast_math = 0;
+      b->nb.fp_math_ctrl = nir_fp_no_fast_math;
       nir_def *inf = nir_imm_floatN_t(&b->nb, INFINITY, src[0]->bit_size);
       dest->def = nir_feq(&b->nb, nir_fabs(&b->nb, src[0]), inf);
 
       b->nb.exact = save_exact;
-      b->nb.fp_fast_math = save_fast_math;
+      b->nb.fp_math_ctrl = save_math_ctrl;
       break;
    }
 
