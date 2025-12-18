@@ -484,21 +484,25 @@ r2d_setup_common(struct tu_cmd_buffer *cmd,
    tu_cs_emit_pkt4(cs, REG_A6XX_RB_A2D_PIXEL_CNTL, 1);
    tu_cs_emit(cs, unknown_8c01);    // TODO: seem to be always 0 on A7XX
 
-   uint32_t blit_cntl = A6XX_RB_A2D_BLT_CNTL(
-         .rotate = (enum a6xx_rotation) blit_param,
-         .solid_color = clear,
-         .color_format = fmt,
-         .scissor = scissor,
-         .d24s8 = fmt == FMT6_Z24_UNORM_S8_UINT_AS_R8G8B8A8 && !clear,
-         .mask = 0xf,
-         .ifmt = util_format_is_srgb(dst_format) ? R2D_UNORM8_SRGB : ifmt,
-      ).value;
+   tu_cs_emit_regs(cs, A6XX_RB_A2D_BLT_CNTL(
+      .rotate = (enum a6xx_rotation) blit_param,
+      .solid_color = clear,
+      .color_format = fmt,
+      .scissor = scissor,
+      .d24s8 = fmt == FMT6_Z24_UNORM_S8_UINT_AS_R8G8B8A8 && !clear,
+      .mask = 0xf,
+      .ifmt = util_format_is_srgb(dst_format) ? R2D_UNORM8_SRGB : ifmt,
+   ));
 
-   tu_cs_emit_pkt4(cs, REG_A6XX_RB_A2D_BLT_CNTL, 1);
-   tu_cs_emit(cs, blit_cntl);
-
-   tu_cs_emit_pkt4(cs, REG_A6XX_GRAS_A2D_BLT_CNTL, 1);
-   tu_cs_emit(cs, blit_cntl);
+   tu_cs_emit_regs(cs, GRAS_A2D_BLT_CNTL(CHIP,
+      .rotate = (enum a6xx_rotation) blit_param,
+      .solid_color = clear,
+      .color_format = fmt,
+      .scissor = scissor,
+      .d24s8 = fmt == FMT6_Z24_UNORM_S8_UINT_AS_R8G8B8A8 && !clear,
+      .mask = 0xf,
+      .ifmt = util_format_is_srgb(dst_format) ? R2D_UNORM8_SRGB : ifmt,
+   ));
 
    if (CHIP > A6XX) {
       tu_cs_emit_regs(cs, TPL1_A2D_BLT_CNTL(CHIP, .raw_copy = false,
