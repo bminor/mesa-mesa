@@ -26,6 +26,7 @@
 
 #include <vulkan/vulkan.h>
 
+struct pvr_device_info;
 struct pvr_winsys;
 struct pvr_winsys_compute_ctx;
 struct pvr_winsys_compute_ctx_create_info;
