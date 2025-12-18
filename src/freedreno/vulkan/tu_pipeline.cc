@@ -783,73 +783,6 @@ tu6_emit_vpc(struct tu_cs *cs,
              const struct ir3_shader_variant *gs,
              const struct ir3_shader_variant *fs)
 {
-   /* note: doesn't compile as static because of the array regs.. */
-   const struct reg_config {
-      uint16_t reg_sp_xs_out_reg;
-      uint16_t reg_sp_xs_vpc_dst_reg;
-      uint16_t reg_vpc_xs_pack;
-      uint16_t reg_vpc_xs_clip_cntl;
-      uint16_t reg_vpc_xs_clip_cntl_v2;
-      uint16_t reg_gras_xs_cl_cntl;
-      uint16_t reg_pc_xs_out_cntl;
-      uint16_t reg_sp_xs_primitive_cntl;
-      uint16_t reg_vpc_xs_layer_cntl;
-      uint16_t reg_vpc_xs_layer_cntl_v2;
-      uint16_t reg_gras_xs_layer_cntl;
-   } reg_config[] = {
-      [MESA_SHADER_VERTEX] = {
-         REG_A6XX_SP_VS_OUTPUT_REG(0),
-         REG_A6XX_SP_VS_VPC_DEST_REG(0),
-         REG_A6XX_VPC_VS_CNTL,
-         REG_A6XX_VPC_VS_CLIP_CULL_CNTL,
-         REG_A6XX_VPC_VS_CLIP_CULL_CNTL_V2,
-         REG_A6XX_GRAS_CL_VS_CLIP_CULL_DISTANCE,
-         REG_A6XX_PC_VS_CNTL,
-         REG_A6XX_SP_VS_OUTPUT_CNTL,
-         REG_A6XX_VPC_VS_SIV_CNTL,
-         REG_A6XX_VPC_VS_SIV_CNTL_V2,
-         REG_A6XX_GRAS_SU_VS_SIV_CNTL,
-      },
-      [MESA_SHADER_TESS_CTRL] = {
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         REG_A6XX_PC_HS_CNTL,
-         0,
-         0,
-         0
-      },
-      [MESA_SHADER_TESS_EVAL] = {
-         REG_A6XX_SP_DS_OUTPUT_REG(0),
-         REG_A6XX_SP_DS_VPC_DEST_REG(0),
-         REG_A6XX_VPC_DS_CNTL,
-         REG_A6XX_VPC_DS_CLIP_CULL_CNTL,
-         REG_A6XX_VPC_DS_CLIP_CULL_CNTL_V2,
-         REG_A6XX_GRAS_CL_DS_CLIP_CULL_DISTANCE,
-         REG_A6XX_PC_DS_CNTL,
-         REG_A6XX_SP_DS_OUTPUT_CNTL,
-         REG_A6XX_VPC_DS_SIV_CNTL,
-         REG_A6XX_VPC_DS_SIV_CNTL_V2,
-         REG_A6XX_GRAS_SU_DS_SIV_CNTL,
-      },
-      [MESA_SHADER_GEOMETRY] = {
-         REG_A6XX_SP_GS_OUTPUT_REG(0),
-         REG_A6XX_SP_GS_VPC_DEST_REG(0),
-         REG_A6XX_VPC_GS_CNTL,
-         REG_A6XX_VPC_GS_CLIP_CULL_CNTL,
-         REG_A6XX_VPC_GS_CLIP_CULL_CNTL_V2,
-         REG_A6XX_GRAS_CL_GS_CLIP_CULL_DISTANCE,
-         REG_A6XX_PC_GS_CNTL,
-         REG_A6XX_SP_GS_OUTPUT_CNTL,
-         REG_A6XX_VPC_GS_SIV_CNTL,
-         REG_A6XX_VPC_GS_SIV_CNTL_V2,
-         REG_A6XX_GRAS_SU_GS_SIV_CNTL,
-      },
-   };
-
    const struct ir3_shader_variant *last_shader;
    if (gs) {
       last_shader = gs;
@@ -858,8 +791,6 @@ tu6_emit_vpc(struct tu_cs *cs,
    } else {
       last_shader = vs;
    }
-
-   const struct reg_config *cfg = &reg_config[last_shader->type];
 
    struct ir3_shader_linkage linkage = {
       .primid_loc = 0xff,
@@ -962,6 +893,8 @@ tu6_emit_vpc(struct tu_cs *cs,
    if (linkage.cnt == 0)
       ir3_link_add(&linkage, 0, 0, 0x1, linkage.max_loc);
 
+   tu6_emit_vpc_varying_modes<CHIP>(cs, fs, last_shader);
+
    /* map outputs of the last shader to VPC */
    assert(linkage.cnt <= 32);
    const uint32_t sp_out_count = DIV_ROUND_UP(linkage.cnt, 2);
@@ -976,30 +909,121 @@ tu6_emit_vpc(struct tu_cs *cs,
          A6XX_SP_VS_VPC_DEST_REG_OUTLOC0(linkage.var[i].loc);
    }
 
-   tu_cs_emit_pkt4(cs, cfg->reg_sp_xs_out_reg, sp_out_count);
-   tu_cs_emit_array(cs, sp_out, sp_out_count);
+   tu_crb crb = cs->crb(sp_out_count + sp_vpc_dst_count + 12);
+   uint32_t *regs;
 
-   tu_cs_emit_pkt4(cs, cfg->reg_sp_xs_vpc_dst_reg, sp_vpc_dst_count);
-   tu_cs_emit_array(cs, sp_vpc_dst, sp_vpc_dst_count);
+   switch (last_shader->type) {
+   case MESA_SHADER_VERTEX:
+      regs = (uint32_t *)sp_out;
+      for (unsigned i = 0; i < sp_out_count; i++)
+         crb.add(A6XX_SP_VS_OUTPUT_REG(i, .dword = regs[i]));
 
-   tu_cs_emit_pkt4(cs, cfg->reg_vpc_xs_pack, 1);
-   tu_cs_emit(cs, A6XX_VPC_VS_CNTL_POSITIONLOC(position_loc) |
-                  A6XX_VPC_VS_CNTL_PSIZELOC(pointsize_loc) |
-                  A6XX_VPC_VS_CNTL_STRIDE_IN_VPC(linkage.max_loc) |
-                  A6XX_VPC_VS_CNTL_EXTRAPOS(extra_pos));
+      regs = (uint32_t *)sp_vpc_dst;
+      for (unsigned i = 0; i < sp_vpc_dst_count; i++)
+         crb.add(A6XX_SP_VS_VPC_DEST_REG(i, .dword = regs[i]));
 
-   tu_cs_emit_pkt4(cs, cfg->reg_vpc_xs_clip_cntl, 1);
-   tu_cs_emit(cs, A6XX_VPC_VS_CLIP_CULL_CNTL_CLIP_MASK(clip_cull_mask) |
-                  A6XX_VPC_VS_CLIP_CULL_CNTL_CLIP_DIST_03_LOC(clip0_loc) |
-                  A6XX_VPC_VS_CLIP_CULL_CNTL_CLIP_DIST_47_LOC(clip1_loc));
-   tu_cs_emit_pkt4(cs, cfg->reg_vpc_xs_clip_cntl_v2, 1);
-   tu_cs_emit(cs, A6XX_VPC_VS_CLIP_CULL_CNTL_CLIP_MASK(clip_cull_mask) |
-                  A6XX_VPC_VS_CLIP_CULL_CNTL_CLIP_DIST_03_LOC(clip0_loc) |
-                  A6XX_VPC_VS_CLIP_CULL_CNTL_CLIP_DIST_47_LOC(clip1_loc));
+      crb.add(VPC_VS_CNTL(CHIP,
+         .stride_in_vpc = linkage.max_loc,
+         .positionloc = position_loc,
+         .psizeloc = pointsize_loc,
+         .extrapos = extra_pos,
+      ));
 
-   tu_cs_emit_pkt4(cs, cfg->reg_gras_xs_cl_cntl, 1);
-   tu_cs_emit(cs, A6XX_GRAS_CL_VS_CLIP_CULL_DISTANCE_CLIP_MASK(last_shader->clip_mask) |
-                  A6XX_GRAS_CL_VS_CLIP_CULL_DISTANCE_CULL_MASK(last_shader->cull_mask));
+      crb.add(VPC_VS_CLIP_CULL_CNTL(CHIP,
+         .clip_mask = clip_cull_mask,
+         .clip_dist_03_loc = clip0_loc,
+         .clip_dist_47_loc = clip1_loc,
+      ));
+
+      if (CHIP <= A7XX) {
+         crb.add(VPC_VS_CLIP_CULL_CNTL_V2(CHIP,
+            .clip_mask = clip_cull_mask,
+            .clip_dist_03_loc = clip0_loc,
+            .clip_dist_47_loc = clip1_loc,
+         ));
+      }
+
+      crb.add(GRAS_CL_VS_CLIP_CULL_DISTANCE(CHIP,
+         .clip_mask = last_shader->clip_mask,
+         .cull_mask = last_shader->cull_mask,
+      ));
+
+      break;
+   case MESA_SHADER_TESS_EVAL:
+      regs = (uint32_t *)sp_out;
+      for (unsigned i = 0; i < sp_out_count; i++)
+         crb.add(A6XX_SP_DS_OUTPUT_REG(i, .dword = regs[i]));
+
+      regs = (uint32_t *)sp_vpc_dst;
+      for (unsigned i = 0; i < sp_vpc_dst_count; i++)
+         crb.add(A6XX_SP_DS_VPC_DEST_REG(i, .dword = regs[i]));
+
+      crb.add(VPC_DS_CNTL(CHIP,
+         .stride_in_vpc = linkage.max_loc,
+         .positionloc = position_loc,
+         .psizeloc = pointsize_loc,
+         .extrapos = extra_pos,
+      ));
+
+      crb.add(VPC_DS_CLIP_CULL_CNTL(CHIP,
+         .clip_mask = clip_cull_mask,
+         .clip_dist_03_loc = clip0_loc,
+         .clip_dist_47_loc = clip1_loc,
+      ));
+
+      if (CHIP <= A7XX) {
+         crb.add(VPC_DS_CLIP_CULL_CNTL_V2(CHIP,
+            .clip_mask = clip_cull_mask,
+            .clip_dist_03_loc = clip0_loc,
+            .clip_dist_47_loc = clip1_loc,
+         ));
+      }
+
+      crb.add(GRAS_CL_DS_CLIP_CULL_DISTANCE(CHIP,
+         .clip_mask = last_shader->clip_mask,
+         .cull_mask = last_shader->cull_mask,
+      ));
+
+      break;
+   case MESA_SHADER_GEOMETRY:
+      regs = (uint32_t *)sp_out;
+      for (unsigned i = 0; i < sp_out_count; i++)
+         crb.add(A6XX_SP_GS_OUTPUT_REG(i, .dword = regs[i]));
+
+      regs = (uint32_t *)sp_vpc_dst;
+      for (unsigned i = 0; i < sp_vpc_dst_count; i++)
+         crb.add(A6XX_SP_GS_VPC_DEST_REG(i, .dword = regs[i]));
+
+      crb.add(VPC_GS_CNTL(CHIP,
+         .stride_in_vpc = linkage.max_loc,
+         .positionloc = position_loc,
+         .psizeloc = pointsize_loc,
+         .extrapos = extra_pos,
+      ));
+
+      crb.add(VPC_GS_CLIP_CULL_CNTL(CHIP,
+         .clip_mask = clip_cull_mask,
+         .clip_dist_03_loc = clip0_loc,
+         .clip_dist_47_loc = clip1_loc,
+      ));
+
+      if (CHIP <= A7XX) {
+         crb.add(VPC_GS_CLIP_CULL_CNTL_V2(CHIP,
+            .clip_mask = clip_cull_mask,
+            .clip_dist_03_loc = clip0_loc,
+            .clip_dist_47_loc = clip1_loc,
+         ));
+      }
+
+      crb.add(GRAS_CL_GS_CLIP_CULL_DISTANCE(CHIP,
+         .clip_mask = last_shader->clip_mask,
+         .cull_mask = last_shader->cull_mask,
+      ));
+
+      break;
+   default:
+      UNREACHABLE("bad last_shader type");
+   }
 
    const struct ir3_shader_variant *geom_shaders[] = { vs, hs, ds, gs };
 
@@ -1010,18 +1034,50 @@ tu6_emit_vpc(struct tu_cs *cs,
 
       bool primid = shader->type != MESA_SHADER_VERTEX &&
          VALIDREG(ir3_find_sysval_regid(shader, SYSTEM_VALUE_PRIMITIVE_ID));
+      bool last = shader == last_shader;
 
-      tu_cs_emit_pkt4(cs, reg_config[shader->type].reg_pc_xs_out_cntl, 1);
-      if (shader == last_shader) {
-         tu_cs_emit(cs, A6XX_PC_VS_CNTL_STRIDE_IN_VPC(linkage.max_loc) |
-                        CONDREG(pointsize_regid, A6XX_PC_VS_CNTL_PSIZE) |
-                        CONDREG(layer_regid, A6XX_PC_VS_CNTL_LAYER) |
-                        CONDREG(view_regid, A6XX_PC_VS_CNTL_VIEW) |
-                        COND(primid, A6XX_PC_VS_CNTL_PRIMITIVE_ID) |
-                        A6XX_PC_VS_CNTL_CLIP_MASK(clip_cull_mask) |
-                        CONDREG(shading_rate_regid, A6XX_PC_VS_CNTL_SHADINGRATE));
-      } else {
-         tu_cs_emit(cs, COND(primid, A6XX_PC_VS_CNTL_PRIMITIVE_ID));
+
+      switch (shader->type) {
+      case MESA_SHADER_VERTEX:
+         crb.add(PC_VS_CNTL(CHIP,
+            .stride_in_vpc = COND(last, linkage.max_loc),
+            .psize = COND(last, VALIDREG(pointsize_regid)),
+            .layer = COND(last, VALIDREG(layer_regid)),
+            .view = COND(last, VALIDREG(view_regid)),
+            .primitive_id = primid,
+            .clip_mask = COND(last, clip_cull_mask),
+            .shadingrate = COND(last, VALIDREG(shading_rate_regid)),
+         ));
+         break;
+      case MESA_SHADER_TESS_CTRL:
+         assert(!last);
+         crb.add(PC_HS_CNTL(CHIP,
+            .primitive_id = primid,
+         ));
+      case MESA_SHADER_TESS_EVAL:
+         crb.add(PC_DS_CNTL(CHIP,
+            .stride_in_vpc = COND(last, linkage.max_loc),
+            .psize = COND(last, VALIDREG(pointsize_regid)),
+            .layer = COND(last, VALIDREG(layer_regid)),
+            .view = COND(last, VALIDREG(view_regid)),
+            .primitive_id = primid,
+            .clip_mask = COND(last, clip_cull_mask),
+            .shadingrate = COND(last, VALIDREG(shading_rate_regid)),
+         ));
+         break;
+      case MESA_SHADER_GEOMETRY:
+         crb.add(PC_GS_CNTL(CHIP,
+            .stride_in_vpc = COND(last, linkage.max_loc),
+            .psize = COND(last, VALIDREG(pointsize_regid)),
+            .layer = COND(last, VALIDREG(layer_regid)),
+            .view = COND(last, VALIDREG(view_regid)),
+            .primitive_id = primid,
+            .clip_mask = COND(last, clip_cull_mask),
+            .shadingrate = COND(last, VALIDREG(shading_rate_regid)),
+         ));
+         break;
+      default:
+         break;
       }
    }
 
@@ -1029,24 +1085,67 @@ tu6_emit_vpc(struct tu_cs *cs,
    if (gs)
       assert(flags_regid != INVALID_REG);
 
-   tu_cs_emit_pkt4(cs, cfg->reg_sp_xs_primitive_cntl, 1);
-   tu_cs_emit(cs, A6XX_SP_VS_OUTPUT_CNTL_OUT(linkage.cnt) |
-                  A6XX_SP_GS_OUTPUT_CNTL_FLAGS_REGID(flags_regid));
-
-   tu_cs_emit_pkt4(cs, cfg->reg_vpc_xs_layer_cntl, 1);
-   tu_cs_emit(cs, A6XX_VPC_VS_SIV_CNTL_LAYERLOC(layer_loc) |
-                  A6XX_VPC_VS_SIV_CNTL_VIEWLOC(view_loc) |
-                  A6XX_VPC_VS_SIV_CNTL_SHADINGRATELOC(shading_rate_loc));
-   tu_cs_emit_pkt4(cs, cfg->reg_vpc_xs_layer_cntl_v2, 1);
-   tu_cs_emit(cs, A6XX_VPC_VS_SIV_CNTL_LAYERLOC(layer_loc) |
-                  A6XX_VPC_VS_SIV_CNTL_VIEWLOC(view_loc) |
-                  A6XX_VPC_VS_SIV_CNTL_SHADINGRATELOC(shading_rate_loc));
-
-   tu_cs_emit_pkt4(cs, cfg->reg_gras_xs_layer_cntl, 1);
-   tu_cs_emit(cs, CONDREG(layer_regid, A6XX_GRAS_SU_VS_SIV_CNTL_WRITES_LAYER) |
-                  CONDREG(view_regid, A6XX_GRAS_SU_VS_SIV_CNTL_WRITES_VIEW));
-
-   tu6_emit_vpc_varying_modes<CHIP>(cs, fs, last_shader);
+   switch (last_shader->type) {
+   case MESA_SHADER_VERTEX:
+      crb.add(A6XX_SP_VS_OUTPUT_CNTL(.out = linkage.cnt));
+      crb.add(VPC_VS_SIV_CNTL(CHIP,
+         .layerloc = layer_loc,
+         .viewloc = view_loc,
+         .shadingrateloc = shading_rate_loc,
+      ));
+      if (CHIP <= A7XX) {
+         crb.add(VPC_VS_SIV_CNTL_V2(CHIP,
+            .layerloc = layer_loc,
+            .viewloc = view_loc,
+            .shadingrateloc = shading_rate_loc,
+         ));
+      }
+      crb.add(GRAS_SU_VS_SIV_CNTL(CHIP,
+         .writes_layer = VALIDREG(layer_regid),
+         .writes_view = VALIDREG(view_regid),
+      ));
+      break;
+   case MESA_SHADER_TESS_EVAL:
+      crb.add(A6XX_SP_DS_OUTPUT_CNTL(.out = linkage.cnt));
+      crb.add(VPC_DS_SIV_CNTL(CHIP,
+         .layerloc = layer_loc,
+         .viewloc = view_loc,
+         .shadingrateloc = shading_rate_loc,
+      ));
+      if (CHIP <= A7XX) {
+         crb.add(VPC_DS_SIV_CNTL_V2(CHIP,
+            .layerloc = layer_loc,
+            .viewloc = view_loc,
+            .shadingrateloc = shading_rate_loc,
+         ));
+      }
+      crb.add(GRAS_SU_DS_SIV_CNTL(CHIP,
+         .writes_layer = VALIDREG(layer_regid),
+         .writes_view = VALIDREG(view_regid),
+      ));
+      break;
+   case MESA_SHADER_GEOMETRY:
+      crb.add(A6XX_SP_GS_OUTPUT_CNTL(.out = linkage.cnt, .flags_regid = flags_regid));
+      crb.add(VPC_GS_SIV_CNTL(CHIP,
+         .layerloc = layer_loc,
+         .viewloc = view_loc,
+         .shadingrateloc = shading_rate_loc,
+      ));
+      if (CHIP <= A7XX) {
+         crb.add(VPC_GS_SIV_CNTL_V2(CHIP,
+            .layerloc = layer_loc,
+            .viewloc = view_loc,
+            .shadingrateloc = shading_rate_loc,
+         ));
+      }
+      crb.add(GRAS_SU_GS_SIV_CNTL(CHIP,
+         .writes_layer = VALIDREG(layer_regid),
+         .writes_view = VALIDREG(view_regid),
+      ));
+      break;
+   default:
+      UNREACHABLE("bad last_shader type");
+   }
 }
 TU_GENX(tu6_emit_vpc);
 

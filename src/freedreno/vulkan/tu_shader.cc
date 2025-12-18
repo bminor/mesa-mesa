@@ -2531,7 +2531,7 @@ tu_upload_shader(struct tu_device *dev,
       size += TU6_EMIT_VFD_DEST_MAX_DWORDS;
 
    const unsigned xs_size = 128;
-   const unsigned vpc_size = 32 + (v->stream_output.num_outputs != 0 ? 256 : 0);
+   const unsigned vpc_size = 64 + (v->stream_output.num_outputs != 0 ? 256 : 0);
 
    for (auto& variant : {v, binning, safe_const, safe_const_binning}) {
       if (variant) {
