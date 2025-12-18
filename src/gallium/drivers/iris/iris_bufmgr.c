@@ -860,6 +860,7 @@ iris_slab_alloc(void *priv,
       bo->zeroed = slab->bo->zeroed;
 
       bo->slab.entry.slab = &slab->base;
+      bo->slab.actual_size = entry_size;
 
       bo->slab.real = iris_get_backing_bo(slab->bo);
 
@@ -1017,6 +1018,7 @@ alloc_bo_from_slabs(struct iris_bufmgr *bufmgr,
       return NULL;
 
    struct iris_bo *bo = container_of(entry, struct iris_bo, slab.entry);
+   assert(get_slabs(bufmgr, bo->slab.actual_size) == slabs);
 
    if (bo->aux_map_address && bo->bufmgr->aux_map_ctx) {
       /* This buffer was associated with an aux-buffer range.  We only allow
@@ -1716,7 +1718,7 @@ iris_bo_unreference(struct iris_bo *bo)
 
       bo->zeroed = false;
       if (bo->gem_handle == 0) {
-         pb_slab_free(get_slabs(bufmgr, bo->size), &bo->slab.entry);
+         pb_slab_free(get_slabs(bufmgr, bo->slab.actual_size), &bo->slab.entry);
       } else {
          simple_mtx_lock(&bufmgr->lock);
 

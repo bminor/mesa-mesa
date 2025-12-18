@@ -379,6 +379,7 @@ struct iris_bo {
       struct {
          struct pb_slab_entry entry;
          struct iris_bo *real;
+         uint32_t actual_size;
       } slab;
    };
 };
