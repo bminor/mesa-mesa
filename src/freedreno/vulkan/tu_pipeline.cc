@@ -1259,8 +1259,7 @@ tu6_emit_patch_control_points(struct tu_cs *cs,
       patch_control_points * vs->variant->output_size / 4;
 
    /* Total attribute slots in HS incoming patch. */
-   tu_cs_emit_pkt4(cs, REG_A6XX_PC_HS_PARAM_1, 1);
-   tu_cs_emit(cs, patch_local_mem_size_16b);
+   tu_cs_emit_regs(cs, PC_HS_PARAM_1(CHIP, patch_local_mem_size_16b));
 
    const uint32_t wavesize = 64;
    const uint32_t vs_hs_local_mem_size = 16384;
@@ -1402,8 +1401,9 @@ tu6_emit_program_config(struct tu_cs *cs,
          uint32_t vec4_size = gs->gs.vertices_in *
                               DIV_ROUND_UP(prev_stage_output_size, 4);
 
-         tu_cs_emit_pkt4(cs, REG_A6XX_PC_PRIMITIVE_CNTL_6, 1);
-         tu_cs_emit(cs, A6XX_PC_PRIMITIVE_CNTL_6_STRIDE_IN_VPC(vec4_size));
+         tu_cs_emit_regs(cs, PC_PRIMITIVE_CNTL_6(CHIP,
+            .stride_in_vpc = vec4_size,
+         ));
       }
 
       uint32_t prim_size = prev_stage_output_size;
@@ -2964,17 +2964,18 @@ void
 tu6_emit_sample_locations(struct tu_cs *cs, bool enable,
                           const struct vk_sample_locations_state *samp_loc)
 {
-   uint32_t sample_config =
-      COND(enable, A6XX_RB_MSAA_SAMPLE_POS_CNTL_LOCATION_ENABLE);
+   tu_cs_emit_regs(cs, GRAS_SC_MSAA_SAMPLE_POS_CNTL(CHIP,
+      .location_enable = enable,
+   ));
+   tu_cs_emit_regs(cs, A6XX_RB_MSAA_SAMPLE_POS_CNTL(
+      .location_enable = enable,
+   ));
 
-   tu_cs_emit_pkt4(cs, REG_A6XX_GRAS_SC_MSAA_SAMPLE_POS_CNTL, 1);
-   tu_cs_emit(cs, sample_config);
-
-   tu_cs_emit_pkt4(cs, REG_A6XX_RB_MSAA_SAMPLE_POS_CNTL, 1);
-   tu_cs_emit(cs, sample_config);
-
-   tu_cs_emit_pkt4(cs, REG_A6XX_TPL1_MSAA_SAMPLE_POS_CNTL, 1);
-   tu_cs_emit(cs, sample_config);
+   if (CHIP <= A7XX) {
+      tu_cs_emit_regs(cs, TPL1_MSAA_SAMPLE_POS_CNTL(CHIP,
+         .location_enable = enable,
+      ));
+   }
 
    if (!enable)
       return;
@@ -3001,14 +3002,21 @@ tu6_emit_sample_locations(struct tu_cs *cs, bool enable,
                      A6XX_RB_PROGRAMMABLE_MSAA_POS_0_SAMPLE_0_Y(y))) << i*8;
    }
 
-   tu_cs_emit_pkt4(cs, REG_A6XX_GRAS_SC_PROGRAMMABLE_MSAA_POS_0, 2);
-   tu_cs_emit_qw(cs, sample_locations);
+   tu_cs_emit_regs(cs,
+      GRAS_SC_PROGRAMMABLE_MSAA_POS_0(CHIP, .dword = sample_locations),
+      GRAS_SC_PROGRAMMABLE_MSAA_POS_1(CHIP, .dword = sample_locations >> 32),
+   );
+   tu_cs_emit_regs(cs,
+      A6XX_RB_PROGRAMMABLE_MSAA_POS_0(.dword = sample_locations),
+      A6XX_RB_PROGRAMMABLE_MSAA_POS_1(.dword = sample_locations >> 32),
+   );
 
-   tu_cs_emit_pkt4(cs, REG_A6XX_RB_PROGRAMMABLE_MSAA_POS_0, 2);
-   tu_cs_emit_qw(cs, sample_locations);
-
-   tu_cs_emit_pkt4(cs, REG_A6XX_TPL1_PROGRAMMABLE_MSAA_POS_0, 2);
-   tu_cs_emit_qw(cs, sample_locations);
+   if (CHIP <= A7XX) {
+      tu_cs_emit_regs(cs,
+         TPL1_PROGRAMMABLE_MSAA_POS_0(CHIP, .dword = sample_locations),
+         TPL1_PROGRAMMABLE_MSAA_POS_1(CHIP, .dword = sample_locations >> 32),
+      );
+   }
 }
 
 static const enum mesa_vk_dynamic_graphics_state tu_depth_bias_state[] = {
