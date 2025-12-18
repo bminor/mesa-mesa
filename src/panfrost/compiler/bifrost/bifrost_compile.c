@@ -7064,5 +7064,8 @@ bi_find_loop_blocks(const bi_context *ctx, bi_block *header, BITSET_WORD *out)
     */
    __bitset_and(out, out, dominators, BITSET_WORDS(ctx->num_blocks));
 
+   /* The header is not a predecessor of itself, so add it separately. */
+   BITSET_SET(out, header->index);
+
    ralloc_free(dominators);
 }
