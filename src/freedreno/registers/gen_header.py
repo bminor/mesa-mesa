@@ -258,11 +258,11 @@ class Bitset(object):
                 # Requires using `fui()` or `_mesa_float_to_half()`
                 constexpr_mark = ""
         if reg.bit_size == 64:
-            tab_to("    uint64_t", "unknown;")
             tab_to("    uint64_t", "qword;")
+            tab_to("    uint64_t", "unknown;")
         else:
-            tab_to("    uint32_t", "unknown;")
             tab_to("    uint32_t", "dword;")
+            tab_to("    uint32_t", "unknown;")
         print("};\n")
 
         if not has_variants:
