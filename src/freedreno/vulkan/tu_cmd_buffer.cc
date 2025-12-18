@@ -2061,13 +2061,13 @@ tu6_init_static_regs(struct tu_device *dev, struct tu_cs *cs)
    tu_cs_emit_write_reg(cs, REG_A6XX_SP_NC_MODE_CNTL_2, 0);
    tu_cs_emit_write_reg(cs, REG_A6XX_SP_PERFCTR_SHADER_MASK, 0x3f);
    if (CHIP == A6XX && !cs->device->physical_device->info->props.is_a702)
-      tu_cs_emit_write_reg(cs, REG_A6XX_TPL1_UNKNOWN_B605, 0x44);
+      tu_cs_emit_regs(cs, TPL1_UNKNOWN_B605(CHIP, .dword = 0x44));
    if (CHIP == A6XX) {
-      tu_cs_emit_write_reg(cs, REG_A6XX_HLSQ_UNKNOWN_BE00, 0x80);
-      tu_cs_emit_write_reg(cs, REG_A6XX_HLSQ_UNKNOWN_BE01, 0);
+      tu_cs_emit_regs(cs, HLSQ_UNKNOWN_BE00(CHIP, .dword = 0x80));
+      tu_cs_emit_regs(cs, HLSQ_UNKNOWN_BE01(CHIP));
    }
 
-   tu_cs_emit_write_reg(cs, REG_A6XX_SP_GFX_USIZE, 0); // 2 on a740 ???
+   tu_cs_emit_regs(cs, SP_GFX_USIZE(CHIP));
    tu_cs_emit_write_reg(cs, REG_A6XX_TPL1_PS_ROTATION_CNTL, 0);
    if (CHIP == A6XX)
       tu_cs_emit_regs(cs, HLSQ_SHARED_CONSTS(CHIP, .enable = false));
@@ -2090,9 +2090,10 @@ tu6_init_static_regs(struct tu_device *dev, struct tu_cs *cs)
       tu_cs_emit_write_reg(cs, REG_A6XX_RB_UNKNOWN_881C, 0);
       tu_cs_emit_write_reg(cs, REG_A6XX_RB_UNKNOWN_881D, 0);
       tu_cs_emit_write_reg(cs, REG_A6XX_RB_UNKNOWN_881E, 0);
+
+      tu_cs_emit_regs(cs, RB_UNKNOWN_88F0(CHIP));
    }
 
-   tu_cs_emit_write_reg(cs, REG_A6XX_RB_UNKNOWN_88F0, 0);
 
    tu_cs_emit_regs(cs, VPC_REPLACE_MODE_CNTL(CHIP, false));
    tu_cs_emit_regs(cs, VPC_ROTATION_CNTL(CHIP));
@@ -2106,10 +2107,10 @@ tu6_init_static_regs(struct tu_device *dev, struct tu_cs *cs)
       tu_cs_emit_regs(cs, GRAS_SU_CONSERVATIVE_RAS_CNTL(CHIP, 0));
       tu_cs_emit_regs(cs, PC_DGEN_SU_CONSERVATIVE_RAS_CNTL(CHIP));
 
-      tu_cs_emit_write_reg(cs, REG_A6XX_VPC_UNKNOWN_9210, 0);
-      tu_cs_emit_write_reg(cs, REG_A6XX_VPC_UNKNOWN_9211, 0);
+      tu_cs_emit_regs(cs, VPC_UNKNOWN_9210(CHIP));
+      tu_cs_emit_regs(cs, VPC_UNKNOWN_9211(CHIP));
    }
-   tu_cs_emit_write_reg(cs, REG_A6XX_VPC_LB_MODE_CNTL, 0);
+   tu_cs_emit_regs(cs, VPC_LB_MODE_CNTL(CHIP));
    tu_cs_emit_regs(cs, PC_CONTEXT_SWITCH_GFX_PREEMPTION_MODE(CHIP));
    tu_cs_emit_regs(cs, A6XX_TPL1_MODE_CNTL(.isammode = ISAMMODE_GL,
                                             .texcoordroundmode = dev->instance->use_tex_coord_round_nearest_even_mode
@@ -2180,9 +2181,10 @@ tu6_init_static_regs(struct tu_device *dev, struct tu_cs *cs)
     * zero-instance draw calls. See IR3_CONST_ALLOC_DRIVER_PARAMS allocation
     * for more info.
     */
-   tu_cs_emit_pkt4(
-      cs, CHIP == A6XX ? REG_A6XX_SP_VS_CONST_CONFIG : REG_A7XX_SP_VS_CONST_CONFIG, 1);
-   tu_cs_emit(cs, A6XX_SP_VS_CONST_CONFIG_CONSTLEN(8) | A6XX_SP_VS_CONST_CONFIG_ENABLED);
+   tu_cs_emit_regs(cs, SP_VS_CONST_CONFIG(CHIP,
+      .constlen = 8,
+      .enabled = true,
+   ));
 }
 
 /* Emit the bin restore preamble, which runs in between bins when L1
