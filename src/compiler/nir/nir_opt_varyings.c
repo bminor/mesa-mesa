@@ -1017,11 +1017,20 @@ get_interp_vec4_type(struct linkage_info *linkage, unsigned slot,
 }
 
 static bool
-preserve_nans(nir_shader *nir, unsigned bit_size)
+uses_preserve_nans(nir_def *def)
 {
-   unsigned mode = nir->info.float_controls_execution_mode;
+   nir_foreach_use_including_if(use, def) {
+      if (nir_src_is_if(use))
+         return true;
+      if (!nir_src_is_alu(*use))
+         return true;
 
-   return nir_is_float_control_nan_preserve(mode, bit_size);
+      nir_alu_instr *alu = nir_src_as_alu(*use);
+      if (nir_alu_instr_is_nan_preserve(alu))
+         return true;
+   }
+
+   return false;
 }
 
 static nir_def *
@@ -2512,7 +2521,7 @@ propagate_uniform_expressions(struct linkage_info *linkage,
              * convert Infs to NaNs manually.
              */
             if (loadi->intrinsic == nir_intrinsic_load_interpolated_input &&
-                preserve_nans(b->shader, clone->bit_size))
+                uses_preserve_nans(&loadi->def))
                clone = build_convert_inf_to_nan(b, clone);
 
             /* Replace the original load. */
@@ -4295,8 +4304,7 @@ relocate_slot(struct linkage_info *linkage, struct scalar_slot *slot,
              * we need to convert Infs to NaNs manually in the producer to
              * preserve that.
              */
-            if (preserve_nans(linkage->consumer_builder.shader,
-                              load->bit_size)) {
+            if (uses_preserve_nans(load)) {
                list_for_each_entry(struct list_node, iter,
                                    &slot->producer.stores, head) {
                   nir_intrinsic_instr *store = iter->instr;
