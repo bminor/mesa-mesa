@@ -2031,50 +2031,54 @@ tu6_emit_fs_inputs(struct tu_cs *cs, const struct ir3_shader_variant *fs)
          need_size = true;
    }
 
-   tu_cs_emit_pkt4(cs, REG_A6XX_GRAS_CL_INTERP_CNTL, 1);
-   tu_cs_emit(cs,
-         CONDREG(ij_regid[IJ_PERSP_PIXEL], A6XX_GRAS_CL_INTERP_CNTL_IJ_PERSP_PIXEL) |
-         CONDREG(ij_regid[IJ_PERSP_CENTROID], A6XX_GRAS_CL_INTERP_CNTL_IJ_PERSP_CENTROID) |
-         CONDREG(ij_regid[IJ_PERSP_SAMPLE], A6XX_GRAS_CL_INTERP_CNTL_IJ_PERSP_SAMPLE) |
-         CONDREG(ij_regid[IJ_LINEAR_PIXEL], A6XX_GRAS_CL_INTERP_CNTL_IJ_LINEAR_PIXEL) |
-         CONDREG(ij_regid[IJ_LINEAR_CENTROID], A6XX_GRAS_CL_INTERP_CNTL_IJ_LINEAR_CENTROID) |
-         CONDREG(ij_regid[IJ_LINEAR_SAMPLE], A6XX_GRAS_CL_INTERP_CNTL_IJ_LINEAR_SAMPLE) |
-         COND(need_size, A6XX_GRAS_CL_INTERP_CNTL_IJ_LINEAR_PIXEL) |
-         COND(need_size_persamp, A6XX_GRAS_CL_INTERP_CNTL_IJ_LINEAR_SAMPLE) |
-         COND(fs->fragcoord_compmask != 0, A6XX_GRAS_CL_INTERP_CNTL_COORD_MASK(fs->fragcoord_compmask)));
+   tu_cs_emit_regs(cs,
+      GRAS_CL_INTERP_CNTL(CHIP,
+         .ij_persp_pixel        = VALIDREG(ij_regid[IJ_PERSP_PIXEL]),
+         .ij_persp_centroid     = VALIDREG(ij_regid[IJ_PERSP_CENTROID]),
+         .ij_persp_sample       = VALIDREG(ij_regid[IJ_PERSP_SAMPLE]),
+         .ij_linear_pixel       = VALIDREG(ij_regid[IJ_LINEAR_PIXEL]) || need_size,
+         .ij_linear_centroid    = VALIDREG(ij_regid[IJ_LINEAR_CENTROID]),
+         .ij_linear_sample      = VALIDREG(ij_regid[IJ_LINEAR_SAMPLE]) || need_size_persamp,
+         .coord_mask            = fs->fragcoord_compmask,
+      )
+   );
 
-   tu_cs_emit_pkt4(cs, REG_A6XX_RB_INTERP_CNTL, 2);
-   tu_cs_emit(cs,
-         CONDREG(ij_regid[IJ_PERSP_PIXEL], A6XX_RB_INTERP_CNTL_IJ_PERSP_PIXEL) |
-         CONDREG(ij_regid[IJ_PERSP_CENTROID], A6XX_RB_INTERP_CNTL_IJ_PERSP_CENTROID) |
-         CONDREG(ij_regid[IJ_PERSP_SAMPLE], A6XX_RB_INTERP_CNTL_IJ_PERSP_SAMPLE) |
-         CONDREG(ij_regid[IJ_LINEAR_PIXEL], A6XX_RB_INTERP_CNTL_IJ_LINEAR_PIXEL) |
-         CONDREG(ij_regid[IJ_LINEAR_CENTROID], A6XX_RB_INTERP_CNTL_IJ_LINEAR_CENTROID) |
-         CONDREG(ij_regid[IJ_LINEAR_SAMPLE], A6XX_RB_INTERP_CNTL_IJ_LINEAR_SAMPLE) |
-         COND(need_size, A6XX_RB_INTERP_CNTL_IJ_LINEAR_PIXEL) |
-         COND(enable_varyings, A6XX_RB_INTERP_CNTL_INTERP_EN) |
-         COND(need_size_persamp, A6XX_RB_INTERP_CNTL_IJ_LINEAR_SAMPLE) |
-         COND(fs->fragcoord_compmask != 0,
-                           A6XX_RB_INTERP_CNTL_COORD_MASK(fs->fragcoord_compmask)));
-   tu_cs_emit(cs,
-         A6XX_RB_PS_INPUT_CNTL_FRAGCOORDSAMPLEMODE(
-            sample_shading ? FRAGCOORD_SAMPLE : FRAGCOORD_CENTER) |
-         CONDREG(smask_in_regid, A6XX_RB_PS_INPUT_CNTL_SAMPLEMASK) |
-         CONDREG(samp_id_regid, A6XX_RB_PS_INPUT_CNTL_SAMPLEID) |
-         CONDREG(ij_regid[IJ_PERSP_CENTER_RHW], A6XX_RB_PS_INPUT_CNTL_CENTERRHW) |
-         COND(fs->frag_face, A6XX_RB_PS_INPUT_CNTL_FACENESS) |
-         CONDREG(shading_rate_regid, A6XX_RB_PS_INPUT_CNTL_FOVEATION));
+   tu_cs_emit_regs(cs,
+      A6XX_RB_INTERP_CNTL(
+         .ij_persp_pixel        = VALIDREG(ij_regid[IJ_PERSP_PIXEL]),
+         .ij_persp_centroid     = VALIDREG(ij_regid[IJ_PERSP_CENTROID]),
+         .ij_persp_sample       = VALIDREG(ij_regid[IJ_PERSP_SAMPLE]),
+         .ij_linear_pixel       = VALIDREG(ij_regid[IJ_LINEAR_PIXEL]) || need_size,
+         .ij_linear_centroid    = VALIDREG(ij_regid[IJ_LINEAR_CENTROID]),
+         .ij_linear_sample      = VALIDREG(ij_regid[IJ_LINEAR_SAMPLE]) || need_size_persamp,
+         .coord_mask            = fs->fragcoord_compmask,
+         .interp_en             = enable_varyings,
+      ),
+      A6XX_RB_PS_INPUT_CNTL(
+         .samplemask            = VALIDREG(smask_in_regid),
+         .postdepthcoverage     = fs->post_depth_coverage,
+         .faceness              = fs->frag_face,
+         .sampleid              = VALIDREG(samp_id_regid),
+         .fragcoordsamplemode   = sample_shading ? FRAGCOORD_SAMPLE : FRAGCOORD_CENTER,
+         .centerrhw             = VALIDREG(ij_regid[IJ_PERSP_CENTER_RHW]),
+         .foveation             = VALIDREG(shading_rate_regid),
+      ),
+   );
 
-   tu_cs_emit_pkt4(cs, REG_A6XX_RB_PS_SAMPLEFREQ_CNTL, 1);
-   tu_cs_emit(cs, COND(sample_shading, A6XX_RB_PS_SAMPLEFREQ_CNTL_PER_SAMP_MODE));
+   tu_cs_emit_regs(cs,
+      A6XX_RB_PS_SAMPLEFREQ_CNTL(sample_shading)
+   );
 
-   tu_cs_emit_pkt4(cs, REG_A6XX_GRAS_LRZ_PS_INPUT_CNTL, 1);
-   tu_cs_emit(cs, CONDREG(samp_id_regid, A6XX_GRAS_LRZ_PS_INPUT_CNTL_SAMPLEID) |
-              A6XX_GRAS_LRZ_PS_INPUT_CNTL_FRAGCOORDSAMPLEMODE(
-                 sample_shading ? FRAGCOORD_SAMPLE : FRAGCOORD_CENTER));
+   tu_cs_emit_regs(cs,
+      GRAS_LRZ_PS_INPUT_CNTL(CHIP,
+         .sampleid              = VALIDREG(samp_id_regid),
+         .fragcoordsamplemode   = sample_shading ? FRAGCOORD_SAMPLE : FRAGCOORD_CENTER,
+      )
+   );
 
-   tu_cs_emit_pkt4(cs, REG_A6XX_GRAS_LRZ_PS_SAMPLEFREQ_CNTL, 1);
-   tu_cs_emit(cs, COND(sample_shading, A6XX_GRAS_LRZ_PS_SAMPLEFREQ_CNTL_PER_SAMP_MODE));
+   tu_cs_emit_regs(cs,
+      A6XX_GRAS_LRZ_PS_SAMPLEFREQ_CNTL(sample_shading)
+   );
 
    uint32_t varmask[4] = { 0 };
 
@@ -2200,11 +2204,11 @@ tu6_emit_vs(struct tu_cs *cs,
    bool multi_pos_output = vs->multi_pos_output;
 
    uint32_t multiview_views = util_logbase2(view_mask) + 1;
-   uint32_t multiview_cntl = view_mask ?
-      A6XX_PC_STEREO_RENDERING_CNTL_ENABLE |
-      A6XX_PC_STEREO_RENDERING_CNTL_VIEWS(multiview_views) |
-      COND(!multi_pos_output, A6XX_PC_STEREO_RENDERING_CNTL_DISABLEMULTIPOS)
-      : 0;
+   struct fd_reg_pair multiview_cntl = PC_STEREO_RENDERING_CNTL(CHIP,
+      .enable = view_mask,
+      .disablemultipos = !multi_pos_output,
+      .views = multiview_views,
+   );
 
    /* Copy what the blob does here. This will emit an extra 0x3f
     * CP_EVENT_WRITE when multiview is disabled. I'm not exactly sure what
@@ -2213,27 +2217,31 @@ tu6_emit_vs(struct tu_cs *cs,
    if (cs->device->physical_device->info->props.has_cp_reg_write) {
       tu_cs_emit_pkt7(cs, CP_REG_WRITE, 3);
       tu_cs_emit(cs, CP_REG_WRITE_0_TRACKER(UNK_EVENT_WRITE));
-      tu_cs_emit(cs, REG_A6XX_PC_STEREO_RENDERING_CNTL);
+      tu_cs_emit(cs, multiview_cntl.reg);
    } else {
-      tu_cs_emit_pkt4(cs, REG_A6XX_PC_STEREO_RENDERING_CNTL, 1);
+      tu_cs_emit_pkt4(cs, multiview_cntl.reg, 1);
    }
-   tu_cs_emit(cs, multiview_cntl);
+   tu_cs_emit(cs, multiview_cntl.value);
 
-   tu_cs_emit_pkt4(cs, REG_A6XX_VFD_STEREO_RENDERING_CNTL, 1);
-   tu_cs_emit(cs, multiview_cntl);
+   tu_cs_emit_regs(cs, A6XX_VFD_STEREO_RENDERING_CNTL(
+      .enable = view_mask,
+      .disablemultipos = !multi_pos_output,
+      .views = multiview_views,
+   ));
 
-   if (multiview_cntl &&
+   if (view_mask &&
        cs->device->physical_device->info->props.supports_multiview_mask) {
-      tu_cs_emit_pkt4(cs, REG_A6XX_PC_STEREO_RENDERING_VIEWMASK, 1);
-      tu_cs_emit(cs, view_mask);
+      tu_cs_emit_regs(cs, PC_STEREO_RENDERING_VIEWMASK(CHIP, view_mask));
    }
 
    if (CHIP >= A7XX) {
-      tu_cs_emit_pkt4(cs, REG_A7XX_VPC_STEREO_RENDERING_CNTL, 1);
-      tu_cs_emit(cs, multiview_cntl);
+      tu_cs_emit_regs(cs, VPC_STEREO_RENDERING_CNTL(CHIP,
+         .enable = view_mask,
+         .disablemultipos = !multi_pos_output,
+         .views = multiview_views,
+      ));
 
-      tu_cs_emit_pkt4(cs, REG_A7XX_VPC_STEREO_RENDERING_VIEWMASK, 1);
-      tu_cs_emit(cs, view_mask);
+      tu_cs_emit_regs(cs, VPC_STEREO_RENDERING_VIEWMASK(CHIP, view_mask));
    }
 
    tu6_emit_vfd_dest(cs, vs);
@@ -2276,8 +2284,7 @@ tu6_emit_hs(struct tu_cs *cs,
                   A6XX_VFD_CNTL_2_REGID_INVOCATIONID(hs_invocation_regid));
 
    if (hs) {
-      tu_cs_emit_pkt4(cs, REG_A6XX_PC_HS_PARAM_0, 1);
-      tu_cs_emit(cs, hs->tess.tcs_vertices_out);
+      tu_cs_emit_regs(cs, PC_HS_PARAM_0(CHIP, hs->tess.tcs_vertices_out));
    }
 }
 TU_GENX(tu6_emit_hs);
