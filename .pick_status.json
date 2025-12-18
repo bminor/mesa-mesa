@@ -1,5 +1,215 @@
 [
     {
+        "sha": "645fff5daed8121ffe54741020f402fe6cfa8818",
+        "description": "ac/descriptors: account for num_storage_samples for gfx10",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "3424e16ecedf9f47ca8e020b1ad4a899a3956ce0",
+        "notes": null
+    },
+    {
+        "sha": "7fc5267d08420fadabe495c5cc2413899f56734b",
+        "description": "hud: add new 'dev' pseudo-graph",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3b4b5761aa25de0834c3e9e1d5b2dba310008c46",
+        "description": "hud: only increase y if the pane contains graphs",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f521a6270b8c2c95ec50a85bae5f73ded0ebc16d",
+        "description": "mesa: consider Attrib.MinLayer in do_blit_framebuffer",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "13783fe2ef9fcecdad7aa8b63329a58a7e2b01c5",
+        "description": "ci: disable the valve-kws farm",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "57dc4cf4fba8c93b0a9a6de20e871d0fdf646bdd",
+        "description": "etnaviv: don't emit steering state when uniforms are unchanged",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d7d690b47fb2a3d9e511b094244c9c4e5b3c104f",
+        "description": "panvk: Fix set_compute_sysval()",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "ae76a6a04596bfdbd37bab165bc5f2a5ff60d389",
+        "notes": null
+    },
+    {
+        "sha": "d83c699045aaa101541577795a241bd96d671935",
+        "description": "brw: Convert GS pulled inputs to use URB intrinsics",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "eae3bd19d4fe56c11e2d127417666fa219e62ecb",
+        "description": "brw: Move GS URB Read Length limiting to brw_nir_lower_gs_inputs()",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8889802271987de0bd3bda572a19275e3bc4bde9",
+        "description": "brw: Make max_push_bytes a parameter to URB lowering data",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f62f7d80e2d10f4f6329c71436f52ff576d80e67",
+        "description": "brw: Update try_load_push_input to handle dword-unit offsets too",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f601aa5ce7578c4aaf4408e9d7cdbd9ea6bf8015",
+        "description": "ir3/bisect: fix off-by-one issues while bisecting",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3c5c96fedb77220eac590327699bffcb611a9896",
+        "description": "radv: double pixel throughput in certain cases of PS without interpolated inputs",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8cf154d2eb1e5a136a98b29a83ee3d7d82efb067",
+        "description": "radeonsi: don't load sampler states for buffer and MS samplers",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5acabdd1f83afe23fd7a756bf2f35580694dfa2a",
+        "description": "radeonsi: double pixel throughput in certain cases of PS without inputs",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6592a18cd7601bf89f947b5c096ecc74905a5606",
+        "description": "util/driconf: add workaround for Interstellar Rift",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "67eeee43e07ddd3ba56fd546468dfd0c570af74c",
+        "description": "driconf: add a way to override GLX_CONTEXT_RESET_ISOLATION_BIT_ARB",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f5351afbc8c68070965b567558d1a8211a4d58f3",
+        "description": "docs: update calendar for 25.3.2",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "bb8d00e4b2c0b3a5b266c872fcaf558d4fd581e2",
+        "description": "docs: Add checksums for 25.3.2",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7e53a239aa77dd891960e30496e11b84db966ee3",
+        "description": "docs: add release notes for 25.3.2",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "075eefc42263f5db66a5fc4a0aa9c8f624b376e5",
+        "description": "etnaviv: blt: fix tile count calculation for in-place resolve",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
         "sha": "c00ebca5c4b474249ba65fcfd50ecdf84a656b7c",
         "description": "ir3: Improve spilling of NIR vars to scratch.",
         "nominated": false,
