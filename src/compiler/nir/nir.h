@@ -1323,38 +1323,6 @@ nir_op_is_vec_or_mov(nir_op op)
 }
 
 static inline bool
-nir_is_float_control_signed_zero_preserve(unsigned execution_mode, unsigned bit_size)
-{
-   return (16 == bit_size && execution_mode & FLOAT_CONTROLS_SIGNED_ZERO_PRESERVE_FP16) ||
-          (32 == bit_size && execution_mode & FLOAT_CONTROLS_SIGNED_ZERO_PRESERVE_FP32) ||
-          (64 == bit_size && execution_mode & FLOAT_CONTROLS_SIGNED_ZERO_PRESERVE_FP64);
-}
-
-static inline bool
-nir_is_float_control_inf_preserve(unsigned execution_mode, unsigned bit_size)
-{
-   return (16 == bit_size && execution_mode & FLOAT_CONTROLS_INF_PRESERVE_FP16) ||
-          (32 == bit_size && execution_mode & FLOAT_CONTROLS_INF_PRESERVE_FP32) ||
-          (64 == bit_size && execution_mode & FLOAT_CONTROLS_INF_PRESERVE_FP64);
-}
-
-static inline bool
-nir_is_float_control_nan_preserve(unsigned execution_mode, unsigned bit_size)
-{
-   return (16 == bit_size && execution_mode & FLOAT_CONTROLS_NAN_PRESERVE_FP16) ||
-          (32 == bit_size && execution_mode & FLOAT_CONTROLS_NAN_PRESERVE_FP32) ||
-          (64 == bit_size && execution_mode & FLOAT_CONTROLS_NAN_PRESERVE_FP64);
-}
-
-static inline bool
-nir_is_float_control_signed_zero_inf_nan_preserve(unsigned execution_mode, unsigned bit_size)
-{
-   return (16 == bit_size && execution_mode & FLOAT_CONTROLS_SIGNED_ZERO_INF_NAN_PRESERVE_FP16) ||
-          (32 == bit_size && execution_mode & FLOAT_CONTROLS_SIGNED_ZERO_INF_NAN_PRESERVE_FP32) ||
-          (64 == bit_size && execution_mode & FLOAT_CONTROLS_SIGNED_ZERO_INF_NAN_PRESERVE_FP64);
-}
-
-static inline bool
 nir_is_denorm_flush_to_zero(unsigned execution_mode, unsigned bit_size)
 {
    return (16 == bit_size && execution_mode & FLOAT_CONTROLS_DENORM_FLUSH_TO_ZERO_FP16) ||
