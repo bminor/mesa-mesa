@@ -5689,9 +5689,9 @@ vtn_handle_execution_mode(struct vtn_builder *b, struct vtn_value *entry_point,
          break;
       case SpvExecutionModeSignedZeroInfNanPreserve:
          switch (mode->operands[0]) {
-         case 16: execution_mode = FLOAT_CONTROLS_SIGNED_ZERO_INF_NAN_PRESERVE_FP16; break;
-         case 32: execution_mode = FLOAT_CONTROLS_SIGNED_ZERO_INF_NAN_PRESERVE_FP32; break;
-         case 64: execution_mode = FLOAT_CONTROLS_SIGNED_ZERO_INF_NAN_PRESERVE_FP64; break;
+         case 16: b->fp_math_ctrl_fp16 |= nir_fp_preserve_sz_inf_nan; break;
+         case 32: b->fp_math_ctrl_fp32 |= nir_fp_preserve_sz_inf_nan; break;
+         case 64: b->fp_math_ctrl_fp64 |= nir_fp_preserve_sz_inf_nan; break;
          default: vtn_fail("Floating point type not supported");
          }
          break;
@@ -5863,29 +5863,27 @@ vtn_handle_execution_mode_id(struct vtn_builder *b, struct vtn_value *entry_poin
       if ((flags & can_fast_math) != can_fast_math)
          b->exact = true;
 
-      unsigned execution_mode = 0;
       if (!(flags & SpvFPFastMathModeNotNaNMask)) {
          switch (glsl_get_bit_size(type->type)) {
-         case 16: execution_mode |= FLOAT_CONTROLS_NAN_PRESERVE_FP16; break;
-         case 32: execution_mode |= FLOAT_CONTROLS_NAN_PRESERVE_FP32; break;
-         case 64: execution_mode |= FLOAT_CONTROLS_NAN_PRESERVE_FP64; break;
+         case 16: b->fp_math_ctrl_fp16 |= nir_fp_preserve_nan; break;
+         case 32: b->fp_math_ctrl_fp32 |= nir_fp_preserve_nan; break;
+         case 64: b->fp_math_ctrl_fp64 |= nir_fp_preserve_nan; break;
          }
       }
       if (!(flags & SpvFPFastMathModeNotInfMask)) {
          switch (glsl_get_bit_size(type->type)) {
-         case 16: execution_mode |= FLOAT_CONTROLS_INF_PRESERVE_FP16; break;
-         case 32: execution_mode |= FLOAT_CONTROLS_INF_PRESERVE_FP32; break;
-         case 64: execution_mode |= FLOAT_CONTROLS_INF_PRESERVE_FP64; break;
+         case 16: b->fp_math_ctrl_fp16 |= nir_fp_preserve_inf; break;
+         case 32: b->fp_math_ctrl_fp32 |= nir_fp_preserve_inf; break;
+         case 64: b->fp_math_ctrl_fp64 |= nir_fp_preserve_inf; break;
          }
       }
       if (!(flags & SpvFPFastMathModeNSZMask)) {
          switch (glsl_get_bit_size(type->type)) {
-         case 16: execution_mode |= FLOAT_CONTROLS_SIGNED_ZERO_PRESERVE_FP16; break;
-         case 32: execution_mode |= FLOAT_CONTROLS_SIGNED_ZERO_PRESERVE_FP32; break;
-         case 64: execution_mode |= FLOAT_CONTROLS_SIGNED_ZERO_PRESERVE_FP64; break;
+         case 16: b->fp_math_ctrl_fp16 |= nir_fp_preserve_signed_zero; break;
+         case 32: b->fp_math_ctrl_fp32 |= nir_fp_preserve_signed_zero; break;
+         case 64: b->fp_math_ctrl_fp64 |= nir_fp_preserve_signed_zero; break;
          }
       }
-      b->shader->info.float_controls_execution_mode |= execution_mode;
       break;
    }
 

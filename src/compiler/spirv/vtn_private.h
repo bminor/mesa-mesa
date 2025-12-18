@@ -709,6 +709,10 @@ struct vtn_builder {
    /* false by default, set to true by the ContractionOff execution mode */
    bool exact;
 
+   unsigned fp_math_ctrl_fp16;
+   unsigned fp_math_ctrl_fp32;
+   unsigned fp_math_ctrl_fp64;
+
    /* when a physical memory model is choosen */
    bool physical_ptrs;
 

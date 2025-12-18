@@ -433,26 +433,22 @@ vtn_handle_fp_fast_math(struct vtn_builder *b, struct vtn_value *val)
     * on the builder, so the generated instructions can take it from it.
     * We only care about some of them, check nir_alu_instr for details.
     */
+   unsigned bit_size;
 
-   b->nb.fp_math_ctrl = 0;
-   unsigned exec_mode = b->shader->info.float_controls_execution_mode;
-   if (val->type) {
-      unsigned bit_size;
+   /* Some ALU like modf and frexp return a struct of two values. */
+   if (!val->type)
+      bit_size = 0;
+   else if (glsl_type_is_struct(val->type->type))
+      bit_size = glsl_get_bit_size(val->type->type->fields.structure[0].type);
+   else
+      bit_size = glsl_get_bit_size(val->type->type);
 
-      /* Some ALU like modf and frexp return a struct of two values. */
-      if (glsl_type_is_struct(val->type->type))
-         bit_size = glsl_get_bit_size(val->type->type->fields.structure[0].type);
-      else
-         bit_size = glsl_get_bit_size(val->type->type);
 
-      if (bit_size >= 16 && bit_size <= 64) {
-         if (nir_is_float_control_signed_zero_preserve(exec_mode, bit_size))
-            b->nb.fp_math_ctrl |= nir_fp_preserve_signed_zero;
-         if (nir_is_float_control_inf_preserve(exec_mode, bit_size))
-            b->nb.fp_math_ctrl |= nir_fp_preserve_inf;
-         if (nir_is_float_control_nan_preserve(exec_mode, bit_size))
-            b->nb.fp_math_ctrl |= nir_fp_preserve_nan;
-      }
+   switch (bit_size) {
+   case 16: b->nb.fp_math_ctrl = b->fp_math_ctrl_fp16; break;
+   case 32: b->nb.fp_math_ctrl = b->fp_math_ctrl_fp32; break;
+   case 64: b->nb.fp_math_ctrl = b->fp_math_ctrl_fp64; break;
+   default: b->nb.fp_math_ctrl = 0; break;
    }
 
    vtn_foreach_decoration(b, val, handle_fp_fast_math, NULL);
