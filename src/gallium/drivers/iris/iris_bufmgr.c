@@ -666,7 +666,7 @@ bo_unmap(struct iris_bo *bo)
 }
 
 static struct pb_slabs *
-get_slabs(struct iris_bufmgr *bufmgr, uint64_t size)
+get_slabs(struct iris_bufmgr *bufmgr, uint32_t size)
 {
    for (unsigned i = 0; i < NUM_SLAB_ALLOCATORS; i++) {
       struct pb_slabs *slabs = &bufmgr->bo_slabs[i];
@@ -680,7 +680,7 @@ get_slabs(struct iris_bufmgr *bufmgr, uint64_t size)
 
 /* Return the power of two size of a slab entry matching the input size. */
 static unsigned
-get_slab_pot_entry_size(struct iris_bufmgr *bufmgr, unsigned size)
+get_slab_pot_entry_size(struct iris_bufmgr *bufmgr, uint32_t size)
 {
    unsigned entry_size = util_next_power_of_two(size);
    unsigned min_entry_size = 1 << bufmgr->bo_slabs[0].min_order;
@@ -690,7 +690,7 @@ get_slab_pot_entry_size(struct iris_bufmgr *bufmgr, unsigned size)
 
 /* Return the slab entry alignment. */
 static unsigned
-get_slab_entry_alignment(struct iris_bufmgr *bufmgr, unsigned size)
+get_slab_entry_alignment(struct iris_bufmgr *bufmgr, uint32_t size)
 {
    unsigned entry_size = get_slab_pot_entry_size(bufmgr, size);
 
@@ -754,7 +754,7 @@ iris_slab_alloc(void *priv,
    struct iris_bufmgr *bufmgr = priv;
    struct iris_slab *slab = calloc(1, sizeof(struct iris_slab));
    enum bo_alloc_flags flags = BO_ALLOC_NO_SUBALLOC;
-   unsigned slab_size = 0;
+   uint32_t slab_size = 0;
    /* We only support slab allocation for IRIS_MEMZONE_OTHER */
    enum iris_memory_zone memzone = IRIS_MEMZONE_OTHER;
 
@@ -765,7 +765,7 @@ iris_slab_alloc(void *priv,
 
    /* Determine the slab buffer size. */
    for (unsigned i = 0; i < NUM_SLAB_ALLOCATORS; i++) {
-      unsigned max_entry_size =
+      uint32_t max_entry_size =
          1 << (slabs[i].min_order + slabs[i].num_orders - 1);
 
       if (entry_size <= max_entry_size) {
@@ -795,7 +795,7 @@ iris_slab_alloc(void *priv,
           *
           * TODO: move this to intel_device_info?
           */
-         const unsigned pte_size = 2 * 1024 * 1024;
+         const uint32_t pte_size = 2 * 1024 * 1024;
 
          if (i == NUM_SLAB_ALLOCATORS - 1 && slab_size < pte_size)
             slab_size = pte_size;
@@ -973,17 +973,17 @@ alloc_bo_from_slabs(struct iris_bufmgr *bufmgr,
       return NULL;
 
    struct pb_slabs *last_slab = &bufmgr->bo_slabs[NUM_SLAB_ALLOCATORS - 1];
-   unsigned max_slab_entry_size =
+   const uint32_t max_slab_entry_size =
       1 << (last_slab->min_order + last_slab->num_orders - 1);
 
    if (size > max_slab_entry_size)
       return NULL;
 
+   assert(size <= UINT32_MAX);
    struct pb_slab_entry *entry;
-
    enum iris_heap heap = flags_to_heap(bufmgr, flags);
 
-   unsigned alloc_size = size;
+   uint32_t alloc_size = size;
 
    /* Always use slabs for sizes less than 4 KB because the kernel aligns
     * everything to 4 KB.
