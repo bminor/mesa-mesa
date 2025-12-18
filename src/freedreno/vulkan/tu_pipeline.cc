@@ -338,71 +338,72 @@ tu_push_consts_type(const struct tu_pipeline_layout *layout,
    }
 }
 
-template <chip CHIP>
-struct xs_config {
-   uint16_t reg_sp_xs_config;
-   uint16_t reg_hlsq_xs_ctrl;
-};
+static uint32_t
+sp_xs_config(const struct ir3_shader_variant *v)
+{
+   if (!v)
+      return 0;
 
-template <chip CHIP>
-static const xs_config<CHIP> xs_configs[] = {
-   [MESA_SHADER_VERTEX] = {
-      REG_A6XX_SP_VS_CONFIG,
-      CHIP == A6XX ? REG_A6XX_SP_VS_CONST_CONFIG : REG_A7XX_SP_VS_CONST_CONFIG,
-   },
-   [MESA_SHADER_TESS_CTRL] = {
-      REG_A6XX_SP_HS_CONFIG,
-      CHIP == A6XX ? REG_A6XX_SP_HS_CONST_CONFIG : REG_A7XX_SP_HS_CONST_CONFIG,
-   },
-   [MESA_SHADER_TESS_EVAL] = {
-      REG_A6XX_SP_DS_CONFIG,
-      CHIP == A6XX ? REG_A6XX_SP_DS_CONST_CONFIG : REG_A7XX_SP_DS_CONST_CONFIG,
-   },
-   [MESA_SHADER_GEOMETRY] = {
-      REG_A6XX_SP_GS_CONFIG,
-      CHIP == A6XX ? REG_A6XX_SP_GS_CONST_CONFIG : REG_A7XX_SP_GS_CONST_CONFIG,
-   },
-   [MESA_SHADER_FRAGMENT] = {
-      REG_A6XX_SP_PS_CONFIG,
-      CHIP == A6XX ? REG_A6XX_SP_PS_CONST_CONFIG : REG_A7XX_SP_PS_CONST_CONFIG,
-   },
-   [MESA_SHADER_COMPUTE] = {
-      REG_A6XX_SP_CS_CONFIG,
-      CHIP == A6XX ? REG_A6XX_SP_CS_CONST_CONFIG : REG_A7XX_SP_CS_CONST_CONFIG,
-   },
-};
+   return A6XX_SP_VS_CONFIG_ENABLED |
+         COND(v->bindless_tex, A6XX_SP_VS_CONFIG_BINDLESS_TEX) |
+         COND(v->bindless_samp, A6XX_SP_VS_CONFIG_BINDLESS_SAMP) |
+         COND(v->bindless_ibo, A6XX_SP_VS_CONFIG_BINDLESS_UAV) |
+         COND(v->bindless_ubo, A6XX_SP_VS_CONFIG_BINDLESS_UBO) |
+         A6XX_SP_VS_CONFIG_NUAV(ir3_shader_num_uavs(v)) |
+         A6XX_SP_VS_CONFIG_NTEX(v->num_samp) |
+         A6XX_SP_VS_CONFIG_NSAMP(v->num_samp);
+}
+
+static bool
+push_shared_consts(const struct ir3_shader_variant *v)
+{
+   return v && v->shader_options.push_consts_type == IR3_PUSH_CONSTS_SHARED_PREAMBLE;
+}
 
 template <chip CHIP>
 void
-tu6_emit_xs_config(struct tu_crb &crb,
-                   mesa_shader_stage stage, /* xs->type, but xs may be NULL */
-                   const struct ir3_shader_variant *xs)
+tu6_emit_xs_config(struct tu_crb &crb, struct tu_shader_stages stages)
 {
-   const struct xs_config<CHIP> *cfg = &xs_configs<CHIP>[stage];
+   if (stages.cs) {
+      crb.add(SP_CS_CONST_CONFIG(CHIP,
+         .constlen = stages.cs->constlen,
+         .enabled = true,
+         .read_imm_shared_consts = push_shared_consts(stages.cs),
+      ));
+      crb.add(A6XX_SP_CS_CONFIG(.dword = sp_xs_config(stages.cs)));
+   } else {
+      crb.add(SP_VS_CONST_CONFIG(CHIP,
+         .constlen = COND(stages.vs, stages.vs->constlen),
+         .enabled = stages.vs,
+         .read_imm_shared_consts = push_shared_consts(stages.vs),
+      ));
+      crb.add(SP_HS_CONST_CONFIG(CHIP,
+         .constlen = COND(stages.hs, stages.hs->constlen),
+         .enabled = stages.hs,
+         .read_imm_shared_consts = push_shared_consts(stages.hs),
+      ));
+      crb.add(SP_DS_CONST_CONFIG(CHIP,
+         .constlen = COND(stages.ds, stages.ds->constlen),
+         .enabled = stages.ds,
+         .read_imm_shared_consts = push_shared_consts(stages.ds),
+      ));
+      crb.add(SP_GS_CONST_CONFIG(CHIP,
+         .constlen = COND(stages.gs, stages.gs->constlen),
+         .enabled = stages.gs,
+         .read_imm_shared_consts = push_shared_consts(stages.gs),
+      ));
+      crb.add(SP_PS_CONST_CONFIG(CHIP,
+         .constlen = COND(stages.fs, stages.fs->constlen),
+         .enabled = stages.fs,
+         .read_imm_shared_consts = push_shared_consts(stages.fs),
+      ));
 
-   if (!xs) {
-      /* shader stage disabled */
-      crb.add(tu_reg_value { .reg = cfg->reg_sp_xs_config, .value = 0 });
-      crb.add(tu_reg_value { .reg = cfg->reg_hlsq_xs_ctrl, .value = 0 });
-      return;
+      crb.add(A6XX_SP_VS_CONFIG(.dword = sp_xs_config(stages.vs)));
+      crb.add(A6XX_SP_HS_CONFIG(.dword = sp_xs_config(stages.hs)));
+      crb.add(A6XX_SP_DS_CONFIG(.dword = sp_xs_config(stages.ds)));
+      crb.add(A6XX_SP_GS_CONFIG(.dword = sp_xs_config(stages.gs)));
+      crb.add(A6XX_SP_PS_CONFIG(.dword = sp_xs_config(stages.fs)));
    }
-
-   crb.add(tu_reg_value {
-      .reg = cfg->reg_sp_xs_config,
-      .value = A6XX_SP_VS_CONFIG_ENABLED |
-               COND(xs->bindless_tex, A6XX_SP_VS_CONFIG_BINDLESS_TEX) |
-               COND(xs->bindless_samp, A6XX_SP_VS_CONFIG_BINDLESS_SAMP) |
-               COND(xs->bindless_ibo, A6XX_SP_VS_CONFIG_BINDLESS_UAV) |
-               COND(xs->bindless_ubo, A6XX_SP_VS_CONFIG_BINDLESS_UBO) |
-               A6XX_SP_VS_CONFIG_NTEX(xs->num_samp) |
-               A6XX_SP_VS_CONFIG_NSAMP(xs->num_samp) });
-   crb.add(tu_reg_value {
-      .reg = cfg->reg_hlsq_xs_ctrl,
-      .value = A6XX_SP_VS_CONST_CONFIG_CONSTLEN(xs->constlen) |
-               A6XX_SP_VS_CONST_CONFIG_ENABLED |
-               COND(xs->shader_options.push_consts_type ==
-                       IR3_PUSH_CONSTS_SHARED_PREAMBLE,
-                    A7XX_SP_VS_CONST_CONFIG_READ_IMM_SHARED_CONSTS) });
 }
 TU_GENX(tu6_emit_xs_config);
 
@@ -1266,11 +1267,14 @@ tu6_emit_program_config(struct tu_cs *cs,
                           .ds_state = true, .gs_state = true,
                           .fs_state = true, .gfx_uav = true,
                           .gfx_shared_const = shared_consts_enable));
-   for (size_t stage_idx = MESA_SHADER_VERTEX;
-        stage_idx <= MESA_SHADER_FRAGMENT; stage_idx++) {
-      mesa_shader_stage stage = (mesa_shader_stage) stage_idx;
-      tu6_emit_xs_config<CHIP>(crb, stage, variants[stage]);
-   }
+
+   const struct ir3_shader_variant *vs = variants[MESA_SHADER_VERTEX];
+   const struct ir3_shader_variant *hs = variants[MESA_SHADER_TESS_CTRL];
+   const struct ir3_shader_variant *ds = variants[MESA_SHADER_TESS_EVAL];
+   const struct ir3_shader_variant *gs = variants[MESA_SHADER_GEOMETRY];
+   const struct ir3_shader_variant *fs = variants[MESA_SHADER_FRAGMENT];
+
+   tu6_emit_xs_config<CHIP>(crb, { .vs = vs, .hs = hs, .ds = ds, .gs = gs, .fs = fs });
 
    crb.flush();
 
@@ -1279,11 +1283,6 @@ tu6_emit_program_config(struct tu_cs *cs,
       mesa_shader_stage stage = (mesa_shader_stage) stage_idx;
       tu6_emit_dynamic_offset(cs, variants[stage], shaders[stage], prog);
    }
-
-   const struct ir3_shader_variant *vs = variants[MESA_SHADER_VERTEX];
-   const struct ir3_shader_variant *hs = variants[MESA_SHADER_TESS_CTRL];
-   const struct ir3_shader_variant *ds = variants[MESA_SHADER_TESS_EVAL];
-   const struct ir3_shader_variant *gs = variants[MESA_SHADER_GEOMETRY];
 
    if (hs) {
       tu6_emit_link_map(cs, vs, hs, SB6_HS_SHADER);

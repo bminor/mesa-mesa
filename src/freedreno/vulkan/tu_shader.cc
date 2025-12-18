@@ -1781,7 +1781,7 @@ tu6_emit_cs_config(struct tu_cs *cs,
 
       crb.add(SP_UPDATE_CNTL(CHIP, .cs_state = true, .cs_uav = true,
                              .cs_shared_const = shared_consts_enable));
-      tu6_emit_xs_config<CHIP>(crb, MESA_SHADER_COMPUTE, v);
+      tu6_emit_xs_config<CHIP>(crb, { .cs = v });
       tu6_emit_xs(crb, cs->device, MESA_SHADER_COMPUTE, v, pvtmem, binary_iova);
    }
    tu6_emit_xs_constants(cs, MESA_SHADER_COMPUTE, v, binary_iova);
