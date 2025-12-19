@@ -752,6 +752,12 @@ save_reusable_variables(nir_builder *b, lower_ngg_nogs_state *s)
    ASSERTED int vec_ok = u_vector_init(&s->reusable_nondeferred_variables, 4, sizeof(reusable_nondeferred_variable));
    assert(vec_ok);
 
+   /* Subgroup ops make divergence information useless for our purpose,
+    * we would need workgroup divergence.
+    */
+   if (b->shader->info.uses_wide_subgroup_intrinsics)
+      return;
+
    /* Upper limit on reusable uniforms in order to reduce SGPR spilling. */
    unsigned remaining_reusable_uniforms = 48;
 
