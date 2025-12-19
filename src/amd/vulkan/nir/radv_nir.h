@@ -97,7 +97,8 @@ typedef struct radv_nir_opt_tid_function_options {
 
 bool radv_nir_opt_tid_function(nir_shader *shader, const radv_nir_opt_tid_function_options *options);
 
-bool radv_nir_opt_fs_builtins(nir_shader *shader, const struct radv_graphics_state_key *gfx_state);
+bool radv_nir_opt_fs_builtins(nir_shader *shader, const struct radv_graphics_state_key *gfx_state,
+                              unsigned vgt_outprim_type);
 
 bool radv_nir_lower_immediate_samplers(nir_shader *shader, struct radv_device *device,
                                        const struct radv_shader_stage *stage);
