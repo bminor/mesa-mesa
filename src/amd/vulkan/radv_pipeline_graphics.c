@@ -2872,7 +2872,7 @@ radv_graphics_shaders_compile(struct radv_device *device, struct vk_pipeline_cac
           !gfx_state->dynamic_rasterization_samples && gfx_state->ms.rasterization_samples == 0)
          NIR_PASS(_, stages[MESA_SHADER_FRAGMENT].nir, nir_opt_fragdepth);
 
-      NIR_PASS(_, stages[MESA_SHADER_FRAGMENT].nir, radv_nir_opt_fs_builtins, gfx_state);
+      NIR_PASS(_, stages[MESA_SHADER_FRAGMENT].nir, radv_nir_opt_fs_builtins, gfx_state, vgt_outprim_type);
    }
 
    if (stages[MESA_SHADER_VERTEX].nir && !gfx_state->vs.has_prolog)
