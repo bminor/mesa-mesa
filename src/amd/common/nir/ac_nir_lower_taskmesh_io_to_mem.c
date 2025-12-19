@@ -17,7 +17,6 @@
  */
 
 typedef struct {
-   unsigned payload_entry_bytes;
    unsigned draw_entry_bytes;
 
    /* True if the lowering needs to insert shader query. */
@@ -31,6 +30,21 @@ task_num_entries(nir_builder *b,
    nir_def *ring = nir_load_ring_task_draw_amd(b);
    nir_def *bytes = nir_channel(b, ring, 2);
    return nir_udiv_imm(b, bytes, s->draw_entry_bytes);
+}
+
+static nir_def *
+task_payload_entry_bytes(nir_builder *b,
+                         lower_tsms_io_state *s)
+{
+   nir_def *num_entries = task_num_entries(b, s);
+   nir_def *ring = nir_load_ring_task_payload_amd(b);
+   nir_def *bytes = nir_channel(b, ring, 2);
+
+   /* num_entries must be a power of two,
+    * use that to implement a division using a shift.
+    */
+   nir_def *lsb = nir_find_lsb(b, num_entries);
+   return nir_ushr(b, bytes, lsb);
 }
 
 static nir_def *
@@ -233,7 +247,7 @@ lower_task_payload_store(nir_builder *b,
    nir_def *addr = intrin->src[1].ssa;
    nir_def *ring = nir_load_ring_task_payload_amd(b);
    nir_def *ptr = task_ring_entry_index(b, s);
-   nir_def *ring_off = nir_imul_imm(b, ptr, s->payload_entry_bytes);
+   nir_def *ring_off = nir_imul(b, ptr, task_payload_entry_bytes(b, s));
    nir_def *zero = nir_imm_int(b, 0);
 
    nir_store_buffer_amd(b, store_val, ring, addr, ring_off, zero, .base = base,
@@ -260,7 +274,7 @@ lower_taskmesh_payload_load(nir_builder *b,
 
    nir_def *addr = intrin->src[0].ssa;
    nir_def *ring = nir_load_ring_task_payload_amd(b);
-   nir_def *ring_off = nir_imul_imm(b, ptr, s->payload_entry_bytes);
+   nir_def *ring_off = nir_imul(b, ptr, task_payload_entry_bytes(b, s));
    nir_def *zero = nir_imm_int(b, 0);
 
    return nir_load_buffer_amd(b, num_components, bit_size, ring, addr, ring_off, zero, .base = base,
@@ -308,7 +322,6 @@ ac_nir_lower_task_outputs_to_mem(nir_shader *shader,
 
    lower_tsms_io_state state = {
       .draw_entry_bytes = 16,
-      .payload_entry_bytes = task_payload_entry_bytes,
       .has_query = has_query,
    };
 
@@ -363,7 +376,6 @@ ac_nir_lower_mesh_inputs_to_mem(nir_shader *shader,
 
    lower_tsms_io_state state = {
       .draw_entry_bytes = 16,
-      .payload_entry_bytes = task_payload_entry_bytes,
    };
 
    return nir_shader_lower_instructions(shader,
