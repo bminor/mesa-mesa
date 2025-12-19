@@ -194,7 +194,7 @@ vn_render_pass_create(struct vn_device *dev,
 
 /* render pass commands */
 
-VkResult
+VKAPI_ATTR VkResult VKAPI_CALL
 vn_CreateRenderPass(VkDevice device,
                     const VkRenderPassCreateInfo *pCreateInfo,
                     const VkAllocationCallbacks *pAllocator,
@@ -249,7 +249,7 @@ vn_CreateRenderPass(VkDevice device,
    return VK_SUCCESS;
 }
 
-VkResult
+VKAPI_ATTR VkResult VKAPI_CALL
 vn_CreateRenderPass2(VkDevice device,
                      const VkRenderPassCreateInfo2 *pCreateInfo,
                      const VkAllocationCallbacks *pAllocator,
@@ -299,7 +299,7 @@ vn_CreateRenderPass2(VkDevice device,
    return VK_SUCCESS;
 }
 
-void
+VKAPI_ATTR void VKAPI_CALL
 vn_DestroyRenderPass(VkDevice device,
                      VkRenderPass renderPass,
                      const VkAllocationCallbacks *pAllocator)
@@ -318,7 +318,7 @@ vn_DestroyRenderPass(VkDevice device,
    vk_free(alloc, pass);
 }
 
-void
+VKAPI_ATTR void VKAPI_CALL
 vn_GetRenderAreaGranularity(VkDevice device,
                             VkRenderPass renderPass,
                             VkExtent2D *pGranularity)
@@ -334,7 +334,7 @@ vn_GetRenderAreaGranularity(VkDevice device,
    *pGranularity = pass->granularity;
 }
 
-void
+VKAPI_ATTR void VKAPI_CALL
 vn_GetRenderingAreaGranularity(VkDevice device,
                                const VkRenderingAreaInfo *pRenderingAreaInfo,
                                VkExtent2D *pGranularity)
@@ -348,7 +348,7 @@ vn_GetRenderingAreaGranularity(VkDevice device,
 
 /* framebuffer commands */
 
-VkResult
+VKAPI_ATTR VkResult VKAPI_CALL
 vn_CreateFramebuffer(VkDevice device,
                      const VkFramebufferCreateInfo *pCreateInfo,
                      const VkAllocationCallbacks *pAllocator,
@@ -386,7 +386,7 @@ vn_CreateFramebuffer(VkDevice device,
    return VK_SUCCESS;
 }
 
-void
+VKAPI_ATTR void VKAPI_CALL
 vn_DestroyFramebuffer(VkDevice device,
                       VkFramebuffer framebuffer,
                       const VkAllocationCallbacks *pAllocator)
