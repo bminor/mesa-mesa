@@ -265,6 +265,12 @@ radv_bo_create(struct radv_device *device, struct vk_object_base *object, uint64
    struct radeon_winsys *ws = device->ws;
    VkResult result;
 
+   /* Pad the BO with an extra VM page to mitigate OOB access from SMEM instructions.
+    * This doesn't allocate extra memory, just writes an extra page table entry.
+    */
+   if (pdev->cache_key.mitigate_smem_oob && !is_internal)
+      flags |= RADEON_FLAG_VM_PAD_1PAGE;
+
    result = ws->buffer_create(ws, size, alignment, domain, flags, priority, address, out_bo);
    if (result != VK_SUCCESS)
       return result;
