@@ -1446,6 +1446,8 @@ RADV driver environment variables
    ``nort``
       skip executing vkCmdTraceRays and ray queries (RT extensions will still be
       advertised)
+   ``nosmemmitigation``
+      don't mitigate SMEM memory access issues on GFX6-7
    ``notccompatcmask``
       disable TC-compat CMASK for MSAA surfaces
    ``noumr``

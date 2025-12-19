@@ -479,6 +479,10 @@ radv_emit_compute_scratch(struct radv_device *device, struct radv_cmd_stream *cs
    uint64_t scratch_va;
    uint32_t rsrc1;
 
+   /* Ensure there is always a mapped BO in s[0:1] for the SMEM OOB mitigation */
+   if (!compute_scratch_bo && pdev->cache_key.mitigate_smem_oob)
+      compute_scratch_bo = device->zero_bo;
+
    if (!compute_scratch_bo)
       return;
 
@@ -537,6 +541,10 @@ radv_emit_graphics_shader_pointers(struct radv_device *device, struct radv_cmd_s
 {
    const struct radv_physical_device *pdev = radv_device_physical(device);
    uint64_t va;
+
+   /* Ensure there is always a mapped BO in s[0:1] for the SMEM OOB mitigation */
+   if (!descriptor_bo && pdev->cache_key.mitigate_smem_oob)
+      descriptor_bo = device->zero_bo;
 
    if (!descriptor_bo)
       return;

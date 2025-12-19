@@ -1402,7 +1402,7 @@ radv_CreateDevice(VkPhysicalDevice physicalDevice, const VkDeviceCreateInfo *pCr
        device->vk.enabled_features.extendedDynamicState3ColorBlendEquation)
       radv_shader_part_cache_init(&device->ps_epilogs, &ps_epilog_ops);
 
-   if (pdev->info.has_zero_index_buffer_bug) {
+   if (pdev->info.has_zero_index_buffer_bug || pdev->cache_key.mitigate_smem_oob) {
       result = radv_bo_create(device, NULL, 4096, 4096, RADEON_DOMAIN_VRAM,
                               RADEON_FLAG_NO_CPU_ACCESS | RADEON_FLAG_NO_INTERPROCESS_SHARING | RADEON_FLAG_READ_ONLY |
                                  RADEON_FLAG_ZERO_VRAM | RADEON_FLAG_32BIT,
