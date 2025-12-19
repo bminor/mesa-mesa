@@ -882,9 +882,6 @@ emit_vpc(fd_crb &crb, const struct program_builder *b)
       }
    }
 
-   /* if vertex_flags somehow gets optimized out, your gonna have a bad time: */
-   assert(flags_regid != INVALID_REG);
-
    switch (last_shader->type) {
    case MESA_SHADER_VERTEX:
       crb.add(A6XX_SP_VS_OUTPUT_CNTL(.out = linkage.cnt));
@@ -925,6 +922,9 @@ emit_vpc(fd_crb &crb, const struct program_builder *b)
       ));
       break;
    case MESA_SHADER_GEOMETRY:
+      /* if vertex_flags somehow gets optimized out, your gonna have a bad time: */
+      assert(flags_regid != INVALID_REG);
+
       crb.add(A6XX_SP_GS_OUTPUT_CNTL(.out = linkage.cnt, .flags_regid = flags_regid));
       crb.add(VPC_GS_SIV_CNTL(CHIP,
          .layerloc = layer_loc,
