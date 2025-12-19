@@ -1,5 +1,715 @@
 [
     {
+        "sha": "821baac5c326896253d69a1446178e224feea4e6",
+        "description": "iris: Make uint32 the type used for slab sizes",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2cf0b8c2d0fd7d5864de1cb44d9393547f27ddef",
+        "description": "iris: Fix slab memory leak",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f930ecdc55699c5855f22834e435dd3c5d64182f",
+        "description": "amd: add newer small APUs to get_task_num_entries()",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "02cfc61cc9320e87f12ba1e28aa37c73a7fa2526",
+        "description": "panfrost: enable texel-buffers for three-component formats",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "252e55a1bb0b9f7829230368e47a119122ae7ba5",
+        "description": "nir/printf-helpers: set writes_memory at printf emission",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c1e4c073cd738ec83c1d82eb9e6bbb6a6e3f6ec0",
+        "description": "pvr: limit hw-defs to rogue",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "13d12b33c0f6503aef7ea50db56affcb2dc49631",
+        "description": "pvr: make some winsys files multi-arch",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e762592bffe1f3e36a0387ecdc9f0342bf80e694",
+        "description": "pvr: build pvr_arch_*.c as a multi-arch sources",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "346e365daaf142f1f2c966747e6701f338862426",
+        "description": "pvr: pass device-info to a few winsys functions",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ba2c40cd032488c62eb37d00e71d9a4f94178410",
+        "description": "pvr: use rogue-prefix for rogue-specific code",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6ae6dd7db6bbb95c4a320823210e97aed14b35ba",
+        "description": "pvr: make blit/clear-code rogue-specific",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e1064e57a72bdcb69606891bc1e706dcd72db626",
+        "description": "pvr: only build pvr_dump_csb.c for rogue",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6b4577e12dfd832d0c5a9f93d781595b35c68a4d",
+        "description": "pvr: prepare for multi-gen compilation",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "edca79bc41b3a10ed2d22c252b3cd28e5dc299d7",
+        "description": "pvr: prepare winsys files for multi-arch",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f473c5fa976efee5bb768a08f9df8abaf7509ca5",
+        "description": "pvr: mark pvr_framebuffer.c as per-arch",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e11fac9f26380b5cc04105f85822307fcc07f65e",
+        "description": "pvr: mark pvr_mrt.c as multi-arch",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3d8490519838657898b88baaa4df61fe4deb3481",
+        "description": "pvr: mark pvr_query_compute.c as per-arch",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "be52ea2af7984640adae2c10e84b682257cc5185",
+        "description": "pvr: mark pvr_queue.c as multi-arch",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d0d443abd75249210de040eb82646b90080da271",
+        "description": "pvr: mark pvr_sampler.c as per-arch",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "921a04aac6fac12b802108df9de4876b411e784e",
+        "description": "pvr: mark pvr_job_common.c as per-arch",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6bd378131ab7a0cba8b470f50582737afd8997db",
+        "description": "pvr: mark pvr_hw_pass.c as per-arch",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "949e41a664df59d2e8c3b0d0acc9df9776214c1a",
+        "description": "pvr: split pvr_formats.c",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0b97360139b640f425d04ed384a5d561adcd50d9",
+        "description": "pvr: split pvr_image.c",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8c7f0ad749bd25ee450f55bcdf2a3378ec47b5cb",
+        "description": "pvr: mark pvr_job_context.c as per-arch",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "1f1a6cdadf335d2af346bf805de4cddfc772b246",
+        "description": "pvr: split pvr_spm.c",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8af73b561473f750b9c2d38a6e6ca37a5efaa682",
+        "description": "pvr: mark pvr_job_transfer.c as per-arch",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "11f59c942e64ca75ef9da38198c881c50ea2b20c",
+        "description": "pvr: mark pvr_job_render.c as per-arch",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d07bf4b190cdbcd49dd4b79ff5d9ab235c1df729",
+        "description": "pvr: mark pvr_cmd_query.c as per-arch",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "bd9d87592e55a7d94db2d27841cfdb8d4f97e414",
+        "description": "pvr: mark pvr_cmd_buffer.c as per-arch",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6e57d71c0a839a0f96a311d3a5af3a286c6d04a9",
+        "description": "pvr: mark pvr_job_compute.c as per-arch",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "eb56f9a2006c822d848640062a024cd24c19d246",
+        "description": "pvr: mark pvr_tex_state.c as multi-arch",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6c14ff34e89d9080a2f262d80a7fbb4b39f76012",
+        "description": "pvr: mark pvr_pass.c as multi-arch",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f789eb0d7d5e248589d954439c04853c954cec7f",
+        "description": "pvr: mark pvr_border.c as multi-arch",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "120a89e2a9432d6e1c8a2a381a26faa8793b4005",
+        "description": "pvr: split pvr_descriptor_set.c",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "1facaaba69c895ea9c6773f1b1921b5edf589286",
+        "description": "pvr: split pvr_csb.c",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "2c828a8825b4f9cf0acdcde5bc42c9683087c2b0",
+        "description": "pvr: split pvr_device.c",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b5400c8ddf20d69ea881794ead19a19db8ff8bf1",
+        "description": "pvr: factor out framebuffer-specific code",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5c70230c49432db9da1aedce3c16e33e91f92776",
+        "description": "pvr: factor out pvr_rt_dataset to separate module",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "9b3ab2c8cf9b1358c23a3d0b1a3bc868092510f0",
+        "description": "pvr: factor out cmdbuf functions from pvr_query.c",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "90f60b9b7e052c826f71968a690af8e589796153",
+        "description": "pvr: limit availability of HW defs",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5b3c05006de8e02d42e5efd3f52790fd61ba9e22",
+        "description": "pvr: store format-table in pvr_physical_device",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "49d94897af1e2afd2360ffa331743926a083716b",
+        "description": "pvr: add missing forward-decl",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "429e29ec421034ad19476d84df52d9da1cd7412f",
+        "description": "pvr: add missing include",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "cef4841d1a7ce1c5cff6888e8e566dd7365283cf",
+        "description": "pan/bi: Fix bi_find_loop_blocks for single block loops",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "6535a3b6b3a8fcd95790e9232c2fc0a2c81df58f",
+        "notes": null
+    },
+    {
+        "sha": "6bff8fd5e8e194955c5b3f6142b92bcc21598139",
+        "description": "tu: use application name matching for Yooka-Laylee driconf option",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "0574bfd5f46c9e991095373c458caf6b400d54c9",
+        "notes": null
+    },
+    {
+        "sha": "95ed8d6638d6a6fedf51a346bb9a6ba6a7a512c9",
+        "description": "panfrost: fix get_image_width for 1D buffer images",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "0efe7a6eb909b47fb24a7e15edcf4ee0d01cfd95",
+        "notes": null
+    },
+    {
+        "sha": "d9834fcaa6c946c454f16020cd5b3526dc7ecf00",
+        "description": "compiler: Add FP8 types to GLSL type decoder",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d1d4e3d5305b6f079bba08a4322a5d724b678cf9",
+        "description": "brw: Add EU assembler support for float8",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0088aae4814935797e477c2003f4f0c02edee737",
+        "description": "intel/brw: Add new encode/decode for use with brw_data_type_float/int",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "46e843f76ea11327cf97ecae6c7d917479013438",
+        "description": "intel/brw: Add brw_data_type_float/brw_data_type_int",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "54accefed2a89bedf6e400c196c49446610ee895",
+        "description": "brw: Add BRW_TYPE_BF8 and BRW_TYPE_HF8 for float8",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c9ae59dec5a622fb3e3378515bd06f5e08466326",
+        "description": "nvk: Set maxStorageBufferRange = maxBufferSize",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "65f12fde44075276b640925d4f4301fcf00fc955",
+        "notes": null
+    },
+    {
+        "sha": "b967942b642f414f1ca16fcfafebb14e2b3220dd",
+        "description": "brw: Do cmod prop again after scheduling",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "09450faf6a190170b68613f5a99c3af131f9c97a",
+        "description": "brw: Do cmod prop again after post-RA scheduling",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "08d71730caa874e6792355a468ed96eb9f8eec37",
+        "description": "brw/cmod: Propagate to an instruction with same source",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "50f2cd73668ab1d5cc9c24bfd7222574af5c160a",
+        "description": "brw/dce: Don't generate more NULL destinations after brw_lower_3src_null_dest",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "24cd8aa3b8527eee8d85f6618e308034573f10ef",
+        "description": "brw/cmod: Allow FIXED_GRF",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d7227b11a1056cdb50b4c4192ed30152c51fef58",
+        "description": "brw: elk: Disable can_do_cmod for MACH",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ba30794847437def77484f9eecae7cf3a2e465d4",
+        "description": "brw/cmod: Don't propagate between instructions in different groups",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "95ac3b1daeaa7d40d49fa2e0bdef46346c2996d5",
+        "notes": null
+    },
+    {
+        "sha": "c0fb93506b9d4590196aa1d18f30c21803ba98eb",
+        "description": "brw: Add brw_reg::is_grf",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "fa8b0b6bbbd109f94896e47a8181011d7df8e007",
+        "description": "radv/video: Enable write combine for decode",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4315c28739dcade156ac9384c99ba552b6d85b40",
+        "description": "gfxstream: don't dump genvk.py args to generated files",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ffbe6470a28a3f37c9a805d3a478ce9b18abc60d",
+        "description": "anv: fix a memory leak in slab allocator.",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "dabb012423dc27e2b03f13f7144406edacc89069",
+        "notes": null
+    },
+    {
+        "sha": "61dc9201a1ecd20caec70825642a2b10ba2b9ca6",
+        "description": "brw: constant fold before texture lowering",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0df735a619da347514117f7c1e32816afe911a86",
+        "description": "nvk: Disable compression for image import/export",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "cabfdb4404ad65b2a6a2a3b469e5e09d9b63f96a",
+        "description": "nvk: Enable compression",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d656960596585b10ddff6701ef4d0af8b2846e24",
+        "description": "broadcom/ci: set testgroup size for asan",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "cf7e2b9f6b820eb0cb7affa9812120f2c8e78e49",
+        "description": "broadcom/ci: update expected list",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "b55b8da012df2170ebcf08ef13acbad312b4a4a5",
+        "description": "nak: Add a prepass instruction scheduler",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5caee114ecdee091c02920a9eaec1bbaaaf24e4d",
+        "description": "nak: Reserve capacity in LiveSet::from_iter,extend",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f64d2c8557eeef61a2fdddba40b16367f05ded94",
+        "description": "nak: Factor out prev_multiple_of",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
         "sha": "645fff5daed8121ffe54741020f402fe6cfa8818",
         "description": "ac/descriptors: account for num_storage_samples for gfx10",
         "nominated": true,
