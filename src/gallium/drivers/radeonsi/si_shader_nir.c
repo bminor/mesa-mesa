@@ -324,13 +324,9 @@ static void si_lower_nir(struct si_screen *sscreen, struct nir_shader *nir)
 
       NIR_PASS(_, nir, nir_lower_gs_intrinsics, flags);
    } else if (nir->info.stage == MESA_SHADER_TASK) {
-      NIR_PASS(_, nir, ac_nir_lower_task_outputs_to_mem,
-               sscreen->task_info.payload_entry_size,
-               sscreen->task_info.num_entries, false);
+      NIR_PASS(_, nir, ac_nir_lower_task_outputs_to_mem, false);
    } else if (nir->info.stage == MESA_SHADER_MESH) {
-      NIR_PASS(_, nir, ac_nir_lower_mesh_inputs_to_mem,
-               sscreen->task_info.payload_entry_size,
-               sscreen->task_info.num_entries);
+      NIR_PASS(_, nir, ac_nir_lower_mesh_inputs_to_mem);
    }
 
    if (mesa_shader_stage_is_compute(nir->info.stage)) {

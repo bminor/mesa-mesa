@@ -305,11 +305,8 @@ lower_task_intrinsics(nir_builder *b,
 
 bool
 ac_nir_lower_task_outputs_to_mem(nir_shader *shader,
-                                 unsigned task_payload_entry_bytes,
-                                 unsigned task_num_entries,
                                  bool has_query)
 {
-   assert(util_is_power_of_two_nonzero(task_num_entries));
    bool progress = false;
 
    nir_lower_task_shader_options lower_ts_opt = {
@@ -368,12 +365,8 @@ lower_mesh_intrinsics(nir_builder *b,
 }
 
 bool
-ac_nir_lower_mesh_inputs_to_mem(nir_shader *shader,
-                                unsigned task_payload_entry_bytes,
-                                unsigned task_num_entries)
+ac_nir_lower_mesh_inputs_to_mem(nir_shader *shader)
 {
-   assert(util_is_power_of_two_nonzero(task_num_entries));
-
    lower_tsms_io_state state = {
       .draw_entry_bytes = 16,
    };

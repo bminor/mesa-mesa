@@ -238,14 +238,10 @@ ac_nir_lower_ngg_mesh(nir_shader *shader,
 
 bool
 ac_nir_lower_task_outputs_to_mem(nir_shader *shader,
-                                 unsigned task_payload_entry_bytes,
-                                 unsigned task_num_entries,
                                  bool has_query);
 
 bool
-ac_nir_lower_mesh_inputs_to_mem(nir_shader *shader,
-                                unsigned task_payload_entry_bytes,
-                                unsigned task_num_entries);
+ac_nir_lower_mesh_inputs_to_mem(nir_shader *shader);
 
 bool
 ac_nir_lower_global_access(nir_shader *shader);

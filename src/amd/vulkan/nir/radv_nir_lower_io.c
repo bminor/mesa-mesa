@@ -262,11 +262,10 @@ radv_nir_lower_io_to_mem(struct radv_device *device, struct radv_shader_stage *s
       NIR_PASS(_, nir, ac_nir_lower_gs_inputs_to_mem, map_input, pdev->info.gfx_level, false);
       return true;
    } else if (nir->info.stage == MESA_SHADER_TASK) {
-      ac_nir_lower_task_outputs_to_mem(nir, pdev->task_info.payload_entry_size, pdev->task_info.num_entries,
-                                       info->cs.has_query);
+      ac_nir_lower_task_outputs_to_mem(nir, info->cs.has_query);
       return true;
    } else if (nir->info.stage == MESA_SHADER_MESH) {
-      ac_nir_lower_mesh_inputs_to_mem(nir, pdev->task_info.payload_entry_size, pdev->task_info.num_entries);
+      ac_nir_lower_mesh_inputs_to_mem(nir);
       return true;
    }
 
