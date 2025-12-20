@@ -506,17 +506,16 @@ emit_vpc_attr_buf(struct tu_cs *cs, struct tu_device *dev, bool gmem)
    if (!dev->physical_device->info->props.has_gmem_vpc_attr_buf)
       return;
 
+   const struct fd6_gmem_config *cfg = gmem ?
+      &dev->physical_device->config_gmem :
+      &dev->physical_device->config_sysmem;
+
    tu_cs_emit_regs(cs,
-      VPC_ATTR_BUF_GMEM_SIZE(CHIP,
-               gmem ? dev->physical_device->vpc_attr_buf_size_gmem
-                    : dev->physical_device->vpc_attr_buf_size_bypass),
-      VPC_ATTR_BUF_GMEM_BASE(CHIP,
-               gmem ? dev->physical_device->vpc_attr_buf_offset_gmem
-                    : dev->physical_device->vpc_attr_buf_offset_bypass), );
-   tu_cs_emit_regs(cs,
-      PC_ATTR_BUF_GMEM_SIZE(CHIP,
-               gmem ? dev->physical_device->vpc_attr_buf_size_gmem
-                    : dev->physical_device->vpc_attr_buf_size_bypass), );
+      VPC_ATTR_BUF_GMEM_SIZE(CHIP, cfg->vpc_attr_buf_size),
+      VPC_ATTR_BUF_GMEM_BASE(CHIP, cfg->vpc_attr_buf_offset),
+   );
+
+   tu_cs_emit_regs(cs, PC_ATTR_BUF_GMEM_SIZE(CHIP, cfg->vpc_attr_buf_size));
 }
 
 template <chip CHIP>
@@ -544,15 +543,15 @@ emit_rb_ccu_cntl(struct tu_cs *cs, struct tu_device *dev, bool gmem)
     * which the color CCU offset is set to and the GMEM size available to the
     * GMEM layout calculations is adjusted accordingly.
     */
-   uint32_t color_offset = gmem ? dev->physical_device->ccu_offset_gmem
-                                : dev->physical_device->ccu_offset_bypass;
+   const struct fd6_gmem_config *cfg = gmem ?
+      &dev->physical_device->config_gmem :
+      &dev->physical_device->config_sysmem;
 
+   uint32_t color_offset = cfg->color_ccu_offset;
    uint32_t color_offset_hi = color_offset >> 21;
    color_offset &= 0x1fffff;
 
-   uint32_t depth_offset = gmem ? 0
-                                : dev->physical_device->ccu_depth_offset_bypass;
-
+   uint32_t depth_offset = cfg->depth_ccu_offset;
    uint32_t depth_offset_hi = depth_offset >> 21;
    depth_offset &= 0x1fffff;
 

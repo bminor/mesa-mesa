@@ -26,6 +26,7 @@
 #include "radix_sort/radix_sort_vk.h"
 
 #include "common/freedreno_rd_output.h"
+#include "common/fd6_gmem_cache.h"
 #include "util/vma.h"
 #include "util/u_vector.h"
 
@@ -110,13 +111,7 @@ struct tu_physical_device
    uint64_t gmem_base;
 
    uint32_t usable_gmem_size_gmem;
-   uint32_t ccu_offset_gmem;
-   uint32_t ccu_offset_bypass;
-   uint32_t ccu_depth_offset_bypass;
-   uint32_t vpc_attr_buf_offset_gmem;
-   uint32_t vpc_attr_buf_size_gmem;
-   uint32_t vpc_attr_buf_offset_bypass;
-   uint32_t vpc_attr_buf_size_bypass;
+   struct fd6_gmem_config config_gmem, config_sysmem;
 
    uint64_t uche_trap_base;
 

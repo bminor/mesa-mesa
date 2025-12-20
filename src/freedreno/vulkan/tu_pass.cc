@@ -821,7 +821,7 @@ tu_render_pass_gmem_config(struct tu_render_pass *pass,
        */
       uint32_t gmem_size = layout == TU_GMEM_LAYOUT_FULL
                               ? phys_dev->usable_gmem_size_gmem
-                              : phys_dev->ccu_offset_gmem;
+                              : phys_dev->config_gmem.color_ccu_offset;
       uint32_t gmem_blocks = gmem_size / gmem_align;
       uint32_t offset = 0, pixels = ~0u, i;
       for (i = 0; i < num_gmem_alloc; i++) {

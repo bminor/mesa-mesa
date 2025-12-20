@@ -1580,39 +1580,11 @@ tu_physical_device_init(struct tu_physical_device *device,
    case 7: {
       device->dev_info = info;
       device->info = &device->dev_info;
-      uint32_t depth_cache_size =
-         device->info->num_ccu * device->info->props.sysmem_per_ccu_depth_cache_size;
-      uint32_t color_cache_size =
-         (device->info->num_ccu *
-          device->info->props.sysmem_per_ccu_color_cache_size);
-      uint32_t color_cache_size_gmem =
-         color_cache_size /
-         (1 << device->info->props.gmem_ccu_color_cache_fraction);
 
-      device->ccu_depth_offset_bypass = 0;
-      device->ccu_offset_bypass =
-         device->ccu_depth_offset_bypass + depth_cache_size;
-
-      if (device->info->props.has_gmem_vpc_attr_buf) {
-         device->vpc_attr_buf_size_bypass =
-            device->info->props.sysmem_vpc_attr_buf_size;
-         device->vpc_attr_buf_offset_bypass =
-            device->ccu_offset_bypass + color_cache_size;
-
-         device->vpc_attr_buf_size_gmem =
-            device->info->props.gmem_vpc_attr_buf_size;
-         device->vpc_attr_buf_offset_gmem =
-            device->gmem_size -
-            (device->vpc_attr_buf_size_gmem * device->info->num_ccu);
-
-         device->ccu_offset_gmem =
-            device->vpc_attr_buf_offset_gmem - color_cache_size_gmem;
-
-         device->usable_gmem_size_gmem = device->vpc_attr_buf_offset_gmem;
-      } else {
-         device->ccu_offset_gmem = device->gmem_size - color_cache_size_gmem;
-         device->usable_gmem_size_gmem = device->gmem_size;
-      }
+      device->usable_gmem_size_gmem =
+         fd6_calc_gmem_cache_offsets(&info, device->gmem_size,
+                                     &device->config_gmem,
+                                     &device->config_sysmem);
 
       if (instance->reserve_descriptor_set) {
          device->usable_sets = device->reserved_set_idx = device->info->props.max_sets - 1;
