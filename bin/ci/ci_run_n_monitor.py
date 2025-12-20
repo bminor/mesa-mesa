@@ -302,11 +302,17 @@ def enable_job(
     # Get current attempt number
     attempt_count = enable_attempts.get((job.id, job.status), 0)
     # Check if we've exceeded max attempts to avoid infinite loop
-    if attempt_count >= MAX_ENABLE_JOB_ATTEMPTS:
-        raise RuntimeError(
+    if attempt_count == MAX_ENABLE_JOB_ATTEMPTS:
+        print(
+            f"[yellow]WARNING: "
             f"Maximum enabling attempts ({MAX_ENABLE_JOB_ATTEMPTS}) reached for job {job.name} in {job.status} status"
-            f"({link2print(job.web_url, job.id)}). Giving up."
+            f"({link2print(job.web_url, job.id)})."
         )
+        enable_attempts[(job.id, job.status)] = attempt_count + 1
+        return False
+    elif attempt_count > MAX_ENABLE_JOB_ATTEMPTS:
+        return False
+
     enable_attempts[(job.id, job.status)] = attempt_count + 1
 
     pjob = project.jobs.get(job.id, lazy=True)
