@@ -23,6 +23,8 @@
 #include "util/u_memory.h"
 #include "util/u_queue.h"
 
+#include "common/fd6_gmem_cache.h"
+
 #include "freedreno_batch_cache.h"
 #include "freedreno_gmem.h"
 #include "freedreno_util.h"
@@ -46,32 +48,6 @@ enum fd_gmem_reason {
    FD_GMEM_BLEND_ENABLED = BIT(3),
    FD_GMEM_LOGICOP_ENABLED = BIT(4),
    FD_GMEM_FB_READ = BIT(5),
-};
-
-/* Offset within GMEM of various "non-GMEM" things that GMEM is used to
- * cache.  These offsets differ for gmem vs sysmem rendering (in sysmem
- * mode, the entire GMEM can be used)
- */
-struct fd6_gmem_config {
-   /* Color/depth CCU cache: */
-   uint32_t color_ccu_offset;
-   uint32_t depth_ccu_offset;
-
-   /* Vertex attrib cache (a750+): */
-   uint32_t vpc_attr_buf_size;
-   uint32_t vpc_attr_buf_offset;
-
-   /* Vertex position cache (a8xx+): */
-   uint32_t vpc_pos_buf_size;
-   uint32_t vpc_pos_buf_offset;
-   uint32_t vpc_bv_pos_buf_size;
-   uint32_t vpc_bv_pos_buf_offset;
-
-   /* see enum a6xx_ccu_cache_size */
-   uint32_t depth_cache_fraction;
-   uint32_t color_cache_fraction;
-   uint32_t depth_cache_size;
-   uint32_t color_cache_size;
 };
 
 struct fd_screen {
