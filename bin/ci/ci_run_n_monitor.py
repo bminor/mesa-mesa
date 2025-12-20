@@ -168,8 +168,8 @@ def monitor_pipeline(
     # jobs_waiting is a list of job names that are waiting for status update.
     # It occurs when a job that we want to run depends on another job that is not yet finished.
     jobs_waiting = []
-    # Dictionary to track the number of attempts made for each job
-    enable_attempts: dict[int, int] = {}
+    # Dictionary to track the number of attempts made for each job for a given status
+    enable_attempts: dict[tuple[int, str], int] = {}
     # FIXME: This function has too many parameters, consider refactoring.
     enable_job_fn = partial(
         enable_job,
@@ -274,7 +274,7 @@ def monitor_pipeline(
 def enable_job(
     project: gitlab.v4.objects.Project,
     job: gitlab.v4.objects.ProjectPipelineJob,
-    enable_attempts: dict[int, int],
+    enable_attempts: dict[tuple[int, str], int],
     action_type: Literal["target", "dep", "retry"],
     jobs_waiting: list[str] = list,
 ) -> bool:
@@ -282,7 +282,7 @@ def enable_job(
     Enable a job to run.
     :param project: The GitLab project.
     :param job: The job to enable.
-    :param enable_attempts: A dictionary to track the number of attempts made for each job.
+    :param enable_attempts: A dictionary to track the number of attempts made for each job for a give status.
     :param action_type: The type of action to perform.
     :param jobs_waiting:
     :return: True if the job was enabled, False otherwise.
@@ -300,14 +300,14 @@ def enable_job(
         return False
 
     # Get current attempt number
-    attempt_count = enable_attempts.get(job.id, 0)
+    attempt_count = enable_attempts.get((job.id, job.status), 0)
     # Check if we've exceeded max attempts to avoid infinite loop
     if attempt_count >= MAX_ENABLE_JOB_ATTEMPTS:
         raise RuntimeError(
-            f"Maximum enabling attempts ({MAX_ENABLE_JOB_ATTEMPTS}) reached for job {job.name} "
+            f"Maximum enabling attempts ({MAX_ENABLE_JOB_ATTEMPTS}) reached for job {job.name} in {job.status} status"
             f"({link2print(job.web_url, job.id)}). Giving up."
         )
-    enable_attempts[job.id] = attempt_count + 1
+    enable_attempts[(job.id, job.status)] = attempt_count + 1
 
     pjob = project.jobs.get(job.id, lazy=True)
 
