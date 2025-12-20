@@ -2538,12 +2538,18 @@ static const enum mesa_vk_dynamic_graphics_state tu_viewport_state[] = {
 
 template <chip CHIP>
 static unsigned
+tu6_viewport_nregs(const struct vk_viewport_state *vp)
+{
+   return 10 * vp->viewport_count + 3;
+}
+
+template <chip CHIP>
+static unsigned
 tu6_viewport_size(struct tu_device *dev,
                   const struct vk_viewport_state *vp,
                   const struct vk_rasterization_state *rs)
 {
-   return 1 + vp->viewport_count * 6 + 1 + vp->viewport_count * 2 +
-      1 + vp->viewport_count * 2 + 5;
+   return 1 + 2 * tu6_viewport_nregs<CHIP>(vp);
 }
 
 template <chip CHIP>
@@ -2553,8 +2559,8 @@ tu6_emit_viewport(struct tu_cs *cs,
                   const struct vk_rasterization_state *rs)
 {
    VkExtent2D guardband = {511, 511};
+   tu_crb crb = cs->crb(tu6_viewport_nregs<CHIP>(vp));
 
-   tu_cs_emit_pkt4(cs, GRAS_CL_VIEWPORT_XOFFSET(CHIP, 0).reg, vp->viewport_count * 6);
    for (uint32_t i = 0; i < vp->viewport_count; i++) {
       const VkViewport *viewport = &vp->viewports[i];
       float offsets[3];
@@ -2575,10 +2581,12 @@ tu6_emit_viewport(struct tu_cs *cs,
          offsets[2] = viewport->minDepth;
       }
 
-      for (uint32_t j = 0; j < 3; j++) {
-         tu_cs_emit(cs, fui(offsets[j]));
-         tu_cs_emit(cs, fui(scales[j]));
-      }
+      crb.add(GRAS_CL_VIEWPORT_XOFFSET(CHIP, i, offsets[0]));
+      crb.add(GRAS_CL_VIEWPORT_XSCALE(CHIP, i, scales[0]));
+      crb.add(GRAS_CL_VIEWPORT_YOFFSET(CHIP, i, offsets[1]));
+      crb.add(GRAS_CL_VIEWPORT_YSCALE(CHIP, i, scales[1]));
+      crb.add(GRAS_CL_VIEWPORT_ZOFFSET(CHIP, i, offsets[2]));
+      crb.add(GRAS_CL_VIEWPORT_ZSCALE(CHIP, i, scales[2]));
 
       guardband.width =
          MIN2(guardband.width, fd_calc_guardband(offsets[0], scales[0], false));
@@ -2586,7 +2594,6 @@ tu6_emit_viewport(struct tu_cs *cs,
          MIN2(guardband.height, fd_calc_guardband(offsets[1], scales[1], false));
    }
 
-   tu_cs_emit_pkt4(cs, GRAS_SC_VIEWPORT_SCISSOR_TL(CHIP, 0).reg, vp->viewport_count * 2);
    for (uint32_t i = 0; i < vp->viewport_count; i++) {
       const VkViewport *viewport = &vp->viewports[i];
       VkOffset2D min;
@@ -2615,11 +2622,8 @@ tu6_emit_viewport(struct tu_cs *cs,
       assert(min.x < max.x);
       assert(min.y < max.y);
 
-      tu_cs_emit(
-         cs, GRAS_SC_VIEWPORT_SCISSOR_TL(CHIP, 0, .x = min.x, .y = min.y).value);
-      tu_cs_emit(
-         cs, GRAS_SC_VIEWPORT_SCISSOR_BR(CHIP, 0, .x = max.x - 1, .y = max.y - 1)
-                .value);
+      crb.add(GRAS_SC_VIEWPORT_SCISSOR_TL(CHIP, i, .x = min.x, .y = min.y));
+      crb.add(GRAS_SC_VIEWPORT_SCISSOR_BR(CHIP, i, .x = max.x - 1, .y = max.y - 1));
    }
 
    /* A7XX+ doesn't clamp to [0,1] with disabled depth clamp, to support
@@ -2628,31 +2632,27 @@ tu6_emit_viewport(struct tu_cs *cs,
     */
    bool zero_one_depth_clamp = CHIP >= A7XX && !rs->depth_clamp_enable;
 
-   tu_cs_emit_pkt4(cs, REG_A6XX_GRAS_CL_VIEWPORT_ZCLAMP(0), vp->viewport_count * 2);
    for (uint32_t i = 0; i < vp->viewport_count; i++) {
       const VkViewport *viewport = &vp->viewports[i];
+      float zmin = MIN2(viewport->minDepth, viewport->maxDepth);
+      float zmax = MAX2(viewport->minDepth, viewport->maxDepth);
+
       if (zero_one_depth_clamp) {
-         tu_cs_emit(cs, fui(0.0f));
-         tu_cs_emit(cs, fui(1.0f));
-      } else {
-         tu_cs_emit(cs, fui(MIN2(viewport->minDepth, viewport->maxDepth)));
-         tu_cs_emit(cs, fui(MAX2(viewport->minDepth, viewport->maxDepth)));
+         zmin = 0.0f;
+         zmax = 1.0f;
+      }
+
+      crb.add(GRAS_CL_VIEWPORT_ZCLAMP_MIN(CHIP, i, zmin));
+      crb.add(GRAS_CL_VIEWPORT_ZCLAMP_MAX(CHIP, i, zmax));
+
+      if (i == 0) {
+         /* TODO: what to do about this and multi viewport ? */
+         crb.add(RB_VIEWPORT_ZCLAMP_MIN(CHIP, zmin));
+         crb.add(RB_VIEWPORT_ZCLAMP_MAX(CHIP, zmax));
       }
    }
-   tu_cs_emit_regs(cs,
-      GRAS_CL_GUARDBAND_CLIP_ADJ(CHIP, .horz = guardband.width, .vert = guardband.height));
 
-   /* TODO: what to do about this and multi viewport ? */
-   float z_clamp_min = vp->viewport_count ? MIN2(vp->viewports[0].minDepth, vp->viewports[0].maxDepth) : 0;
-   float z_clamp_max = vp->viewport_count ? MAX2(vp->viewports[0].minDepth, vp->viewports[0].maxDepth) : 0;
-   if (zero_one_depth_clamp) {
-      z_clamp_min = 0.0f;
-      z_clamp_max = 1.0f;
-   }
-
-   tu_cs_emit_regs(cs,
-                   RB_VIEWPORT_ZCLAMP_MIN(CHIP, z_clamp_min),
-                   RB_VIEWPORT_ZCLAMP_MAX(CHIP, z_clamp_max));
+   crb.add(GRAS_CL_GUARDBAND_CLIP_ADJ(CHIP, .horz = guardband.width, .vert = guardband.height));
 }
 
 struct apply_viewport_state {
