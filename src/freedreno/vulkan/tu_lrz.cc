@@ -109,14 +109,16 @@ template <chip CHIP>
 static void
 tu6_emit_lrz_buffer(struct tu_cs *cs, struct tu_image *depth_image)
 {
+   tu_crb crb = cs->crb(7);
+
    if (!depth_image) {
-      tu_cs_emit_regs(cs, GRAS_LRZ_BUFFER_BASE(CHIP, 0),
-                      GRAS_LRZ_BUFFER_PITCH(CHIP, 0),
-                      A6XX_GRAS_LRZ_FAST_CLEAR_BUFFER_BASE(0));
+      crb.add(GRAS_LRZ_BUFFER_BASE(CHIP, 0))
+         .add(GRAS_LRZ_BUFFER_PITCH(CHIP, 0))
+         .add(A6XX_GRAS_LRZ_FAST_CLEAR_BUFFER_BASE(0));
 
       if (CHIP >= A7XX) {
-         tu_cs_emit_regs(cs, GRAS_LRZ_DEPTH_BUFFER_INFO(CHIP));
-         tu_cs_emit_regs(cs, GRAS_LRZ_CB_CNTL(CHIP));
+         crb.add(GRAS_LRZ_DEPTH_BUFFER_INFO(CHIP));
+         crb.add(GRAS_LRZ_CB_CNTL(CHIP));
       }
 
       return;
@@ -128,20 +130,16 @@ tu6_emit_lrz_buffer(struct tu_cs *cs, struct tu_image *depth_image)
    if (!depth_image->lrz_layout.lrz_fc_offset)
       lrz_fc_iova = 0;
 
-   tu_cs_emit_regs(
-      cs, GRAS_LRZ_BUFFER_BASE(CHIP, .qword = lrz_iova),
-      GRAS_LRZ_BUFFER_PITCH(
+   crb.add(GRAS_LRZ_BUFFER_BASE(CHIP, .qword = lrz_iova))
+      .add(GRAS_LRZ_BUFFER_PITCH(
          CHIP, .pitch = depth_image->lrz_layout.lrz_pitch * sizeof(uint16_t),
-         .array_pitch = depth_image->lrz_layout.lrz_layer_size),
-      A6XX_GRAS_LRZ_FAST_CLEAR_BUFFER_BASE(.qword = lrz_fc_iova));
+         .array_pitch = depth_image->lrz_layout.lrz_layer_size))
+      .add(A6XX_GRAS_LRZ_FAST_CLEAR_BUFFER_BASE(.qword = lrz_fc_iova));
 
    if (CHIP >= A7XX) {
-      tu_cs_emit_regs(
-         cs, GRAS_LRZ_DEPTH_BUFFER_INFO(CHIP, .depth_format = tu6_pipe2depth(
+      crb.add(GRAS_LRZ_DEPTH_BUFFER_INFO(CHIP, .depth_format = tu6_pipe2depth(
                                                  depth_image->vk.format)));
-      tu_cs_emit_regs(
-         cs,
-         GRAS_LRZ_CB_CNTL(CHIP, .double_buffer_stride =
+      crb.add(GRAS_LRZ_CB_CNTL(CHIP, .double_buffer_stride =
                                    depth_image->lrz_layout.lrz_buffer_size));
    }
 }
