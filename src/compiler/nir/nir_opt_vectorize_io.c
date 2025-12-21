@@ -414,16 +414,18 @@ vectorize_slot(nir_intrinsic_instr *chan[8], unsigned mask, bool allow_holes)
          scan_mask = mask & BITFIELD_RANGE(4, 4);
          mask &= ~scan_mask;
 
-         if (is_load && allow_holes) {
+         if (is_load && allow_holes && scan_mask) {
             unsigned num = util_last_bit(scan_mask);
-            scan_mask = BITFIELD_RANGE(4, num - 4);
+            unsigned start = ffs(scan_mask) - 1;
+            scan_mask = BITFIELD_RANGE(start, num - start);
          }
       } else {
          scan_mask = mask;
 
-         if (is_load && allow_holes) {
+         if (is_load && allow_holes && scan_mask) {
             unsigned num = util_last_bit(scan_mask);
-            scan_mask = BITFIELD_MASK(num);
+            unsigned start = ffs(scan_mask) - 1;
+            scan_mask = BITFIELD_RANGE(start, num - start);
          }
       }
 
