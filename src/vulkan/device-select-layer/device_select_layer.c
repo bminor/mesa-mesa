@@ -194,11 +194,10 @@ void
 device_select_get_properties(const struct instance_info *info, VkPhysicalDevice device,
                              VkPhysicalDeviceProperties2 *properties)
 {
-   info->GetPhysicalDeviceProperties(device, &properties->properties);
-
-   if (info->GetPhysicalDeviceProperties2 &&
-       properties->properties.apiVersion >= VK_API_VERSION_1_1)
+   if (info->GetPhysicalDeviceProperties2 && info->has_vulkan11)
       info->GetPhysicalDeviceProperties2(device, properties);
+   else
+      info->GetPhysicalDeviceProperties(device, &properties->properties);
 }
 
 static void
