@@ -97,5 +97,14 @@ glx@glx-query-drawable-glx_width
 glx@glx-query-drawable-glxpixmap-glx_width
 glx@glx-swap-pixmap
 
+# weston crash leading to failures
+# first seen in https://gitlab.freedesktop.org/mesa/mesa/-/merge_requests/38923
+glx@glx-egl-switch-context
+glx@glx-query-drawable-glx_fbconfig_id-glxwindow
+glx@glx-swap-exchange
+glx@glx-swap-singlebuffer
+glx@glx_arb_sync_control@glxgetmscrateoml
+glx@glx_ext_import_context@query context info
+
 # New flakes with GL CTS 4.6.7.0
 KHR-GL46.transform_feedback2.transform_feedback2_states

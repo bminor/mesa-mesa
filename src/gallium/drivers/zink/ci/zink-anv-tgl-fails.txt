@@ -19,14 +19,6 @@ glx@glx-swap-pixmap-bad,Fail
 glx@glx-visuals-depth -pixmap,Crash
 glx@glx-visuals-stencil -pixmap,Crash
 
-# weston crash leading to failures
-glx@glx-egl-switch-context,Fail
-glx@glx-query-drawable-glx_fbconfig_id-glxwindow,Fail
-glx@glx-swap-exchange,Fail
-glx@glx-swap-singlebuffer,Fail
-glx@glx_arb_sync_control@glxgetmscrateoml,Fail
-glx@glx_ext_import_context@query context info,Fail
-
 spec@!opengl 1.0@gl-1.0-no-op-paths,Fail
 
 spec@!opengl 1.0@gl-1.0-swapbuffers-behavior,Fail
