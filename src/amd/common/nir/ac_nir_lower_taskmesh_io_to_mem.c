@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: MIT
  */
 
+#include "ac_gpu_info.h"
 #include "ac_nir.h"
 #include "nir_builder.h"
 #include "amdgfxregs.h"
@@ -17,8 +18,6 @@
  */
 
 typedef struct {
-   unsigned draw_entry_bytes;
-
    /* True if the lowering needs to insert shader query. */
    bool has_query;
 } lower_tsms_io_state;
@@ -29,7 +28,7 @@ task_num_entries(nir_builder *b,
 {
    nir_def *ring = nir_load_ring_task_draw_amd(b);
    nir_def *bytes = nir_channel(b, ring, 2);
-   return nir_udiv_imm(b, bytes, s->draw_entry_bytes);
+   return nir_udiv_imm(b, bytes, AC_TASK_DRAW_ENTRY_BYTES);
 }
 
 static nir_def *
@@ -148,7 +147,7 @@ task_write_draw_ring(nir_builder *b,
 {
    nir_def *ptr = task_ring_entry_index(b, s);
    nir_def *ring = nir_load_ring_task_draw_amd(b);
-   nir_def *scalar_off = nir_imul_imm(b, ptr, s->draw_entry_bytes);
+   nir_def *scalar_off = nir_imul_imm(b, ptr, AC_TASK_DRAW_ENTRY_BYTES);
    nir_def *vector_off = nir_imm_int(b, 0);
    nir_def *zero = nir_imm_int(b, 0);
 
@@ -318,7 +317,6 @@ ac_nir_lower_task_outputs_to_mem(nir_shader *shader,
    progress |= nir_lower_vars_to_ssa(shader);
 
    lower_tsms_io_state state = {
-      .draw_entry_bytes = 16,
       .has_query = has_query,
    };
 
@@ -367,9 +365,7 @@ lower_mesh_intrinsics(nir_builder *b,
 bool
 ac_nir_lower_mesh_inputs_to_mem(nir_shader *shader)
 {
-   lower_tsms_io_state state = {
-      .draw_entry_bytes = 16,
-   };
+   lower_tsms_io_state state = {0};
 
    return nir_shader_lower_instructions(shader,
                                         filter_mesh_input_load,
