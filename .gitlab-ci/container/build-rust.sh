@@ -12,7 +12,7 @@ section_start rust "Building Rust toolchain"
 # DEBIAN_BUILD_BASE_TAG
 # DEBIAN_TEST_BASE_TAG
 
-MINIMUM_SUPPORTED_RUST_VERSION=$(python3 -c 'import tomllib; print(tomllib.load(open("'"$CI_PROJECT_DIR"'/clippy.toml", "rb"))["msrv"])')
+MINIMUM_SUPPORTED_RUST_VERSION=$(python3 -c 'import tomllib; print(tomllib.load(open("clippy.toml", "rb"))["msrv"])')
 
 # This version number can be bumped freely, to benefit from the latest
 # diagnostics in CI `build-only` jobs, and for building external CI
