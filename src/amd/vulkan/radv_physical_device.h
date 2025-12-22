@@ -318,6 +318,8 @@ bool radv_transfer_queue_enabled(const struct radv_physical_device *pdev);
 
 bool radv_compute_queue_enabled(const struct radv_physical_device *pdev);
 
+bool radv_spm_trace_enabled(const struct radv_physical_device *pdev);
+
 static inline uint32_t
 radv_get_sampled_image_desc_size(const struct radv_physical_device *pdev)
 {

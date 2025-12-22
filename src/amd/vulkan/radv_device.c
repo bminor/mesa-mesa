@@ -69,13 +69,6 @@ typedef void *drmDevicePtr;
 #include "ac_formats.h"
 
 static bool
-radv_spm_trace_enabled(const struct radv_instance *instance)
-{
-   return (instance->vk.trace_mode & RADV_TRACE_MODE_RGP) &&
-          debug_get_bool_option("RADV_THREAD_TRACE_CACHE_COUNTERS", true);
-}
-
-static bool
 radv_trap_handler_enabled()
 {
    return !!os_get_option("RADV_TRAP_HANDLER");
@@ -603,10 +596,10 @@ radv_device_init_rgp(struct radv_device *device)
            "radv: Thread trace support is enabled (initial buffer size: %u MiB, "
            "instruction timing: %s, cache counters: %s, queue events: %s).\n",
            device->sqtt.buffer_size / (1024 * 1024), radv_is_instruction_timing_enabled() ? "enabled" : "disabled",
-           radv_spm_trace_enabled(instance) ? "enabled" : "disabled",
+           radv_spm_trace_enabled(pdev) ? "enabled" : "disabled",
            radv_sqtt_queue_events_enabled() ? "enabled" : "disabled");
 
-   if (radv_spm_trace_enabled(instance)) {
+   if (radv_spm_trace_enabled(pdev)) {
       if (pdev->info.gfx_level >= GFX10 && pdev->info.gfx_level <= GFX12 && pdev->info.gfx_level != GFX11_5) {
          if (!radv_spm_init(device))
             return VK_ERROR_INITIALIZATION_FAILED;
