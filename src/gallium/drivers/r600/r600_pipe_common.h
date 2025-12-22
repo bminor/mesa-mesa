@@ -57,7 +57,7 @@ struct u_log_context;
 #define DBG_ALL_SHADERS		(DBG_FS - 1)
 #define DBG_FS			(1 << 6) /* fetch shader */
 #define DBG_TEX			(1 << 7)
-#define DBG_NIR			(1 << 8)
+/* gap */
 #define DBG_COMPUTE		(1 << 9)
 /* gap */
 #define DBG_VM			(1 << 11)
