@@ -224,7 +224,7 @@ fd3_program_emit(struct fd_ringbuffer *ring, struct fd3_emit *emit, int nr,
    OUT_RING(ring,
             A3XX_SP_VS_CTRL_REG1_CONSTLENGTH(vp->constlen) |
                A3XX_SP_VS_CTRL_REG1_INITIALOUTSTANDING(vp->total_in) |
-               A3XX_SP_VS_CTRL_REG1_CONSTFOOTPRINT(MAX2(vp->constlen - 1, 0)));
+               A3XX_SP_VS_CTRL_REG1_CONSTMAXID(COND(vp->constlen != 0, vp->constlen - 1)));
    OUT_RING(ring, A3XX_SP_VS_PARAM_REG_POSREGID(pos_regid) |
                      A3XX_SP_VS_PARAM_REG_PSIZEREGID(psize_regid) |
                      A3XX_SP_VS_PARAM_REG_TOTALVSOUTVAR(fp->varying_in));
@@ -296,8 +296,7 @@ fd3_program_emit(struct fd_ringbuffer *ring, struct fd3_emit *emit, int nr,
                   A3XX_SP_FS_CTRL_REG0_LENGTH(fpbuffersz));
       OUT_RING(ring, A3XX_SP_FS_CTRL_REG1_CONSTLENGTH(fp->constlen) |
                         A3XX_SP_FS_CTRL_REG1_INITIALOUTSTANDING(fp->sysval_in) |
-                        A3XX_SP_FS_CTRL_REG1_CONSTFOOTPRINT(
-                           MAX2(fp->constlen - 1, 0)) |
+                        A3XX_SP_FS_CTRL_REG1_CONSTMAXID(COND(fp->constlen != 0, fp->constlen - 1)) |
                         A3XX_SP_FS_CTRL_REG1_HALFPRECVAROFFSET(63));
 
       OUT_PKT0(ring, REG_A3XX_SP_FS_OBJ_OFFSET_REG, 2);
