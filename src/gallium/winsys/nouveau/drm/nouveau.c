@@ -75,10 +75,12 @@ nouveau_drm_new(int fd, struct nouveau_drm **pdrm)
    drm->version = (ver->version_major << 24) |
                   (ver->version_minor << 8) |
                    ver->version_patchlevel;
+
+   drmFreeVersion(ver);
+
    if (drm->version < 0x01000301)
       goto out_err;
 
-   drmFreeVersion(ver);
    return 0;
 
 out_err:
