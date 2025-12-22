@@ -682,7 +682,7 @@ static const struct debug_named_value common_debug_options[] = {
 	{ "cs", DBG_CS, "Print compute shaders" },
 	{ "tcs", DBG_TCS, "Print tessellation control shaders" },
 	{ "tes", DBG_TES, "Print tessellation evaluation shaders" },
-	{ "preoptir", DBG_PREOPT_IR, "Print the LLVM IR before initial optimizations" },
+	{ "preoptir", DBG_PREOPT_IR, "Print the NIR before initial optimizations" },
 	{ "checkir", DBG_CHECK_IR, "Enable additional sanity checks on shader IR" },
 
 	{ "testdma", DBG_TEST_DMA, "Invoke SDMA tests and exit." },
