@@ -753,6 +753,7 @@ v3d_screen_get_compatible_tlb_format(struct pipe_screen *screen,
         }
 }
 
+#ifdef ENABLE_SHADER_CACHE
 static struct disk_cache *
 v3d_screen_get_disk_shader_cache(struct pipe_screen *pscreen)
 {
@@ -760,6 +761,7 @@ v3d_screen_get_disk_shader_cache(struct pipe_screen *pscreen)
 
         return screen->disk_cache;
 }
+#endif
 
 static int
 v3d_screen_get_fd(struct pipe_screen *pscreen)
@@ -837,7 +839,9 @@ v3d_screen_create(int fd, const struct pipe_screen_config *config,
         pscreen->get_name = v3d_screen_get_name;
         pscreen->get_vendor = v3d_screen_get_vendor;
         pscreen->get_device_vendor = v3d_screen_get_vendor;
+#ifdef ENABLE_SHADER_CACHE
         pscreen->get_disk_shader_cache = v3d_screen_get_disk_shader_cache;
+#endif
         pscreen->query_dmabuf_modifiers = v3d_screen_query_dmabuf_modifiers;
         pscreen->is_dmabuf_modifier_supported =
                 v3d_screen_is_dmabuf_modifier_supported;
