@@ -365,7 +365,12 @@ fd_init_screen_caps(struct fd_screen *screen)
    /* this is probably not totally correct.. but it's a start: */
 
    /* Supported features (boolean caps). */
-   caps->prefer_real_buffer_in_constbuf0 = true;
+   if (is_a6xx(screen)) {
+      /* Direct upload is slightly faster without TC, and indirect causes
+       * regression on at least a3xx.
+       */
+      caps->prefer_real_buffer_in_constbuf0 = true;
+   }
    caps->npot_textures = true;
    caps->mixed_framebuffer_sizes = true;
    caps->anisotropic_filter = true;
