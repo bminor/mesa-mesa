@@ -72,7 +72,7 @@ size_t util_printf_next_spec_pos(const char *str, size_t pos)
          continue;
       }
 
-      char *spec_pos = strpbrk(str_found, "cdieEfFgGaAosuxXp%");
+      const char *spec_pos = strpbrk(str_found, "cdieEfFgGaAosuxXp%");
       if (spec_pos == NULL) {
          return -1;
       } else if (*spec_pos == '%') {
