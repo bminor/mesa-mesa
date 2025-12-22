@@ -21,10 +21,6 @@
 #include <sys/utsname.h>
 #include <stdlib.h>
 
-#if AMD_LLVM_AVAILABLE
-#include <llvm-c/TargetMachine.h>
-#endif
-
 struct r600_multi_fence {
 	struct pipe_reference reference;
 	struct pipe_fence_handle *gfx;
@@ -989,11 +985,7 @@ bool r600_common_screen_init(struct r600_common_screen *rscreen,
 			 " / %s", uname_data.release);
 
 	snprintf(rscreen->renderer_string, sizeof(rscreen->renderer_string),
-		 "%s (%sDRM %i.%i.%i%s"
-#if AMD_LLVM_AVAILABLE
-		 ", LLVM " MESA_LLVM_VERSION_STRING
-#endif
-		 ")",
+		 "%s (%sDRM %i.%i.%i%s)",
 		 chip_name, family_name, rscreen->info.drm_major,
 		 rscreen->info.drm_minor, rscreen->info.drm_patchlevel,
 		 kernel_version);
