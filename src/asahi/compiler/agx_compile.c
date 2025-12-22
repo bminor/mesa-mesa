@@ -2262,7 +2262,13 @@ agx_emit_tex(agx_builder *b, nir_tex_instr *instr)
          break;
       case nir_tex_src_sampler_handle:
          b->shader->out->uses_sampler_heap = true;
-         sampler = index;
+         nir_intrinsic_instr *intr = nir_src_as_intrinsic(instr->src[i].src);
+         if (intr && intr->intrinsic == nir_intrinsic_bindless_sampler_agx) {
+            /* Heap offset */
+            sampler = agx_src_index(&intr->src[1]);
+         } else {
+            sampler = index;
+         }
          break;
 
       case nir_tex_src_texture_handle:
@@ -3062,7 +3068,11 @@ agx_optimize_nir(nir_shader *nir, bool soft_fault, uint16_t *preamble_size,
     */
    NIR_PASS(_, nir, agx_nir_lower_fminmax);
 
-   if (preamble_size && (!(agx_compiler_debug & AGX_DBG_NOPREAMBLE))) {
+   /* Force preamble generation for internal shaders since hk's meta copies
+    * depend on it for correctness with imgwblk intrinsics.
+    */
+   if (preamble_size &&
+       (!(agx_compiler_debug & AGX_DBG_NOPREAMBLE) || nir->info.internal)) {
       unsigned sizes[] = {
          *preamble_size,
          ts_count ? *ts_count : 1000 /* large finite */,
