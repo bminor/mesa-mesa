@@ -844,7 +844,7 @@
         "description": "util/u_printf: Fix const correctness in util_printf_next_spec_pos",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "6d263ff5a3ec3352bd5e0b1750d38b173d50a1dc",
         "notes": null
