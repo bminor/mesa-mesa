@@ -1485,8 +1485,14 @@ radv_gang_sem_init(struct radv_cmd_buffer *cmd_buffer)
    if (cmd_buffer->gang.sem.va)
       return true;
 
-   /* DWORD 0: GFX->ACE semaphore (GFX blocks ACE, ie. ACE waits for GFX)
-    * DWORD 1: ACE->GFX semaphore
+   /* DWORD 0:
+    *   leader->follower semaphore: used when leader does something that the follower has to wait for
+    *   - for transfer queues: when SDMA is working on a transfer that ACE needs to wait for
+    *   - for task/mesh: when GFX is doing something that ACE needs to wait for
+    * DWORD 1:
+    *   follower->leader semaphore: used when follower does something that the leader has to wait for
+    *   - for transfer queues: when ACE is working on a transfer that SDMA needs to wait for
+    *   - for task/mesh: no needed yet
     */
    uint64_t sem_init = 0;
    uint32_t va_off = 0;
