@@ -254,7 +254,7 @@
         "description": "freedreno/a3xx-a5xx: restore cbuf0 direct upload.",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "203ac73374a734ecd0157a21cd750fef7a589a67",
         "notes": null
