@@ -7860,6 +7860,25 @@ radv_BeginCommandBuffer(VkCommandBuffer commandBuffer, const VkCommandBufferBegi
    if (radv_device_fault_detection_enabled(device))
       radv_cmd_buffer_trace_emit(cmd_buffer);
 
+   if (radv_spm_trace_enabled(pdev) && (cmd_buffer->qf == RADV_QUEUE_GENERAL || cmd_buffer->qf == RADV_QUEUE_COMPUTE)) {
+      /* Force-enable windowed performance counters because the SQTT preamble is based on the queue
+       * family. That means that if it's presenting on compute, it won't enable windowed performance
+       * counters on graphics.
+       *
+       * On GFX12, this is required because this state seems cleared between command buffers and SPM
+       * counter values might be lost otherwise.
+       */
+      struct radv_cmd_stream *cs = cmd_buffer->cs;
+
+      radeon_check_space(device->ws, cmd_buffer->cs->b, 5);
+
+      ac_cmdbuf_begin(cs->b);
+      if (cmd_buffer->qf == RADV_QUEUE_GENERAL)
+         ac_cmdbuf_event_write(V_028A90_PERFCOUNTER_START);
+      ac_cmdbuf_set_sh_reg(R_00B82C_COMPUTE_PERFCOUNT_ENABLE, S_00B82C_PERFCOUNT_ENABLE(1));
+      ac_cmdbuf_end();
+   }
+
    radv_describe_begin_cmd_buffer(cmd_buffer);
 
    return result;
