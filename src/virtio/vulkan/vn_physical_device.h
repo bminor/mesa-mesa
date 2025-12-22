@@ -94,6 +94,7 @@ struct vn_physical_device {
    uint32_t wa_min_fb_align;
 
    VkDriverId renderer_driver_id;
+   uint32_t renderer_driver_version;
 
    /* Static storage so that host copy properties query can be done once. */
    VkImageLayout copy_src_layouts[64];
