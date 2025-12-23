@@ -651,20 +651,8 @@ _mesa_CreateQueries(GLenum target, GLsizei n, GLuint *ids)
 {
    GET_CURRENT_CONTEXT(ctx);
 
-   switch (target) {
-   case GL_SAMPLES_PASSED:
-   case GL_ANY_SAMPLES_PASSED:
-   case GL_ANY_SAMPLES_PASSED_CONSERVATIVE:
-   case GL_TIME_ELAPSED:
-   case GL_TIMESTAMP:
-   case GL_PRIMITIVES_GENERATED:
-   case GL_TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN:
-   case GL_TRANSFORM_FEEDBACK_STREAM_OVERFLOW:
-   case GL_TRANSFORM_FEEDBACK_OVERFLOW:
-      break;
-   default:
-      _mesa_error(ctx, GL_INVALID_ENUM, "glCreateQueries(invalid target = %s)",
-                  _mesa_enum_to_string(target));
+   if (target != GL_TIMESTAMP && !get_query_binding_point(ctx, target, 0)) {
+      _mesa_error(ctx, GL_INVALID_ENUM, "glCreateQueries(target)");
       return;
    }
 
