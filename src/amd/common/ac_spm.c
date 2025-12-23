@@ -5,6 +5,7 @@
  */
 
 #include "ac_cmdbuf.h"
+#include "ac_cmdbuf_cp.h"
 #include "ac_spm.h"
 
 #include "util/bitscan.h"
@@ -1797,42 +1798,34 @@ ac_emit_spm_setup(struct ac_cmdbuf *cs, enum amd_gfx_level gfx_level,
 }
 
 void
-ac_emit_spm_start(struct ac_cmdbuf *cs, enum amd_ip_type ip_type)
+ac_emit_spm_start(struct ac_cmdbuf *cs, enum amd_ip_type ip_type,
+                  const struct radeon_info *info)
 {
-   ac_cmdbuf_begin(cs);
-
    /* Start SPM counters. */
+   ac_cmdbuf_begin(cs);
    ac_cmdbuf_set_uconfig_reg(R_036020_CP_PERFMON_CNTL,
                              S_036020_PERFMON_STATE(V_036020_CP_PERFMON_STATE_DISABLE_AND_RESET) |
                                 S_036020_SPM_PERFMON_STATE(V_036020_STRM_PERFMON_STATE_START_COUNTING));
+   ac_cmdbuf_end();
 
    /* Start windowed performance counters. */
-   if (ip_type == AMD_IP_GFX)
-      ac_cmdbuf_event_write(V_028A90_PERFCOUNTER_START);
-   ac_cmdbuf_set_sh_reg(R_00B82C_COMPUTE_PERFCOUNT_ENABLE, S_00B82C_PERFCOUNT_ENABLE(1));
-
-   ac_cmdbuf_end();
+   ac_emit_cp_update_windowed_counters(cs, info, ip_type, true);
 }
 
 void
 ac_emit_spm_stop(struct ac_cmdbuf *cs, enum amd_ip_type ip_type,
                  const struct radeon_info *info)
 {
-   ac_cmdbuf_begin(cs);
-
    /* Stop windowed performance counters. */
-   if (ip_type == AMD_IP_GFX && !info->never_send_perfcounter_stop)
-      ac_cmdbuf_event_write(V_028A90_PERFCOUNTER_STOP);
-
-   ac_cmdbuf_set_sh_reg(R_00B82C_COMPUTE_PERFCOUNT_ENABLE, S_00B82C_PERFCOUNT_ENABLE(0));
+   ac_emit_cp_update_windowed_counters(cs, info, ip_type, false);
 
    /* Stop SPM counters. */
+   ac_cmdbuf_begin(cs);
    ac_cmdbuf_set_uconfig_reg(R_036020_CP_PERFMON_CNTL,
                              S_036020_PERFMON_STATE(V_036020_CP_PERFMON_STATE_DISABLE_AND_RESET) |
                              S_036020_SPM_PERFMON_STATE(info->never_stop_sq_perf_counters ?
                                 V_036020_STRM_PERFMON_STATE_START_COUNTING :
                                 V_036020_STRM_PERFMON_STATE_STOP_COUNTING));
-
    ac_cmdbuf_end();
 }
 

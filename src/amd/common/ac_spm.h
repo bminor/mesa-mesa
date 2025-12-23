@@ -370,7 +370,8 @@ ac_emit_spm_setup(struct ac_cmdbuf *cs, enum amd_gfx_level gfx_level,
                   uint64_t va);
 
 void
-ac_emit_spm_start(struct ac_cmdbuf *cs, enum amd_ip_type ip_type);
+ac_emit_spm_start(struct ac_cmdbuf *cs, enum amd_ip_type ip_type,
+                  const struct radeon_info *info);
 
 void
 ac_emit_spm_stop(struct ac_cmdbuf *cs, enum amd_ip_type ip_type,

@@ -127,6 +127,10 @@ void
 ac_emit_cp_spi_config_cntl(struct ac_cmdbuf *cs, enum amd_gfx_level gfx_level,
                            bool enable);
 
+void
+ac_emit_cp_update_windowed_counters(struct ac_cmdbuf *cs, const struct radeon_info *info,
+                                    enum amd_ip_type ip_type, bool enable);
+
 #ifdef __cplusplus
 }
 #endif

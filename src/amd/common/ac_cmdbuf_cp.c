@@ -620,3 +620,20 @@ ac_emit_cp_spi_config_cntl(struct ac_cmdbuf *cs, enum amd_gfx_level gfx_level,
    }
    ac_cmdbuf_end();
 }
+
+void
+ac_emit_cp_update_windowed_counters(struct ac_cmdbuf *cs, const struct radeon_info *info,
+                                    enum amd_ip_type ip_type, bool enable)
+{
+   ac_cmdbuf_begin(cs);
+   if (ip_type == AMD_IP_GFX) {
+      if (enable) {
+         ac_cmdbuf_event_write(V_028A90_PERFCOUNTER_START);
+      } else if (!info->never_send_perfcounter_stop) {
+         ac_cmdbuf_event_write(V_028A90_PERFCOUNTER_STOP);
+      }
+   }
+   ac_cmdbuf_set_sh_reg(R_00B82C_COMPUTE_PERFCOUNT_ENABLE,
+                        S_00B82C_PERFCOUNT_ENABLE(enable));
+   ac_cmdbuf_end();
+}

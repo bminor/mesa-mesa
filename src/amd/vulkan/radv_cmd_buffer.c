@@ -7872,11 +7872,7 @@ radv_BeginCommandBuffer(VkCommandBuffer commandBuffer, const VkCommandBufferBegi
 
       radeon_check_space(device->ws, cmd_buffer->cs->b, 5);
 
-      ac_cmdbuf_begin(cs->b);
-      if (cmd_buffer->qf == RADV_QUEUE_GENERAL)
-         ac_cmdbuf_event_write(V_028A90_PERFCOUNTER_START);
-      ac_cmdbuf_set_sh_reg(R_00B82C_COMPUTE_PERFCOUNT_ENABLE, S_00B82C_PERFCOUNT_ENABLE(1));
-      ac_cmdbuf_end();
+      ac_emit_cp_update_windowed_counters(cs->b, &pdev->info, cs->hw_ip, true);
    }
 
    radv_describe_begin_cmd_buffer(cmd_buffer);

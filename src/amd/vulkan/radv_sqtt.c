@@ -521,7 +521,7 @@ radv_begin_sqtt(struct radv_queue *queue)
 
    if (device->spm.bo) {
       radeon_check_space(ws, cs.b, 8);
-      ac_emit_spm_start(cs.b, cs.hw_ip);
+      ac_emit_spm_start(cs.b, cs.hw_ip, &pdev->info);
    }
 
    result = ws->cs_finalize(cs.b);
