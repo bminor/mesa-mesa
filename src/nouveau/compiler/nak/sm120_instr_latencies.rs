@@ -112,7 +112,7 @@ fn op_reg_latency(op: &Op, reader: bool, op_reg_idx: usize) -> RegLatencySM100 {
             }
         }
         Op::CS2R(cs2r) => {
-            if cs2r.dst.as_reg().unwrap().comps() == 2 {
+            if cs2r.dst.comps() == 2 {
                 Disp64
             } else {
                 Dualalu
