@@ -73,6 +73,10 @@
 #define VN_TRACE_SCOPE(name) MESA_TRACE_SCOPE(name)
 #define VN_TRACE_FUNC()      MESA_TRACE_SCOPE(__func__)
 
+#define VN_MAKE_NVIDIA_VERSION(major, minor, sub_minor, patch)               \
+   ((((uint32_t)(major)) << 22U) | (((uint32_t)(minor)) << 14U) |            \
+    (((uint32_t)(sub_minor)) << 6U) | ((uint32_t)(patch)))
+
 struct vn_instance;
 struct vn_physical_device;
 struct vn_device;

@@ -67,13 +67,12 @@ vn_wsi_proc_addr(VkPhysicalDevice physicalDevice, const char *pName)
 VkResult
 vn_wsi_init(struct vn_physical_device *physical_dev)
 {
-   /* TODO Drop the workaround for NVIDIA_PROPRIETARY once hw prime buffer
-    * blit path works there.
-    */
    const bool use_sw_device =
       !physical_dev->base.vk.supported_extensions
           .EXT_external_memory_dma_buf ||
-      physical_dev->renderer_driver_id == VK_DRIVER_ID_NVIDIA_PROPRIETARY;
+      (physical_dev->renderer_driver_id == VK_DRIVER_ID_NVIDIA_PROPRIETARY &&
+       physical_dev->renderer_driver_version <
+          VN_MAKE_NVIDIA_VERSION(590, 48, 1, 0));
 
    const VkAllocationCallbacks *alloc =
       &physical_dev->instance->base.vk.alloc;
