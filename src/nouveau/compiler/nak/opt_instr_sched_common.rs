@@ -253,7 +253,7 @@ pub fn estimate_block_weight(cfg: &CFG<BasicBlock>, block_idx: usize) -> u64 {
 /// Memory instructions were copied from L1 data cache latencies.
 /// For instructions not mentioned in the paper, I made up numbers.
 /// This could probably be improved.
-pub fn estimate_variable_latency(sm: &dyn ShaderModel, op: &Op) -> u32 {
+pub fn estimate_variable_latency(sm: &ShaderModelInfo, op: &Op) -> u32 {
     if !sm.op_needs_scoreboard(op) {
         return 0;
     }
