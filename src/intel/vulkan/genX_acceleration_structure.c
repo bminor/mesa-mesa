@@ -135,7 +135,13 @@ add_bvh_dump(struct anv_cmd_buffer *cmd_buffer,
 
    struct anv_address dst_addr = { .bo = bvh_dump->bo, .offset = 0 };
    struct anv_address src_addr = anv_address_from_u64(src);
+
+   vk_barrier_compute_w_to_compute_r(vk_command_buffer_to_handle(&cmd_buffer->vk));
    anv_cmd_copy_addr(cmd_buffer, src_addr, dst_addr, bvh_dump->dump_size);
+
+   /* Add host barrier to read BVH data. */
+   vk_barrier_compute_w_to_host_r(vk_command_buffer_to_handle(&cmd_buffer->vk));
+   genX(cmd_buffer_apply_pipe_flushes)(cmd_buffer);
 
    pthread_mutex_lock(&device->mutex);
    list_addtail(&bvh_dump->link, &device->bvh_dumps);
@@ -485,12 +491,6 @@ anv_init_header(VkCommandBuffer commandBuffer, const struct vk_acceleration_stru
    }
 
    if (INTEL_DEBUG_BVH_ANY) {
-      genx_batch_emit_pipe_control(&cmd_buffer->batch, cmd_buffer->device->info,
-                                   cmd_buffer->state.current_pipeline,
-                                   ANV_PIPE_END_OF_PIPE_SYNC_BIT |
-                                   ANV_PIPE_DATA_CACHE_FLUSH_BIT |
-                                   ANV_PIPE_HDC_PIPELINE_FLUSH_BIT |
-                                   ANV_PIPE_UNTYPED_DATAPORT_CACHE_FLUSH_BIT);
       debug_record_as_to_bvh_dump(cmd_buffer, header_addr, bvh_layout.size,
                                   intermediate_header_addr, intermediate_bvh_addr,
                                   state->leaf_node_count, geometry_type);
