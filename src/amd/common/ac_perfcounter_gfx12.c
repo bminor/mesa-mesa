@@ -20,6 +20,7 @@ static unsigned gfx12_CB_select1[] = {
 static struct ac_pc_block_base gfx12_CB = {
    .gpu_block = CB,
    .name = "CB",
+   .distribution = AC_PC_PER_SHADER_ARRAY,
    .num_counters = 4,
    .flags = AC_PC_BLOCK_SE | AC_PC_BLOCK_INSTANCE_GROUPS,
 
@@ -47,6 +48,7 @@ static unsigned gfx12_CPC_counters[] = {
 static struct ac_pc_block_base gfx12_CPC = {
    .gpu_block = CPC,
    .name = "CPC",
+   .distribution = AC_PC_GLOBAL_BLOCK,
    .num_counters = 2,
 
    .select0 = gfx12_CPC_select0,
@@ -73,6 +75,7 @@ static unsigned gfx12_CPF_counters[] = {
 static struct ac_pc_block_base gfx12_CPF = {
    .gpu_block = CPF,
    .name = "CPF",
+   .distribution = AC_PC_GLOBAL_BLOCK,
    .num_counters = 2,
 
    .select0 = gfx12_CPF_select0,
@@ -99,6 +102,7 @@ static unsigned gfx12_CPG_counters[] = {
 static struct ac_pc_block_base gfx12_CPG = {
    .gpu_block = CPG,
    .name = "CPG",
+   .distribution = AC_PC_GLOBAL_BLOCK,
    .num_counters = 2,
 
    .select0 = gfx12_CPG_select0,
@@ -122,6 +126,7 @@ static unsigned gfx12_GRBM_counters[] = {
 static struct ac_pc_block_base gfx12_GRBM = {
    .gpu_block = GRBM,
    .name = "GRBM",
+   .distribution = AC_PC_GLOBAL_BLOCK,
    .num_counters = 2,
 
    .select0 = gfx12_GRBM_select0,
@@ -146,6 +151,7 @@ static struct ac_pc_block_base gfx12_PA_SC = {
    .gpu_block = PA_SC,
    .name = "PA_SC",
    .num_counters = 8,
+   .distribution = AC_PC_PER_SHADER_ARRAY,
    .flags = AC_PC_BLOCK_SE,
 
    .select0 = gfx12_PA_SC_select0,
@@ -175,6 +181,7 @@ static unsigned gfx12_SPI_select1[] = {
 static struct ac_pc_block_base gfx12_SPI = {
    .gpu_block = SPI,
    .name = "SPI",
+   .distribution = AC_PC_PER_SHADER_ENGINE,
    .num_counters = 6,
    .flags = AC_PC_BLOCK_SE,
 
@@ -201,6 +208,7 @@ static unsigned gfx12_SX_select1[] = {
 static struct ac_pc_block_base gfx12_SX = {
    .gpu_block = SX,
    .name = "SX",
+   .distribution = AC_PC_PER_SHADER_ARRAY,
    .num_counters = 4,
    .flags = AC_PC_BLOCK_SE,
 
@@ -224,6 +232,7 @@ static unsigned gfx12_TA_select1[] = {
 static struct ac_pc_block_base gfx12_TA = {
    .gpu_block = TA,
    .name = "TA",
+   .distribution = AC_PC_PER_SHADER_ARRAY,
    .num_counters = 2,
    .flags = AC_PC_BLOCK_SE | AC_PC_BLOCK_INSTANCE_GROUPS | AC_PC_BLOCK_SHADER_WINDOWED,
 
@@ -247,6 +256,7 @@ static unsigned gfx12_TD_select1[] = {
 static struct ac_pc_block_base gfx12_TD = {
    .gpu_block = TD,
    .name = "TD",
+   .distribution = AC_PC_PER_SHADER_ARRAY,
    .num_counters = 2,
    .flags = AC_PC_BLOCK_SE | AC_PC_BLOCK_INSTANCE_GROUPS | AC_PC_BLOCK_SHADER_WINDOWED,
 
@@ -272,6 +282,7 @@ static unsigned gfx12_CHA_select1[] = {
 static struct ac_pc_block_base gfx12_CHA = {
    .gpu_block = CHA,
    .name = "CHA",
+   .distribution = AC_PC_GLOBAL_BLOCK,
    .num_counters = 4,
 
    .select0 = gfx12_CHA_select0,
@@ -296,6 +307,7 @@ static unsigned gfx12_CHC_select1[] = {
 static struct ac_pc_block_base gfx12_CHC = {
    .gpu_block = CHC,
    .name = "CHC",
+   .distribution = AC_PC_GLOBAL_BLOCK,
    .num_counters = 4,
 
    .select0 = gfx12_CHC_select0,
@@ -321,6 +333,7 @@ static unsigned gfx12_DB_select1[] = {
 static struct ac_pc_block_base gfx12_DB = {
    .gpu_block = DB,
    .name = "DB",
+   .distribution = AC_PC_PER_SHADER_ARRAY,
    .num_counters = 4,
    .flags = AC_PC_BLOCK_SE | AC_PC_BLOCK_INSTANCE_GROUPS,
 
@@ -344,6 +357,7 @@ static unsigned gfx12_GCR_select1[] = {
 static struct ac_pc_block_base gfx12_GCR = {
    .gpu_block = GCR,
    .name = "GCR",
+   .distribution = AC_PC_GLOBAL_BLOCK,
    .num_counters = 2,
 
    .select0 = gfx12_GCR_select0,
@@ -379,6 +393,7 @@ static unsigned gfx12_GE_select1[] = {
 static struct ac_pc_block_base gfx12_GE = {
    .gpu_block = GE,
    .name = "GE",
+   .distribution = AC_PC_GLOBAL_BLOCK,
    .num_counters = 12,
 
    .select0 = gfx12_GE_select0,
@@ -403,6 +418,7 @@ static unsigned gfx12_GL1A_select1[] = {
 static struct ac_pc_block_base gfx12_GL1A = {
    .gpu_block = GL1A,
    .name = "GL1A",
+   .distribution = AC_PC_PER_SHADER_ARRAY,
    .num_counters = 4,
    .flags = AC_PC_BLOCK_SE | AC_PC_BLOCK_SHADER_WINDOWED,
 
@@ -428,6 +444,7 @@ static unsigned gfx12_GL1C_select1[] = {
 static struct ac_pc_block_base gfx12_GL1C = {
    .gpu_block = GL1C,
    .name = "GL1C",
+   .distribution = AC_PC_PER_SHADER_ARRAY,
    .num_counters = 4,
    .flags = AC_PC_BLOCK_SE | AC_PC_BLOCK_SHADER_WINDOWED,
 
@@ -454,6 +471,7 @@ static unsigned gfx12_GL2A_select1[] = {
 static struct ac_pc_block_base gfx12_GL2A = {
    .gpu_block = GL2A,
    .name = "GL2A",
+   .distribution = AC_PC_GLOBAL_BLOCK,
    .num_counters = 4,
 
    .select0 = gfx12_GL2A_select0,
@@ -479,6 +497,7 @@ static unsigned gfx12_GL2C_select1[] = {
 static struct ac_pc_block_base gfx12_GL2C = {
    .gpu_block = GL2C,
    .name = "GL2C",
+   .distribution = AC_PC_GLOBAL_BLOCK,
    .num_counters = 4,
 
    .select0 = gfx12_GL2C_select0,
@@ -506,6 +525,7 @@ static unsigned gfx12_PA_SU_select1[] = {
 static struct ac_pc_block_base gfx12_PA_SU = {
    .gpu_block = PA_SU,
    .name = "PA_SU",
+   .distribution = AC_PC_PER_SHADER_ENGINE,
    .num_counters = 4,
    .flags = AC_PC_BLOCK_SE,
 
@@ -526,6 +546,7 @@ static unsigned gfx12_RLC_select0[] = {
 static struct ac_pc_block_base gfx12_RLC = {
    .gpu_block = RLC,
    .name = "RLC",
+   .distribution = AC_PC_GLOBAL_BLOCK,
    .num_counters = 2,
 
    .select0 = gfx12_RLC_select0,
@@ -555,6 +576,7 @@ static unsigned gfx12_SQ_select0[] = {
 static struct ac_pc_block_base gfx12_SQ = {
    .gpu_block = SQ,
    .name = "SQ",
+   .distribution = AC_PC_PER_SHADER_ENGINE,
    .num_counters = 16,
    .flags = AC_PC_BLOCK_SE | AC_PC_BLOCK_SHADER,
 
@@ -580,6 +602,7 @@ static unsigned gfx12_TCP_select1[] = {
 static struct ac_pc_block_base gfx12_TCP = {
    .gpu_block = TCP,
    .name = "TCP",
+   .distribution = AC_PC_PER_SHADER_ARRAY,
    .num_counters = 4,
    .flags = AC_PC_BLOCK_SE | AC_PC_BLOCK_INSTANCE_GROUPS | AC_PC_BLOCK_SHADER_WINDOWED,
 
@@ -600,6 +623,7 @@ static unsigned gfx12_UTCL1_select0[] = {
 static struct ac_pc_block_base gfx12_UTCL1 = {
    .gpu_block = UTCL1,
    .name = "UTCL1",
+   .distribution = AC_PC_PER_SHADER_ENGINE,
    .num_counters = 2,
    .flags = AC_PC_BLOCK_SE | AC_PC_BLOCK_SHADER_WINDOWED,
 
@@ -612,6 +636,7 @@ static struct ac_pc_block_base gfx12_UTCL1 = {
 static struct ac_pc_block_base gfx12_SQ_WGP = {
    .gpu_block = SQ_WGP,
    .name = "SQ_WGP",
+   .distribution = AC_PC_PER_SHADER_ARRAY,
    .num_counters = 16,
    .flags = AC_PC_BLOCK_SE | AC_PC_BLOCK_SHADER,
 
@@ -632,6 +657,7 @@ static unsigned gfx12_GRBMSE_select0[] = {
 static struct ac_pc_block_base gfx12_GRBMSE = {
    .gpu_block = GRBMSE,
    .name = "GRBMSE",
+   .distribution = AC_PC_PER_SHADER_ENGINE,
    .num_counters = 2,
    .flags = AC_PC_BLOCK_SE | AC_PC_BLOCK_SHADER,
 
