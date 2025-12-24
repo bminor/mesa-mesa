@@ -680,7 +680,7 @@ static struct ac_pc_block_gfxdescr groups_gfx12[] = {
    {&gfx12_GL2A, 114},
    {&gfx12_GL2C, 249},
    {&gfx12_GRBM, 51},
-   {&gfx12_GRBMSE, 20},
+   {&gfx12_GRBMSE, 25},
    {&gfx12_PA_SC, 821},
    {&gfx12_PA_SU, 828},
    {&gfx12_RLC, 6},
