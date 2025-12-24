@@ -190,4 +190,7 @@ bool ac_init_perfcounters(const struct radeon_info *info,
                           struct ac_perfcounters *pc);
 void ac_destroy_perfcounters(struct ac_perfcounters *pc);
 
+const struct ac_pc_block_gfxdescr *
+ac_gfx12_get_perfcounters(uint32_t *num_blocks);
+
 #endif

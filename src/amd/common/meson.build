@@ -91,6 +91,7 @@ amd_common_files = files(
   'amd_family.c',
   'ac_parse_ib.c',
   'ac_perfcounter.c',
+  'ac_perfcounter_gfx12.c',
   'ac_perfcounter.h',
   'ac_pm4.c',
   'ac_pm4.h',
