@@ -344,6 +344,8 @@ ac_spm_init_grbm_gfx_index(const struct ac_pc_block *block,
 
    switch (block->b->b->gpu_block) {
    case GL2C:
+   case CPF:
+   case GCEA:
       /* Global blocks. */
       grbm_gfx_index |= S_030800_SE_BROADCAST_WRITES(1);
       FALLTHROUGH;
