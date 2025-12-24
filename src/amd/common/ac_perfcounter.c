@@ -1282,36 +1282,73 @@ bool ac_init_perfcounters(const struct radeon_info *info,
       block->b = &blocks[i];
       block->num_instances = MAX2(1, block->b->instances);
 
-      if (!strcmp(block->b->b->name, "CB") ||
-          !strcmp(block->b->b->name, "DB") ||
-          !strcmp(block->b->b->name, "RMI"))
-         block->num_instances = info->max_se;
-      else if (!strcmp(block->b->b->name, "TCC"))
-         block->num_instances = info->max_tcc_blocks;
-      else if (!strcmp(block->b->b->name, "IA"))
-         block->num_instances = MAX2(1, info->max_se / 2);
-      else if (!strcmp(block->b->b->name, "TA") ||
-               !strcmp(block->b->b->name, "TCP") ||
-               !strcmp(block->b->b->name, "TD")) {
-         block->num_instances = MAX2(1, info->max_good_cu_per_sa);
-      }
+      if (info->gfx_level >= GFX12) {
+         /* TODO: Generalize this to older generations. */
+         const uint32_t num_rb_per_se = info->num_rb / info->num_se;
+         const uint32_t rb_per_sa = num_rb_per_se / info->max_sa_per_se;
 
-      if (info->gfx_level >= GFX10) {
-         if (!strcmp(block->b->b->name, "TCP")) {
-            block->num_global_instances = MAX2(1, info->num_cu_per_sh) * info->num_se * info->max_sa_per_se;
-         } else if (!strcmp(block->b->b->name, "SQ")) {
-            block->num_global_instances = block->num_instances * info->num_se;
-         } else if (!strcmp(block->b->b->name, "GL1C") ||
-                    !strcmp(block->b->b->name, "SQ_WGP")) {
+         switch (block->b->b->gpu_block) {
+         case CB:
+         case DB:
+            block->num_instances = rb_per_sa;
+            break;
+         case GL2C:
+            block->num_instances = info->num_tcc_blocks;
+            break;
+         case TA:
+         case TD:
+         case TCP:
+            block->num_instances = MAX2(1, info->max_good_cu_per_sa);
+            break;
+         default:
+            break;
+         }
+
+         switch (block->b->b->distribution) {
+         case AC_PC_PER_SHADER_ARRAY:
             block->num_global_instances = block->num_instances * info->num_se * info->max_sa_per_se;
-         } else if (!strcmp(block->b->b->name, "GL2C") ||
-                    !strcmp(block->b->b->name, "GCEA")) {
-            block->num_instances = block->num_global_instances = info->num_tcc_blocks;
-         } else if (!strcmp(block->b->b->name, "CPF")) {
-            block->num_instances = block->num_global_instances = 1;
-         } else if (!strcmp(block->b->b->name, "TA") ||
-                    !strcmp(block->b->b->name, "TD")) {
+            break;
+         case AC_PC_PER_SHADER_ENGINE:
+            block->num_global_instances = block->num_instances * info->num_se;
+            break;
+         case AC_PC_GLOBAL_BLOCK:
             block->num_global_instances = block->num_instances;
+            break;
+         default:
+            UNREACHABLE("Invalid perf block distribution mode.");
+         }
+      } else {
+         if (!strcmp(block->b->b->name, "CB") ||
+             !strcmp(block->b->b->name, "DB") ||
+             !strcmp(block->b->b->name, "RMI"))
+            block->num_instances = info->max_se;
+         else if (!strcmp(block->b->b->name, "TCC"))
+            block->num_instances = info->max_tcc_blocks;
+         else if (!strcmp(block->b->b->name, "IA"))
+            block->num_instances = MAX2(1, info->max_se / 2);
+         else if (!strcmp(block->b->b->name, "TA") ||
+                  !strcmp(block->b->b->name, "TCP") ||
+                  !strcmp(block->b->b->name, "TD")) {
+            block->num_instances = MAX2(1, info->max_good_cu_per_sa);
+         }
+
+         if (info->gfx_level >= GFX10) {
+            if (!strcmp(block->b->b->name, "TCP")) {
+               block->num_global_instances = MAX2(1, info->num_cu_per_sh) * info->num_se * info->max_sa_per_se;
+            } else if (!strcmp(block->b->b->name, "SQ")) {
+               block->num_global_instances = block->num_instances * info->num_se;
+            } else if (!strcmp(block->b->b->name, "GL1C") ||
+                       !strcmp(block->b->b->name, "SQ_WGP")) {
+               block->num_global_instances = block->num_instances * info->num_se * info->max_sa_per_se;
+            } else if (!strcmp(block->b->b->name, "GL2C") ||
+                       !strcmp(block->b->b->name, "GCEA")) {
+               block->num_instances = block->num_global_instances = info->num_tcc_blocks;
+            } else if (!strcmp(block->b->b->name, "CPF")) {
+               block->num_instances = block->num_global_instances = 1;
+            } else if (!strcmp(block->b->b->name, "TA") ||
+                       !strcmp(block->b->b->name, "TD")) {
+               block->num_global_instances = block->num_instances;
+            }
          }
       }
 
