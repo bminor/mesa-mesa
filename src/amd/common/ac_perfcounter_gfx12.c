@@ -668,7 +668,7 @@ static struct ac_pc_block_base gfx12_GRBMSE = {
 static struct ac_pc_block_gfxdescr groups_gfx12[] = {
    {&gfx12_CB, 315},
    {&gfx12_CHA, 25},
-   {&gfx12_CHC, 94},
+   {&gfx12_CHC, 94, 4},
    {&gfx12_CPC, 55},
    {&gfx12_CPF, 43},
    {&gfx12_CPG, 95},
@@ -677,11 +677,11 @@ static struct ac_pc_block_gfxdescr groups_gfx12[] = {
    {&gfx12_GE, 54},
    {&gfx12_GL1A, 21},
    {&gfx12_GL1C, 121, 4},
-   {&gfx12_GL2A, 114},
+   {&gfx12_GL2A, 114, 4},
    {&gfx12_GL2C, 249},
    {&gfx12_GRBM, 51},
    {&gfx12_GRBMSE, 25},
-   {&gfx12_PA_SC, 821},
+   {&gfx12_PA_SC, 821, 2},
    {&gfx12_PA_SU, 828},
    {&gfx12_RLC, 6},
    {&gfx12_SPI, 318},
@@ -690,7 +690,7 @@ static struct ac_pc_block_gfxdescr groups_gfx12[] = {
    {&gfx12_TA, 254},
    {&gfx12_TCP, 99},
    {&gfx12_TD, 271},
-   {&gfx12_UTCL1, 71},
+   {&gfx12_UTCL1, 71, 2},
    {&gfx12_SQ_WGP, 511, 4},
 };
 
