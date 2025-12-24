@@ -9,6 +9,7 @@
 #include "ac_spm.h"
 
 #include "util/bitscan.h"
+#include "util/compiler.h"
 #include "util/u_memory.h"
 #include "ac_perfcounter.h"
 
@@ -345,7 +346,7 @@ ac_spm_init_grbm_gfx_index(const struct ac_pc_block *block,
    case GL2C:
       /* Global blocks. */
       grbm_gfx_index |= S_030800_SE_BROADCAST_WRITES(1);
-      break;
+      FALLTHROUGH;
    case SQ:
       /* Per-SE blocks. */
       grbm_gfx_index |= S_030800_SH_BROADCAST_WRITES(1);
