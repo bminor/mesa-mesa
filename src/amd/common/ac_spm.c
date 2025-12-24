@@ -353,9 +353,15 @@ ac_spm_init_grbm_gfx_index(const struct ac_pc_block *block,
       /* Per-SE blocks. */
       grbm_gfx_index |= S_030800_SH_BROADCAST_WRITES(1);
       break;
-   default:
+   case TA:
+   case TD:
+   case TCP:
+   case SQ_WGP:
+   case GL1C:
       /* Other blocks shouldn't broadcast. */
       break;
+   default:
+      UNREACHABLE("Invalid SPM block.");
    }
 
    if (block->b->b->gpu_block == SQ_WGP) {
