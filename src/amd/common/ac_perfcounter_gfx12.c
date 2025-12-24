@@ -169,14 +169,16 @@ static unsigned gfx12_SPI_select0[] = {
    R_036604_SPI_PERFCOUNTER1_SELECT,
    R_036608_SPI_PERFCOUNTER2_SELECT,
    R_03660C_SPI_PERFCOUNTER3_SELECT,
-   R_036620_SPI_PERFCOUNTER4_SELECT,
-   R_036624_SPI_PERFCOUNTER5_SELECT,
+   R_036610_SPI_PERFCOUNTER4_SELECT,
+   R_036614_SPI_PERFCOUNTER5_SELECT,
 };
 static unsigned gfx12_SPI_select1[] = {
-   R_036610_SPI_PERFCOUNTER0_SELECT1,
-   R_036614_SPI_PERFCOUNTER1_SELECT1,
-   R_036618_SPI_PERFCOUNTER2_SELECT1,
-   R_03661C_SPI_PERFCOUNTER3_SELECT1
+   R_036618_SPI_PERFCOUNTER0_SELECT1,
+   R_03661C_SPI_PERFCOUNTER1_SELECT1,
+   R_036620_SPI_PERFCOUNTER2_SELECT1,
+   R_036624_SPI_PERFCOUNTER3_SELECT1,
+   R_036628_SPI_PERFCOUNTER4_SELECT1,
+   R_03662C_SPI_PERFCOUNTER5_SELECT1
 };
 static struct ac_pc_block_base gfx12_SPI = {
    .gpu_block = SPI,
@@ -189,8 +191,8 @@ static struct ac_pc_block_base gfx12_SPI = {
    .select1 = gfx12_SPI_select1,
    .counter0_lo = R_034604_SPI_PERFCOUNTER0_LO,
 
-   .num_spm_counters = 4,
-   .num_spm_wires = 8,
+   .num_spm_counters = 6,
+   .num_spm_wires = 12,
    .spm_block_select = AC_SPM_SE_BLOCK_SPI,
 };
 
@@ -204,6 +206,8 @@ static unsigned gfx12_SX_select0[] = {
 static unsigned gfx12_SX_select1[] = {
    R_036910_SX_PERFCOUNTER0_SELECT1,
    R_036914_SX_PERFCOUNTER1_SELECT1,
+   R_036918_SX_PERFCOUNTER2_SELECT1,
+   R_03691C_SX_PERFCOUNTER3_SELECT1,
 };
 static struct ac_pc_block_base gfx12_SX = {
    .gpu_block = SX,
@@ -216,8 +220,8 @@ static struct ac_pc_block_base gfx12_SX = {
    .select1 = gfx12_SX_select1,
    .counter0_lo = R_034900_SX_PERFCOUNTER0_LO,
 
-   .num_spm_counters = 2,
-   .num_spm_wires = 4,
+   .num_spm_counters = 4,
+   .num_spm_wires = 8,
    .spm_block_select = AC_SPM_SE_BLOCK_SX,
 };
 
@@ -273,11 +277,14 @@ static struct ac_pc_block_base gfx12_TD = {
 static unsigned gfx12_CHA_select0[] = {
    R_037780_CHA_PERFCOUNTER0_SELECT,
    R_037788_CHA_PERFCOUNTER1_SELECT,
-   R_03778C_CHA_PERFCOUNTER2_SELECT,
-   R_037790_CHA_PERFCOUNTER3_SELECT,
+   R_037790_CHA_PERFCOUNTER2_SELECT,
+   R_037798_CHA_PERFCOUNTER3_SELECT,
 };
 static unsigned gfx12_CHA_select1[] = {
    R_037784_CHA_PERFCOUNTER0_SELECT1,
+   R_03778C_CHA_PERFCOUNTER1_SELECT1,
+   R_037794_CHA_PERFCOUNTER2_SELECT1,
+   R_03779C_CHA_PERFCOUNTER3_SELECT1,
 };
 static struct ac_pc_block_base gfx12_CHA = {
    .gpu_block = CHA,
@@ -289,8 +296,8 @@ static struct ac_pc_block_base gfx12_CHA = {
    .select1 = gfx12_CHA_select1,
    .counter0_lo = R_035800_CHA_PERFCOUNTER0_LO,
 
-   .num_spm_counters = 1,
-   .num_spm_wires = 2,
+   .num_spm_counters = 4,
+   .num_spm_wires = 8,
    .spm_block_select = AC_SPM_GLOBAL_BLOCK_CHA,
 };
 
@@ -298,11 +305,14 @@ static struct ac_pc_block_base gfx12_CHA = {
 static unsigned gfx12_CHC_select0[] = {
    R_036F00_CHC_PERFCOUNTER0_SELECT,
    R_036F08_CHC_PERFCOUNTER1_SELECT,
-   R_036F0C_CHC_PERFCOUNTER2_SELECT,
-   R_036F10_CHC_PERFCOUNTER3_SELECT,
+   R_036F10_CHC_PERFCOUNTER2_SELECT,
+   R_036F18_CHC_PERFCOUNTER3_SELECT,
 };
 static unsigned gfx12_CHC_select1[] = {
    R_036F04_CHC_PERFCOUNTER0_SELECT1,
+   R_036F0C_CHC_PERFCOUNTER1_SELECT1,
+   R_036F14_CHC_PERFCOUNTER2_SELECT1,
+   R_036F1C_CHC_PERFCOUNTER3_SELECT1,
 };
 static struct ac_pc_block_base gfx12_CHC = {
    .gpu_block = CHC,
@@ -314,8 +324,8 @@ static struct ac_pc_block_base gfx12_CHC = {
    .select1 = gfx12_CHC_select1,
    .counter0_lo = R_034F00_CHC_PERFCOUNTER0_LO,
 
-   .num_spm_counters = 1,
-   .num_spm_wires = 2,
+   .num_spm_counters = 4,
+   .num_spm_wires = 8,
    .spm_block_select = AC_SPM_GLOBAL_BLOCK_CHC,
 };
 
@@ -329,6 +339,8 @@ static unsigned gfx12_DB_select0[] = {
 static unsigned gfx12_DB_select1[] = {
    R_037104_DB_PERFCOUNTER0_SELECT1,
    R_03710C_DB_PERFCOUNTER1_SELECT1,
+   R_037114_DB_PERFCOUNTER2_SELECT1,
+   R_03711C_DB_PERFCOUNTER3_SELECT1,
 };
 static struct ac_pc_block_base gfx12_DB = {
    .gpu_block = DB,
@@ -341,8 +353,8 @@ static struct ac_pc_block_base gfx12_DB = {
    .select1 = gfx12_DB_select1,
    .counter0_lo = R_035100_DB_PERFCOUNTER0_LO,
 
-   .num_spm_counters = 2,
-   .num_spm_wires = 4,
+   .num_spm_counters = 4,
+   .num_spm_wires = 8,
    .spm_block_select = AC_SPM_SE_BLOCK_DB,
 };
 
@@ -353,6 +365,7 @@ static unsigned gfx12_GCR_select0[] = {
 };
 static unsigned gfx12_GCR_select1[] = {
    R_037584_GCR_PERFCOUNTER0_SELECT1,
+   R_03758C_GCR_PERFCOUNTER1_SELECT1,
 };
 static struct ac_pc_block_base gfx12_GCR = {
    .gpu_block = GCR,
@@ -364,41 +377,33 @@ static struct ac_pc_block_base gfx12_GCR = {
    .select1 = gfx12_GCR_select1,
    .counter0_lo = R_035480_GCR_PERFCOUNTER0_LO,
 
-   .num_spm_counters = 1,
-   .num_spm_wires = 2,
+   .num_spm_counters = 2,
+   .num_spm_wires = 4,
    .spm_block_select = AC_SPM_GLOBAL_BLOCK_GCR,
 };
 
 /* GE */
 static unsigned gfx12_GE_select0[] = {
-   R_036200_GE_PERFCOUNTER0_SELECT,
-   R_036208_GE_PERFCOUNTER1_SELECT,
-   R_036210_GE_PERFCOUNTER2_SELECT,
-   R_036218_GE_PERFCOUNTER3_SELECT,
-   R_036220_GE_PERFCOUNTER4_SELECT,
-   R_036228_GE_PERFCOUNTER5_SELECT,
-   R_036230_GE_PERFCOUNTER6_SELECT,
-   R_036238_GE_PERFCOUNTER7_SELECT,
-   R_036240_GE_PERFCOUNTER8_SELECT,
-   R_036248_GE_PERFCOUNTER9_SELECT,
-   R_036250_GE_PERFCOUNTER10_SELECT,
-   R_036258_GE_PERFCOUNTER11_SELECT,
+   R_036290_GE1_PERFCOUNTER0_SELECT,
+   R_036298_GE1_PERFCOUNTER1_SELECT,
+   R_0362A0_GE1_PERFCOUNTER2_SELECT,
+   R_0362A8_GE1_PERFCOUNTER3_SELECT,
 };
 static unsigned gfx12_GE_select1[] = {
-   R_036204_GE_PERFCOUNTER0_SELECT1,
-   R_03620C_GE_PERFCOUNTER1_SELECT1,
-   R_036214_GE_PERFCOUNTER2_SELECT1,
-   R_03621C_GE_PERFCOUNTER3_SELECT1,
+   R_036294_GE1_PERFCOUNTER0_SELECT1,
+   R_03629C_GE1_PERFCOUNTER1_SELECT1,
+   R_0362A4_GE1_PERFCOUNTER2_SELECT1,
+   R_0362AC_GE1_PERFCOUNTER3_SELECT1,
 };
 static struct ac_pc_block_base gfx12_GE = {
    .gpu_block = GE,
    .name = "GE",
    .distribution = AC_PC_GLOBAL_BLOCK,
-   .num_counters = 12,
+   .num_counters = 4,
 
    .select0 = gfx12_GE_select0,
    .select1 = gfx12_GE_select1,
-   .counter0_lo = R_034200_GE_PERFCOUNTER0_LO,
+   .counter0_lo = R_034290_GE1_PERFCOUNTER0_LO,
 
    .num_spm_counters = 4,
    .num_spm_wires = 8,
@@ -409,11 +414,14 @@ static struct ac_pc_block_base gfx12_GE = {
 static unsigned gfx12_GL1A_select0[] = {
    R_037700_GL1A_PERFCOUNTER0_SELECT,
    R_037708_GL1A_PERFCOUNTER1_SELECT,
-   R_03770C_GL1A_PERFCOUNTER2_SELECT,
-   R_037710_GL1A_PERFCOUNTER3_SELECT,
+   R_037710_GL1A_PERFCOUNTER2_SELECT,
+   R_037718_GL1A_PERFCOUNTER3_SELECT,
 };
 static unsigned gfx12_GL1A_select1[] = {
    R_037704_GL1A_PERFCOUNTER0_SELECT1,
+   R_03770C_GL1A_PERFCOUNTER1_SELECT1,
+   R_037714_GL1A_PERFCOUNTER2_SELECT1,
+   R_03771C_GL1A_PERFCOUNTER3_SELECT1,
 };
 static struct ac_pc_block_base gfx12_GL1A = {
    .gpu_block = GL1A,
@@ -426,8 +434,8 @@ static struct ac_pc_block_base gfx12_GL1A = {
    .select1 = gfx12_GL1A_select1,
    .counter0_lo = R_035700_GL1A_PERFCOUNTER0_LO,
 
-   .num_spm_counters = 1,
-   .num_spm_wires = 2,
+   .num_spm_counters = 4,
+   .num_spm_wires = 8,
    .spm_block_select = AC_SPM_SE_BLOCK_GL1A,
 };
 
@@ -435,11 +443,14 @@ static struct ac_pc_block_base gfx12_GL1A = {
 static unsigned gfx12_GL1C_select0[] = {
    R_036E80_GL1C_PERFCOUNTER0_SELECT,
    R_036E88_GL1C_PERFCOUNTER1_SELECT,
-   R_036E8C_GL1C_PERFCOUNTER2_SELECT,
-   R_036E90_GL1C_PERFCOUNTER3_SELECT,
+   R_036E90_GL1C_PERFCOUNTER2_SELECT,
+   R_036E98_GL1C_PERFCOUNTER3_SELECT,
 };
 static unsigned gfx12_GL1C_select1[] = {
    R_036E84_GL1C_PERFCOUNTER0_SELECT1,
+   R_036E8C_GL1C_PERFCOUNTER1_SELECT1,
+   R_036E94_GL1C_PERFCOUNTER2_SELECT1,
+   R_036E9C_GL1C_PERFCOUNTER3_SELECT1,
 };
 static struct ac_pc_block_base gfx12_GL1C = {
    .gpu_block = GL1C,
@@ -452,8 +463,8 @@ static struct ac_pc_block_base gfx12_GL1C = {
    .select1 = gfx12_GL1C_select1,
    .counter0_lo = R_034E80_GL1C_PERFCOUNTER0_LO,
 
-   .num_spm_counters = 1,
-   .num_spm_wires = 2,
+   .num_spm_counters = 4,
+   .num_spm_wires = 8,
    .spm_block_select = AC_SPM_SE_BLOCK_GL1C,
 };
 
@@ -462,11 +473,13 @@ static unsigned gfx12_GL2A_select0[] = {
    R_036E40_GL2A_PERFCOUNTER0_SELECT,
    R_036E48_GL2A_PERFCOUNTER1_SELECT,
    R_036E50_GL2A_PERFCOUNTER2_SELECT,
-   R_036E54_GL2A_PERFCOUNTER3_SELECT,
+   R_036E58_GL2A_PERFCOUNTER3_SELECT,
 };
 static unsigned gfx12_GL2A_select1[] = {
    R_036E44_GL2A_PERFCOUNTER0_SELECT1,
    R_036E4C_GL2A_PERFCOUNTER1_SELECT1,
+   R_036E54_GL2A_PERFCOUNTER2_SELECT1,
+   R_036E5C_GL2A_PERFCOUNTER3_SELECT1,
 };
 static struct ac_pc_block_base gfx12_GL2A = {
    .gpu_block = GL2A,
@@ -478,8 +491,8 @@ static struct ac_pc_block_base gfx12_GL2A = {
    .select1 = gfx12_GL2A_select1,
    .counter0_lo = R_034E40_GL2A_PERFCOUNTER0_LO,
 
-   .num_spm_counters = 2,
-   .num_spm_wires = 4,
+   .num_spm_counters = 4,
+   .num_spm_wires = 8,
    .spm_block_select = AC_SPM_GLOBAL_BLOCK_GL2A,
 };
 
@@ -488,11 +501,13 @@ static unsigned gfx12_GL2C_select0[] = {
    R_036E00_GL2C_PERFCOUNTER0_SELECT,
    R_036E08_GL2C_PERFCOUNTER1_SELECT,
    R_036E10_GL2C_PERFCOUNTER2_SELECT,
-   R_036E14_GL2C_PERFCOUNTER3_SELECT,
+   R_036E18_GL2C_PERFCOUNTER3_SELECT,
 };
 static unsigned gfx12_GL2C_select1[] = {
    R_036E04_GL2C_PERFCOUNTER0_SELECT1,
    R_036E0C_GL2C_PERFCOUNTER1_SELECT1,
+   R_036E14_GL2C_PERFCOUNTER2_SELECT1,
+   R_036E1C_GL2C_PERFCOUNTER3_SELECT1,
 };
 static struct ac_pc_block_base gfx12_GL2C = {
    .gpu_block = GL2C,
@@ -504,8 +519,8 @@ static struct ac_pc_block_base gfx12_GL2C = {
    .select1 = gfx12_GL2C_select1,
    .counter0_lo = R_034E00_GL2C_PERFCOUNTER0_LO,
 
-   .num_spm_counters = 2,
-   .num_spm_wires = 4,
+   .num_spm_counters = 4,
+   .num_spm_wires = 8,
    .spm_block_select = AC_SPM_GLOBAL_BLOCK_GL2C,
 };
 
@@ -617,18 +632,21 @@ static struct ac_pc_block_base gfx12_TCP = {
 
 /* UTCL1 */
 static unsigned gfx12_UTCL1_select0[] = {
-   R_03758C_UTCL1_PERFCOUNTER0_SELECT,
-   R_037590_UTCL1_PERFCOUNTER1_SELECT,
+   R_037680_UTCL1_PERFCOUNTER0_SELECT,
+   R_037684_UTCL1_PERFCOUNTER1_SELECT,
+   R_037688_UTCL1_PERFCOUNTER2_SELECT,
+   R_03768C_UTCL1_PERFCOUNTER3_SELECT,
 };
 static struct ac_pc_block_base gfx12_UTCL1 = {
    .gpu_block = UTCL1,
    .name = "UTCL1",
    .distribution = AC_PC_PER_SHADER_ENGINE,
-   .num_counters = 2,
+   .num_counters = 4,
    .flags = AC_PC_BLOCK_SE | AC_PC_BLOCK_SHADER_WINDOWED,
 
    .select0 = gfx12_UTCL1_select0,
-   .counter0_lo = R_035470_UTCL1_PERFCOUNTER0_LO,
+   .counter0_lo = R_035680_UTCL1_PERFCOUNTER0_LO,
+
    .num_spm_counters = 0,
 };
 
