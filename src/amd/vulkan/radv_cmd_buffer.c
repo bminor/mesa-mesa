@@ -10,6 +10,7 @@
 
 #include "radv_cmd_buffer.h"
 #include "meta/radv_meta.h"
+#include "ac_formats.h"
 #include "ac_shader_util.h"
 #include "radv_cp_dma.h"
 #include "radv_cs.h"
@@ -2746,135 +2747,12 @@ radv_emit_rbplus_state(struct radv_cmd_buffer *cmd_buffer)
    unsigned sx_blend_opt_control = 0;
 
    for (unsigned i = 0; i < render->color_att_count; i++) {
-      unsigned format, swap;
-      bool has_alpha, has_rgb;
-      if (render->color_att[i].iview == NULL) {
-         /* We don't set the DISABLE bits, because the HW can't have holes,
-          * so the SPI color format is set to 32-bit 1-component. */
-         sx_ps_downconvert |= V_028754_SX_RT_EXPORT_32_R << (i * 4);
-         continue;
-      }
-
       const struct radv_color_buffer_info *cb = &render->color_att[i].cb;
 
-      format = pdev->info.gfx_level >= GFX11 ? G_028C70_FORMAT_GFX11(cb->ac.cb_color_info)
-                                             : G_028C70_FORMAT_GFX6(cb->ac.cb_color_info);
-      swap = G_028C70_COMP_SWAP(cb->ac.cb_color_info);
-      has_alpha = pdev->info.gfx_level >= GFX11 ? !G_028C74_FORCE_DST_ALPHA_1_GFX11(cb->ac.cb_color_attrib)
-                                                : !G_028C74_FORCE_DST_ALPHA_1_GFX6(cb->ac.cb_color_attrib);
-
-      uint32_t spi_format = (cmd_buffer->state.spi_shader_col_format >> (i * 4)) & 0xf;
-      uint32_t colormask = (d->color_write_mask >> (4 * i)) & 0xfu;
-
-      if (format == V_028C70_COLOR_8 || format == V_028C70_COLOR_16 || format == V_028C70_COLOR_32)
-         has_rgb = !has_alpha;
-      else
-         has_rgb = true;
-
-      /* Check the colormask and export format. */
-      if (!(colormask & 0x7))
-         has_rgb = false;
-      if (!(colormask & 0x8))
-         has_alpha = false;
-
-      if (spi_format == V_028714_SPI_SHADER_ZERO) {
-         has_rgb = false;
-         has_alpha = false;
-      }
-
-      /* Disable value checking for disabled channels. */
-      if (!has_rgb)
-         sx_blend_opt_control |= S_02875C_MRT0_COLOR_OPT_DISABLE(1) << (i * 4);
-      if (!has_alpha)
-         sx_blend_opt_control |= S_02875C_MRT0_ALPHA_OPT_DISABLE(1) << (i * 4);
-
-      /* Enable down-conversion for 32bpp and smaller formats. */
-      switch (format) {
-      case V_028C70_COLOR_8:
-      case V_028C70_COLOR_8_8:
-      case V_028C70_COLOR_8_8_8_8:
-         /* For 1 and 2-channel formats, use the superset thereof. */
-         if (spi_format == V_028714_SPI_SHADER_FP16_ABGR || spi_format == V_028714_SPI_SHADER_UINT16_ABGR ||
-             spi_format == V_028714_SPI_SHADER_SINT16_ABGR) {
-            sx_ps_downconvert |= V_028754_SX_RT_EXPORT_8_8_8_8 << (i * 4);
-
-            if (G_028C70_NUMBER_TYPE(cb->ac.cb_color_info) != V_028C70_NUMBER_SRGB)
-               sx_blend_opt_epsilon |= V_028758_8BIT_FORMAT_0_5 << (i * 4);
-         }
-         break;
-
-      case V_028C70_COLOR_5_6_5:
-         if (spi_format == V_028714_SPI_SHADER_FP16_ABGR) {
-            sx_ps_downconvert |= V_028754_SX_RT_EXPORT_5_6_5 << (i * 4);
-            sx_blend_opt_epsilon |= V_028758_6BIT_FORMAT_0_5 << (i * 4);
-         }
-         break;
-
-      case V_028C70_COLOR_1_5_5_5:
-      case V_028C70_COLOR_5_5_5_1:
-         if (spi_format == V_028714_SPI_SHADER_FP16_ABGR) {
-            sx_ps_downconvert |= V_028754_SX_RT_EXPORT_1_5_5_5 << (i * 4);
-            sx_blend_opt_epsilon |= V_028758_5BIT_FORMAT_0_5 << (i * 4);
-         }
-         break;
-
-      case V_028C70_COLOR_4_4_4_4:
-         if (spi_format == V_028714_SPI_SHADER_FP16_ABGR) {
-            sx_ps_downconvert |= V_028754_SX_RT_EXPORT_4_4_4_4 << (i * 4);
-            sx_blend_opt_epsilon |= V_028758_4BIT_FORMAT_0_5 << (i * 4);
-         }
-         break;
-
-      case V_028C70_COLOR_32:
-         if (swap == V_028C70_SWAP_STD && spi_format == V_028714_SPI_SHADER_32_R)
-            sx_ps_downconvert |= V_028754_SX_RT_EXPORT_32_R << (i * 4);
-         else if (swap == V_028C70_SWAP_ALT_REV && spi_format == V_028714_SPI_SHADER_32_AR)
-            sx_ps_downconvert |= V_028754_SX_RT_EXPORT_32_A << (i * 4);
-         break;
-
-      case V_028C70_COLOR_16:
-      case V_028C70_COLOR_16_16:
-         /* For 1-channel formats, use the superset thereof. */
-         if (spi_format == V_028714_SPI_SHADER_UNORM16_ABGR || spi_format == V_028714_SPI_SHADER_SNORM16_ABGR ||
-             spi_format == V_028714_SPI_SHADER_UINT16_ABGR || spi_format == V_028714_SPI_SHADER_SINT16_ABGR ||
-             spi_format == V_028714_SPI_SHADER_FP16_ABGR) {
-            if (swap == V_028C70_SWAP_STD || swap == V_028C70_SWAP_STD_REV)
-               sx_ps_downconvert |= V_028754_SX_RT_EXPORT_16_16_GR << (i * 4);
-            else
-               sx_ps_downconvert |= V_028754_SX_RT_EXPORT_16_16_AR << (i * 4);
-         }
-         break;
-
-      case V_028C70_COLOR_10_11_11:
-         if (spi_format == V_028714_SPI_SHADER_FP16_ABGR)
-            sx_ps_downconvert |= V_028754_SX_RT_EXPORT_10_11_11 << (i * 4);
-         break;
-
-      case V_028C70_COLOR_2_10_10_10:
-         if (spi_format == V_028714_SPI_SHADER_FP16_ABGR ||
-             spi_format == V_028714_SPI_SHADER_UINT16_ABGR ||
-             spi_format == V_028714_SPI_SHADER_SINT16_ABGR) {
-            sx_ps_downconvert |= V_028754_SX_RT_EXPORT_2_10_10_10 << (i * 4);
-            sx_blend_opt_epsilon |= V_028758_10BIT_FORMAT_0_5 << (i * 4);
-         }
-         break;
-      case V_028C70_COLOR_5_9_9_9:
-         if (spi_format == V_028714_SPI_SHADER_FP16_ABGR) {
-            if (pdev->info.gfx_level >= GFX12) {
-               sx_ps_downconvert |= V_028754_SX_RT_EXPORT_9_9_9_E5 << (i * 4);
-            } else if (pdev->info.gfx_level >= GFX10_3) {
-               if (colormask == 0xf) {
-                  sx_ps_downconvert |= V_028754_SX_RT_EXPORT_9_9_9_E5 << (i * 4);
-               } else {
-                  /* On GFX10_3+, RB+ with E5B9G9R9 seems broken in the hardware when not all
-                   * channels are written. Disable RB+ to workaround it.
-                   */
-                  sx_ps_downconvert |= V_028754_SX_RT_EXPORT_NO_CONVERSION << (i * 4);
-               }
-            }
-         }
-         break;
-      }
+      ac_set_sx_downconvert_state_for_mrt(pdev->info.gfx_level, render->color_att[i].iview == NULL,
+                                          cb->ac.cb_color_info, cb->ac.cb_color_attrib,
+                                          cmd_buffer->state.spi_shader_col_format, d->color_write_mask, i,
+                                          &sx_ps_downconvert, &sx_blend_opt_epsilon, &sx_blend_opt_control, NULL);
    }
 
    /* If there are no color outputs, the first color export is always enabled as 32_R, so also set
