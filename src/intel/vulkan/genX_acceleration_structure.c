@@ -290,7 +290,20 @@ anv_get_as_size(VkDevice device, const struct vk_acceleration_structure_build_st
 static void
 anv_get_build_config(VkDevice device, struct vk_acceleration_structure_build_state *state)
 {
-   state->config.encode_key[1] = (state->build_info->flags & VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR) ? 1 : 0;
+   VkBuildAccelerationStructureFlagsKHR flags = state->build_info->flags;
+
+   /* TODO: ANV does not yet have support for AS updates without doing a full
+    * rebuild, this means that AS updates can cause their size to increase.
+    *
+    * The Vulkan spec says that the maximum size required for updating a
+    * compacted AS will be the "compacted size" that can be queried from it
+    * after the initial build, so in order for apps to behave we must report
+    * the compacted size of an updatable AS as the maximum possible size for
+    * any AS that could also be built from the same number of leaf nodes.
+    */
+   state->config.encode_key[1] =
+      ((flags & VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_COMPACTION_BIT_KHR) &&
+      !(flags & VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR)) ? 1 : 0;
 }
 
 static void
