@@ -800,3 +800,169 @@ ac_is_reduction_mode_supported(const struct radeon_info *info, enum pipe_format 
 
    return true;
 }
+
+void
+ac_set_sx_downconvert_state_for_mrt(enum amd_gfx_level gfx_level, bool is_null, unsigned cb_color_info,
+                                    unsigned cb_color_attrib, unsigned spi_shader_col_format,
+                                    unsigned cb_target_mask, unsigned mrt_index,
+                                    uint32_t *sx_ps_downconvert, uint32_t *sx_blend_opt_epsilon,
+                                    uint32_t *sx_blend_opt_control, uint32_t *fix_cb_target_mask)
+{
+   if (is_null) {
+      /* If the color buffer is not set, the driver sets 32_R as the SPI color format, because
+       * the HW doesn't allow holes between color outputs, so also set this to enable RB+.
+       */
+      *sx_ps_downconvert |= V_028754_SX_RT_EXPORT_32_R << (mrt_index * 4);
+      return;
+   }
+
+   unsigned cb_format = gfx_level >= GFX11 ? G_028C70_FORMAT_GFX11(cb_color_info):
+                                             G_028C70_FORMAT_GFX6(cb_color_info);
+   unsigned cb_swap = G_028C70_COMP_SWAP(cb_color_info);
+   unsigned spi_format = (spi_shader_col_format >> (mrt_index * 4)) & 0xf;
+   unsigned colormask = (cb_target_mask >> (mrt_index * 4)) & 0xf;
+
+   /* Set if RGB and A are present. */
+   bool has_alpha = !(gfx_level >= GFX11 ? G_028C74_FORCE_DST_ALPHA_1_GFX11(cb_color_attrib):
+                                           G_028C74_FORCE_DST_ALPHA_1_GFX6(cb_color_attrib));
+   bool has_rgb;
+
+   if (cb_format == V_028C70_COLOR_8 || cb_format == V_028C70_COLOR_16 || cb_format == V_028C70_COLOR_32)
+      has_rgb = !has_alpha;
+   else
+      has_rgb = true;
+
+   /* Check the colormask and export format. */
+   if (!(colormask & PIPE_MASK_RGB))
+      has_rgb = false;
+   if (!(colormask & PIPE_MASK_A))
+      has_alpha = false;
+
+   if (spi_format == V_028714_SPI_SHADER_ZERO) {
+      has_rgb = false;
+      has_alpha = false;
+   }
+
+   /* Disable value checking for disabled channels during SX blend optimizations (determining
+    * BLEND_BYPASS and DISCARD). These bits modify how BLEND_BYPASS and DISCARD are determined.
+    *
+    * When both DISABLE bits are set, the behavior is BLEND_BYPASS. When colormask is
+    * also 0, the SX export format must still be set, and then it behaves like DISCARD.
+    *
+    * When any DISABLE bit is not set, those components must succeed the corresponding MRTi blend
+    * opt test to get BLEND_BYPASS or DISCARD.
+    */
+   if (!has_rgb)
+      *sx_blend_opt_control |= S_02875C_MRT0_COLOR_OPT_DISABLE(1) << (mrt_index * 4);
+   if (!has_alpha)
+      *sx_blend_opt_control |= S_02875C_MRT0_ALPHA_OPT_DISABLE(1) << (mrt_index * 4);
+
+   /* Enable export down-conversion for 32bpp and smaller formats, also called RB+, required
+    * for optimal pixel throughput. If this function doesn't set anything (the value stays at
+    * SX_RT_EXPORT_NO_CONVERSION=0), the pixel throughput will be the same as 64bpp.
+    */
+   bool export_format_is_fp16 = spi_format == V_028714_SPI_SHADER_FP16_ABGR;
+   bool export_format_is_int16 = spi_format == V_028714_SPI_SHADER_UINT16_ABGR ||
+                                 spi_format == V_028714_SPI_SHADER_SINT16_ABGR;
+   bool export_format_is_norm16 = spi_format == V_028714_SPI_SHADER_UNORM16_ABGR ||
+                                  spi_format == V_028714_SPI_SHADER_SNORM16_ABGR;
+
+   switch (cb_format) {
+   case V_028C70_COLOR_8:
+   case V_028C70_COLOR_8_8:
+   case V_028C70_COLOR_8_8_8_8:
+      if (export_format_is_fp16 || export_format_is_int16) {
+         *sx_ps_downconvert |= V_028754_SX_RT_EXPORT_8_8_8_8 << (mrt_index * 4);
+         if (G_028C70_NUMBER_TYPE(cb_color_info) != V_028C70_NUMBER_SRGB)
+            *sx_blend_opt_epsilon |= V_028758_8BIT_FORMAT_0_5 << (mrt_index * 4);
+      }
+      break;
+
+   case V_028C70_COLOR_16:
+   case V_028C70_COLOR_16_16:
+      /* For 1-channel formats, use the superset thereof. */
+      if (export_format_is_fp16 || export_format_is_int16 || export_format_is_norm16) {
+         if (cb_swap == V_028C70_SWAP_STD || cb_swap == V_028C70_SWAP_STD_REV)
+            *sx_ps_downconvert |= V_028754_SX_RT_EXPORT_16_16_GR << (mrt_index * 4);
+         else
+            *sx_ps_downconvert |= V_028754_SX_RT_EXPORT_16_16_AR << (mrt_index * 4);
+      }
+      break;
+
+   case V_028C70_COLOR_32:
+      if (cb_swap == V_028C70_SWAP_STD && spi_format == V_028714_SPI_SHADER_32_R)
+         *sx_ps_downconvert |= V_028754_SX_RT_EXPORT_32_R << (mrt_index * 4);
+      else if (cb_swap == V_028C70_SWAP_ALT_REV && spi_format == V_028714_SPI_SHADER_32_AR)
+         *sx_ps_downconvert |= V_028754_SX_RT_EXPORT_32_A << (mrt_index * 4);
+      break;
+
+   case V_028C70_COLOR_5_6_5:
+      if (export_format_is_fp16) {
+         *sx_ps_downconvert |= V_028754_SX_RT_EXPORT_5_6_5 << (mrt_index * 4);
+         *sx_blend_opt_epsilon |= V_028758_6BIT_FORMAT_0_5 << (mrt_index * 4);
+      }
+      break;
+
+   case V_028C70_COLOR_1_5_5_5:
+   case V_028C70_COLOR_5_5_5_1:
+      if (export_format_is_fp16) {
+         *sx_ps_downconvert |= V_028754_SX_RT_EXPORT_1_5_5_5 << (mrt_index * 4);
+         *sx_blend_opt_epsilon |= V_028758_5BIT_FORMAT_0_5 << (mrt_index * 4);
+      }
+      break;
+
+   case V_028C70_COLOR_4_4_4_4:
+      if (export_format_is_fp16) {
+         *sx_ps_downconvert |= V_028754_SX_RT_EXPORT_4_4_4_4 << (mrt_index * 4);
+         *sx_blend_opt_epsilon |= V_028758_4BIT_FORMAT_0_5 << (mrt_index * 4);
+      }
+      break;
+
+   case V_028C70_COLOR_10_11_11:
+   case V_028C70_COLOR_11_11_10:
+      if (export_format_is_fp16)
+         *sx_ps_downconvert |= V_028754_SX_RT_EXPORT_10_11_11 << (mrt_index * 4);
+      break;
+
+   case V_028C70_COLOR_2_10_10_10:
+   case V_028C70_COLOR_10_10_10_2:
+      if (export_format_is_fp16 || export_format_is_int16) {
+         *sx_ps_downconvert |= V_028754_SX_RT_EXPORT_2_10_10_10 << (mrt_index * 4);
+         *sx_blend_opt_epsilon |= V_028758_10BIT_FORMAT_0_5 << (mrt_index * 4);
+      }
+      break;
+
+   case V_028C70_COLOR_5_9_9_9:
+      /* This only executes on GFX10.3+. */
+      assert(gfx_level >= GFX10_3);
+
+      if (export_format_is_fp16) {
+         if (gfx_level >= GFX12) {
+            *sx_ps_downconvert |= V_028754_SX_RT_EXPORT_9_9_9_E5 << (mrt_index * 4);
+         } else {
+            /* GFX10.3-11 have a bug where R9G9B9E5 is broken with RB+ when the color mask is neither
+             * full nor empty.
+             *
+             * If A is missing in the color mask, add it. If it's the only bit set, remove it.
+             */
+            if (fix_cb_target_mask) {
+               if (colormask == PIPE_MASK_RGB) {
+                  colormask |= PIPE_MASK_A;
+                  *fix_cb_target_mask |= PIPE_MASK_A << (mrt_index * 4);
+               } else if (colormask == PIPE_MASK_A) {
+                  colormask = 0;
+                  *fix_cb_target_mask &= ~(PIPE_MASK_A << (mrt_index * 4));
+               }
+            }
+
+            /* Don't enable RB+ if the color mask is not full or empty, which is done by not
+             * setting SX_PS_DOWNCONVERT for that MRT. Even if the color mask is 0, we should
+             * still set a non-zero export format to make sure the pixels are discarded quickly.
+             */
+            if (colormask == PIPE_MASK_RGBA || colormask == 0)
+               *sx_ps_downconvert |= V_028754_SX_RT_EXPORT_9_9_9_E5 << (mrt_index * 4);
+         }
+      }
+      break;
+   }
+}

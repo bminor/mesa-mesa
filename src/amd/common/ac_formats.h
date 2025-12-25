@@ -70,6 +70,13 @@ bool
 ac_is_reduction_mode_supported(const struct radeon_info *info, enum pipe_format format,
                                bool shadow_samplers);
 
+void
+ac_set_sx_downconvert_state_for_mrt(enum amd_gfx_level gfx_level, bool is_null, unsigned cb_color_info,
+                                    unsigned cb_color_attrib, unsigned spi_shader_col_format,
+                                    unsigned cb_target_mask, unsigned mrt_index,
+                                    uint32_t *sx_ps_downconvert, uint32_t *sx_blend_opt_epsilon,
+                                    uint32_t *sx_blend_opt_control, uint32_t *fix_cb_target_mask);
+
 #ifdef __cplusplus
 }
 #endif
