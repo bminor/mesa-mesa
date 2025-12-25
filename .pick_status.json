@@ -164,7 +164,7 @@
         "description": "nir/normalize_cubemap_coords: Handle the projector before the normalization",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 1,
         "main_sha": null,
         "because_sha": "52e718097fa7dc808b3e8b43a8fd14a5b2b64797",
         "notes": null
