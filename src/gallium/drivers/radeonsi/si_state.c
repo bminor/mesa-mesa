@@ -200,7 +200,8 @@ static void si_emit_cb_render_state(struct si_context *sctx, unsigned index)
             if (spi_format == V_028714_SPI_SHADER_UNORM16_ABGR ||
                 spi_format == V_028714_SPI_SHADER_SNORM16_ABGR ||
                 spi_format == V_028714_SPI_SHADER_UINT16_ABGR ||
-                spi_format == V_028714_SPI_SHADER_SINT16_ABGR) {
+                spi_format == V_028714_SPI_SHADER_SINT16_ABGR ||
+                spi_format == V_028714_SPI_SHADER_FP16_ABGR) {
                if (swap == V_028C70_SWAP_STD || swap == V_028C70_SWAP_STD_REV)
                   sx_ps_downconvert |= V_028754_SX_RT_EXPORT_16_16_GR << (i * 4);
                else
@@ -215,7 +216,9 @@ static void si_emit_cb_render_state(struct si_context *sctx, unsigned index)
 
          case V_028C70_COLOR_2_10_10_10:
          case V_028C70_COLOR_10_10_10_2:
-            if (spi_format == V_028714_SPI_SHADER_FP16_ABGR) {
+            if (spi_format == V_028714_SPI_SHADER_FP16_ABGR ||
+                spi_format == V_028714_SPI_SHADER_UINT16_ABGR ||
+                spi_format == V_028714_SPI_SHADER_SINT16_ABGR) {
                sx_ps_downconvert |= V_028754_SX_RT_EXPORT_2_10_10_10 << (i * 4);
                sx_blend_opt_epsilon |= V_028758_10BIT_FORMAT_0_5 << (i * 4);
             }
