@@ -43,6 +43,15 @@ normalize_cubemap_coords(nir_builder *b, nir_tex_instr *tex, void *data)
    nir_def *orig_coord = tex->src[idx].src.ssa;
    assert(orig_coord->num_components >= 3);
 
+   /* Handle the projection first, as applying it after the normalization
+    * will give incorrect results.
+    */
+   nir_def *proj = nir_steal_tex_src(tex, nir_tex_src_projector);
+   if (proj) {
+      nir_def *inv_proj = nir_frcp(b, proj);
+      orig_coord = nir_fmul(b, orig_coord, inv_proj);
+   }
+
    nir_def *orig_xyz = nir_trim_vector(b, orig_coord, 3);
    nir_def *norm = nir_fmax_abs_vec_comp(b, orig_xyz);
    nir_def *normalized = nir_fmul(b, orig_coord, nir_frcp(b, norm));
