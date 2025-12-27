@@ -603,10 +603,11 @@ gbm_bo_import(struct gbm_device *gbm,
  * \param height The height of the mapped region for the buffer
  * \param flags The union of the GBM_BO_TRANSFER_* flags for this buffer
  * \param stride Ptr for returned stride in bytes of the mapped region
- * \param map_data Returned opaque ptr for the mapped region
+ * \param map_data Returned opaque ptr for the mapped region that should
+ * be passed to gbm_bo_unmap() when the mapped buffer is no longer needed.
+ * *map_data must be a %NULL pointer.
  *
- * \return Address of the mapped buffer that should be unmapped with
- * gbm_bo_unmap() when no longer needed. On error, %NULL is returned
+ * \return Address of the mapped buffer. On error, %NULL is returned
  * and errno is set.
  *
  * \sa enum gbm_bo_transfer_flags for the list of flags
