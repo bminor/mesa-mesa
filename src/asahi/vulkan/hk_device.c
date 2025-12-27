@@ -400,8 +400,8 @@ hk_CreateDevice(VkPhysicalDevice physicalDevice,
    struct vk_pipeline_cache_create_info cache_info = {
       .weak_ref = true,
    };
-   dev->mem_cache = vk_pipeline_cache_create(&dev->vk, &cache_info, NULL);
-   if (dev->mem_cache == NULL) {
+   dev->vk.mem_cache = vk_pipeline_cache_create(&dev->vk, &cache_info, NULL);
+   if (dev->vk.mem_cache == NULL) {
       result = VK_ERROR_OUT_OF_HOST_MEMORY;
       goto fail_queues;
    }
@@ -443,7 +443,7 @@ hk_CreateDevice(VkPhysicalDevice physicalDevice,
 fail_meta:
    hk_device_finish_meta(dev);
 fail_mem_cache:
-   vk_pipeline_cache_destroy(dev->mem_cache, NULL);
+   vk_pipeline_cache_destroy(dev->vk.mem_cache, NULL);
 fail_queues:
    vk_foreach_queue_safe(iter, &dev->vk) {
       struct hk_queue *queue = container_of(iter, struct hk_queue, vk);
@@ -487,7 +487,7 @@ hk_DestroyDevice(VkDevice _device, const VkAllocationCallbacks *pAllocator)
    hk_destroy_internal_shaders(dev, &dev->kernels, false);
    hk_destroy_internal_shaders(dev, &dev->prolog_epilog, true);
 
-   vk_pipeline_cache_destroy(dev->mem_cache, NULL);
+   vk_pipeline_cache_destroy(dev->vk.mem_cache, NULL);
 
    vk_foreach_queue_safe(iter, &dev->vk) {
       struct hk_queue *queue = container_of(iter, struct hk_queue, vk);
