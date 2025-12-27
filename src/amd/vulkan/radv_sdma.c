@@ -714,7 +714,8 @@ radv_sdma_supports_image(const struct radv_device *device, const struct radv_ima
 {
    const struct radv_physical_device *pdev = radv_device_physical(device);
 
-   /* TODO: Handle emulated formats and verify sparse image support. */
+   if (radv_is_format_emulated(pdev, image->vk.format))
+      return false;
 
    if (!pdev->info.sdma_supports_sparse &&
        (image->vk.create_flags & VK_IMAGE_CREATE_SPARSE_RESIDENCY_BIT))
