@@ -659,8 +659,8 @@ create_ms_images(struct panvk_device *dev, struct panvk_image *img,
                         &img->ms_imgs[msaa_idx]);
 
       struct panvk_image *res = panvk_image_from_handle(img->ms_imgs[msaa_idx]);
-      assert(res->vk.format = img->vk.format);
-      assert(res->plane_count = img->plane_count);
+      assert(res->vk.format == img->vk.format);
+      assert(res->plane_count == img->plane_count);
       for (uint32_t i = 0; i < res->plane_count; ++i) {
          assert(res->planes[i].image.props.format ==
                 img->planes[i].image.props.format);
