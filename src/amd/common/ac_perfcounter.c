@@ -1245,6 +1245,14 @@ bool ac_init_perfcounters(const struct radeon_info *info,
          case GL2C:
             block->num_instances = info->num_tcc_blocks;
             break;
+         case GL2A:
+            if (info->family == CHIP_NAVI31) {
+               block->num_instances = 4;
+            } else if (info->family == CHIP_NAVI32 ||
+                       info->family == CHIP_NAVI33) {
+               block->num_instances = 2;
+            }
+            break;
          case TA:
          case TD:
          case TCP:
