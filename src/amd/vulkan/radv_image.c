@@ -666,6 +666,12 @@ radv_get_surface_flags(struct radv_device *device, struct radv_image *image, uns
           */
          flags |= RADEON_SURF_VIEW_3D_AS_2D_ARRAY;
       }
+
+      if ((image->vk.usage & VK_IMAGE_USAGE_STORAGE_BIT) &&
+          instance->drirc.performance.prefer_2d_swizzle_for_3d_storage) {
+         /* Some applications perform much better with a 2D swizzle mode for 3D storage images. */
+         flags |= RADEON_SURF_VIEW_3D_AS_2D_ARRAY;
+      }
    }
 
    /* Required for clearing/initializing a specific layer on GFX8. */

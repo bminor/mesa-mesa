@@ -70,6 +70,7 @@ struct radv_drirc {
       bool disable_ngg_gs;
       bool enable_unified_heap_on_apu;
       bool report_llvm9_version_string;
+      bool prefer_2d_swizzle_for_3d_storage;
       char *gfx12_hiz_wa;
    } performance;
 
