@@ -664,7 +664,7 @@
         "description": "radv/nir: fix front_face opts for points/lines and unknown prim",
         "nominated": true,
         "nomination_type": 2,
-        "resolution": 0,
+        "resolution": 3,
         "main_sha": null,
         "because_sha": "af375c675601f2ab6f3871145312355682a2b2d0",
         "notes": null
