@@ -146,6 +146,7 @@ def monitor_pipeline(
     dependencies: set[str],
     stress: int,
     inhibit_single_target_trace: int = False,
+    polling_period: int = REFRESH_WAIT_JOBS,
 ) -> tuple[Optional[int], Optional[int], Dict[str, Dict[int, Tuple[float, str, str]]]]:
     """Monitors pipeline and delegate canceling jobs"""
     statuses: dict[str, str] = defaultdict(str)
@@ -239,13 +240,13 @@ def monitor_pipeline(
                     enough = False
 
             if not enough:
-                pretty_wait(REFRESH_WAIT_JOBS)
+                pretty_wait(polling_period)
                 continue
 
         if jobs_waiting:
             print(f"[yellow]Waiting for jobs to update status:")
             print_formatted_list(jobs_waiting, indentation=8, color="[yellow]")
-            pretty_wait(REFRESH_WAIT_JOBS)
+            pretty_wait(polling_period)
             continue
 
         if (
@@ -274,7 +275,7 @@ def monitor_pipeline(
         if skip_follow_statuses.issuperset(target_statuses.values()):
             return None, 0, execution_times
 
-        pretty_wait(REFRESH_WAIT_JOBS)
+        pretty_wait(polling_period)
 
 
 def enable_job(
@@ -514,6 +515,13 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="When there is only one target job, inhibit the job trace output in the console.",
     )
+    parser.add_argument(
+        "--polling-period",
+        type=int,
+        default=REFRESH_WAIT_JOBS,
+        help=f"Specify the waiting seconds between monitor loops. (Default: {REFRESH_WAIT_JOBS})",
+     )
+
 
     mutex_group1 = parser.add_mutually_exclusive_group()
     mutex_group1.add_argument(
@@ -780,6 +788,7 @@ def main() -> None:
             deps,
             args.stress,
             args.no_job_log,
+            args.polling_period,
         )
 
         if target_job_id:
