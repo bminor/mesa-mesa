@@ -10,7 +10,7 @@ from collections import OrderedDict
 from copy import deepcopy
 from dataclasses import dataclass, field
 from itertools import accumulate
-from os import get_terminal_size
+from os import get_terminal_size, getenv
 from pathlib import Path
 from subprocess import check_output
 from textwrap import dedent
@@ -41,7 +41,10 @@ Dag = dict[str, DagNode]
 
 StageSeq = OrderedDict[str, set[str]]
 
-console = Console(highlight=False)
+if getenv("CI_JOB_ID"):
+    console = Console(highlight=False, no_color=False, color_system="truecolor", width=120)
+else:
+    console = Console(highlight=False)
 print = console.print
 
 

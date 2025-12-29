@@ -20,6 +20,7 @@ from collections import defaultdict, Counter
 from concurrent.futures import ThreadPoolExecutor
 from functools import partial
 from itertools import chain
+from os import getenv
 from subprocess import check_output, CalledProcessError
 from typing import Callable, Dict, TYPE_CHECKING, Iterable, Literal, Optional, Tuple, cast
 
@@ -56,7 +57,10 @@ STATUS_COLORS = defaultdict(lambda: "", {
 COMPLETED_STATUSES = frozenset({"success", "failed"})
 RUNNING_STATUSES = frozenset({"created", "pending", "running"})
 
-console = Console(highlight=False)
+if getenv("CI_JOB_ID"):
+    console = Console(highlight=False, no_color=False, color_system="truecolor", width=120)
+else:
+    console = Console(highlight=False)
 print = console.print
 
 
@@ -405,7 +409,7 @@ def print_log(
         # GitLab's REST API doesn't offer pagination for logs, so we have to refetch it all
         lines = job.trace().decode().splitlines()
         for line in lines[printed_lines:]:
-            print(line)
+            print(line, markup=False)
         printed_lines = len(lines)
 
         if job.status in COMPLETED_STATUSES:
@@ -637,7 +641,10 @@ def __job_duration_record(dict_item: tuple) -> str:
 def link2print(url: str, text: str, text_pad: int = 0) -> str:
     text = str(text)
     text_pad = len(text) if text_pad < 1 else text_pad
-    return f"[link={url}]{text:{text_pad}}[/link]"
+    if console.is_terminal:
+        return f"[link={url}]{text:{text_pad}}[/link]"
+    else:
+        return f"{text:{text_pad}}"
 
 
 def main() -> None:
