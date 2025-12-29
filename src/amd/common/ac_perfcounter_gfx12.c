@@ -566,7 +566,6 @@ static struct ac_pc_block_base gfx12_RLC = {
 
    .select0 = gfx12_RLC_select0,
    .counter0_lo = R_035200_RLC_PERFCOUNTER0_LO,
-   .num_spm_counters = 0,
 };
 
 /* SQ */
@@ -646,8 +645,6 @@ static struct ac_pc_block_base gfx12_UTCL1 = {
 
    .select0 = gfx12_UTCL1_select0,
    .counter0_lo = R_035680_UTCL1_PERFCOUNTER0_LO,
-
-   .num_spm_counters = 0,
 };
 
 /* SQ_WQP */
