@@ -88,7 +88,16 @@ enum ac_pc_gpu_block {
    GEDIST  = 0x2E,
    GESE    = 0x2F,
    DF      = 0x30,
-   SQ_WGP  = 0x31, /* GFX11+ */
+   /* GFX11+ */
+   SQ_WGP  = 0x31,
+   PC      = 0x32,
+   /* GFX12+ */
+   GL1XA   = 0x33,
+   GL1XC   = 0x34,
+   WGS     = 0x35,
+   GCEA_CPWD = 0x36,
+   GCEA_SE   = 0x37,
+   RLC_USER = 0x38,
    NUM_GPU_BLOCK,
 };
 
