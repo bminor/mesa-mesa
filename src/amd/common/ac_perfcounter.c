@@ -954,21 +954,6 @@ static struct ac_pc_block_base gfx10_GCEA = {
    .spm_block_select = AC_SPM_GLOBAL_BLOCK_GCEA,
 };
 
-/* gfx11_SQ_WQP */
-static struct ac_pc_block_base gfx11_SQ_WGP = {
-   .gpu_block = SQ_WGP,
-   .name = "SQ_WGP",
-   .num_counters = 16,
-   .flags = AC_PC_BLOCK_SE | AC_PC_BLOCK_SHADER,
-
-   .select0 = cik_SQ_select0,
-   .counter0_lo = R_034700_SQ_PERFCOUNTER0_LO,
-
-   .num_spm_counters = 8,
-   .num_spm_wires = 8,
-   .spm_block_select = AC_SPM_SE_BLOCK_SQC,
-};
-
 /* Both the number of instances and selectors varies between chips of the same
  * class. We only differentiate by class here and simply expose the maximum
  * number over all chips in a class.
@@ -1067,40 +1052,6 @@ static struct ac_pc_block_gfxdescr groups_gfx103[] = {
    {&cik_TD, 192},
    {&gfx10_UTCL1, 15},
    {&gfx10_GCEA, 89},
-};
-
-static struct ac_pc_block_gfxdescr groups_gfx11[] = {
-   {&cik_CB, 313},
-   {&gfx10_CHA, 39},
-   {&gfx10_CHCG, 43},
-   {&gfx10_CHC, 43},
-   {&cik_CPC, 55},
-   {&cik_CPF, 43},
-   {&cik_CPG, 91},
-   {&gfx10_DB, 370},
-   {&gfx10_GCR, 154},
-   {&cik_GDS, 147},
-   {&gfx10_GE, 39},
-   {&gfx10_GL1A, 23},
-   {&gfx10_GL1C, 83, 4},
-   {&gfx10_GL2A, 107},
-   {&gfx10_GL2C, 258},
-   {&cik_GRBM, 49},
-   {&cik_GRBMSE, 20},
-   {&gfx10_PA_PH, 1023},
-   {&cik_PA_SC, 664},
-   {&gfx10_PA_SU, 310},
-   {&gfx10_RLC, 6},
-   {&gfx10_RMI, 138},
-   {&cik_SPI, 283},
-   {&gfx10_SQ, 36},
-   {&cik_SX, 81},
-   {&cik_TA, 235},
-   {&gfx10_TCP, 77},
-   {&cik_TD, 196},
-   {&gfx10_UTCL1, 65},
-   {&gfx11_SQ_WGP, 511, 4},
-   {&gfx10_GCEA, 86},
 };
 
 struct ac_pc_block *ac_lookup_counter(const struct ac_perfcounters *pc,
@@ -1257,8 +1208,7 @@ bool ac_init_perfcounters(const struct radeon_info *info,
       num_blocks = ARRAY_SIZE(groups_gfx103);
       break;
    case GFX11:
-      blocks = groups_gfx11;
-      num_blocks = ARRAY_SIZE(groups_gfx11);
+      blocks = ac_gfx11_get_perfcounters(&num_blocks);
       break;
    case GFX12:
       blocks = ac_gfx12_get_perfcounters(&num_blocks);

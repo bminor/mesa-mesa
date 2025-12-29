@@ -210,4 +210,7 @@ void ac_destroy_perfcounters(struct ac_perfcounters *pc);
 const struct ac_pc_block_gfxdescr *
 ac_gfx12_get_perfcounters(uint32_t *num_blocks);
 
+const struct ac_pc_block_gfxdescr *
+ac_gfx11_get_perfcounters(uint32_t *num_blocks);
+
 #endif
