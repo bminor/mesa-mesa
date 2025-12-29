@@ -145,6 +145,7 @@ def monitor_pipeline(
     job_filter: callable,
     dependencies: set[str],
     stress: int,
+    inhibit_single_target_trace: int = False,
 ) -> tuple[Optional[int], Optional[int], Dict[str, Dict[int, Tuple[float, str, str]]]]:
     """Monitors pipeline and delegate canceling jobs"""
     statuses: dict[str, str] = defaultdict(str)
@@ -248,7 +249,8 @@ def monitor_pipeline(
             continue
 
         if (
-            stress in [0, 1]
+            not inhibit_single_target_trace
+            and stress in [0, 1]
             and len(target_statuses) == 1
             and RUNNING_STATUSES.intersection(target_statuses.values())
         ):
@@ -506,6 +508,11 @@ def parse_args() -> argparse.Namespace:
         "--dry-run",
         action="store_true",
         help="Exit after printing target jobs and dependencies",
+    )
+    parser.add_argument(
+        "--no-job-log",
+        action="store_true",
+        help="When there is only one target job, inhibit the job trace output in the console.",
     )
 
     mutex_group1 = parser.add_mutually_exclusive_group()
@@ -771,7 +778,8 @@ def main() -> None:
             pipe,
             job_filter,
             deps,
-            args.stress
+            args.stress,
+            args.no_job_log,
         )
 
         if target_job_id:
