@@ -97,6 +97,7 @@ static const driOptionDescription hk_dri_options[] = {
       DRI_CONF_HK_DISABLE_BORDER_EMULATION(false)
       DRI_CONF_HK_FAKE_MINMAX(false)
       DRI_CONF_HK_IMAGE_VIEW_MIN_LOD(false)
+      DRI_CONF_HK_ENABLE_VERTEX_PIPELINE_STORES_ATOMICS(false)
    DRI_CONF_SECTION_END
 };
 /* clang-format on */
@@ -122,6 +123,9 @@ hk_init_dri_options(struct hk_instance *instance)
 
    instance->image_view_min_lod =
       driQueryOptionb(&instance->dri_options, "hk_image_view_min_lod");
+
+   instance->vertex_stores = driQueryOptionb(
+      &instance->dri_options, "hk_enable_vertex_pipeline_stores_atomics");
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL

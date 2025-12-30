@@ -253,7 +253,7 @@ hk_get_device_features(
       .textureCompressionASTC_LDR = true,
       .occlusionQueryPrecise = true,
       .pipelineStatisticsQuery = true,
-      .vertexPipelineStoresAndAtomics = true,
+      .vertexPipelineStoresAndAtomics = instance->vertex_stores,
       .fragmentStoresAndAtomics = true,
       .shaderTessellationAndGeometryPointSize = true,
       .shaderImageGatherExtended = true,

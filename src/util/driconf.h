@@ -673,6 +673,10 @@
    DRI_CONF_OPT_B(hk_image_view_min_lod, def, \
                   "Emulate VK_EXT_image_view_min_lod (conformant but slower)")
 
+#define DRI_CONF_HK_ENABLE_VERTEX_PIPELINE_STORES_ATOMICS(def) \
+   DRI_CONF_OPT_B(hk_enable_vertex_pipeline_stores_atomics, def, \
+                  "Enable vertexPipelineStoresAndAtomics")
+
 /**
  * \brief venus specific configuration options
  */

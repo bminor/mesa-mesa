@@ -8,7 +8,6 @@
 #pragma once
 
 #include "util/xmlconfig.h"
-#include "hk_private.h"
 #include "vk_instance.h"
 
 struct hk_instance {
@@ -23,6 +22,7 @@ struct hk_instance {
    bool no_border;
    bool fake_minmax;
    bool image_view_min_lod;
+   bool vertex_stores;
 };
 
 VK_DEFINE_HANDLE_CASTS(hk_instance, vk.base, VkInstance,
