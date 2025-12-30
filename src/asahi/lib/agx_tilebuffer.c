@@ -32,19 +32,6 @@ agx_select_tile_size(unsigned px_size_B)
                                                           : MIN_TILE_SIZE_PX;
 }
 
-static unsigned
-agx_shared_layout_from_tile_size(uint16_t t)
-{
-   if (t == 32 * 32)
-      return AGX_SHARED_LAYOUT_32X32;
-   else if (t == 32 * 16)
-      return AGX_SHARED_LAYOUT_32X16;
-   else if (t == 16 * 16)
-      return AGX_SHARED_LAYOUT_16X16;
-   else
-      UNREACHABLE("Invalid tile size");
-}
-
 static inline unsigned
 format_align_B(enum pipe_format format)
 {
@@ -171,10 +158,18 @@ agx_tilebuffer_pack_usc(struct agx_tilebuffer_layout *tib)
    agx_pack(&tib->usc, USC_SHARED, cfg) {
       if (tib->nr_samples > 0) {
          cfg.uses_shared_memory = true;
-         cfg.layout = agx_shared_layout_from_tile_size(tib->tile_size);
          cfg.sample_stride_in_8_bytes = tib->sample_size_B / 8;
          cfg.sample_count = tib->nr_samples;
          cfg.bytes_per_threadgroup = agx_tilebuffer_total_size(tib);
+
+         if (tib->tile_size == 32 * 32)
+            cfg.layout = AGX_SHARED_LAYOUT_32X32;
+         else if (tib->tile_size == 32 * 16)
+            cfg.layout = AGX_SHARED_LAYOUT_32X16;
+         else if (tib->tile_size == 16 * 16)
+            cfg.layout = AGX_SHARED_LAYOUT_16X16;
+         else
+            UNREACHABLE("Invalid tile size");
       } else {
          cfg.layout = AGX_SHARED_LAYOUT_VERTEX_COMPUTE;
          cfg.bytes_per_threadgroup = 65536;
