@@ -177,5 +177,10 @@ TEST(Tilebuffer, Layouts)
          << tests[i].name;
       ASSERT_EQ(tests[i].total_size, agx_tilebuffer_total_size(&tests[i].layout))
          << tests[i].name;
+
+      for (unsigned j = 0; j < 8; ++j) {
+         ASSERT_EQ(tests[i].layout._offset_B[j], actual._offset_B[j])
+            << tests[i].name << ", render target " << j;
+      }
    }
 }
