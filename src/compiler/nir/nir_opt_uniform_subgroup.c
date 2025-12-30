@@ -221,6 +221,21 @@ opt_uniform_subgroup_instr(nir_builder *b, nir_intrinsic_instr *intrin, void *_s
       }
       break;
 
+   case nir_intrinsic_ddx:
+   case nir_intrinsic_ddx_coarse:
+   case nir_intrinsic_ddx_fine:
+   case nir_intrinsic_ddy:
+   case nir_intrinsic_ddy_coarse:
+   case nir_intrinsic_ddy_fine:
+      if (nir_src_is_divergent(&intrin->src[0]))
+         return false;
+
+      nir_def *x = intrin->src[0].ssa;
+      b->fp_math_ctrl = nir_fp_no_fast_math;
+      replacement = nir_fsub(b, x, x);
+      b->fp_math_ctrl = nir_fp_fast_math;
+      break;
+
    case nir_intrinsic_reduce:
    case nir_intrinsic_exclusive_scan:
    case nir_intrinsic_inclusive_scan: {
