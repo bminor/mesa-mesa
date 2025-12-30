@@ -397,11 +397,11 @@ agx_get_query_result(struct pipe_context *pctx, struct pipe_query *pquery,
 
    switch (classify_query_type(query->type)) {
    case QUERY_COPY_BOOL32:
-      vresult->b = value;
+      vresult->u64 = ((uint32_t)value) != 0;
       return true;
 
    case QUERY_COPY_BOOL64:
-      vresult->b = value > 0;
+      vresult->u64 = value != 0;
       return true;
 
    case QUERY_COPY_NORMAL:
@@ -445,15 +445,6 @@ agx_get_query_result_resource_cpu(struct agx_context *ctx,
          agx_get_query_result(&ctx->base, (void *)query, true, &result);
 
       assert(ready);
-
-      switch (classify_query_type(query->type)) {
-      case QUERY_COPY_BOOL32:
-      case QUERY_COPY_BOOL64:
-         result.u64 = result.b;
-         break;
-      default:
-         break;
-      }
    }
 
    /* Clamp to type, arb_query_buffer_object-qbo tests */
