@@ -64,7 +64,7 @@ struct test tests[] = {
          PIPE_FORMAT_R32G32_SINT,
       },
       {
-         ._offset_B = { 0, 4, 12, 16 },
+         ._offset_B = { 16, 0, 18, 8 },
          .sample_size_B = 24,
          .nr_samples = 1,
          .tile_size = { 32, 32 },
@@ -81,7 +81,7 @@ struct test tests[] = {
          PIPE_FORMAT_R32G32_SINT,
       },
       {
-         ._offset_B = { 0, 4, 12, 16 },
+         ._offset_B = { 16, 0, 18, 8 },
          .sample_size_B = 24,
          .nr_samples = 2,
          .tile_size = { 32, 16 },
@@ -98,7 +98,7 @@ struct test tests[] = {
          PIPE_FORMAT_R32G32_SINT,
       },
       {
-         ._offset_B = { 0, 4, 12, 16 },
+         ._offset_B = { 16, 0, 18, 8 },
          .sample_size_B = 24,
          .nr_samples = 4,
          .tile_size = { 16, 16 },
@@ -110,7 +110,7 @@ struct test tests[] = {
       1,
       { PIPE_FORMAT_R8_UNORM, PIPE_FORMAT_R16G16_SNORM },
       {
-         ._offset_B = { 0, 2 },
+         ._offset_B = { 4, 0 },
          .sample_size_B = 8,
          .nr_samples = 1,
          .tile_size = { 32, 32 },
@@ -122,7 +122,7 @@ struct test tests[] = {
       1,
       { PIPE_FORMAT_R8_UNORM, PIPE_FORMAT_R10G10B10A2_UNORM },
       {
-         ._offset_B = { 0, 4 },
+         ._offset_B = { 4, 0 },
          .sample_size_B = 8,
          .nr_samples = 1,
          .tile_size = { 32, 32 },

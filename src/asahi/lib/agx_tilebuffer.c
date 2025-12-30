@@ -58,6 +58,14 @@ agx_shared_layout_from_tile_size(struct agx_tile_size t)
       UNREACHABLE("Invalid tile size");
 }
 
+static inline unsigned
+format_align_B(enum pipe_format format)
+{
+   /* For some reason util_format_get_blocksize(NONE) = 1 */
+   enum pipe_format phys = ail_pixel_format[format].renderable;
+   return (format != PIPE_FORMAT_NONE) ? util_format_get_blocksize(phys) : 0;
+}
+
 struct agx_tilebuffer_layout
 agx_build_tilebuffer_layout(const enum pipe_format *formats, uint8_t nr_cbufs,
                             uint8_t nr_samples, bool layered)
@@ -68,51 +76,41 @@ agx_build_tilebuffer_layout(const enum pipe_format *formats, uint8_t nr_cbufs,
    };
 
    uint32_t offset_B = 0;
+   uint8_t order[] = {0, 1, 2, 3, 4, 5, 6, 7};
 
-   for (unsigned rt = 0; rt < nr_cbufs; ++rt) {
-      tib.logical_format[rt] = formats[rt];
+   /* Sort render targets in descending order of alignment, eliminating padding
+    * and giving the optimal order of render targets. We use insertion sort
+    * because it is simple, stable, fast for small n, and free for n=1.
+    */
+   for (int i = 1; i < nr_cbufs; ++i) {
+      for (int j = i; j > 0 && format_align_B(formats[order[j - 1]]) <
+                                  format_align_B(formats[order[j]]);
+           --j) {
+         SWAP(order[j], order[j - 1]);
+      }
+   }
 
-      /* If there are gaps in the layout, don't allocate holes. Obscure,
-       * PIPE_FORMAT_NONE has a size of 1, not 0.
-       */
-      if (formats[rt] == PIPE_FORMAT_NONE)
-         continue;
+   for (unsigned i = 0; i < nr_cbufs; ++i) {
+      unsigned rt = order[i];
+      enum pipe_format format = formats[rt];
+      tib.logical_format[rt] = format;
 
-      /* Require natural alignment for tilebuffer allocations. This could be
-       * optimized, but this shouldn't be a problem in practice.
-       */
-      enum pipe_format physical_fmt = agx_tilebuffer_physical_format(&tib, rt);
-      unsigned align_B = util_format_get_blocksize(physical_fmt);
-      assert(util_is_power_of_two_nonzero(align_B) &&
-             util_is_power_of_two_nonzero(MAX_BYTES_PER_SAMPLE) &&
-             align_B < MAX_BYTES_PER_SAMPLE &&
-             "max bytes per sample divisible by alignment");
+      assert(util_is_aligned(offset_B, MAX2(format_align_B(formats[rt]), 1)) &&
+             "loop invariant ensured by the sort");
 
-      offset_B = ALIGN_POT(offset_B, align_B);
-      assert(offset_B <= MAX_BYTES_PER_SAMPLE && "loop invariant + above");
-
-      /* Determine the size, if we were to allocate this render target to the
-       * tilebuffer as desired.
-       */
-      unsigned nr = util_format_get_nr_components(physical_fmt) == 1
-                       ? util_format_get_nr_components(formats[rt])
-                       : 1;
-
-      unsigned size_B = align_B * nr;
-      unsigned new_offset_B = offset_B + size_B;
+      unsigned size_B = format_align_B(format);
+      enum pipe_format phys = ail_pixel_format[format].renderable;
+      if (util_format_get_nr_components(phys) == 1) {
+         size_B *= util_format_get_nr_components(format);
+      }
 
       /* If allocating this render target would exceed any tilebuffer limits, we
-       * need to spill it to memory. We continue processing in case there are
-       * smaller render targets after that would still fit. Otherwise, we
-       * allocate it to the tilebuffer.
-       *
-       * TODO: Suboptimal, we might be able to reorder render targets to
-       * avoid fragmentation causing spilling.
+       * need to spill it to memory. Otherwise, allocate it to the tilebuffer.
        */
+      unsigned new_offset_B = offset_B + size_B;
       bool fits = (new_offset_B <= MAX_BYTES_PER_SAMPLE) &&
                   (ALIGN_POT(new_offset_B, 8) * MIN_TILE_SIZE_PX *
                    nr_samples) <= MAX_BYTES_PER_TILE;
-
       if (fits) {
          tib._offset_B[rt] = offset_B;
          offset_B = new_offset_B;
