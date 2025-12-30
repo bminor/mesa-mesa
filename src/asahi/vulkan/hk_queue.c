@@ -146,8 +146,7 @@ asahi_fill_vdm_command(struct hk_device *dev, struct hk_cs *cs,
       c->flags |= DRM_ASAHI_RENDER_NO_VERTEX_CLUSTERING;
    }
 
-   c->utile_width_px = cs->tib.tile_size.width;
-   c->utile_height_px = cs->tib.tile_size.height;
+   agx_tilebuffer_set_drm_cmd(c, &cs->tib);
 
    /* Can be 0 for attachmentless rendering with no draws */
    c->samples = MAX2(cs->tib.nr_samples, 1);

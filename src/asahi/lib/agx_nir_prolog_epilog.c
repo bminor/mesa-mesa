@@ -420,7 +420,7 @@ agx_nir_fs_epilog(nir_builder *b, const void *key_)
       key->rt_formats, ARRAY_SIZE(key->rt_formats), key->nr_samples, true);
 
    if (key->force_small_tile)
-      tib.tile_size = (struct agx_tile_size){16, 16};
+      tib.tile_size = 16 * 16;
 
    bool force_translucent = false;
    nir_lower_blend_options opts = {

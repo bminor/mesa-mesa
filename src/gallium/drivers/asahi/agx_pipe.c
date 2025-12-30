@@ -1374,8 +1374,7 @@ agx_cmdbuf(struct agx_device *dev, struct drm_asahi_cmd_render *c,
    c->partial_bg.usc = pipeline_load.usc | 4;
    c->partial_eot.usc = pipeline_store.usc | 4;
 
-   c->utile_width_px = tib->tile_size.width;
-   c->utile_height_px = tib->tile_size.height;
+   agx_tilebuffer_set_drm_cmd(c, tib);
 
    c->samples = tib->nr_samples;
    c->layers = MAX2(util_framebuffer_get_num_layers(framebuffer), 1);

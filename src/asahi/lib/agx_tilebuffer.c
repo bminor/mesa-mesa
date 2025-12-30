@@ -5,9 +5,7 @@
 
 #include "agx_tilebuffer.h"
 #include <assert.h>
-#include "util/bitscan.h"
 #include "util/format/u_format.h"
-#include "agx_usc.h"
 #include "layout.h"
 
 /* Maximum number of bytes per tile on G13G. This may change in future versions
@@ -24,35 +22,24 @@
 #define MIN_TILE_SIZE_PX (16 * 16)
 
 /* Select the largest tile size that fits */
-static struct agx_tile_size
-agx_select_tile_size(unsigned bytes_per_pixel)
+static uint16_t
+agx_select_tile_size(unsigned px_size_B)
 {
-   /* clang-format off */
-   struct agx_tile_size sizes[] = {
-      { 32, 32 },
-      { 32, 16 },
-      { 16, 16 }
-   };
-   /* clang-format on */
+   assert(px_size_B <= (MAX_BYTES_PER_TILE / MIN_TILE_SIZE_PX));
 
-   for (unsigned i = 0; i < ARRAY_SIZE(sizes); ++i) {
-      struct agx_tile_size size = sizes[i];
-
-      if ((bytes_per_pixel * size.width * size.height) <= MAX_BYTES_PER_TILE)
-         return size;
-   }
-
-   UNREACHABLE("No supported tile size meets the bytes per pixel requirement");
+   return ((px_size_B * 32 * 32) <= MAX_BYTES_PER_TILE)   ? (32 * 32)
+          : ((px_size_B * 32 * 16) <= MAX_BYTES_PER_TILE) ? (32 * 16)
+                                                          : MIN_TILE_SIZE_PX;
 }
 
 static unsigned
-agx_shared_layout_from_tile_size(struct agx_tile_size t)
+agx_shared_layout_from_tile_size(uint16_t t)
 {
-   if (t.width == 32 && t.height == 32)
+   if (t == 32 * 32)
       return AGX_SHARED_LAYOUT_32X32;
-   else if (t.width == 32 && t.height == 16)
+   else if (t == 32 * 16)
       return AGX_SHARED_LAYOUT_32X16;
-   else if (t.width == 16 && t.height == 16)
+   else if (t == 16 * 16)
       return AGX_SHARED_LAYOUT_16X16;
    else
       UNREACHABLE("Invalid tile size");
@@ -127,8 +114,7 @@ agx_build_tilebuffer_layout(const enum pipe_format *formats, uint8_t nr_cbufs,
    if (nr_samples > 1)
       offset_B = MAX2(offset_B, 1);
 
-   tib.sample_size_B = ALIGN_POT(offset_B, 8);
-
+   tib.sample_size_B = align(offset_B, 8);
    tib.tile_size = agx_select_tile_size(tib.sample_size_B * nr_samples);
 
    agx_tilebuffer_pack_usc(&tib);
@@ -176,8 +162,7 @@ agx_tilebuffer_supports_mask(struct agx_tilebuffer_layout *tib, unsigned rt)
 uint32_t
 agx_tilebuffer_total_size(struct agx_tilebuffer_layout *tib)
 {
-   return tib->sample_size_B * tib->nr_samples * tib->tile_size.width *
-          tib->tile_size.height;
+   return tib->sample_size_B * tib->nr_samples * tib->tile_size;
 }
 
 void

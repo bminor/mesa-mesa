@@ -8,6 +8,7 @@
 #include <assert.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include "drm-uapi/asahi_drm.h"
 #include "util/format/u_formats.h"
 #include "agx_pack.h"
 
@@ -24,11 +25,6 @@ extern "C" {
 struct nir_shader;
 struct nir_def;
 struct nir_builder;
-
-struct agx_tile_size {
-   uint8_t width;
-   uint8_t height;
-};
 
 struct agx_tilebuffer_layout {
    /* Logical format of each render target. Use agx_tilebuffer_physical_format
@@ -55,12 +51,20 @@ struct agx_tilebuffer_layout {
    /* If layered rendering is used */
    bool layered;
 
-   /* Selected tile size */
-   struct agx_tile_size tile_size;
+   /* Selected tile size in pixels. Either 32*32, 32*16, or 16*16. */
+   uint16_t tile_size;
 
    /* USC word corresponding to this configuration of the tilebuffer */
    struct agx_usc_shared_packed usc;
 };
+
+static inline void
+agx_tilebuffer_set_drm_cmd(struct drm_asahi_cmd_render *c,
+                           const struct agx_tilebuffer_layout *layout)
+{
+   c->utile_width_px = layout->tile_size >= 32 * 16 ? 32 : 16;
+   c->utile_height_px = layout->tile_size <= 32 * 16 ? 16 : 32;
+}
 
 /*
  * _offset_B is undefined for non-spilled render targets. This safe accessor
