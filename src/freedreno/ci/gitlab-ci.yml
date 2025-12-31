@@ -7,7 +7,7 @@ a200-gl:
     - .a200
     - .lumag-freedreno-manual-rules
   timeout: 180m
-  parallel: 2
+  parallel: 3
   variables:
     CI_TRON_TIMEOUT__OVERALL__MINUTES: 180
     DEQP_SUITE: freedreno-a200

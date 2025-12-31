@@ -500,7 +500,8 @@ dEQP-GLES2.functional.fbo.render.color.mix_npot_tex2d_bgra,Fail
 dEQP-GLES2.functional.fbo.render.color.mix_npot_tex2d_bgra_depth_component16,Fail
 dEQP-GLES2.functional.fbo.render.color.mix_npot_tex2d_rgb,Fail
 dEQP-GLES2.functional.fbo.render.color.mix_npot_tex2d_rgb_depth_component16,Fail
-dEQP-GLES2.functional.fbo.render.color.mix_npot_tex2d_rgba,Fail
+# This one was failing with parallel=2 and is passing with parallel=3
+# dEQP-GLES2.functional.fbo.render.color.mix_npot_tex2d_rgba,Fail
 dEQP-GLES2.functional.fbo.render.color.mix_npot_tex2d_rgba_depth_component16,Fail
 dEQP-GLES2.functional.fbo.render.color.mix_tex2d_bgra,Fail
 dEQP-GLES2.functional.fbo.render.color.mix_tex2d_bgra_depth_component16,Fail
