@@ -1048,6 +1048,7 @@ fn compile_nir_variant(
     res.input_size = nir.uniform_size();
 
     nir_pass!(nir, nir_lower_convert_alu_types, None);
+    nir_pass!(nir, nir_opt_intrinsics);
 
     opt_nir(nir, dev, true);
 
