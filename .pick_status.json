@@ -1,5 +1,415 @@
 [
     {
+        "sha": "369a3b22b494aecc2ad241b9d66f2d877fcafc18",
+        "description": "nir/opt_uniform_subgroup: optimize uniform ddx/ddy",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "7ed6679361f02ea48562652d11281e927ee06fed",
+        "description": "mesa: allow pipeline statistics in glCreateQueries",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "63a19daefb51fe617bda1d8ca92d9af6dce3aaf8",
+        "description": "panvk: fix accidental assignment in assert",
+        "nominated": false,
+        "nomination_type": 2,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": "cb3f6481750a4eb1618d123a49840b77f2aded6c",
+        "notes": null
+    },
+    {
+        "sha": "e96b5a2f98d7f4629a20fc2d3c27db021dfea467",
+        "description": "asahi/ci: skip fp64 subgroup tests",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "086dd1daa3093b36666c5552c4c5bc4bd5e83d61",
+        "description": "hk: hide vertexPipelineStoresAndAtomics",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "56b90a70b3c2c62d659b0cb1577028ddf4f03630",
+        "description": "asahi: fix garbage with query reads",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4dc963353870cdd8ecfabf51ab896a23a7020ca1",
+        "description": "asahi: inline agx_shared_layout_from_tile_size",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "130c1b0bd5692257d4aec9ac3d90242b941426e1",
+        "description": "asahi: use flat tile size encoding",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "16627035ef897be294ebfd5598ba8a676f8d8c8e",
+        "description": "asahi: tightly pack tilebuffer",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "c14240b4aa2170a8eb3dea31529019b75ae2f6ea",
+        "description": "asahi: test tilebuffer offsets",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8f20419014c48ad0b6449093a95d16eac1d5f10d",
+        "description": "agx: fix AGX_MESA_DEBUG=nopreamble",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "411110f738a0d5dc6120a66590ef43e02214af1e",
+        "description": "ci,crnm: refresh_wait_job as argument",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f94530e8c6a75b042c6ac69c65b6e535a0048bc3",
+        "description": "ci,crnm: inhibit single target trace dump",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8cf2c50e7774a571528b7044bdfdc5d3a8ebbd2a",
+        "description": "ci,crnm: enhancement within a GitLab job",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0c4214129998f06eb495b6e45e7c8b4c0147cad6",
+        "description": "aco: allow opsel for last v_alignbyte/bit operand",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d8e524cd6bbbe93f14511b084647b855633d2e28",
+        "description": "mesa/main/ff_frag: Don't generate the projector for cubemap sampling",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f3eb98ec57635f23e7ac20b8a83157ef97e56b17",
+        "description": "nir/normalize_cubemap_coords: Handle the projector before the normalization",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "52e718097fa7dc808b3e8b43a8fd14a5b2b64797",
+        "notes": null
+    },
+    {
+        "sha": "84f294395eca06d831b3b8834161539347ef2357",
+        "description": "tu: Convert emit_lrz_buffer to CRB",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f9ae22411265272c6aaa3baff0e097ffbff97df4",
+        "description": "tu: Convert viewport state to CRB",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "434179a50ce4b9a307299594b402f43ba2446c85",
+        "description": "tu: Use GMEM cache helper",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "d197ea37d1aa4d387c509c1d31e307393e1c24c2",
+        "description": "freedreno/a6xx: Extract out GMEM cache helper",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ebf14544102ec148e6d037a6cde4242c4ab831fb",
+        "description": "r600: remove LLVM dependency",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "8c4d824e39420001517ad71cfe052b99316e9aaa",
+        "description": "r600: fix documentation of preoptir",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "64a2081c7fa4bd0cdbc4182632629fa114bd5a0f",
+        "description": "r600: remove obsolete option for experimental NIR support",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "cbedced5e8c10d2becbeb351fe3603b55f8b6571",
+        "description": "ac/nir/cull: do not reuse variables if subgroup ops are used",
+        "nominated": true,
+        "nomination_type": 1,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "974ca3264367833cf62273018484f9b9ea0034ca",
+        "description": "freedreno/a3xx-a5xx: restore cbuf0 direct upload.",
+        "nominated": true,
+        "nomination_type": 2,
+        "resolution": 0,
+        "main_sha": null,
+        "because_sha": "203ac73374a734ecd0157a21cd750fef7a589a67",
+        "notes": null
+    },
+    {
+        "sha": "08fc55cce91afc7d29b7a0ad8f74612a79606c42",
+        "description": "freedreno/a3xx: Improve the name of CONSTFOOTPRINT and fix constlen==0 case.",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5e8cc19a3ba673cff0675809d36534483bb913b0",
+        "description": "nir: remove per shader float fast math flags",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "0e2b31c8df45af1b2568bffbca37ad654ec09400",
+        "description": "gallivm: stop using per shader float fast math flags",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "9da2d218041c1a9dd731c3f10ca4800c8b7c6773",
+        "description": "vtn: implement default fp_math_ctrl without using execution mode",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "6e67267045108e0d74800cb8173556fdf36461a0",
+        "description": "nir/opt_varyings: use per instruction nan flag for promoting to flat",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "4f5a29ec3265cfcdff6d3e7becdf934999504c30",
+        "description": "nir/opt_varyings: use per instruction inf/nan flag for moving past interp",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "f3290219ab32fda01b1663a8407eff26548e2fbd",
+        "description": "nir: use a seperate enum for per alu floating point math control",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "44318091d87b4da032b74c1309be74764b17b11b",
+        "description": "gallivm: use nir_alu_instr_is_sz/nan_preserve",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "ed3e035773ed2b233bc3d6b7a509b6cb1b7db7ca",
+        "description": "gbm: Make documentation for `gbm_bo_map` more explicit",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "78e1f53429ab037f355fe67e68fae02dbce07aa4",
+        "description": "ac/perfcounter: update configuration of many blocks on GFX12",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "e377060e5cb4c3c5b41eae236ab7b6e860526c3c",
+        "description": "ac/perfcounter: rework computing the number of block instances on GFX12",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a90b9138177e905433a3a6b6c83c77f31a2a561e",
+        "description": "ac/perfcounter: fix the number of static instances for some blocks on GFX12",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "a62ca19010ce7ef8aee1d66778ddbb09b30d5b8a",
+        "description": "ac/perfcounter: update the number of events for GRBME_SE on GFX12",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "3317ea5122b517c32d3eb083662cf64759d973b3",
+        "description": "ac/perfcounter: define a distribution mode for all perf blocks on GFX12",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
+        "sha": "5de9390d4cb202c036bf2b81edc2c2565f4180a7",
+        "description": "ac/perfcounter: move configuration for GFX12 in a separate file",
+        "nominated": false,
+        "nomination_type": 0,
+        "resolution": 4,
+        "main_sha": null,
+        "because_sha": null,
+        "notes": null
+    },
+    {
         "sha": "ea4dedde8fe7757a593501eb6fcbaf0a78d1b36b",
         "description": "hk: Advertise VK_KHR_pipeline_binary",
         "nominated": false,
