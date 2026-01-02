@@ -86,6 +86,10 @@ print_instr_name(struct log_stream *stream, struct ir3_instruction *instr,
          mesa_log_stream_printf(stream, "(eq)");
       if (instr->flags & IR3_INSTR_NEEDS_HELPERS)
          mesa_log_stream_printf(stream, "(needs_helpers)");
+      if (instr->flags & IR3_INSTR_EOLM)
+         mesa_log_stream_printf(stream, "(eolm)");
+      if (instr->flags & IR3_INSTR_EOGM)
+         mesa_log_stream_printf(stream, "(eogm)");
    } else {
       mesa_log_stream_printf(stream, " ");
    }
