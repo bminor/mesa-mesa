@@ -988,6 +988,7 @@ a7xx_base = GPUProps(
         has_sel_b_fneg = True,
         has_pred_bit = True,
         has_pc_dgen_so_cntl = True,
+        has_eolm_eogm = True,
     )
 
 a7xx_gen1 = GPUProps(

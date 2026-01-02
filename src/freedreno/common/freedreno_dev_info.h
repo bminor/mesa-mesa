@@ -405,6 +405,9 @@ struct fd_dev_info {
        * driver.
        */
       bool has_hw_bin_scaling;
+
+      /* Whether the (eolm) and (eogm) nop flags are supported. */
+      bool has_eolm_eogm;
    } props;
 };
 

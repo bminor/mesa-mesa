@@ -4271,7 +4271,14 @@ by a particular renderpass/blit.
 	<reg32 offset="0xae02" name="SP_NC_MODE_CNTL">
 		<!-- TODO: valid bits 0x3c3f, see kernel -->
 	</reg32>
-	<reg32 offset="0xae03" name="SP_CHICKEN_BITS" usage="init"/>
+	<reg32 offset="0xae03" name="SP_CHICKEN_BITS" usage="init">
+		<doc>
+			When this bit is enabled, new waves may be unlocked once
+			all invocations have signaled they don't need local
+			memory anymore using (eolm)nop.
+		</doc>
+		<bitfield name="EOLM_ENABLE" pos="1" type="boolean"/>
+	</reg32>
 	<reg32 offset="0xae04" name="SP_NC_MODE_CNTL_2" usage="init">
 		<bitfield name="F16_NO_INF" pos="3" type="boolean"/>
 	</reg32>
