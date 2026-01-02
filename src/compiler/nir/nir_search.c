@@ -334,6 +334,12 @@ match_value(const nir_algebraic_table *table,
                                                new_swizzle[i]);
             if (val != const_val->data.d)
                return false;
+
+            /* The comparison above does not check the sign bit for 0.0,
+             * so do it manually.
+             */
+            if ((dui(val) == 0) != (dui(const_val->data.d) == 0))
+               return false;
          }
          return true;
       }
