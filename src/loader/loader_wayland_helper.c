@@ -412,7 +412,8 @@ loader_wayland_presentation_feedback(struct loader_wayland_presentation *pres,
        !tracing)
       return;
 
-   fd = malloc(sizeof *fd);
+   fd = calloc(1, sizeof *fd);
+
    fd->presentation = pres;
    fd->tracing = tracing;
    if (tracing) {
