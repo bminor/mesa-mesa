@@ -198,6 +198,7 @@ optimizations = [
    (('iabs', ('iabs', a)), ('iabs', a)),
    (('iabs', ('ineg', a)), ('iabs', a)),
    (('~fadd', a, 0.0), a),
+   (('~fadd', a, -0.0), a),
    # a+0.0 is 'a' unless 'a' is denormal or -0.0. If it's only used by a
    # floating point instruction, they should flush any input denormals and we
    # can replace -0.0 with 0.0 if the float execution mode allows it.
@@ -249,9 +250,12 @@ optimizations = [
    (('fadd', a, a), ('fmul', a, 2.0)),
    (('fadd(contract)', a, ('fadd(is_used_once)', a, b)), ('fadd', b, ('fmul', a, 2.0))),
    (('~fmul', a, 0.0), 0.0),
+   (('~fmul', a, -0.0), 0.0),
    # The only effect a*0.0 should have is when 'a' is infinity, -0.0 or NaN
    (('fmul(nsz,nnan)', 'a', 0.0), 0.0),
+   (('fmul(nsz,nnan)', 'a', -0.0), 0.0),
    (('fmulz', a, 0.0), 0.0),
+   (('fmulz', a, -0.0), 0.0),
    (('fmulz(nsz)', a, 'b(is_finite_not_zero)'), ('fmul', a, b)),
    (('fmulz', 'a(is_finite)', 'b(is_finite)'), ('fmul', a, b)),
    (('fmulz', a, a), ('fmul', a, a)),
@@ -277,11 +281,16 @@ optimizations = [
    (('fmul', ('fsign', a), ('fmul', a, a)), ('fmul', ('fabs', a), a)),
    (('fmul', ('fmul', ('fsign', a), a), a), ('fmul', ('fabs', a), a)),
    (('~ffma', 0.0, a, b), b),
+   (('~ffma', -0.0, a, b), b),
    (('ffma(is_only_used_as_float,nsz,nnan,ninf)', 0.0, a, b), b),
+   (('ffma(is_only_used_as_float,nsz,nnan,ninf)', -0.0, a, b), b),
    (('ffmaz', 0.0, a, b), ('fadd', 0.0, b)),
+   (('ffmaz', -0.0, a, b), ('fadd', 0.0, b)),
    (('~ffma', a, b, 0.0), ('fmul', a, b)),
    (('ffma(nsz)', a, b, 0.0), ('fmul', a, b)),
    (('ffmaz(nsz)', a, b, 0.0), ('fmulz', a, b)),
+   (('ffma', a, b, '#c(is_negative_zero)'), ('fmul', a, b)),
+   (('ffmaz', a, b, '#c(is_negative_zero)'), ('fmulz', a, b)),
    (('ffma', 1.0, a, b), ('fadd', a, b)),
    (('ffmaz(nsz)', 1.0, a, b), ('fadd', a, b)),
    (('ffma', -1.0, a, b), ('fadd', ('fneg', a), b)),
@@ -289,9 +298,11 @@ optimizations = [
    (('~ffma', '#a', '#b', c), ('fadd', ('fmul', a, b), c)),
    (('~ffmaz', '#a', '#b', c), ('fadd', ('fmulz', a, b), c)),
    (('~flrp', a, b, 0.0), a),
+   (('~flrp', a, b, -0.0), a),
    (('~flrp', a, b, 1.0), b),
    (('~flrp', a, a, b), a),
    (('~flrp', 0.0, a, b), ('fmul', a, b)),
+   (('~flrp', -0.0, a, b), ('fmul', a, b)),
 
    # flrp(a, a + b, c) => a + flrp(0, b, c) => a + (b * c)
    (('~flrp', a, ('fadd(is_used_once)', a, b), c), ('fadd', ('fmul', b, c), a)),
