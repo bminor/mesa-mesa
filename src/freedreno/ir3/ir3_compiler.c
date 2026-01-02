@@ -268,6 +268,7 @@ ir3_compiler_create(struct fd_device *dev, const struct fd_dev_id *dev_id,
       compiler->has_alias_rt = dev_info->props.has_alias_rt;
       compiler->mergedregs = true;
       compiler->has_sel_b_fneg = dev_info->props.has_sel_b_fneg;
+      compiler->has_eolm_eogm = dev_info->props.has_eolm_eogm;
 
       compiler->has_alias_tex = (compiler->gen >= 7);
 

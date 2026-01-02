@@ -2052,6 +2052,46 @@ helper_sched(struct ir3_legalize_ctx *ctx, struct ir3 *ir,
    }
 }
 
+static bool
+needs_eolm(struct ir3_instruction *instr)
+{
+   switch (instr->opc) {
+   case OPC_STL:
+   case OPC_LDL:
+   case OPC_STLW:
+   case OPC_LDLW:
+   case OPC_ATOMIC_ADD:
+   case OPC_ATOMIC_SUB:
+   case OPC_ATOMIC_XCHG:
+   case OPC_ATOMIC_INC:
+   case OPC_ATOMIC_DEC:
+   case OPC_ATOMIC_CMPXCHG:
+   case OPC_ATOMIC_MIN:
+   case OPC_ATOMIC_MAX:
+   case OPC_ATOMIC_AND:
+   case OPC_ATOMIC_OR:
+   case OPC_ATOMIC_XOR:
+      return true;
+   default:
+      return false;
+   }
+}
+
+static bool
+needs_eogm(struct ir3_instruction *instr)
+{
+   return opc_cat(instr->opc) == 5 || opc_cat(instr->opc) == 6;
+}
+
+static bool
+is_cheap_for_eolm_eogm(struct ir3_instruction *instr)
+{
+   /* Blob inserts these flags as soon as possible, so consider all instructions
+    * expensive.
+    */
+   return false;
+}
+
 struct ir3_last_block_data {
    /* Whether a read will be done on a register at a later point, it is
     * considered safe to set (last) when this is false for a particular
@@ -2525,6 +2565,14 @@ ir3_legalize(struct ir3 *ir, struct ir3_shader_variant *so, int *max_bary)
 
    if (so->type == MESA_SHADER_FRAGMENT)
       kill_sched(ir, so);
+
+   if ((so->type == MESA_SHADER_FRAGMENT || so->type == MESA_SHADER_COMPUTE) &&
+       so->compiler->has_eolm_eogm) {
+      feature_usage_sched(ctx, ir, so, needs_eolm, is_cheap_for_eolm_eogm,
+                          IR3_INSTR_EOLM);
+      feature_usage_sched(ctx, ir, so, needs_eogm, is_cheap_for_eolm_eogm,
+                          IR3_INSTR_EOGM);
+   }
 
    /* TODO: does (eq) exist before a6xx? */
    if (so->type == MESA_SHADER_FRAGMENT && so->need_pixlod &&

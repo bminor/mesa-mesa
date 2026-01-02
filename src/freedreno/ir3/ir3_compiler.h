@@ -316,6 +316,8 @@ struct ir3_compiler {
 
    bool has_sel_b_fneg;
 
+   bool has_eolm_eogm;
+
    struct {
       /* The number of cycles needed for the result of one ALU operation to be
        * available to another ALU operation. Only valid when the halfness of the
