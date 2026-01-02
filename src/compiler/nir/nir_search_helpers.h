@@ -130,24 +130,6 @@ is_nan(UNUSED const nir_search_state *state, const nir_alu_instr *instr,
 }
 
 static inline bool
-is_negative_zero(UNUSED const nir_search_state *state, const nir_alu_instr *instr,
-       unsigned src, unsigned num_components, const uint8_t *swizzle)
-{
-   /* only constant srcs: */
-   if (!nir_src_is_const(instr->src[src].src))
-      return false;
-
-   for (unsigned i = 0; i < num_components; i++) {
-      union di tmp;
-      tmp.d = nir_src_comp_as_float(instr->src[src].src, swizzle[i]);
-      if (tmp.ui != 0x8000000000000000ull)
-         return false;
-   }
-
-   return true;
-}
-
-static inline bool
 is_any_comp_nan(UNUSED const nir_search_state *state, const nir_alu_instr *instr,
                 unsigned src, unsigned num_components, const uint8_t *swizzle)
 {
