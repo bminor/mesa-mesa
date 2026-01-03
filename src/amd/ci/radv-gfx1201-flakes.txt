@@ -1,12 +1,19 @@
+dEQP-VK.api.buffer_marker.compute.default_mem.bottom_of_pipe.memory_dep.buffer_copy
+dEQP-VK.api.buffer_marker.compute.external_host_mem.bottom_of_pipe.memory_dep.dispatch_offset_24
+dEQP-VK.binding_model.descriptor_buffer.sparse_binding_buffer.capture_replay.compute_comp_combined_image_sampler_custom_border_color
+dEQP-VK.binding_model.descriptor_buffer.sparse_binding_buffer.capture_replay.compute_comp_sampled_image_custom_border_color
 dEQP-VK.pipeline.*.depth.*
 dEQP-VK.pipeline.shader_object_linked_spirv.vertex_input.single_attribute.dmat4.as_r64g64b64a64_sfloat_rate_instance
 dEQP-VK.sparse_resources.image_sparse_binding.multiple_bind_sparse_info.3d.r16i.1024_128_8
 dEQP-VK.sparse_resources.image_sparse_binding.multiple_sparse_image_opaque_memory_bind_info.3d.r32ui.512_256_6
 dEQP-VK.sparse_resources.image_sparse_binding.multiple_sparse_memory_bind.3d.rgba16_snorm.1024_128_8
 dEQP-VK.sparse_resources.image_sparse_residency.3d.rg32ui.512_256_16
+dEQP-VK.sparse_resources.mipmap_sparse_residency.3d.r64i.1024_128_8
+dEQP-VK.sparse_resources.mipmap_sparse_residency.3d.rg32i.1024_128_8
 dEQP-VK.sparse_resources.mipmap_sparse_residency.3d.rgba16ui.1024_128_8
 dEQP-VK.video.encode.av1.720x480_10le_420.i_15.tiling_1x2_rc_vbr_lf_layered_dpb
 dEQP-VK.video.encode.av1.720x480_10le_420.i_p_15.rc_disabled_lr_cdef_intra_refresh_row_based
+dEQP-VK.video.encode.av1.720x480_10le_420.i_p_open_15.lr_layered_dpb
 
 # CTS bug https://gitlab.khronos.org/Tracker/vk-gl-cts/-/issues/6173
 dEQP-VK.transform_feedback.primitives_generated_query.concurrent.pipeline_statistics_2.32bit.line_list.indirect
