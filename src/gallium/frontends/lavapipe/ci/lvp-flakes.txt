@@ -13,6 +13,8 @@ dEQP-VK.dynamic_rendering.primary_cmd_buff.suballocation.formats..*.input.load.s
 dEQP-VK.dynamic_rendering.primary_cmd_buff.suballocation.formats.r8g8b8a8_unorm.input.dont_care.store.self_dep_draw
 dEQP-VK.dynamic_rendering.primary_cmd_buff.suballocation.formats.r8g8b8a8_unorm.input.dont_care.store.self_dep_draw
 
+dEQP-VK.image.general_layout.input_attachment.sampled.memory.render_pass
+
 dEQP-VK.rasterization.culling.front_triangle_fan_point
 dEQP-VK.rasterization.primitives.dynamic_stipple.smooth_lines_with_adjacency_wide
 dEQP-VK.rasterization.primitives.dynamic_stipple_and_topology.rectangular_line_strip_with_adjacency_wide
