@@ -25,6 +25,8 @@ spec@ext_framebuffer_blit@fbo-sys-blit
 spec@ext_framebuffer_blit@fbo-sys-sub-blit
 spec@glsl-1.10@execution@vs-loop-array-index-unroll
 
+KHR-GLES31.core.compute_shader.sso-compute-pipeline
+
 dEQP-VK.api.copy_and_blit.copy_commands2.blit_image.all_formats.color.2d.r8_sint.r16g16b16a16_sint.optimal_general_nearest
 dEQP-VK.api.copy_and_blit.copy_commands2.blit_image.simple_tests.mirror_y_3d.r32_sfloat_nearest
 dEQP-VK.api.copy_and_blit.core.blit_image.all_formats.color.2d.astc_10x5_srgb_block.a8b8g8r8_srgb_pack32.general_general_nearest
@@ -129,6 +131,7 @@ dEQP-VK.memory_model.message_passing.ext.u32.noncoherent.fence_fence.atomicwrite
 dEQP-VK.memory_model.message_passing.ext.u32.noncoherent.fence_fence.atomicwrite.device.payload_local.image.guard_local.buffer.vert
 dEQP-VK.memory_model.message_passing.ext.u32.noncoherent.fence_fence.atomicwrite.queuefamily.payload_local.image.guard_local.image.frag
 dEQP-VK.memory_model.write_after_read.core11.u32.coherent.fence_fence.atomicwrite.workgroup.payload_local.image.guard_local.image.comp
+dEQP-VK.memory_model.write_after_read.ext.u32.coherent.atomic_atomic.atomicrmw.queuefamily.payload_local.buffer.guard_nonlocal.workgroup.comp
 dEQP-VK.memory_model.write_after_read.ext.u32.coherent.atomic_atomic.atomicwrite.queuefamily.payload_local.buffer.guard_local.buffer.frag
 dEQP-VK.memory_model.write_after_read.ext.u32.coherent.atomic_fence.atomicwrite.device.payload_local.buffer.guard_local.image.frag
 dEQP-VK.memory_model.write_after_read.ext.u32.coherent.atomic_fence.atomicwrite.queuefamily.payload_local.image.guard_local.image.frag
